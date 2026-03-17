@@ -79,35 +79,88 @@ class BlackHoleEnemy extends EnemyBase {
     final cy = size.y / 2;
     final r = 18 * scale;
 
-    // Dark center
-    final darkPaint = Paint()..color = const Color(0xFF000000);
-    canvas.drawCircle(Offset(cx, cy), r * 0.7, darkPaint);
+    // === INDICATORE RAGGIO GRAVITAZIONALE (cerchio sottile) ===
+    if (scale <= 1.01) {
+      final rangePaint = Paint()
+        ..color = NeonColors.darkRed.withValues(alpha: 0.06)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 0.5;
+      canvas.drawCircle(Offset(cx, cy), 150, rangePaint); // raggio attrazione
+    }
 
-    // Rotating red border
-    paint.style = PaintingStyle.stroke;
-    paint.strokeWidth = 3;
+    // === GLOW ESTERNO ROSSO (ampio, pulsante) ===
+    final glowPulse = 0.15 + math.sin(_rotAngle * 1.5) * 0.05;
+    final outerGlow = Paint()
+      ..color = NeonColors.red.withValues(alpha: glowPulse)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 25);
+    canvas.drawCircle(Offset(cx, cy), r * 2, outerGlow);
 
+    // === ANELLI GRAVITAZIONALI ROTANTI ===
+    // Anello 1: esterno, rotazione oraria
     canvas.save();
     canvas.translate(cx, cy);
     canvas.rotate(_rotAngle);
-
+    final ring1Paint = Paint()
+      ..color = NeonColors.red.withValues(alpha: 0.4)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2 * scale;
     for (int i = 0; i < 4; i++) {
       final angle = i * math.pi / 2;
       canvas.drawArc(
         Rect.fromCircle(center: Offset.zero, radius: r),
-        angle,
-        math.pi / 3,
-        false,
-        paint,
+        angle, math.pi / 3, false, ring1Paint,
       );
     }
     canvas.restore();
 
-    // Red glow
-    final glowPaint = Paint()
-      ..color = NeonColors.red.withValues(alpha: 0.2)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 20);
-    canvas.drawCircle(Offset(cx, cy), r * 1.5, glowPaint);
+    // Anello 2: interno, rotazione antioraria
+    canvas.save();
+    canvas.translate(cx, cy);
+    canvas.rotate(-_rotAngle * 1.3);
+    final ring2Paint = Paint()
+      ..color = NeonColors.red.withValues(alpha: 0.25)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.5 * scale;
+    for (int i = 0; i < 3; i++) {
+      final angle = i * math.pi * 2 / 3;
+      canvas.drawArc(
+        Rect.fromCircle(center: Offset.zero, radius: r * 0.7),
+        angle, math.pi / 4, false, ring2Paint,
+      );
+    }
+    canvas.restore();
+
+    // === NUCLEO NERO con bordo rosso ===
+    final darkPaint = Paint()..color = const Color(0xFF000000);
+    canvas.drawCircle(Offset(cx, cy), r * 0.5, darkPaint);
+    // Bordo rosso pulsante del nucleo
+    final borderPulse = 0.5 + math.sin(_rotAngle * 3) * 0.3;
+    final borderPaint = Paint()
+      ..color = NeonColors.red.withValues(alpha: borderPulse)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.5;
+    canvas.drawCircle(Offset(cx, cy), r * 0.5, borderPaint);
+
+    // === PARTICELLE SPIRALANTI (solo layer principale) ===
+    if (scale <= 1.01) {
+      for (int i = 0; i < 8; i++) {
+        final pAngle = _rotAngle * 2 + i * math.pi / 4;
+        final pDist = r * (0.6 + 0.4 * math.sin(_rotAngle + i * 0.5));
+        final px = cx + pDist * math.cos(pAngle);
+        final py = cy + pDist * math.sin(pAngle);
+        final pAlpha = 0.2 + math.sin(_rotAngle * 3 + i) * 0.15;
+        final particlePaint = Paint()
+          ..color = NeonColors.red.withValues(alpha: pAlpha)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2);
+        canvas.drawCircle(Offset(px, py), 1.5, particlePaint);
+      }
+
+      // Punto luminoso centrale
+      final corePaint = Paint()
+        ..color = const Color(0xFFFF4400).withValues(alpha: 0.5 + math.sin(_rotAngle * 4) * 0.3)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
+      canvas.drawCircle(Offset(cx, cy), r * 0.15, corePaint);
+    }
 
     paint.style = PaintingStyle.fill;
   }
