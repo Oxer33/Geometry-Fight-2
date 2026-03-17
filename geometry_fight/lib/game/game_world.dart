@@ -496,4 +496,10 @@ class GeometryFightGame extends FlameGame
 
   int get enemyCount => world.children.whereType<EnemyBase>().length;
   int get bossCount => world.children.whereType<BossBase>().length;
+
+  /// Ritorna il boss attivo (se presente) per mostrare la barra HP nella HUD
+  BossBase? get activeBoss {
+    final bosses = world.children.whereType<BossBase>();
+    return bosses.isEmpty ? null : bosses.first;
+  }
 }

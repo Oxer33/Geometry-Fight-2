@@ -55,6 +55,19 @@ class GameHud extends StatelessWidget {
                 ),
               ),
 
+              // === BARRA HP BOSS (centro, sotto wave indicator) ===
+              if (game.activeBoss != null)
+                Positioned(
+                  top: topPad + 28,
+                  left: MediaQuery.of(context).size.width * 0.2,
+                  right: MediaQuery.of(context).size.width * 0.2,
+                  child: _BossHpBar(
+                    bossName: game.activeBoss!.bossName,
+                    healthPercent: game.activeBoss!.healthPercent,
+                    bossColor: game.activeBoss!.neonColor,
+                  ),
+                ),
+
               // === COMBO POPUP (centro schermo) ===
               if (game.scoreSystem.showingCombo)
                 Center(
@@ -368,6 +381,143 @@ class _WaveIndicator extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+// ===================================================================
+// BARRA HP BOSS - Prominente durante le boss fight
+// ===================================================================
+class _BossHpBar extends StatelessWidget {
+  final String bossName;
+  final double healthPercent;
+  final Color bossColor;
+
+  const _BossHpBar({
+    required this.bossName,
+    required this.healthPercent,
+    required this.bossColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    // Colore barra in base alla vita rimasta
+    final barColor = healthPercent > 0.5
+        ? bossColor
+        : healthPercent > 0.25
+            ? const Color(0xFFFFAA00)
+            : const Color(0xFFFF2244);
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Nome boss
+        Text(
+          bossName.toUpperCase(),
+          style: TextStyle(
+            color: barColor.withValues(alpha: 0.9),
+            fontSize: 11,
+            fontWeight: FontWeight.bold,
+            fontFamily: 'monospace',
+            letterSpacing: 3,
+            shadows: [Shadow(color: barColor, blurRadius: 8)],
+          ),
+        ),
+        const SizedBox(height: 3),
+        // Barra HP con glow
+        SizedBox(
+          height: 8,
+          child: CustomPaint(
+            size: const Size(double.infinity, 8),
+            painter: _BossHpBarPainter(
+              progress: healthPercent.clamp(0.0, 1.0),
+              color: barColor,
+            ),
+          ),
+        ),
+        const SizedBox(height: 2),
+        // Percentuale HP
+        Text(
+          '${(healthPercent * 100).toInt()}%',
+          style: TextStyle(
+            color: barColor.withValues(alpha: 0.6),
+            fontSize: 9,
+            fontFamily: 'monospace',
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Painter per la barra HP del boss con glow neon
+class _BossHpBarPainter extends CustomPainter {
+  final double progress;
+  final Color color;
+
+  _BossHpBarPainter({required this.progress, required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final radius = Radius.circular(4);
+
+    // Background scuro
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromLTWH(0, 0, size.width, size.height),
+        radius,
+      ),
+      Paint()..color = Colors.white.withValues(alpha: 0.08),
+    );
+
+    // Bordo esterno
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromLTWH(0, 0, size.width, size.height),
+        radius,
+      ),
+      Paint()
+        ..color = color.withValues(alpha: 0.3)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1,
+    );
+
+    // Barra HP con glow
+    final barWidth = size.width * progress;
+    if (barWidth > 0) {
+      // Glow
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromLTWH(0, -2, barWidth, size.height + 4),
+          radius,
+        ),
+        Paint()
+          ..color = color.withValues(alpha: 0.3)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4),
+      );
+
+      // Barra piena
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromLTWH(0, 0, barWidth, size.height),
+          radius,
+        ),
+        Paint()..color = color.withValues(alpha: 0.8),
+      );
+
+      // Highlight superiore
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromLTWH(1, 1, barWidth - 2, size.height * 0.4),
+          radius,
+        ),
+        Paint()..color = Colors.white.withValues(alpha: 0.15),
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _BossHpBarPainter oldDelegate) {
+    return oldDelegate.progress != progress || oldDelegate.color != color;
   }
 }
 
