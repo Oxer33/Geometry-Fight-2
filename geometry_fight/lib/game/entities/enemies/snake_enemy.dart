@@ -84,20 +84,81 @@ class SnakeEnemy extends EnemyBase {
 
   @override
   void renderShape(Canvas canvas, Paint paint, double scale) {
-    // Draw segments
-    for (int i = 0; i < _segments.length; i++) {
-      final seg = _segments[i] - position;
-      final radius = (6 - i * 0.3).clamp(3.0, 6.0) * scale;
-      canvas.drawCircle(
-        Offset(size.x / 2 + seg.x, size.y / 2 + seg.y),
-        radius,
-        paint,
-      );
+    final cx = size.x / 2;
+    final cy = size.y / 2;
+
+    if (_segments.isEmpty) {
+      canvas.drawCircle(Offset(cx, cy), 6 * scale, paint);
+      return;
     }
 
-    // If segments not initialized yet, draw at center
-    if (_segments.isEmpty) {
-      canvas.drawCircle(Offset(size.x / 2, size.y / 2), 6 * scale, paint);
+    // === CONNESSIONI LUMINOSE TRA SEGMENTI ===
+    if (scale <= 1.01 && _segments.length > 1) {
+      for (int i = 0; i < _segments.length - 1; i++) {
+        final seg1 = _segments[i] - position;
+        final seg2 = _segments[i + 1] - position;
+        final lineAlpha = (1.0 - i / _segments.length) * 0.3;
+        final linePaint = Paint()
+          ..color = paint.color.withValues(alpha: lineAlpha)
+          ..strokeWidth = (2.5 - i * 0.2).clamp(0.5, 2.5)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2);
+        canvas.drawLine(
+          Offset(cx + seg1.x, cy + seg1.y),
+          Offset(cx + seg2.x, cy + seg2.y),
+          linePaint,
+        );
+      }
+    }
+
+    // === SEGMENTI con gradiente colore ===
+    for (int i = _segments.length - 1; i >= 0; i--) {
+      final seg = _segments[i] - position;
+      final progress = i / _segments.length; // 0=testa, 1=coda
+      final radius = (6 - i * 0.3).clamp(3.0, 6.0) * scale;
+      final segAlpha = (1.0 - progress * 0.5);
+
+      // Segmento con colore che sfuma verso il turchese
+      final segColor = Color.lerp(
+        paint.color,
+        paint.color.withValues(alpha: 0.4),
+        progress,
+      ) ?? paint.color;
+      final segPaint = Paint()..color = segColor.withValues(alpha: segAlpha);
+      canvas.drawCircle(Offset(cx + seg.x, cy + seg.y), radius, segPaint);
+
+      // Nucleo pulsante per ogni segmento (solo layer principale)
+      if (scale <= 1.01 && i % 2 == 0) {
+        final pulse = 0.3 + math.sin(idlePhase * 4 + i * 0.5) * 0.2;
+        final corePaint = Paint()
+          ..color = const Color(0xFFFFFFFF).withValues(alpha: pulse)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 1.5);
+        canvas.drawCircle(Offset(cx + seg.x, cy + seg.y), radius * 0.35, corePaint);
+      }
+    }
+
+    // === TESTA: più grande con occhi ===
+    if (scale <= 1.01 && _segments.isNotEmpty) {
+      final head = _segments[0] - position;
+      final headR = 6.0 * scale;
+      // Occhi (nella direzione di movimento)
+      final moveDir = _segments.length > 1
+          ? (_segments[0] - _segments[1]).normalized()
+          : Vector2(0, -1);
+      final eyeOffset = 2.5;
+      final perpDir = Vector2(-moveDir.y, moveDir.x);
+
+      final eyeL = Offset(
+        cx + head.x + perpDir.x * eyeOffset + moveDir.x * 2,
+        cy + head.y + perpDir.y * eyeOffset + moveDir.y * 2,
+      );
+      final eyeR = Offset(
+        cx + head.x - perpDir.x * eyeOffset + moveDir.x * 2,
+        cy + head.y - perpDir.y * eyeOffset + moveDir.y * 2,
+      );
+      final eyePaint = Paint()
+        ..color = const Color(0xFFFFFFFF).withValues(alpha: 0.8);
+      canvas.drawCircle(eyeL, 1.2, eyePaint);
+      canvas.drawCircle(eyeR, 1.2, eyePaint);
     }
   }
 }
