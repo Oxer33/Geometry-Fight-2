@@ -84,6 +84,50 @@ class GameHud extends StatelessWidget {
                   child: _PowerUpBar(player: game.player),
                 ),
 
+              // === PERFECT WAVE! (centro schermo) ===
+              if (game.showPerfectWave)
+                Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const SizedBox(height: 60),
+                      Text(
+                        'PERFECT WAVE!',
+                        style: TextStyle(
+                          color: const Color(0xFF00FF88),
+                          fontSize: 28,
+                          fontWeight: FontWeight.w900,
+                          fontFamily: 'monospace',
+                          letterSpacing: 4,
+                          shadows: [
+                            const Shadow(color: Color(0xFF00FF88), blurRadius: 16),
+                            Shadow(color: const Color(0xFF00FF88).withValues(alpha: 0.5), blurRadius: 32),
+                          ],
+                        ),
+                      ),
+                      Text(
+                        '+50 GEOMI BONUS',
+                        style: TextStyle(
+                          color: const Color(0xFF00FF88).withValues(alpha: 0.6),
+                          fontSize: 12,
+                          fontFamily: 'monospace',
+                          letterSpacing: 2,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+              // === FLASH ROSSO QUANDO COLPITO ===
+              if (game.hitFlashTimer > 0)
+                Positioned.fill(
+                  child: IgnorePointer(
+                    child: Container(
+                      color: Colors.red.withValues(alpha: game.hitFlashTimer * 0.5),
+                    ),
+                  ),
+                ),
+
               // === NEMICI RIMANENTI (mini-bar in basso al centro) ===
               Positioned(
                 bottom: 8,

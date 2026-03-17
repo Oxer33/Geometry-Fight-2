@@ -93,6 +93,14 @@ class GeometryFightGame extends FlameGame
   int sessionGeoms = 0;
   int sessionKills = 0;
 
+  // Perfect Wave tracking
+  bool _hitThisWave = false;
+  bool showPerfectWave = false;
+  double _perfectWaveTimer = 0;
+
+  // Screen flash rosso quando colpito
+  double hitFlashTimer = 0;
+
   // Callbacks for UI
   void Function()? onGameOver;
   void Function()? onPause;
@@ -170,6 +178,14 @@ class GeometryFightGame extends FlameGame
     waveSystem.update(scaledDt);
     scoreSystem.update(scaledDt);
     powerUpSystem.update(scaledDt);
+
+    // Timer flash rosso
+    if (hitFlashTimer > 0) hitFlashTimer -= dt;
+    // Timer perfect wave
+    if (_perfectWaveTimer > 0) {
+      _perfectWaveTimer -= dt;
+      if (_perfectWaveTimer <= 0) showPerfectWave = false;
+    }
 
     // Camera follow player
     final targetPos = player.position.clone();
@@ -422,6 +438,20 @@ class GeometryFightGame extends FlameGame
   void onPlayerHit() {
     scoreSystem.resetMultiplier();
     triggerScreenShake(6, 0.3);
+    hitFlashTimer = 0.3; // Flash rosso sullo schermo per 0.3s
+    _hitThisWave = true; // Questa wave non è più "perfect"
+  }
+
+  /// Chiamato quando una wave viene completata (dal WaveSystem)
+  void onWaveComplete() {
+    if (!_hitThisWave) {
+      // PERFECT WAVE! Nessun colpo subito durante la wave
+      showPerfectWave = true;
+      _perfectWaveTimer = 2.5;
+      // Bonus: geomi raddoppiati per questa wave
+      scoreSystem.addGeoms(50);
+    }
+    _hitThisWave = false; // Reset per la prossima wave
   }
 
   void onPlayerDeath() {

@@ -73,6 +73,9 @@ class WaveSystem {
   void _completeWave() {
     _waveActive = false;
 
+    // Notifica il game che la wave è completa (per Perfect Wave bonus)
+    game.onWaveComplete();
+
     // Wait 2 seconds then start next wave
     Future.delayed(const Duration(seconds: 2), () {
       if (game.gameState == GameState.playing) {
