@@ -107,4 +107,36 @@
 
 ---
 
+## ✅ COMPLETATO (Sessione 3 - Marzo 2026)
+
+### Fix Critici
+- [x] Fix wave system: nemici non spawnavano dopo wave 1 (_postSpawnDelay 1.5s)
+- [x] Modalità di gioco effettivamente implementate nel wave system
+
+### Nuovi Contenuti
+- [x] 5 nuovi nemici: Healer (cura), Orbiter (orbita+spara), Siren (rallenta proiettili), Necro (resuscita), Tesla (archi elettrici)
+- [x] 5 nuovi boss: Nexus Prime (portali), Void Reaper (zone morte), Tesla Lord (torri fulmini), Phantom King (invisibilità+cloni), Omega Core (boss finale supremo HP:3000)
+- [x] Wave estese da 50 a 75 con nuovi boss
+
+### Meccaniche
+- [x] Attrazione geomi passiva 80px (senza power-up)
+- [x] Velocità attrazione proporzionale alla distanza
+
+### Grafica Nemici Upgrade (10 nemici migliorati)
+- [x] Drone: nucleo pulsante, croce, punti energetici
+- [x] Mine: punte animate, anelli pericolo, scintille
+- [x] Bouncer: archi velocità, nucleo luminoso
+- [x] Kamikaze: anelli carica, scia fuoco, nucleo incandescente
+- [x] Weaver: linee strutturali, nucleo, punti energetici
+- [x] Splitter: linee frattura, indicatore livello
+- [x] Shield: force field multi-layer, segmenti HP, indicatore regen
+- [x] BlackHole: doppio anello gravitazionale, particelle spiralanti, indicatore raggio
+- [x] Spawner: linee strutturali, indicatore spawn, punti vertici
+- [x] Snake: connessioni luminose, gradiente colore, occhi sulla testa
+
+### UI
+- [x] Splash screen cinematografico (navicella insegue drone, esplosione, logo)
+
+---
+
 *Ultimo aggiornamento: Marzo 2026*
