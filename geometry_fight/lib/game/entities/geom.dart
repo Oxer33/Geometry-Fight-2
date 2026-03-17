@@ -47,20 +47,28 @@ class Geom extends PositionComponent
       return;
     }
 
-    // Magnet attraction
+    // Attrazione geomi: sempre attiva con raggio base 80px
+    // Power-up Magnet aumenta il raggio a 400px
+    // Upgrade magnetRange aggiunge raggio extra
     final player = game.player;
     final dist = position.distanceTo(player.position);
-    final magnetRange = player.hasMagnet ? magnetRadius : game.saveData.magnetRange;
+    
+    // Raggio base passivo (80px) + upgrade + power-up
+    const double baseAttractionRange = 80.0;
+    final upgradeRange = game.saveData.magnetRange;
+    final magnetRange = player.hasMagnet ? magnetRadius : baseAttractionRange + upgradeRange;
 
-    if (magnetRange > 0 && dist < magnetRange) {
+    if (dist < magnetRange) {
       _attracted = true;
     }
 
-    if (_attracted || dist < geomCollectRadius) {
+    if (_attracted) {
       final dir = (player.position - position);
       if (dir.length > 0) {
         dir.normalize();
-        position += dir * 600 * dt;
+        // Velocità attrazione: più vicino = più veloce
+        final attractSpeed = player.hasMagnet ? 800.0 : 400.0 + (1.0 - dist / magnetRange).clamp(0.0, 1.0) * 300;
+        position += dir * attractSpeed * dt;
       }
     }
   }

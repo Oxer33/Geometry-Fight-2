@@ -17,6 +17,11 @@ enum EnemyType {
   leech,
   titan,
   glitch,
+  healer,
+  orbiter,
+  siren,
+  necro,
+  tesla,
 }
 
 enum BossType {
@@ -177,6 +182,31 @@ List<WaveConfig> generateWaveConfigs() {
     // Glitch dal wave 16 (teletrasporto)
     if (wave >= 16) {
       spawns.add(WaveSpawn(EnemyType.glitch, 1 + wave ~/ 10, delay: 4));
+    }
+
+    // Healer dal wave 18 (cura nemici vicini - priorità alta!)
+    if (wave >= 18 && wave % 2 == 0) {
+      spawns.add(WaveSpawn(EnemyType.healer, (wave ~/ 18).clamp(1, 2), delay: 5));
+    }
+
+    // Orbiter dal wave 20 (orbita e spara)
+    if (wave >= 20) {
+      spawns.add(WaveSpawn(EnemyType.orbiter, 1 + wave ~/ 12, delay: 4));
+    }
+
+    // Tesla dal wave 22 (archi elettrici tra nemici)
+    if (wave >= 22) {
+      spawns.add(WaveSpawn(EnemyType.tesla, 1 + wave ~/ 15, delay: 5));
+    }
+
+    // Siren dal wave 25 (rallenta proiettili)
+    if (wave >= 25) {
+      spawns.add(WaveSpawn(EnemyType.siren, (wave ~/ 15).clamp(1, 3), delay: 6));
+    }
+
+    // Necro dal wave 28 (resuscita nemici morti)
+    if (wave >= 28 && wave % 3 == 0) {
+      spawns.add(WaveSpawn(EnemyType.necro, 1, delay: 7));
     }
 
     configs.add(WaveConfig(waveNumber: wave, spawns: spawns));

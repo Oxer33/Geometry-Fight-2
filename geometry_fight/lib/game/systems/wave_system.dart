@@ -1,3 +1,4 @@
+import '../../data/difficulty.dart';
 import '../../data/wave_configs.dart';
 import '../game_world.dart';
 
@@ -8,6 +9,9 @@ class WaveSystem {
   int _spawnIndex = 0;
   bool _waveActive = false;
   bool _bossActive = false;
+  bool _allSpawned = false; // Tutti i gruppi sono stati spawnati
+  double _postSpawnDelay = 0; // Delay dopo l'ultimo spawn prima di controllare completamento
+  int _totalSpawned = 0; // Contatore nemici spawnati in questa wave
   late List<WaveConfig> _configs;
   WaveConfig? _currentConfig;
 
@@ -15,17 +19,34 @@ class WaveSystem {
     _configs = generateWaveConfigs();
   }
 
+  /// Ritorna la modalità di gioco attuale dal game
+  GameMode get _mode => game.gameMode;
+
   void startWave(int wave) {
     currentWave = wave;
     _waveActive = true;
     _spawnIndex = 0;
-    _spawnTimer = 1.0; // Small delay before first spawn
+    _spawnTimer = 1.0; // Delay iniziale prima del primo spawn
+    _allSpawned = false;
+    _postSpawnDelay = 0;
+    _totalSpawned = 0;
 
-    // Find config
-    _currentConfig = _configs.firstWhere(
-      (c) => c.waveNumber == wave,
-      orElse: () => _generateEndlessWave(wave),
-    );
+    // Genera config in base alla modalità di gioco
+    switch (_mode) {
+      case GameMode.bossRush:
+        _currentConfig = _generateBossRushWave(wave);
+      case GameMode.survival:
+        _currentConfig = _generateSurvivalWave(wave);
+      case GameMode.timeAttack:
+        _currentConfig = _generateTimeAttackWave(wave);
+      case GameMode.zenMode:
+        _currentConfig = _generateZenWave(wave);
+      case GameMode.classic:
+        _currentConfig = _configs.firstWhere(
+          (c) => c.waveNumber == wave,
+          orElse: () => _generateEndlessWave(wave),
+        );
+    }
 
     // Check for boss
     if (_currentConfig!.boss != null) {
@@ -49,24 +70,31 @@ class WaveSystem {
     }
 
     _spawnTimer -= dt;
-    if (_spawnTimer <= 0 && _currentConfig != null) {
+    if (_spawnTimer <= 0 && _currentConfig != null && !_allSpawned) {
       if (_spawnIndex < _currentConfig!.spawns.length) {
         final spawn = _currentConfig!.spawns[_spawnIndex];
         for (int i = 0; i < spawn.count; i++) {
           game.spawnEnemy(spawn.type);
+          _totalSpawned++;
         }
         _spawnIndex++;
 
         if (_spawnIndex < _currentConfig!.spawns.length) {
           _spawnTimer = _currentConfig!.spawns[_spawnIndex].delay;
+        } else {
+          // Tutti i gruppi spawnati - avvia il delay di sicurezza
+          _allSpawned = true;
+          _postSpawnDelay = 1.5; // Aspetta 1.5s prima di controllare il completamento
         }
       }
     }
 
-    // Check if wave is complete
-    if (_spawnIndex >= (_currentConfig?.spawns.length ?? 0) &&
-        game.enemyCount == 0) {
-      _completeWave();
+    // Check if wave is complete (SOLO dopo il delay post-spawn)
+    if (_allSpawned) {
+      _postSpawnDelay -= dt;
+      if (_postSpawnDelay <= 0 && game.enemyCount == 0) {
+        _completeWave();
+      }
     }
   }
 
@@ -76,8 +104,10 @@ class WaveSystem {
     // Notifica il game che la wave è completa (per Perfect Wave bonus)
     game.onWaveComplete();
 
-    // Wait 2 seconds then start next wave
-    Future.delayed(const Duration(seconds: 2), () {
+    // Delay tra wave dipende dalla modalità
+    final delayMs = _mode == GameMode.survival ? 500 : 2000;
+
+    Future.delayed(Duration(milliseconds: delayMs), () {
       if (game.gameState == GameState.playing) {
         startWave(currentWave + 1);
       }
@@ -86,6 +116,52 @@ class WaveSystem {
 
   void onBossDefeated() {
     _bossActive = false;
+  }
+
+  /// Boss Rush: ogni wave è un boss, difficoltà crescente
+  WaveConfig _generateBossRushWave(int wave) {
+    final bosses = BossType.values;
+    final bossIndex = (wave - 1) % bosses.length;
+    // Pochi nemici di supporto
+    final spawns = <WaveSpawn>[
+      WaveSpawn(EnemyType.drone, 3 + wave * 2),
+    ];
+    return WaveConfig(waveNumber: wave, spawns: spawns, boss: bosses[bossIndex]);
+  }
+
+  /// Survival: wave infinite con nemici crescenti, nessun boss, nessuna pausa
+  WaveConfig _generateSurvivalWave(int wave) {
+    final spawns = <WaveSpawn>[];
+    spawns.add(WaveSpawn(EnemyType.drone, (8 + wave * 4).clamp(8, 100)));
+    if (wave >= 2) spawns.add(WaveSpawn(EnemyType.kamikaze, (wave * 2).clamp(2, 30), delay: 0.5));
+    if (wave >= 3) spawns.add(WaveSpawn(EnemyType.weaver, (wave).clamp(1, 20), delay: 0.5));
+    if (wave >= 5) spawns.add(WaveSpawn(EnemyType.splitter, (wave ~/ 2).clamp(1, 10), delay: 0.5));
+    if (wave >= 7) spawns.add(WaveSpawn(EnemyType.bouncer, (wave ~/ 3).clamp(1, 8), delay: 0.5));
+    if (wave >= 10) spawns.add(WaveSpawn(EnemyType.titan, 1, delay: 1));
+    if (wave >= 12) spawns.add(WaveSpawn(EnemyType.glitch, (wave ~/ 4).clamp(1, 5), delay: 0.5));
+    if (wave >= 15) spawns.add(WaveSpawn(EnemyType.blackHole, 1, delay: 2));
+    return WaveConfig(waveNumber: wave, spawns: spawns);
+  }
+
+  /// Time Attack: tanti nemici facili per fare punti velocemente
+  WaveConfig _generateTimeAttackWave(int wave) {
+    final spawns = <WaveSpawn>[
+      WaveSpawn(EnemyType.drone, 15 + wave * 5),
+      WaveSpawn(EnemyType.kamikaze, 5 + wave * 2, delay: 0.3),
+      WaveSpawn(EnemyType.weaver, 3 + wave, delay: 0.3),
+    ];
+    if (wave >= 3) spawns.add(WaveSpawn(EnemyType.bouncer, wave, delay: 0.5));
+    return WaveConfig(waveNumber: wave, spawns: spawns);
+  }
+
+  /// Zen Mode: pochi nemici lenti, rilassante
+  WaveConfig _generateZenWave(int wave) {
+    final spawns = <WaveSpawn>[
+      WaveSpawn(EnemyType.drone, 3 + wave),
+      WaveSpawn(EnemyType.weaver, 1 + wave ~/ 2, delay: 2),
+    ];
+    if (wave >= 5) spawns.add(WaveSpawn(EnemyType.bouncer, 1 + wave ~/ 3, delay: 3));
+    return WaveConfig(waveNumber: wave, spawns: spawns);
   }
 
   WaveConfig _generateEndlessWave(int wave) {

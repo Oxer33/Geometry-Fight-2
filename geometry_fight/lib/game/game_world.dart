@@ -30,6 +30,11 @@ import 'entities/enemies/vortex_enemy.dart';
 import 'entities/enemies/leech_enemy.dart';
 import 'entities/enemies/titan_enemy.dart';
 import 'entities/enemies/glitch_enemy.dart';
+import 'entities/enemies/healer_enemy.dart';
+import 'entities/enemies/orbiter_enemy.dart';
+import 'entities/enemies/siren_enemy.dart';
+import 'entities/enemies/necro_enemy.dart';
+import 'entities/enemies/tesla_enemy.dart';
 import 'entities/bosses/boss_base.dart';
 import 'entities/bosses/the_grid_boss.dart';
 import 'entities/bosses/hydra_boss.dart';
@@ -311,6 +316,16 @@ class GeometryFightGame extends FlameGame
         enemy = TitanEnemy();
       case EnemyType.glitch:
         enemy = GlitchEnemy();
+      case EnemyType.healer:
+        enemy = HealerEnemy();
+      case EnemyType.orbiter:
+        enemy = OrbiterEnemy();
+      case EnemyType.siren:
+        enemy = SirenEnemy();
+      case EnemyType.necro:
+        enemy = NecroEnemy();
+      case EnemyType.tesla:
+        enemy = TeslaEnemy();
     }
 
     // Applica moltiplicatori di difficoltà a HP e velocità
