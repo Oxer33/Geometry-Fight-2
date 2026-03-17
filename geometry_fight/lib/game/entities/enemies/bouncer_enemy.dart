@@ -53,6 +53,55 @@ class BouncerEnemy extends EnemyBase {
   void renderShape(Canvas canvas, Paint paint, double scale) {
     final cx = size.x / 2;
     final cy = size.y / 2;
-    canvas.drawCircle(Offset(cx, cy), 8 * scale, paint);
+    final r = 8 * scale;
+
+    // Cerchio principale
+    canvas.drawCircle(Offset(cx, cy), r, paint);
+
+    // Dettagli solo sul layer principale (non glow)
+    if (scale <= 1.01) {
+      // Velocità attuale come indicatore di luminosità
+      final speedFactor = (_velocity.length / _maxSpeed).clamp(0.0, 1.0);
+
+      // Anello esterno rotante
+      final ringPaint = Paint()
+        ..color = paint.color.withValues(alpha: 0.3 + speedFactor * 0.3)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1;
+      canvas.save();
+      canvas.translate(cx, cy);
+      canvas.rotate(idlePhase * 2);
+      // Arco parziale che indica la velocità
+      final sweepAngle = math.pi * (0.5 + speedFactor * 1.5);
+      canvas.drawArc(
+        Rect.fromCircle(center: Offset.zero, radius: r * 1.15),
+        0, sweepAngle, false, ringPaint,
+      );
+      canvas.restore();
+
+      // Secondo arco (rotazione opposta)
+      canvas.save();
+      canvas.translate(cx, cy);
+      canvas.rotate(-idlePhase * 1.5);
+      ringPaint.color = paint.color.withValues(alpha: 0.2);
+      canvas.drawArc(
+        Rect.fromCircle(center: Offset.zero, radius: r * 1.3),
+        0, sweepAngle * 0.6, false, ringPaint,
+      );
+      canvas.restore();
+
+      // Nucleo luminoso (più luminoso = più veloce)
+      final corePaint = Paint()
+        ..color = Color.fromRGBO(255, 255, 255, 0.3 + speedFactor * 0.5)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
+      canvas.drawCircle(Offset(cx, cy), r * 0.35, corePaint);
+
+      // Croce interna
+      final crossPaint = Paint()
+        ..color = paint.color.withValues(alpha: 0.2)
+        ..strokeWidth = 0.5;
+      canvas.drawLine(Offset(cx - r * 0.5, cy), Offset(cx + r * 0.5, cy), crossPaint);
+      canvas.drawLine(Offset(cx, cy - r * 0.5), Offset(cx, cy + r * 0.5), crossPaint);
+    }
   }
 }
