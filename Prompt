@@ -1,0 +1,587 @@
+ciao amico mio, dobbiamo creare un gioco chiamato Geometry Fight, ti allego il prompt che ho creato, arricchiscilo anche tu con nuovi nemici e boss e crea il gioco completo
+
+# GEOMETRY WARS FLUTTER — SPECIFICA COMPLETA DI PROGETTO
+
+## OBIETTIVO
+Crea un gioco mobile completo in Flutter ispirato a Geometry Wars: twin-stick shooter top-down 
+con grafica neon su sfondo nero, griglia deformabile, nemici procedurali, boss multi-fase, 
+sistema di power-up, upgrade permanenti e uno shop in-game. Il gioco deve essere 
+spettacolare visivamente e completamente giocabile.
+
+---
+
+## STACK TECNICO OBBLIGATORIO
+
+- **Engine**: Flame (flutter/flame) — FlameGame + GameWidget
+- **State management**: Riverpod
+- **Persistenza**: Hive (valute, upgrade, highscore) + SharedPreferences (settings)
+- **Input**: flutter_joystick per mobile (due joystick virtuali: movimento + mira)
+           + supporto tastiera/gamepad via HardwareKeyboard per desktop/web
+- **Shader/VFX**: flutter_shaders per effetti glow neon GLSL
+- **Audio**: flame_audio (FlameAudio) con pool di suoni per evitare latenza
+- **Architettura**: ECS leggero — ogni entità ha componenti (PositionComponent, 
+                   HealthComponent, WeaponComponent, etc.), i sistemi iterano sui componenti
+
+---
+
+## STRUTTURA FILE CONSIGLIATA
+lib/
+├── main.dart
+├── game/
+│   ├── game_world.dart          # FlameGame principale
+│   ├── game_loop.dart           # update() e render() con delta time
+│   ├── entity_manager.dart      # spawn, remove, query entità
+│   ├── systems/
+│   │   ├── physics_system.dart  # movimento, collisioni (spatial hash grid)
+│   │   ├── render_system.dart   # ordine di draw, glow, trail
+│   │   ├── wave_system.dart     # generazione ondate, difficoltà
+│   │   ├── score_system.dart    # moltiplicatore, combo, geomi
+│   │   ├── powerup_system.dart  # spawn e applicazione power-up
+│   │   └── particle_system.dart # pool di particelle
+│   ├── entities/
+│   │   ├── player.dart
+│   │   ├── enemies/             # un file per tipo
+│   │   ├── bosses/              # un file per boss
+│   │   ├── projectiles.dart
+│   │   ├── powerups.dart
+│   │   └── geom.dart            # cristalli raccoglibili (valuta)
+│   ├── weapons/                 # un file per arma
+│   ├── effects/
+│   │   ├── grid_distortion.dart # griglia deformabile
+│   │   ├── neon_glow.dart       # GLSL shader glow
+│   │   ├── screen_shake.dart
+│   │   └── explosion.dart       # particle burst
+├── ui/
+│   ├── hud.dart
+│   ├── screens/
+│   │   ├── main_menu.dart
+│   │   ├── game_screen.dart
+│   │   ├── shop_screen.dart
+│   │   ├── upgrades_screen.dart
+│   │   ├── pause_screen.dart
+│   │   └── game_over_screen.dart
+├── data/
+│   ├── save_data.dart           # HiveObject per save
+│   ├── constants.dart
+│   └── wave_configs.dart        # dati ondate in JSON/dart const
+└── utils/
+├── extensions.dart          # Vector2, Color helpers
+└── spatial_hash.dart        # collision detection ottimizzata
+
+---
+
+## GRAFICA E VISUAL EFFECTS
+
+### Stile visivo
+- Sfondo: nero assoluto (Color(0xFF000000))
+- Tutti gli elementi sono forme geometriche neon luminose (triangoli, rombi, quadrati, esagoni)
+- Ogni tipo di entità ha un colore neon dominante con glow (vedi sezione nemici)
+- Nessuna texture bitmap — tutto disegnato con Canvas API di Flutter/Flame
+
+### Griglia deformabile (priorità alta)
+- Griglia di linee sottili (opacità 0.15, colore azzurro/bianco) che copre tutto lo schermo
+- Ogni esplosione, proiettile o entità che passa la deforma localmente
+- Implementazione: griglia di nodi (grid nodes) con posizione target e posizione attuale
+- Ogni nodo è influenzato da forze radiali (esplosioni = forza repulsiva, black hole = attrattiva)
+- Spring simulation: ogni nodo tende a tornare alla posizione di riposo con smorzamento
+- Update ogni frame con velocità proporzionale alla distanza dal punto di riposo
+
+### Effetto glow neon
+- Usa FragmentShader GLSL: disegna la forma, poi blur radiale + additive blending
+- Ogni entità ha: colore base (pieno) + alone esterno (stesso colore, alpha 40-60%, radius 8-16px)
+- Le esplosioni emettono un flash bianco che si dissolve in 0.1s
+- I proiettili lasciano un trail (coda luminosa) che si dissolve in 0.15s
+
+### Effetti speciali richiesti
+1. **Screen shake**: scuoti la camera (offset random di ±4px) per 0.2s ad ogni esplosione grande
+2. **Chromatic aberration flash**: split RGB breve (0.05s) quando il player viene colpito
+3. **Slow-mo**: quando attivi la bomba, rallenta il tempo (timeScale = 0.3) per 0.5s 
+   con effetto desaturazione + vignette
+4. **Warp lines**: all'inizio di ogni ondata, linee di velocità orizzontali (starfield warp) per 0.3s
+5. **Death spiral**: quando un boss muore, tutti gli elementi ruotano verso il centro e scompaiono
+6. **Pulse ring**: cerchio che si espande dall'entità appena spawned (outline, dissolve in 0.4s)
+7. **Multiplier text pop**: quando il moltiplicatore sale, testo "+xN" che vola in su e dissolve
+
+---
+
+## SISTEMA DI GIOCO CORE
+
+### Arena
+- Area di gioco: 3000x3000 unità logiche (molto più grande dello schermo)
+- Camera: segue il player con lerp (smoothing 0.08), sempre centrata sul giocatore
+- Bordi: muri invisibili — i proiettili rimbalzano 2 volte prima di dissolversi
+- I nemici vengono spawned fuori dallo schermo visibile (padding 200 unità)
+
+### Player
+- **Forma**: triangolo isoscele neon ciano (#00FFFF) con thruster posteriore animato
+- **Velocità**: 400 unità/s base, modificabile con upgrade
+- **Arma**: si punta verso la direzione del joystick destro (o mouse/WASD+frecce)
+- **Vite**: 3 vite iniziali (icone nave in HUD), invincibilità 2s dopo respawn
+- **Bomba (Smart Bomb)**: 1 bomba iniziale, massimo 3. Elimina tutti i nemici a schermo 
+  con esplosione radiale + slow-mo momentaneo. Raccogliendo power-up si ricaricano.
+- **Scudo**: power-up temporaneo — assorbe 1 colpo, visualizzato come esagono lampeggiante
+- **XP/Livello**: raccogliendo geomi il player sale di livello (ogni 10 livelli = bonus permanente)
+- **Hurtbox**: cerchio con radius 8 (molto più piccolo della sprite per essere fair)
+
+### Proiettili base del player
+- **Bullet**: rettangolo piccolo (4x8px) giallo neon (#FFE500), velocità 700 u/s
+- Fire rate base: 8 colpi/s, modificabile con upgrade
+- I proiettili rimbalzano sui muri (max 2 bounce)
+- Distruzione: dissolve con particelle al contatto con nemico o dopo 2.0s
+
+---
+
+## SISTEMA ARMI (WEAPONS)
+
+Il player può avere un'arma attiva alla volta. Le armi extra si raccolgono come power-up 
+temporanei (durata 15s), dopo tornano all'arma base.
+
+### 1. BASIC GUN (arma base)
+- Singolo proiettile dritto in direzione di mira
+- Colore: giallo neon (#FFE500)
+
+### 2. SPREAD SHOT
+- 5 proiettili a ventaglio (±30°, ±15°, 0°)
+- Ogni proiettile più piccolo e veloce del basic
+- Colore: arancione (#FF6B00)
+
+### 3. LASER
+- Raggio continuo (LineComponent) spesso 3px con glow intenso
+- Danno per frame (DPS invece di hit)
+- Colore: rosso acceso (#FF0022)
+- Effetto: il nemico colpito prende una "cicatrice" luminosa
+
+### 4. PLASMA CANNON
+- Proiettile grande e lento, esplode all'impatto con radius 80
+- L'esplosione danneggia tutti i nemici nel raggio
+- Colore: viola (#CC00FF) con particelle
+
+### 5. RICOCHET GUN
+- Proiettile che rimbalza 5 volte, accelera ad ogni rimbalzo
+- Colore: verde neon (#00FF88)
+- Ideale contro Snake e nemici che si raggruppano
+
+### 6. HOMING MISSILES
+- 3 missili che si dirigono verso il nemico più vicino
+- Curva smooth con steering behaviour (seek + arrival)
+- Colore: ciano (#00FFFF) con scia rossa
+- Reload: 0.5s tra ogni burst
+
+### 7. TWIN SHOT
+- Doppio proiettile parallelo (offset ±12px dal centro)
+- Fire rate raddoppiata rispetto basic
+- Colore: bianco perlaceo
+
+### 8. OVERDRIVE BEAM (arma speciale, solo con power-up raro)
+- Fascio enorme che copre tutta la direzione
+- Dura 3s, poi sparisce
+- Colore: bianco totale con rainbow shift
+- Tutto ciò che tocca muore istantaneamente (inclusi proiettili nemici)
+
+---
+
+## NEMICI (10 TIPI)
+
+Ogni nemico ha: HP, velocità, danno al contatto, valore in punti, valore in geomi,
+colore neon, comportamento AI, animazione idle (rotazione/pulsazione).
+
+### 1. DRONE (rosa #FF00AA)
+- Forma: rombo
+- Comportamento: si muove direttamente verso il player (seek)
+- HP: 1 · Velocità: 180 · Punti: 50 · Geomi: 1
+- Animazione: ruota costantemente su se stesso
+- Spawn: dal wave 1, in gruppi di 5-20
+
+### 2. SNAKE (verde #00FF44)
+- Forma: serie di 6-10 cerchi connessi (catena)
+- Comportamento: il "testa" segue il player, gli altri seguono la testa
+- HP: 1 per segmento · Velocità: 120 · Punti: 100/segmento
+- Se si distrugge un segmento centrale, si divide in 2 snake più corti
+- Spawn: dal wave 3
+
+### 3. MINE (grigio #888888)
+- Forma: cerchio con 8 punte (stella)
+- Comportamento: stazionario, esplode se il player si avvicina (radius 80)
+  o se colpito (after 0.5s delay — telegrafato da lampeggio)
+- HP: 2 · Punti: 75 · Esplosione radius: 100 con danno area
+- Spawn: da wave 2, in cluster di 3-8
+
+### 4. SPAWNER (arancione #FF8800)
+- Forma: esagono grande con nucleo pulsante
+- Comportamento: si muove lentamente verso i bordi dell'arena, ogni 3s genera 2 Drone
+- HP: 15 · Velocità: 60 · Punti: 500 + punti per i figli
+- Priorità: il player dovrebbe eliminarlo subito (telegrafato con indicatore freccia HUD)
+- Spawn: dal wave 5
+
+### 5. WEAVER (azzurro #00AAFF)
+- Forma: rombo allungato
+- Comportamento: movimento sinusoidale trasversale rispetto al player
+  (si avvicina in zigzag imprevedibile)
+- HP: 2 · Velocità: 220 (ma non lineare) · Punti: 150
+- Spawn: dal wave 4
+
+### 6. BOUNCER (giallo #FFDD00)
+- Forma: cerchio
+- Comportamento: si muove in linea retta e rimbalza sui muri (come pallina biliardo)
+  accelera ogni rimbalzo fino a velocità massima 500
+- HP: 3 · Punti: 200
+- Spawn: dal wave 4, velocità aumenta con le wave
+
+### 7. SPLITTER (bianco #FFFFFF)
+- Forma: triangolo grande
+- Comportamento: si muove verso il player. Quando muore, si divide in 3 Splitter Medium.
+  I Medium quando muoiono si dividono in 3 Splitter Small.
+- HP: 1 per livello · Punti: 50/100/300 per livello
+- Spawn: dal wave 6 — i Small sono velocissimi e pericolosi
+
+### 8. SHIELD ENEMY (viola #9900FF)
+- Forma: cerchio con scudo esagonale frontale
+- Comportamento: lo scudo frontale blocca tutti i proiettili dal davanti
+  Devi colpirlo sul retro o con area damage (Plasma, Bomba)
+- HP scudo: 5 (si rigenera dopo 4s) · HP corpo: 3 · Punti: 350
+- Spawn: dal wave 7
+
+### 9. BLACK HOLE (rosso scuro #660000 con alone rosso)
+- Forma: cerchio nero con bordo rotante
+- Comportamento: stazionario, attrae verso di sé tutti i nemici vicini (+spawn bonus enemy)
+  e ANCHE il player (forza debole ma costante)
+  I proiettili del player si curvano verso di esso
+- HP: 20 (immune ai proiettili normali — solo plasma/bomba/laser)
+- Punti: 1000 · Geomi: 10
+- Spawn: dal wave 8, massimo 1 per ondata
+
+### 10. KAMIKAZE (rosso #FF2200)
+- Forma: freccia/triangolo molto appuntito
+- Comportamento: idle per 1.5s (telegrafato con lampeggio accelerante),
+  poi rush diretto verso la posizione del player alla velocità 800 u/s
+  Se manca, si ferma e ripete
+- HP: 1 · Punti: 100
+- Spawn: dal wave 5, in gruppi di 3-6 con timing sfasato
+
+---
+
+## BOSS (4 TIPI)
+
+I boss appaiono ogni 10 ondate. L'arena si oscura, appare il nome del boss in HUD 
+con barra HP. La musica cambia. I geomi e punti del boss valgono 10x.
+
+### BOSS 1 — "THE GRID" (wave 10)
+- Forma: quadrato enorme 200x200 neon bianco con pattern interno che cambia
+- HP: 500 · 3 fasi
+
+**Fase 1 (100% → 60% HP):**
+- Spara proiettili nei 4 pattern: cross, diagonal, spiral, spread
+- Si muove lentamente verso il player, genera Mine ogni 4s
+
+**Fase 2 (60% → 30% HP):**
+- Velocità raddoppiata, pattern alternati più rapidi
+- Spawn 2 Drone ogni 2s
+- Nuovo attacco: "grid slam" — proiettili che coprono quasi tutto lo schermo con 1-2 gap
+
+**Fase 3 (30% → 0%):**
+- Diventa rosso, velocità x1.5 ancora, fire rate x2
+- Spawn Spawner ogni 8s
+- Nuovo attacco: "laser sweep" — raggio che ruota 360° in 3s
+
+**Morte**: esplosione a catena, tutta la griglia si deforma massimamente, 
+         50 geomi spawn nella sua posizione, jingle di vittoria.
+
+---
+
+### BOSS 2 — "HYDRA" (wave 20)
+- Forma: nucleo centrale + 4 teste su tentacoli (Bezier animated)
+- HP totale: 800 (distribuiti: 200 nucleo + 150/testa)
+
+**Meccanica**: le teste attaccano indipendentemente. Se distruggi una testa,
+dopo 5s se ne rigenera una nuova. Devi distruggerle tutte ENTRO 3s 
+l'una dall'altra per impedire la rigenerazione.
+
+**Attacchi per testa** (randomizzati):
+- Testa 1: burst di 8 proiettili radiali
+- Testa 2: laser tracking (segue il player per 1.5s)
+- Testa 3: spawna 3 Snake
+- Testa 4: missile homing
+
+**Fase finale** (solo nucleo): nucleo entra in "rage", 
+spin attack continuo + proiettili densi in tutte le direzioni
+
+---
+
+### BOSS 3 — "SINGULARITY" (wave 30)
+- Forma: grande sfera scura con alone verde radioattivo
+- HP: 1200 · Meccanica principale: GRAVITY MANIPULATION
+
+**Attacchi:**
+- Pulse: ogni 3s emette un'onda che spinge il player
+- Pull: ogni 5s aspira il player verso di sé (il player deve contrastare attivamente)
+- Clone: crea 2-3 copie false (stessa grafica, 1 HP) — quella vera ha l'alone più intenso
+- Vortex: crea 4 Black Hole attorno a sé che ruotano lentamente
+- Black Rain: pioggia di mini-black-hole dal cielo (cadono dall'alto)
+
+**Debolezza**: quando fa Pull, la sua schiena è esposta — danno x3 da dietro
+
+---
+
+### BOSS 4 — "THE SWARM MOTHER" (wave 40 — boss finale)
+- Forma: enorme esagono irregolare + membrana pulsante
+- HP: 2000 · 4 fasi
+
+**Fase 1**: spawn continuo di Drone (20 alla volta ogni 3s), attacchi lenti
+**Fase 2**: si divide in 2 metà che si muovono indipendentemente
+**Fase 3**: le metà si ricongiungono, spawn Splitter + Kamikaze, laser sweep
+**Fase 4** (sotto 20% HP): "BERSERK" — velocità x3, immune a tutto tranne bomba/plasma,
+           spawn Black Hole al centro arena. BGM diventa più intensa.
+
+**Vittoria del gioco** (endless mode continua oltre wave 40 con difficoltà scalata)
+
+---
+
+## POWER-UP (8 TIPI)
+
+I power-up droppano dai nemici (probabilità variabile) o appaiono ad orari fissi nell'arena.
+Visualizzazione: forma geometrica lampeggiante con alone del colore corrispondente.
+Durata: 15 secondi (barra nella HUD che si svuota).
+
+### 1. RAPID FIRE (rosso #FF4400)
+- Fire rate x2.5 per la durata
+- Suono: pitch più alto del colpo
+
+### 2. SPREAD SHOT BOOST (arancione #FF8800)
+- Attiva temporaneamente l'arma Spread Shot
+
+### 3. SHIELD (ciano #00FFFF)
+- Scudo esagonale attorno al player che assorbe 1 colpo (poi si rompe con effetto visivo)
+- Se prendi un secondo Shield mentre ce l'hai, si ricarica
+
+### 4. MAGNET (giallo #FFEE00)
+- Tutti i geomi nell'arena vengono attratti verso il player automaticamente
+- Raggio di attrazione: 400 unità
+
+### 5. TIME SLOW (viola #AA00FF)
+- timeScale = 0.4 per tutto tranne il player
+- Effetto desaturazione lieve + aberrazione cromatica sui bordi
+
+### 6. OVERDRIVE (bianco rainbow)
+- Velocità player x1.5 + danno x3 + scia di particelle arcobaleno
+- Fire rate x2 + proiettili attraversano nemici (pierce)
+
+### 7. SMART BOMB RECHARGE (verde #00FF44)
+- Aggiunge 1 bomba (max 3), con animazione "ricarica" in HUD
+
+### 8. SCORE MULTIPLIER BOOST (oro #FFD700)
+- Il moltiplicatore corrente viene raddoppiato per 20s
+- Bordo HUD diventa dorato per la durata
+
+---
+
+## SISTEMA SCORE E MOLTIPLICATORE
+
+- Ogni kill aumenta il moltiplicatore di 0.1x (max 20x)
+- Se il player viene colpito: moltiplicatore azzera a 1x (grande feedback visivo + suono)
+- I geomi valgono: valore_base × moltiplicatore_corrente
+- Score = punti_kill × moltiplicatore
+- Combo: uccidere 5 nemici in 0.5s = bonus "COMBO x5" (testo popup + bonus punti)
+- Highscore salvato con Hive, top 5 per modalità (normale / survival / boss rush)
+
+---
+
+## GEOMI (VALUTA IN-GAME)
+
+- I nemici droppano cristalli geometrici colorati (dimensione proporzionale al valore)
+- I geomi spariscono dopo 8s se non raccolti (fading animation)
+- Con il Magnet power-up vengono attratti automaticamente
+- I geomi raccolta durante la partita si trasformano in GoldGeoms (1:10) 
+  dopo la partita e vanno allo shop
+- Display in HUD: icona cristallo + contatore
+
+---
+
+## SHOP
+
+Lo shop è accessibile dal main menu o tra le ondate (pausa automatica dopo ogni wave 10).
+Si acquista con GoldGeoms. UI: griglia di card con anteprima grafica.
+
+### CATEGORIA 1: SHIP SKINS (cosmetici, non influenzano gameplay)
+1. Classic (default — sbloccata)
+2. Stealth (triangolo nero con bordi rossi) — 500 GG
+3. Crystal (forma diamante, effetti prismatici) — 1000 GG
+4. Ghost (semi-trasparente con particelle) — 1500 GG
+5. Omega (stella a 4 punte con rotazione) — 3000 GG
+
+### CATEGORIA 2: BULLET TRAILS (cosmetici)
+- Trail normale, fuoco, ghiaccio, plasma, arcobaleno (200 GG ognuno)
+
+### CATEGORIA 3: UPGRADE PERMANENTI (influenzano il gameplay — stackable)
+
+**FIREPOWER** (max livello 5)
+- Lv1: +15% danno · 100GG
+- Lv2: +15% danno · 200GG
+- Lv3: +20% danno · 400GG
+- Lv4: +20% danno · 800GG
+- Lv5: +30% danno · 1500GG
+
+**SPEED** (max Lv5, stessi prezzi)
+- Ogni livello: +10% velocità movimento
+
+**FIRE RATE** (max Lv5)
+- Ogni livello: +8% fire rate
+
+**SHIELD CAPACITY** (max Lv3)
+- Lv1: scudo regge 2 colpi · 300GG
+- Lv2: scudo regge 3 colpi · 700GG
+- Lv3: scudo si rigenera dopo 10s · 1500GG
+
+**STARTING LIVES** (max Lv2)
+- Lv1: inizi con 4 vite · 500GG
+- Lv2: inizi con 5 vite · 1200GG
+
+**BOMB CAPACITY** (max Lv2)
+- Lv1: puoi portare 4 bombe · 400GG
+- Lv2: puoi portare 5 bombe · 900GG
+
+**MAGNET RANGE** (max Lv3)
+- Aumenta il raggio di raccolta geomi passiva (anche senza power-up)
+- Lv1: +50px · 250GG · Lv2: +100px · 600GG · Lv3: +200px · 1200GG
+
+**XP BOOST** (max Lv3)
+- Geomi valgono +20%/+40%/+70% più GoldGeoms a fine partita
+- 300/700/1500 GG
+
+### CATEGORIA 4: STARTING WEAPONS
+- Sblocca la possibilità di iniziare la partita con un'arma diversa dalla Basic
+- Twin Shot start: 800 GG
+- Spread start: 1000 GG
+- Ricochet start: 1200 GG
+
+### CATEGORIA 5: GAME MODES (sbloccabili)
+- **Boss Rush**: affronta solo boss in sequenza · 2000 GG
+- **Survival**: ondate infinite senza pausa · 2500 GG
+- **Challenge Pack**: 10 livelli challenge con obiettivi specifici · 3000 GG
+
+---
+
+## HUD (HEADS-UP DISPLAY)
+
+Layout (adattivo per phone/tablet):
+- **Top-left**: score (grande) + moltiplicatore (color-coded: bianco→oro→rosso al salire)
+- **Top-right**: vite (icone navina) + bombe (icone bomba) + GoldGeoms attuali
+- **Bottom-left**: joystick movimento (solo mobile)
+- **Bottom-right**: joystick mira (solo mobile) + pulsante BOMBA (cerchio rosso)
+- **Top-center**: nome ondata corrente ("WAVE 7") che appare 2s poi dissolve
+- **Center**: barra HP boss (solo durante boss fight) con nome boss
+- **Power-up attivo**: barra sottile sotto lo score con icona + countdown
+- **Indicatori fuori schermo**: frecce ai bordi che indicano Spawner/Boss fuori vista
+- **Combo popup**: testo animato al centro quando si fa una combo
+
+---
+
+## MODALITÀ DI GIOCO
+
+1. **Classic** (default): 40 wave + boss ogni 10, poi endless
+2. **Boss Rush** (sbloccabile): solo boss in sequenza veloce, 3 vite totali
+3. **Survival** (sbloccabile): ondate infinite sempre più veloci, no pausa tra wave
+4. **Challenge** (sbloccabile): livelli con obiettivi (es: "kill 50 Drone senza muovere", 
+   "completa la wave senza usare bombe")
+
+---
+
+## AUDIO
+
+- **BGM**: 3 tracce musicali distinte (wave 1-10 / wave 11-30 / wave 31+) 
+  + tracce boss + traccia menu. Usa asset MP3/OGG.
+- **SFX pool**: pre-carica tutti i suoni all'avvio per azzerare latenza
+  Lista suoni: shoot, enemy_death, player_hit, player_death, bomb_explode, 
+               powerup_pickup, boss_spawn, boss_hit, geom_collect, multiplier_lost,
+               wave_start, level_up, shop_buy, menu_select
+- **Volume**: separato per BGM e SFX nelle impostazioni
+- **Doppler**: pitch dei proiettili nemici leggermente più alto quando si avvicinano
+
+---
+
+## PERFORMANCE E OTTIMIZZAZIONE
+
+- Object pooling OBBLIGATORIO per: proiettili, particelle, geomi, nemici piccoli
+  (pre-allocare pool da 200 proiettili, 500 particelle, 100 geomi)
+- Spatial hash grid per collision detection (cell size = 64px) — NON usare O(n²) check
+- Particle limit: massimo 300 particelle attive contemporaneamente (FIFO quando supera)
+- Nemici off-screen non eseguono comportamenti complessi (AI simplificata quando fuori viewport)
+- Target: 60 FPS stabili su mid-range Android (Snapdragon 665 / 3GB RAM)
+- Usa RepaintBoundary attorno al GameWidget per isolare i repaint dalla UI Flutter
+
+---
+
+## FEEDBACK VISIVI DI GIOCO (UX)
+
+- Quando il moltiplicatore raggiunge 5x, 10x, 15x, 20x: flash breve dello sfondo + suono
+- Quando il player viene colpito: screen flash rosso semi-trasparente + shake + suono
+- Quando il player muore: slow-mo 0.5s + dissolvenza player in particelle + camera zoom out
+- Quando spawna un boss: schermo oscurato gradualmente + testo boss al centro + suono
+- Numero flottante "+50" sopra ogni kill (del colore del nemico), poi dissolve verso l'alto
+- "PERFECT WAVE!" se completi un'ondata senza essere colpito (bonus 2x geomi ondata)
+- Tutorial pop-up solo al primo avvio (overlay con frecce animate, skip-able)
+
+---
+
+## SALVATAGGIO E PROGRESSIONE
+
+Usa Hive con i seguenti HiveObject:
+```dart
+@HiveType(typeId: 0)
+class SaveData extends HiveObject {
+  @HiveField(0) int goldGeoms;           // valuta totale
+  @HiveField(1) Map<String, int> upgrades; // upgradeId → livello
+  @HiveField(2) List<String> unlockedSkins;
+  @HiveField(3) List<String> unlockedModes;
+  @HiveField(4) Map<String, int> highscores; // mode → score
+  @HiveField(5) int totalPlaytime;        // secondi
+  @HiveField(6) Map<String, int> stats;   // kills, waves, etc.
+}
+```
+
+---
+
+## SCREENS E NAVIGAZIONE
+
+- **Main Menu**: titolo animato (geometrie che fluttuano), pulsanti: PLAY, SHOP, 
+  LEADERBOARD, SETTINGS, QUIT. Sfondo: arena in idle con nemici passivi
+- **Mode Select**: grid di card per le modalità (locked se non sbloccate)
+- **Game Screen**: GameWidget a schermo intero + HUD overlay
+- **Pause**: semi-trasparente sopra il gioco (RESUME / SHOP / QUIT)
+- **Game Over**: score + highscore + GoldGeoms guadagnati + pulsanti (RETRY / SHOP / MENU)
+- **Shop**: griglia scrollabile con categorie tab, preview animata degli acquisti
+- **Settings**: volume BGM/SFX, vibrazione, show FPS, reset data
+
+---
+
+## CHECKLIST FINALE (verifica prima di consegnare)
+
+- [ ] Il gioco gira a 60 FPS stabili su un telefono mid-range
+- [ ] Tutti e 10 i nemici sono implementati con comportamenti distinti
+- [ ] Tutti e 4 i boss sono implementati con fasi multiple
+- [ ] Tutte e 8 le armi sono funzionanti
+- [ ] Tutti e 8 i power-up sono funzionanti  
+- [ ] Lo shop ha tutte le categorie con logica acquisto/sblocco
+- [ ] Gli upgrade permanenti influenzano effettivamente il gameplay
+- [ ] Il salvataggio persiste tra sessioni (Hive)
+- [ ] La griglia si deforma visivamente
+- [ ] I proiettili rimbalzano sui muri
+- [ ] Feedback visivi (screen shake, flash, particelle) funzionanti
+- [ ] Input mobile (dual joystick) e desktop (WASD + mouse) funzionanti
+- [ ] BGM e SFX funzionanti con volume separato
+- [ ] HUD mostra tutte le informazioni richieste
+
+---
+
+Inizia implementando in questo ordine:
+1. GameLoop base + player con movimento dual-stick
+2. Proiettili + collisione base
+3. Drone nemico + sistema wave base
+4. Griglia deformabile
+5. Tutti i nemici
+6. Power-up
+7. Tutti i boss
+8. Sistema score/geomi/moltiplicatore
+9. Shop + upgrade permanenti
+10. Effetti visivi avanzati + audio
+11. Tutte le screen UI
+12. Polish + ottimizzazione
