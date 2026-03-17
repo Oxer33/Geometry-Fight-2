@@ -105,12 +105,54 @@ class SplitterEnemy extends EnemyBase {
     canvas.translate(cx, cy);
     canvas.rotate(idlePhase * 2);
 
+    // Triangolo principale
     final path = Path()
       ..moveTo(0, -r)
       ..lineTo(r * 0.87, r * 0.5)
       ..lineTo(-r * 0.87, r * 0.5)
       ..close();
     canvas.drawPath(path, paint);
+
+    // Dettagli solo sul layer principale
+    if (scale <= 1.01) {
+      // Linee di frattura (dove si dividerà)
+      if (splitterSize != SplitterSize.small) {
+        final fracturePaint = Paint()
+          ..color = paint.color.withValues(alpha: 0.25)
+          ..strokeWidth = 0.5
+          ..style = PaintingStyle.stroke;
+        // 3 linee dal centro ai vertici
+        canvas.drawLine(Offset.zero, Offset(0, -r * 0.7), fracturePaint);
+        canvas.drawLine(Offset.zero, Offset(r * 0.6, r * 0.35), fracturePaint);
+        canvas.drawLine(Offset.zero, Offset(-r * 0.6, r * 0.35), fracturePaint);
+      }
+
+      // Nucleo pulsante (colore diverso per dimensione)
+      final coreColor = splitterSize == SplitterSize.large
+          ? const Color(0xFFFFFFFF)
+          : splitterSize == SplitterSize.medium
+              ? const Color(0xFFDDDDFF)
+              : const Color(0xFFAAAAFF);
+      final pulse = 0.4 + math.sin(idlePhase * 5) * 0.3;
+      final corePaint = Paint()
+        ..color = coreColor.withValues(alpha: pulse)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2);
+      canvas.drawCircle(Offset.zero, r * 0.2, corePaint);
+
+      // Indicatore livello (puntini per quante volte può ancora dividersi)
+      final dotsCount = splitterSize == SplitterSize.large ? 3 : splitterSize == SplitterSize.medium ? 2 : 0;
+      for (int i = 0; i < dotsCount; i++) {
+        final dotAngle = i * math.pi * 2 / 3 - math.pi / 2;
+        final dotPaint = Paint()
+          ..color = paint.color.withValues(alpha: 0.5)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 1);
+        canvas.drawCircle(
+          Offset(r * 0.4 * math.cos(dotAngle), r * 0.4 * math.sin(dotAngle)),
+          1.0, dotPaint,
+        );
+      }
+    }
+
     canvas.restore();
   }
 }
