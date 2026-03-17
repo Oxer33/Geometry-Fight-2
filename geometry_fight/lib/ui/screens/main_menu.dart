@@ -5,12 +5,14 @@ class MainMenuScreen extends StatefulWidget {
   final VoidCallback onPlay;
   final VoidCallback onShop;
   final VoidCallback onSettings;
+  final VoidCallback? onLeaderboard;
 
   const MainMenuScreen({
     super.key,
     required this.onPlay,
     required this.onShop,
     required this.onSettings,
+    this.onLeaderboard,
   });
 
   @override
@@ -118,8 +120,17 @@ class _MainMenuScreenState extends State<MainMenuScreen>
                     onTap: widget.onShop,
                   ),
                   const SizedBox(height: 16),
+                  if (widget.onLeaderboard != null) ...[
+                    const SizedBox(height: 16),
+                    _NeonButton(
+                      text: 'CLASSIFICA',
+                      color: const Color(0xFFFFD700),
+                      onTap: widget.onLeaderboard!,
+                    ),
+                  ],
+                  const SizedBox(height: 16),
                   _NeonButton(
-                    text: 'SETTINGS',
+                    text: 'IMPOSTAZIONI',
                     color: Colors.white70,
                     onTap: widget.onSettings,
                   ),

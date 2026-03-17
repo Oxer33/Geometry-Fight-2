@@ -1,6 +1,8 @@
 import 'package:flame/components.dart';
 import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
+import '../../data/difficulty.dart';
+import '../../data/leaderboard.dart';
 import '../../game/game_world.dart';
 import '../hud.dart';
 import '../widgets/animated_builder_widget.dart';
@@ -11,8 +13,15 @@ import 'pause_screen.dart';
 /// Schermata di gioco principale con GameWidget, joystick visuali e HUD.
 class GameScreen extends StatefulWidget {
   final VoidCallback onQuit;
+  final Difficulty difficulty;
+  final GameMode gameMode;
 
-  const GameScreen({super.key, required this.onQuit});
+  const GameScreen({
+    super.key,
+    required this.onQuit,
+    this.difficulty = Difficulty.normal,
+    this.gameMode = GameMode.classic,
+  });
 
   @override
   State<GameScreen> createState() => _GameScreenState();
@@ -26,8 +35,20 @@ class _GameScreenState extends State<GameScreen> {
   @override
   void initState() {
     super.initState();
-    _game = GeometryFightGame();
+    _game = GeometryFightGame(
+      difficulty: widget.difficulty,
+      gameMode: widget.gameMode,
+    );
     _game.onGameOver = () {
+      // Salva nella leaderboard
+      LeaderboardManager.addEntry(LeaderboardEntry(
+        mode: widget.gameMode.name,
+        difficulty: widget.difficulty.name,
+        score: _game.scoreSystem.score,
+        wave: _game.waveSystem.currentWave,
+        kills: _game.sessionKills,
+        date: DateTime.now(),
+      ));
       setState(() => _showGameOver = true);
     };
     _game.onPause = () {

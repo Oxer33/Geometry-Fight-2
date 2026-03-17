@@ -84,27 +84,93 @@ abstract class EnemyBase extends PositionComponent
 
   @override
   void render(Canvas canvas) {
-    // Spawn pulse
+    final cx = size.x / 2;
+    final cy = size.y / 2;
+
+    // === SPAWN PULSE (doppio anello espansivo) ===
     if (_spawnPulse > 0) {
-      final radius = (1 - _spawnPulse / 0.4) * 40;
+      final progress = 1 - _spawnPulse / 0.4;
       final alpha = _spawnPulse / 0.4;
-      final paint = Paint()
-        ..color = neonColor.withValues(alpha: alpha * 0.5)
+      // Anello esterno
+      final outerR = progress * 50;
+      final outerPaint = Paint()
+        ..color = neonColor.withValues(alpha: alpha * 0.3)
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 2;
-      canvas.drawCircle(Offset(size.x / 2, size.y / 2), radius, paint);
+        ..strokeWidth = 1;
+      canvas.drawCircle(Offset(cx, cy), outerR, outerPaint);
+      // Anello interno più luminoso
+      final innerR = progress * 30;
+      final innerPaint = Paint()
+        ..color = neonColor.withValues(alpha: alpha * 0.6)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
+      canvas.drawCircle(Offset(cx, cy), innerR, innerPaint);
     }
 
-    // Draw glow
-    final glowPaint = Paint()
-      ..color = neonColor.withValues(alpha: 0.3)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10);
-    renderShape(canvas, glowPaint, 1.3);
+    // === GLOW ESTERNO SOFT (alone ampio) ===
+    final softGlow = Paint()
+      ..color = neonColor.withValues(alpha: 0.12)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 16);
+    renderShape(canvas, softGlow, 1.6);
 
-    // Draw main shape
-    final mainColor = _flashTimer > 0 ? const Color(0xFFFFFFFF) : neonColor;
+    // === GLOW INTERNO BRIGHT ===
+    final brightGlow = Paint()
+      ..color = neonColor.withValues(alpha: 0.3)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8);
+    renderShape(canvas, brightGlow, 1.25);
+
+    // === CORPO PRINCIPALE ===
+    final isHit = _flashTimer > 0;
+    final mainColor = isHit ? const Color(0xFFFFFFFF) : neonColor;
     final mainPaint = Paint()..color = mainColor;
     renderShape(canvas, mainPaint, 1.0);
+
+    // === CHROMATIC ABERRATION SIMULATA (quando colpito) ===
+    if (isHit) {
+      final redShift = Paint()
+        ..color = const Color(0xFFFF0000).withValues(alpha: 0.3);
+      canvas.save();
+      canvas.translate(1.5, 0);
+      renderShape(canvas, redShift, 1.0);
+      canvas.restore();
+      final blueShift = Paint()
+        ..color = const Color(0xFF0000FF).withValues(alpha: 0.3);
+      canvas.save();
+      canvas.translate(-1.5, 0);
+      renderShape(canvas, blueShift, 1.0);
+      canvas.restore();
+    }
+
+    // === MINI HP BAR (solo per nemici con più di 1 HP e non a vita piena) ===
+    if (maxHp > 1 && hp < maxHp && hp > 0) {
+      _renderMiniHpBar(canvas, cx, cy);
+    }
+  }
+
+  /// Mini barra HP sotto il nemico
+  void _renderMiniHpBar(Canvas canvas, double cx, double cy) {
+    final barWidth = size.x * 1.2;
+    final barHeight = 2.0;
+    final barX = cx - barWidth / 2;
+    final barY = cy + size.y / 2 + 4;
+    final hpPercent = (hp / maxHp).clamp(0.0, 1.0);
+
+    // Background
+    canvas.drawRect(
+      Rect.fromLTWH(barX, barY, barWidth, barHeight),
+      Paint()..color = const Color(0x33FFFFFF),
+    );
+    // HP bar con colore dinamico
+    final barColor = hpPercent > 0.5
+        ? neonColor
+        : hpPercent > 0.25
+            ? const Color(0xFFFFAA00)
+            : const Color(0xFFFF2200);
+    canvas.drawRect(
+      Rect.fromLTWH(barX, barY, barWidth * hpPercent, barHeight),
+      Paint()..color = barColor,
+    );
   }
 
   void renderShape(Canvas canvas, Paint paint, double scale);

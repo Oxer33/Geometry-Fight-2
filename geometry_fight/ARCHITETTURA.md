@@ -132,4 +132,26 @@ lib/
 
 ---
 
+## Sistema Difficoltà
+| Livello | HP Nemici | Velocità | Spawn | Power-up Drop | Score | Vite |
+|---------|-----------|----------|-------|---------------|-------|------|
+| Facile | x0.7 | x0.8 | x0.7 | 10% | x0.5 | 5 |
+| Normale | x1.0 | x1.0 | x1.0 | 5% | x1.0 | 3 |
+| Difficile | x1.5 | x1.2 | x1.3 | 3% | x2.0 | 2 |
+| Incubo | x2.0 | x1.4 | x1.6 | 2% | x4.0 | 1 |
+
+## Modalità di Gioco
+| Modalità | Costo | Descrizione |
+|----------|-------|-------------|
+| Classica | Free | 50 wave + boss ogni 10 |
+| Boss Rush | 2000 GG | Solo boss in sequenza |
+| Sopravvivenza | 2500 GG | Ondate infinite, no pausa |
+| Attacco a Tempo | 1500 GG | Max punti in 3 minuti |
+| Zen | 1000 GG | Vite infinite, relax |
+
+## Nuove Schermate (v2)
+- `splash_screen.dart` - Splash di avvio con logo animato
+- `mode_select_screen.dart` - Selezione modalità + difficoltà
+- `leaderboard_screen.dart` - Classifica locale top 10
+
 ## Ultimo aggiornamento: Marzo 2026

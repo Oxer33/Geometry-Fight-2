@@ -6,6 +6,7 @@ import 'package:flame/game.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart' show KeyEventResult;
 import '../data/constants.dart';
+import '../data/difficulty.dart';
 import '../data/save_data.dart';
 import '../data/wave_configs.dart';
 import '../utils/spatial_hash.dart';
@@ -65,7 +66,19 @@ class GeometryFightGame extends FlameGame
   double timeScale = 1.0;
   double _slowMoTimer = 0;
 
+  // Difficoltà e modalità di gioco
+  final Difficulty difficulty;
+  final GameMode gameMode;
+  late DifficultyConfig diffConfig;
+
   SaveData saveData = SaveData();
+
+  GeometryFightGame({
+    this.difficulty = Difficulty.normal,
+    this.gameMode = GameMode.classic,
+  }) {
+    diffConfig = difficultyConfigs[difficulty]!;
+  }
 
   // Input state
   Vector2 moveInput = Vector2.zero();
@@ -107,10 +120,11 @@ class GeometryFightGame extends FlameGame
     grid = GridDistortion();
     world.add(grid);
 
-    // Add player
+    // Add player (applica difficoltà alle vite/bombe iniziali)
     player = Player();
     player.position = Vector2(arenaWidth / 2, arenaHeight / 2);
-    player.lives = saveData.startingLives;
+    player.lives = diffConfig.startingLives + (saveData.startingLives - 3);
+    player.bombs = diffConfig.startingBombs;
     world.add(player);
 
     // Screen shake
@@ -244,6 +258,7 @@ class GeometryFightGame extends FlameGame
   void spawnEnemy(EnemyType type, [Vector2? position]) {
     final pos = position ?? _randomSpawnPosition();
     EnemyBase enemy;
+    // Applica moltiplicatori di difficoltà dopo la creazione
 
     switch (type) {
       case EnemyType.drone:
@@ -281,6 +296,11 @@ class GeometryFightGame extends FlameGame
       case EnemyType.glitch:
         enemy = GlitchEnemy();
     }
+
+    // Applica moltiplicatori di difficoltà a HP e velocità
+    enemy.hp = (enemy.hp * diffConfig.enemyHpMultiplier);
+    enemy.maxHp = enemy.hp;
+    enemy.speed = (enemy.speed * diffConfig.enemySpeedMultiplier);
 
     enemy.position = pos;
     world.add(enemy);
@@ -378,8 +398,8 @@ class GeometryFightGame extends FlameGame
       spawnGeom(enemy.position + offset, 1);
     }
 
-    // Chance to drop power-up
-    if (math.Random().nextDouble() < 0.05) {
+    // Chance to drop power-up (influenzata dalla difficoltà)
+    if (math.Random().nextDouble() < diffConfig.powerUpDropRate) {
       spawnPowerUp(enemy.position);
     }
   }
@@ -486,7 +506,8 @@ class GeometryFightGame extends FlameGame
 
     player = Player();
     player.position = Vector2(arenaWidth / 2, arenaHeight / 2);
-    player.lives = saveData.startingLives;
+    player.lives = diffConfig.startingLives + (saveData.startingLives - 3);
+    player.bombs = diffConfig.startingBombs;
     world.add(player);
 
     waveSystem = WaveSystem(this);

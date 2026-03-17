@@ -2,9 +2,9 @@ import 'dart:math' as math;
 import 'dart:ui';
 import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
+import 'package:flutter/painting.dart' show HSVColor;
 import '../../data/constants.dart';
 import '../game_world.dart';
-import '../effects/explosion.dart';
 import 'enemies/enemy_base.dart';
 import 'projectiles.dart';
 
@@ -47,8 +47,16 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
   // Visual
   double _thrusterPhase = 0;
   double _rotation = 0;
+  double _wingPulse = 0;
+  double _energyPhase = 0;
+  double _shieldPhase = 0;
 
-  Player() : super(size: Vector2(24, 28), anchor: Anchor.center);
+  // Trail di movimento (scia luminosa)
+  final List<Vector2> _trail = [];
+  static const int _maxTrailLength = 18;
+  double _trailTimer = 0;
+
+  Player() : super(size: Vector2(30, 34), anchor: Anchor.center);
 
   @override
   Future<void> onLoad() async {
@@ -113,8 +121,25 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
       _attractGeoms();
     }
 
-    // Thruster animation
+    // Animazioni visive
     _thrusterPhase += dt * 15;
+    _wingPulse += dt * 4;
+    _energyPhase += dt * 8;
+    _shieldPhase += dt * 3;
+
+    // Trail di movimento: registra posizione ogni 0.02s
+    _trailTimer += dt;
+    if (_trailTimer >= 0.02 && moveDir.length > 0.1) {
+      _trailTimer = 0;
+      _trail.insert(0, position.clone());
+      if (_trail.length > _maxTrailLength) _trail.removeLast();
+    } else if (moveDir.length <= 0.1 && _trail.isNotEmpty) {
+      // Dissolvenza trail quando fermi
+      if (_trailTimer >= 0.05) {
+        _trailTimer = 0;
+        if (_trail.isNotEmpty) _trail.removeLast();
+      }
+    }
   }
 
   void _shoot(Vector2 direction) {
@@ -247,63 +272,258 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
 
   @override
   void render(Canvas canvas) {
+    final cx = size.x / 2;
+    final cy = size.y / 2;
     final paint = Paint();
 
-    // Glow
-    paint.color = NeonColors.cyan.withValues(alpha: 0.3);
-    paint.maskFilter = const MaskFilter.blur(BlurStyle.normal, 12);
-    _drawTriangle(canvas, paint, 1.3);
+    // === 1. TRAIL DI MOVIMENTO (scia luminosa dietro la nave) ===
+    _renderTrail(canvas, cx, cy);
 
-    // Main body
-    paint.maskFilter = null;
-    paint.color = isInvincible
-        ? ((_invincibleTimer * 10).toInt() % 2 == 0
-            ? NeonColors.cyan
-            : NeonColors.cyan.withValues(alpha: 0.3))
+    // === 2. EFFETTO OVERDRIVE (alone arcobaleno) ===
+    if (hasOverdrive) {
+      _renderOverdriveAura(canvas, cx, cy);
+    }
+
+    // === 3. GLOW ESTERNO DELLA NAVE ===
+    final baseColor = hasOverdrive
+        ? _getRainbowColor(_energyPhase)
         : NeonColors.cyan;
-    _drawTriangle(canvas, paint, 1.0);
+    paint.color = baseColor.withValues(alpha: 0.25);
+    paint.maskFilter = const MaskFilter.blur(BlurStyle.normal, 16);
+    _drawShipBody(canvas, paint, 1.4);
 
-    // Thruster
-    final thrusterSize = 4 + math.sin(_thrusterPhase) * 2;
-    paint.color = NeonColors.spreadOrange;
-    paint.maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
-    canvas.drawCircle(
-        Offset(size.x / 2, size.y - 2), thrusterSize, paint);
+    // === 4. THRUSTER (doppio motore con fiamme) ===
+    _renderThrusters(canvas, cx, cy);
 
-    // Shield
+    // === 5. CORPO NAVE PRINCIPALE ===
+    paint.maskFilter = null;
+    if (isInvincible) {
+      final blink = ((_invincibleTimer * 12).toInt() % 2 == 0);
+      paint.color = blink ? baseColor : baseColor.withValues(alpha: 0.2);
+    } else {
+      paint.color = baseColor;
+    }
+    _drawShipBody(canvas, paint, 1.0);
+
+    // === 6. DETTAGLI INTERNI (cockpit, linee strutturali) ===
+    _renderShipDetails(canvas, cx, cy, baseColor);
+
+    // === 7. WING-TIP LIGHTS (luci sulle punte delle ali) ===
+    _renderWingLights(canvas, cx, cy);
+
+    // === 8. SCUDO FORCE FIELD ===
     if (hasShield) {
-      paint.color = NeonColors.cyan.withValues(alpha: 0.3);
-      paint.style = PaintingStyle.stroke;
-      paint.strokeWidth = 2;
-      paint.maskFilter = const MaskFilter.blur(BlurStyle.normal, 6);
-      _drawHexagon(canvas, paint, 22);
-      paint.style = PaintingStyle.fill;
+      _renderShield(canvas, cx, cy);
     }
   }
 
-  void _drawTriangle(Canvas canvas, Paint paint, double scale) {
-    final cx = size.x / 2;
-    final cy = size.y / 2;
-    final w = size.x / 2 * scale;
-    final h = size.y / 2 * scale;
+  /// Scia luminosa dietro la nave durante il movimento
+  void _renderTrail(Canvas canvas, double cx, double cy) {
+    if (_trail.isEmpty) return;
+    for (int i = 0; i < _trail.length; i++) {
+      final alpha = (1.0 - i / _maxTrailLength) * 0.4;
+      final trailSize = (1.0 - i / _maxTrailLength) * 3;
+      final offset = _trail[i] - position;
+      final color = hasOverdrive
+          ? _getRainbowColor(_energyPhase + i * 0.3)
+          : NeonColors.cyan;
+      final p = Paint()
+        ..color = color.withValues(alpha: alpha)
+        ..maskFilter = MaskFilter.blur(BlurStyle.normal, trailSize + 2);
+      canvas.drawCircle(
+        Offset(cx + offset.x, cy + offset.y),
+        trailSize,
+        p,
+      );
+    }
+  }
+
+  /// Alone arcobaleno attorno alla nave durante overdrive
+  void _renderOverdriveAura(Canvas canvas, double cx, double cy) {
+    for (int i = 0; i < 3; i++) {
+      final hue = ((_energyPhase * 60 + i * 120) % 360);
+      final color = HSVColor.fromAHSV(0.15 - i * 0.03, hue, 1, 1).toColor();
+      final p = Paint()
+        ..color = color
+        ..maskFilter = MaskFilter.blur(BlurStyle.normal, 18 + i * 6.0);
+      canvas.drawCircle(Offset(cx, cy), 22 + i * 4.0, p);
+    }
+  }
+
+  /// Doppi thruster con fiamma animata e particelle
+  void _renderThrusters(Canvas canvas, double cx, double cy) {
+    final moveDir = game.moveInput;
+    final isMoving = moveDir.length > 0.1;
+    final flameLength = isMoving ? 10 + math.sin(_thrusterPhase) * 4 : 4 + math.sin(_thrusterPhase * 0.5) * 1;
+    final flameWidth = isMoving ? 4.0 : 2.0;
 
     canvas.save();
     canvas.translate(cx, cy);
     canvas.rotate(_rotation);
-    canvas.translate(-cx, -cy);
 
-    final path = Path()
-      ..moveTo(cx, cy - h)
-      ..lineTo(cx - w, cy + h)
-      ..lineTo(cx + w, cy + h)
-      ..close();
-    canvas.drawPath(path, paint);
+    // Thruster sinistro
+    _drawFlame(canvas, -5, 13, flameLength, flameWidth);
+    // Thruster destro
+    _drawFlame(canvas, 5, 13, flameLength, flameWidth);
+
     canvas.restore();
   }
 
-  void _drawHexagon(Canvas canvas, Paint paint, double radius) {
+  /// Disegna una fiamma singola del thruster
+  void _drawFlame(Canvas canvas, double x, double y, double length, double width) {
+    // Core bianco (centro fiamma)
+    final corePaint = Paint()
+      ..color = const Color(0xFFFFFFFF).withValues(alpha: 0.9)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2);
+    canvas.drawOval(
+      Rect.fromCenter(center: Offset(x, y + length * 0.3), width: width * 0.6, height: length * 0.5),
+      corePaint,
+    );
+
+    // Fiamma interna (arancione brillante)
+    final innerPaint = Paint()
+      ..color = const Color(0xFFFF6600).withValues(alpha: 0.7)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
+    canvas.drawOval(
+      Rect.fromCenter(center: Offset(x, y + length * 0.5), width: width, height: length * 0.7),
+      innerPaint,
+    );
+
+    // Fiamma esterna (rosso/viola glow)
+    final outerPaint = Paint()
+      ..color = const Color(0xFFFF2200).withValues(alpha: 0.3)
+      ..maskFilter = MaskFilter.blur(BlurStyle.normal, width + 2);
+    canvas.drawOval(
+      Rect.fromCenter(center: Offset(x, y + length * 0.6), width: width * 1.8, height: length),
+      outerPaint,
+    );
+  }
+
+  /// Dettagli interni della nave: cockpit luminoso e linee strutturali
+  void _renderShipDetails(Canvas canvas, double cx, double cy, Color baseColor) {
+    canvas.save();
+    canvas.translate(cx, cy);
+    canvas.rotate(_rotation);
+
+    // Cockpit (cerchio luminoso al centro-alto della nave)
+    final cockpitGlow = 0.6 + math.sin(_energyPhase * 2) * 0.2;
+    final cockpitPaint = Paint()
+      ..color = const Color(0xFFFFFFFF).withValues(alpha: cockpitGlow)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
+    canvas.drawCircle(const Offset(0, -4), 3, cockpitPaint);
+    cockpitPaint.maskFilter = null;
+    cockpitPaint.color = baseColor.withValues(alpha: 0.9);
+    canvas.drawCircle(const Offset(0, -4), 2, cockpitPaint);
+
+    // Linee strutturali sulle ali
+    final linePaint = Paint()
+      ..color = baseColor.withValues(alpha: 0.3)
+      ..strokeWidth = 0.5
+      ..style = PaintingStyle.stroke;
+    // Linea ala sinistra
+    canvas.drawLine(const Offset(-2, 0), const Offset(-10, 10), linePaint);
+    // Linea ala destra
+    canvas.drawLine(const Offset(2, 0), const Offset(10, 10), linePaint);
+    // Linea centrale
+    canvas.drawLine(const Offset(0, -8), const Offset(0, 8), linePaint);
+
+    canvas.restore();
+  }
+
+  /// Luci sulle punte delle ali che pulsano
+  void _renderWingLights(Canvas canvas, double cx, double cy) {
+    final pulse = 0.5 + math.sin(_wingPulse) * 0.5;
+
+    canvas.save();
+    canvas.translate(cx, cy);
+    canvas.rotate(_rotation);
+
+    // Luce ala sinistra (rossa)
+    final leftPaint = Paint()
+      ..color = Color.fromRGBO(255, 50, 50, pulse * 0.8)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
+    canvas.drawCircle(const Offset(-12, 10), 2, leftPaint);
+
+    // Luce ala destra (verde)
+    final rightPaint = Paint()
+      ..color = Color.fromRGBO(50, 255, 100, pulse * 0.8)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
+    canvas.drawCircle(const Offset(12, 10), 2, rightPaint);
+
+    canvas.restore();
+  }
+
+  /// Scudo esagonale force field con animazione
+  void _renderShield(Canvas canvas, double cx, double cy) {
+    final shieldAlpha = 0.2 + math.sin(_shieldPhase * 2) * 0.1;
+
+    // Glow esterno
+    final glowPaint = Paint()
+      ..color = NeonColors.cyan.withValues(alpha: shieldAlpha * 0.5)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10);
+    _drawHexagonAt(canvas, cx, cy, 24, glowPaint);
+
+    // Bordo esagonale principale
+    final borderPaint = Paint()
+      ..color = NeonColors.cyan.withValues(alpha: shieldAlpha + 0.2)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.5;
+    _drawHexagonAt(canvas, cx, cy, 22, borderPaint);
+
+    // Secondo esagono interno (ruotato)
+    canvas.save();
+    canvas.translate(cx, cy);
+    canvas.rotate(_shieldPhase * 0.3);
+    final innerPaint = Paint()
+      ..color = NeonColors.cyan.withValues(alpha: shieldAlpha * 0.4)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 0.5;
+    _drawHexagonAt(canvas, 0, 0, 18, innerPaint);
+    canvas.restore();
+
+    // Punti energetici sui vertici
+    for (int i = 0; i < 6; i++) {
+      final angle = i * math.pi / 3 - math.pi / 6;
+      final px = cx + 22 * math.cos(angle);
+      final py = cy + 22 * math.sin(angle);
+      final dotAlpha = 0.3 + math.sin(_shieldPhase * 3 + i) * 0.3;
+      final dotPaint = Paint()
+        ..color = NeonColors.cyan.withValues(alpha: dotAlpha)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
+      canvas.drawCircle(Offset(px, py), 1.5, dotPaint);
+    }
+  }
+
+  /// Disegna il corpo della nave: forma a freccia dettagliata con ali
+  void _drawShipBody(Canvas canvas, Paint paint, double scale) {
     final cx = size.x / 2;
     final cy = size.y / 2;
+
+    canvas.save();
+    canvas.translate(cx, cy);
+    canvas.rotate(_rotation);
+
+    final s = scale;
+    // Forma nave: punta affilata in alto, ali laterali, coda
+    final path = Path()
+      ..moveTo(0, -14 * s)           // Punta
+      ..lineTo(4 * s, -6 * s)       // Lato destro punta
+      ..lineTo(13 * s, 10 * s)      // Ala destra esterna
+      ..lineTo(8 * s, 8 * s)        // Rientro ala destra
+      ..lineTo(5 * s, 14 * s)       // Coda destra
+      ..lineTo(0, 10 * s)           // Centro coda
+      ..lineTo(-5 * s, 14 * s)      // Coda sinistra
+      ..lineTo(-8 * s, 8 * s)       // Rientro ala sinistra
+      ..lineTo(-13 * s, 10 * s)     // Ala sinistra esterna
+      ..lineTo(-4 * s, -6 * s)      // Lato sinistro punta
+      ..close();
+    canvas.drawPath(path, paint);
+
+    canvas.restore();
+  }
+
+  /// Esagono a posizione arbitraria
+  void _drawHexagonAt(Canvas canvas, double cx, double cy, double radius, Paint paint) {
     final path = Path();
     for (int i = 0; i < 6; i++) {
       final angle = i * math.pi / 3 - math.pi / 6;
@@ -317,6 +537,12 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
     }
     path.close();
     canvas.drawPath(path, paint);
+  }
+
+  /// Colore arcobaleno per overdrive
+  Color _getRainbowColor(double phase) {
+    final hue = (phase * 60) % 360;
+    return HSVColor.fromAHSV(1.0, hue, 1.0, 1.0).toColor();
   }
 
   @override
