@@ -15,6 +15,15 @@ class LeechEnemy extends EnemyBase {
   double _tentaclePhase = 0;
   double _attachTimer = 0; // Durata dell'aggancio prima di staccarsi
 
+  @override
+  void onDeath() {
+    // Ripristina velocità player se agganciato alla morte
+    if (_attached) {
+      game.player.speed = playerSpeed;
+    }
+    super.onDeath();
+  }
+
   LeechEnemy()
       : super(
           hp: 2,
@@ -30,16 +39,21 @@ class LeechEnemy extends EnemyBase {
     _tentaclePhase += dt * 8;
 
     if (_attached) {
-      // Segui il player attaccato
+      // Segui il player attaccato (orbita attorno a lui)
       position = playerPosition + Vector2(
         math.cos(_tentaclePhase * 2) * 20,
         math.sin(_tentaclePhase * 2) * 20,
       );
+
+      // EFFETTO RALLENTAMENTO: riduce la velocità del player del 30%
+      // Il player.speed viene temporaneamente ridotto
+      game.player.speed = playerSpeed * 0.7;
       
       _attachTimer -= dt;
-      // Dopo 5 secondi si stacca
+      // Dopo 5 secondi si stacca e ripristina la velocità
       if (_attachTimer <= 0) {
         _attached = false;
+        game.player.speed = playerSpeed; // Ripristina velocità
       }
       return;
     }
