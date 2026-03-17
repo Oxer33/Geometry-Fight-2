@@ -4,6 +4,9 @@ import 'package:flame/components.dart';
 import '../../../data/constants.dart';
 import 'enemy_base.dart';
 
+/// DRONE - Nemico base più comune. Rombo rosa che insegue il player.
+/// Grafica: rombo con nucleo pulsante, croce interna luminosa,
+/// particelle energetiche sui vertici, rotazione fluida.
 class DroneEnemy extends EnemyBase {
   DroneEnemy()
       : super(
@@ -31,6 +34,7 @@ class DroneEnemy extends EnemyBase {
     canvas.translate(cx, cy);
     canvas.rotate(idlePhase * 3);
 
+    // Rombo esterno (corpo principale)
     final path = Path()
       ..moveTo(0, -s)
       ..lineTo(s, 0)
@@ -38,6 +42,35 @@ class DroneEnemy extends EnemyBase {
       ..lineTo(-s, 0)
       ..close();
     canvas.drawPath(path, paint);
+
+    // Solo per il layer principale (non glow)
+    if (scale <= 1.01) {
+      // Croce interna luminosa
+      final crossPaint = Paint()
+        ..color = paint.color.withValues(alpha: 0.4)
+        ..strokeWidth = 0.8
+        ..style = PaintingStyle.stroke;
+      canvas.drawLine(Offset(0, -s * 0.5), Offset(0, s * 0.5), crossPaint);
+      canvas.drawLine(Offset(-s * 0.5, 0), Offset(s * 0.5, 0), crossPaint);
+
+      // Nucleo pulsante al centro
+      final pulse = 0.5 + math.sin(idlePhase * 6) * 0.3;
+      final corePaint = Paint()
+        ..color = const Color(0xFFFFFFFF).withValues(alpha: pulse)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2);
+      canvas.drawCircle(Offset.zero, s * 0.2, corePaint);
+
+      // Punti energetici sui 4 vertici del rombo
+      final dotAlpha = 0.4 + math.sin(idlePhase * 4) * 0.3;
+      final dotPaint = Paint()
+        ..color = paint.color.withValues(alpha: dotAlpha)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2);
+      canvas.drawCircle(Offset(0, -s * 0.8), 1.2, dotPaint);
+      canvas.drawCircle(Offset(s * 0.8, 0), 1.2, dotPaint);
+      canvas.drawCircle(Offset(0, s * 0.8), 1.2, dotPaint);
+      canvas.drawCircle(Offset(-s * 0.8, 0), 1.2, dotPaint);
+    }
+
     canvas.restore();
   }
 }
