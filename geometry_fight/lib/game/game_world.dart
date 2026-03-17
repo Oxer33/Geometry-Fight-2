@@ -42,6 +42,11 @@ import 'entities/bosses/singularity_boss.dart';
 import 'entities/bosses/swarm_mother_boss.dart';
 import 'entities/bosses/the_architect_boss.dart';
 import 'entities/bosses/chrono_wraith_boss.dart';
+import 'entities/bosses/nexus_prime_boss.dart';
+import 'entities/bosses/void_reaper_boss.dart';
+import 'entities/bosses/tesla_lord_boss.dart';
+import 'entities/bosses/phantom_king_boss.dart';
+import 'entities/bosses/omega_core_boss.dart';
 import 'entities/geom.dart';
 import 'entities/powerups.dart';
 import 'effects/grid_distortion.dart';
@@ -354,6 +359,16 @@ class GeometryFightGame extends FlameGame
         boss = TheArchitectBoss();
       case BossType.chronoWraith:
         boss = ChronoWraithBoss();
+      case BossType.nexusPrime:
+        boss = NexusPrimeBoss();
+      case BossType.voidReaper:
+        boss = VoidReaperBoss();
+      case BossType.teslaLord:
+        boss = TeslaLordBoss();
+      case BossType.phantomKing:
+        boss = PhantomKingBoss();
+      case BossType.omegaCore:
+        boss = OmegaCoreBoss();
     }
 
     boss.position = pos;

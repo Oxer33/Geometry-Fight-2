@@ -32,6 +32,11 @@ enum BossType {
   // New bosses
   theArchitect,
   chronoWraith,
+  nexusPrime,
+  voidReaper,
+  teslaLord,
+  phantomKing,
+  omegaCore,
 }
 
 class WaveSpawn {
@@ -57,7 +62,7 @@ class WaveConfig {
 List<WaveConfig> generateWaveConfigs() {
   final configs = <WaveConfig>[];
 
-  for (int wave = 1; wave <= 50; wave++) {
+  for (int wave = 1; wave <= 75; wave++) {
     // Boss waves
     if (wave == 10) {
       configs.add(WaveConfig(
@@ -104,6 +109,46 @@ List<WaveConfig> generateWaveConfigs() {
         waveNumber: wave,
         spawns: [],
         boss: BossType.chronoWraith,
+      ));
+      continue;
+    }
+    if (wave == 55) {
+      configs.add(WaveConfig(
+        waveNumber: wave,
+        spawns: [WaveSpawn(EnemyType.tesla, 3), WaveSpawn(EnemyType.orbiter, 4, delay: 2)],
+        boss: BossType.nexusPrime,
+      ));
+      continue;
+    }
+    if (wave == 60) {
+      configs.add(WaveConfig(
+        waveNumber: wave,
+        spawns: [WaveSpawn(EnemyType.healer, 2), WaveSpawn(EnemyType.siren, 3, delay: 2)],
+        boss: BossType.voidReaper,
+      ));
+      continue;
+    }
+    if (wave == 65) {
+      configs.add(WaveConfig(
+        waveNumber: wave,
+        spawns: [WaveSpawn(EnemyType.tesla, 5), WaveSpawn(EnemyType.necro, 2, delay: 3)],
+        boss: BossType.teslaLord,
+      ));
+      continue;
+    }
+    if (wave == 70) {
+      configs.add(WaveConfig(
+        waveNumber: wave,
+        spawns: [WaveSpawn(EnemyType.phantom, 4), WaveSpawn(EnemyType.glitch, 3, delay: 2)],
+        boss: BossType.phantomKing,
+      ));
+      continue;
+    }
+    if (wave == 75) {
+      configs.add(WaveConfig(
+        waveNumber: wave,
+        spawns: [WaveSpawn(EnemyType.titan, 3), WaveSpawn(EnemyType.healer, 2, delay: 3)],
+        boss: BossType.omegaCore,
       ));
       continue;
     }
