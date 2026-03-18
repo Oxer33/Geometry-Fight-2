@@ -1,8 +1,11 @@
 import 'dart:ui';
 
-// Arena
-const double arenaWidth = 3000;
-const double arenaHeight = 3000;
+// Arena (30% più piccola rispetto all'originale 3000x3000)
+// Tunnel mode usa le dimensioni originali per il corridoio lungo
+const double arenaWidth = 2100;
+const double arenaHeight = 2100;
+const double tunnelArenaWidth = 3000; // Solo per tunnel mode
+const double tunnelArenaHeight = 3000;
 
 // Player
 const double playerSpeed = 400;

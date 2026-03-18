@@ -27,7 +27,7 @@ abstract class EnemyBase extends PositionComponent
     required this.neonColor,
     Vector2? size,
   })  : maxHp = hp,
-        super(size: size ?? Vector2(20, 20), anchor: Anchor.center);
+        super(size: size != null ? size * 2 : Vector2(40, 40), anchor: Anchor.center);
 
   @override
   Future<void> onLoad() async {

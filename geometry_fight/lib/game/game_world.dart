@@ -597,21 +597,49 @@ class GeometryFightGame extends FlameGame
     if (player.bombs <= 0) return;
     player.bombs--;
 
-    activateSlowMo(0.5, 0.3);
+    // Slow-mo drammatico
+    activateSlowMo(0.8, 0.2);
 
-    // Kill all visible enemies
-    final enemies =
-        world.children.whereType<EnemyBase>().toList();
+    // Uccidi TUTTI i nemici nell'intera area visibile (raggio enorme)
+    final enemies = world.children.whereType<EnemyBase>().toList();
     for (final enemy in enemies) {
       final dist = enemy.position.distanceTo(player.position);
-      if (dist < 800) {
+      if (dist < 1200) {
         enemy.takeDamage(999);
       }
     }
 
+    // Danneggia anche i boss nel raggio
+    final bosses = world.children.whereType<BossBase>().toList();
+    for (final boss in bosses) {
+      final dist = boss.position.distanceTo(player.position);
+      if (dist < 1200) {
+        boss.takeDamage(50); // Danno significativo ai boss
+      }
+    }
+
+    // Esplosione DEVASTANTE: tripla esplosione concentrica
     spawnExplosion(player.position, NeonColors.white,
-        radius: 400, particleCount: 50);
-    grid.applyForce(player.position, 800, 2000);
+        radius: 800, particleCount: 80);
+    // Seconda onda con colore diverso
+    Future.delayed(const Duration(milliseconds: 100), () {
+      if (gameState == GameState.playing) {
+        spawnExplosion(player.position, NeonColors.cyan,
+            radius: 600, particleCount: 60);
+      }
+    });
+    // Terza onda
+    Future.delayed(const Duration(milliseconds: 200), () {
+      if (gameState == GameState.playing) {
+        spawnExplosion(player.position, NeonColors.spreadOrange,
+            radius: 400, particleCount: 40);
+      }
+    });
+
+    // Screen shake intenso e prolungato
+    triggerScreenShake(12, 0.6);
+    // Distorsione griglia massima
+    grid.applyForce(player.position, 1200, 3000);
   }
 
   void togglePause() {

@@ -19,8 +19,8 @@ abstract class BossBase extends PositionComponent
   double _flashTimer = 0;
 
   // Sistema spawn nemici durante boss fight
-  double _minionSpawnTimer = 3.0; // Timer iniziale prima del primo spawn
-  static const double _minionSpawnInterval = 5.0; // Ogni 5 secondi
+  double _minionSpawnTimer = 2.0; // Timer iniziale prima del primo spawn
+  static const double _minionSpawnInterval = 3.5; // Ogni 3.5 secondi (era 5)
   static final _bossRandom = math.Random();
 
   BossBase({
@@ -87,7 +87,7 @@ abstract class BossBase extends PositionComponent
   /// Spawna nemici di supporto durante il boss fight.
   /// Il numero e tipo dipende dalla fase corrente del boss.
   void _spawnMinions() {
-    final baseCount = 3 + currentPhase * 2; // 3, 5, 7, 9 nemici per fase
+    final baseCount = 5 + currentPhase * 3; // 5, 8, 11, 14 nemici per fase
     
     // Tipi nemici per fase (progressivamente più difficili)
     final minionTypes = <List<EnemyType>>[

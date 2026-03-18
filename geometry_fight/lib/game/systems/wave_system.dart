@@ -130,28 +130,31 @@ class WaveSystem {
     return WaveConfig(waveNumber: wave, spawns: [], boss: bosses[bossIndex]);
   }
 
-  /// Survival: wave infinite con nemici crescenti, nessun boss, nessuna pausa
+  /// Survival: wave infinite con TANTI nemici crescenti, nessun boss, nessuna pausa
   WaveConfig _generateSurvivalWave(int wave) {
     final spawns = <WaveSpawn>[];
-    spawns.add(WaveSpawn(EnemyType.drone, (8 + wave * 4).clamp(8, 100)));
-    if (wave >= 2) spawns.add(WaveSpawn(EnemyType.kamikaze, (wave * 2).clamp(2, 30), delay: 0.5));
-    if (wave >= 3) spawns.add(WaveSpawn(EnemyType.weaver, (wave).clamp(1, 20), delay: 0.5));
-    if (wave >= 5) spawns.add(WaveSpawn(EnemyType.splitter, (wave ~/ 2).clamp(1, 10), delay: 0.5));
-    if (wave >= 7) spawns.add(WaveSpawn(EnemyType.bouncer, (wave ~/ 3).clamp(1, 8), delay: 0.5));
-    if (wave >= 10) spawns.add(WaveSpawn(EnemyType.titan, 1, delay: 1));
-    if (wave >= 12) spawns.add(WaveSpawn(EnemyType.glitch, (wave ~/ 4).clamp(1, 5), delay: 0.5));
+    spawns.add(WaveSpawn(EnemyType.drone, (15 + wave * 6).clamp(15, 150)));
+    if (wave >= 2) spawns.add(WaveSpawn(EnemyType.kamikaze, (wave * 3).clamp(3, 50), delay: 0.5));
+    if (wave >= 3) spawns.add(WaveSpawn(EnemyType.weaver, (wave * 2).clamp(2, 30), delay: 0.5));
+    if (wave >= 4) spawns.add(WaveSpawn(EnemyType.swarmDrone, (wave * 4).clamp(8, 60), delay: 0.3));
+    if (wave >= 5) spawns.add(WaveSpawn(EnemyType.splitter, (wave).clamp(1, 15), delay: 0.5));
+    if (wave >= 7) spawns.add(WaveSpawn(EnemyType.bouncer, (wave ~/ 2).clamp(1, 12), delay: 0.5));
+    if (wave >= 10) spawns.add(WaveSpawn(EnemyType.titan, 1 + wave ~/ 10, delay: 1));
+    if (wave >= 12) spawns.add(WaveSpawn(EnemyType.glitch, (wave ~/ 3).clamp(1, 8), delay: 0.5));
     if (wave >= 15) spawns.add(WaveSpawn(EnemyType.blackHole, 1, delay: 2));
     return WaveConfig(waveNumber: wave, spawns: spawns);
   }
 
-  /// Time Attack: tanti nemici facili per fare punti velocemente
+  /// Time Attack: TANTISSIMI nemici facili per fare punti velocemente
   WaveConfig _generateTimeAttackWave(int wave) {
     final spawns = <WaveSpawn>[
-      WaveSpawn(EnemyType.drone, 15 + wave * 5),
-      WaveSpawn(EnemyType.kamikaze, 5 + wave * 2, delay: 0.3),
-      WaveSpawn(EnemyType.weaver, 3 + wave, delay: 0.3),
+      WaveSpawn(EnemyType.drone, 25 + wave * 8),
+      WaveSpawn(EnemyType.kamikaze, 8 + wave * 3, delay: 0.3),
+      WaveSpawn(EnemyType.weaver, 5 + wave * 2, delay: 0.3),
+      WaveSpawn(EnemyType.swarmDrone, 15 + wave * 5, delay: 0.2),
     ];
-    if (wave >= 3) spawns.add(WaveSpawn(EnemyType.bouncer, wave, delay: 0.5));
+    if (wave >= 3) spawns.add(WaveSpawn(EnemyType.bouncer, wave * 2, delay: 0.5));
+    if (wave >= 5) spawns.add(WaveSpawn(EnemyType.mine, wave * 2, delay: 0.5));
     return WaveConfig(waveNumber: wave, spawns: spawns);
   }
 
@@ -165,16 +168,17 @@ class WaveSystem {
     return WaveConfig(waveNumber: wave, spawns: spawns);
   }
 
-  /// Tunnel: nemici in corridoio, boss ogni 5 wave, difficoltà crescente veloce
+  /// Tunnel: TANTI nemici in corridoio, boss ogni 5 wave, difficoltà crescente veloce
   WaveConfig _generateTunnelWave(int wave) {
     final spawns = <WaveSpawn>[];
     // Nel tunnel i nemici arrivano in fila, tanti e veloci
-    spawns.add(WaveSpawn(EnemyType.drone, 6 + wave * 3));
-    spawns.add(WaveSpawn(EnemyType.kamikaze, 2 + wave, delay: 0.5));
-    if (wave >= 3) spawns.add(WaveSpawn(EnemyType.swarmDrone, 10 + wave * 2, delay: 0.3));
-    if (wave >= 5) spawns.add(WaveSpawn(EnemyType.bouncer, wave, delay: 0.5));
-    if (wave >= 8) spawns.add(WaveSpawn(EnemyType.laserTurret, (wave ~/ 5).clamp(1, 3), delay: 1));
-    if (wave >= 10) spawns.add(WaveSpawn(EnemyType.titan, 1, delay: 2));
+    spawns.add(WaveSpawn(EnemyType.drone, 12 + wave * 5));
+    spawns.add(WaveSpawn(EnemyType.kamikaze, 4 + wave * 2, delay: 0.5));
+    if (wave >= 3) spawns.add(WaveSpawn(EnemyType.swarmDrone, 20 + wave * 4, delay: 0.3));
+    if (wave >= 5) spawns.add(WaveSpawn(EnemyType.bouncer, wave * 2, delay: 0.5));
+    if (wave >= 7) spawns.add(WaveSpawn(EnemyType.weaver, wave * 2, delay: 0.5));
+    if (wave >= 8) spawns.add(WaveSpawn(EnemyType.laserTurret, (wave ~/ 4).clamp(1, 4), delay: 1));
+    if (wave >= 10) spawns.add(WaveSpawn(EnemyType.titan, 1 + wave ~/ 10, delay: 2));
 
     // Boss ogni 5 wave nel tunnel
     BossType? boss;
@@ -189,13 +193,13 @@ class WaveSystem {
     // Genera ondate sempre più difficili oltre le wave configurate
     final spawns = <WaveSpawn>[];
 
-    // Nemici base sempre presenti
-    spawns.add(WaveSpawn(EnemyType.drone, (10 + wave * 3).clamp(10, 80)));
-    spawns.add(WaveSpawn(EnemyType.kamikaze, (wave ~/ 2).clamp(3, 20), delay: 1));
-    spawns.add(WaveSpawn(EnemyType.weaver, (wave ~/ 3).clamp(2, 15), delay: 2));
-    spawns.add(WaveSpawn(EnemyType.splitter, (wave ~/ 5).clamp(1, 8), delay: 3));
-    spawns.add(WaveSpawn(EnemyType.shieldEnemy, (wave ~/ 6).clamp(1, 6), delay: 4));
-    spawns.add(WaveSpawn(EnemyType.vortex, (wave ~/ 10).clamp(1, 3), delay: 5));
+    // Nemici base sempre presenti (RADDOPPIATI)
+    spawns.add(WaveSpawn(EnemyType.drone, (20 + wave * 5).clamp(20, 120)));
+    spawns.add(WaveSpawn(EnemyType.kamikaze, (wave).clamp(5, 40), delay: 1));
+    spawns.add(WaveSpawn(EnemyType.weaver, (wave ~/ 2).clamp(3, 25), delay: 2));
+    spawns.add(WaveSpawn(EnemyType.splitter, (wave ~/ 3).clamp(2, 12), delay: 3));
+    spawns.add(WaveSpawn(EnemyType.shieldEnemy, (wave ~/ 4).clamp(2, 10), delay: 4));
+    spawns.add(WaveSpawn(EnemyType.vortex, (wave ~/ 8).clamp(1, 5), delay: 5));
 
     // Nuovi nemici nelle endless waves
     spawns.add(WaveSpawn(EnemyType.leech, (wave ~/ 5).clamp(2, 10), delay: 3));

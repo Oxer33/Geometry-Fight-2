@@ -209,39 +209,39 @@ List<WaveConfig> generateWaveConfigs() {
     final spawns = <WaveSpawn>[];
     final difficulty = wave / 10.0;
 
-    // Drones - always present
-    spawns.add(WaveSpawn(EnemyType.drone, 5 + wave * 2));
+    // Drones - always present (numeri RADDOPPIATI per più azione)
+    spawns.add(WaveSpawn(EnemyType.drone, 10 + wave * 4));
 
     // Mines from wave 2
     if (wave >= 2) {
-      spawns.add(WaveSpawn(EnemyType.mine, 3 + wave ~/ 2, delay: 1));
+      spawns.add(WaveSpawn(EnemyType.mine, 5 + wave, delay: 1));
     }
 
     // Snakes from wave 3
     if (wave >= 3) {
-      spawns.add(WaveSpawn(EnemyType.snake, 1 + wave ~/ 4, delay: 2));
+      spawns.add(WaveSpawn(EnemyType.snake, 2 + wave ~/ 2, delay: 2));
     }
 
     // Weavers and Bouncers from wave 4
     if (wave >= 4) {
-      spawns.add(WaveSpawn(EnemyType.weaver, 2 + wave ~/ 3, delay: 1.5));
-      spawns.add(WaveSpawn(EnemyType.bouncer, 1 + wave ~/ 4, delay: 3));
+      spawns.add(WaveSpawn(EnemyType.weaver, 4 + wave ~/ 2, delay: 1.5));
+      spawns.add(WaveSpawn(EnemyType.bouncer, 2 + wave ~/ 2, delay: 3));
     }
 
     // Spawners and Kamikazes from wave 5
     if (wave >= 5) {
-      spawns.add(WaveSpawn(EnemyType.spawner, 1 + wave ~/ 8, delay: 4));
-      spawns.add(WaveSpawn(EnemyType.kamikaze, 3 + wave ~/ 3, delay: 2));
+      spawns.add(WaveSpawn(EnemyType.spawner, 2 + wave ~/ 5, delay: 4));
+      spawns.add(WaveSpawn(EnemyType.kamikaze, 6 + wave, delay: 2));
     }
 
     // Splitters from wave 6
     if (wave >= 6) {
-      spawns.add(WaveSpawn(EnemyType.splitter, 1 + wave ~/ 5, delay: 3));
+      spawns.add(WaveSpawn(EnemyType.splitter, 2 + wave ~/ 3, delay: 3));
     }
 
     // Shield enemies from wave 7
     if (wave >= 7) {
-      spawns.add(WaveSpawn(EnemyType.shieldEnemy, 1 + wave ~/ 6, delay: 4));
+      spawns.add(WaveSpawn(EnemyType.shieldEnemy, 2 + wave ~/ 4, delay: 4));
     }
 
     // Black Holes from wave 8 (max 1 per wave)
