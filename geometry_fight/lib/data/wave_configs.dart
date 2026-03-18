@@ -42,6 +42,12 @@ enum BossType {
   teslaLord,
   phantomKing,
   omegaCore,
+  // Batch 3 bosses
+  mirrorMaster,
+  swarmQueen,
+  graviton,
+  inferno,
+  eternityEngine,
 }
 
 class WaveSpawn {

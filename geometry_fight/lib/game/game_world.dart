@@ -52,6 +52,11 @@ import 'entities/bosses/void_reaper_boss.dart';
 import 'entities/bosses/tesla_lord_boss.dart';
 import 'entities/bosses/phantom_king_boss.dart';
 import 'entities/bosses/omega_core_boss.dart';
+import 'entities/bosses/mirror_master_boss.dart';
+import 'entities/bosses/swarm_queen_boss.dart';
+import 'entities/bosses/graviton_boss.dart';
+import 'entities/bosses/inferno_boss.dart';
+import 'entities/bosses/eternity_engine_boss.dart';
 import 'entities/geom.dart';
 import 'entities/powerups.dart';
 import 'effects/grid_distortion.dart';
@@ -384,6 +389,16 @@ class GeometryFightGame extends FlameGame
         boss = PhantomKingBoss();
       case BossType.omegaCore:
         boss = OmegaCoreBoss();
+      case BossType.mirrorMaster:
+        boss = MirrorMasterBoss();
+      case BossType.swarmQueen:
+        boss = SwarmQueenBoss();
+      case BossType.graviton:
+        boss = GravitonBoss();
+      case BossType.inferno:
+        boss = InfernoBoss();
+      case BossType.eternityEngine:
+        boss = EternityEngineBoss();
     }
 
     boss.position = pos;
