@@ -139,4 +139,41 @@
 
 ---
 
+## ✅ COMPLETATO (Sessione 4 - Marzo 2026)
+
+### Code Review Professionale
+- [x] Fix highscore hardcoded 'classic' → usa gameMode.name
+- [x] Rimossi import inutilizzati score_system.dart  
+- [x] Rimossa classe AnimatedBuilder duplicata da main_menu.dart
+- [x] Menu responsive landscape/portrait con bottoni compatti
+
+### UI/UX
+- [x] Splash screen: tasto SKIP visibile, proiettili che colpiscono drone, flash impatto
+- [x] Menu principale: layout a 2 colonne landscape, bottoni con icone, responsive
+- [x] Modalità sbloccate per test (kDebugUnlockAll)
+
+### 5 Nuovi Nemici (27 totali)
+- [x] Gravity Well (indaco): campo gravitazionale, spirale interna, particelle orbitanti
+- [x] Swarm Drone (rosa): gruppi enormi, si enragiano quando uno muore
+- [x] Laser Turret (rosso): stazionaria, laser rotante 360°, warmup con indicatore
+- [x] Time Bomb (arancio): countdown 8s visibile, scudo 2s, esplosione area 200px
+- [x] Decoy (verde ingannevole): imita power-up, esplode vicino, scopribile sparandogli
+
+### 5 Nuovi Boss (16 totali)
+- [x] Mirror Master (wave 80): ottagono con facce riflettenti shimmer
+- [x] Swarm Queen (wave 85): alveare con ali membranose, spawna sciami
+- [x] Graviton (wave 90): sfera nera con anelli dorati, alterna PULL/PUSH gravità
+- [x] Inferno (wave 95): stella 5 punte con scie di fuoco, nucleo incandescente
+- [x] Eternity Engine (wave 100): BOSS DEFINITIVO, triplo anello arcobaleno, 4 fasi
+
+### Nuova Modalità
+- [x] Tunnel infinito: nemici in corridoio veloce, boss ogni 5 wave
+
+### Meccaniche
+- [x] Wave estese da 75 a 100 con boss batch 3
+- [x] Tutti i 27 nemici nelle endless waves
+- [x] Self-review: fix endless waves, analisi Q&A step-by-step
+
+---
+
 *Ultimo aggiornamento: Marzo 2026*
