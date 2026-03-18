@@ -73,7 +73,7 @@ class WaveConfig {
 List<WaveConfig> generateWaveConfigs() {
   final configs = <WaveConfig>[];
 
-  for (int wave = 1; wave <= 75; wave++) {
+  for (int wave = 1; wave <= 100; wave++) {
     // Boss waves
     if (wave == 10) {
       configs.add(WaveConfig(
@@ -160,6 +160,47 @@ List<WaveConfig> generateWaveConfigs() {
         waveNumber: wave,
         spawns: [WaveSpawn(EnemyType.titan, 3), WaveSpawn(EnemyType.healer, 2, delay: 3)],
         boss: BossType.omegaCore,
+      ));
+      continue;
+    }
+    // Wave 80-100: nuovi boss batch 3
+    if (wave == 80) {
+      configs.add(WaveConfig(
+        waveNumber: wave,
+        spawns: [WaveSpawn(EnemyType.mirror, 4), WaveSpawn(EnemyType.decoy, 5, delay: 2)],
+        boss: BossType.mirrorMaster,
+      ));
+      continue;
+    }
+    if (wave == 85) {
+      configs.add(WaveConfig(
+        waveNumber: wave,
+        spawns: [WaveSpawn(EnemyType.swarmDrone, 20), WaveSpawn(EnemyType.healer, 2, delay: 3)],
+        boss: BossType.swarmQueen,
+      ));
+      continue;
+    }
+    if (wave == 90) {
+      configs.add(WaveConfig(
+        waveNumber: wave,
+        spawns: [WaveSpawn(EnemyType.gravityWell, 2), WaveSpawn(EnemyType.blackHole, 1, delay: 4)],
+        boss: BossType.graviton,
+      ));
+      continue;
+    }
+    if (wave == 95) {
+      configs.add(WaveConfig(
+        waveNumber: wave,
+        spawns: [WaveSpawn(EnemyType.kamikaze, 10), WaveSpawn(EnemyType.timeBomb, 3, delay: 3)],
+        boss: BossType.inferno,
+      ));
+      continue;
+    }
+    if (wave == 100) {
+      configs.add(WaveConfig(
+        waveNumber: wave,
+        spawns: [WaveSpawn(EnemyType.titan, 4), WaveSpawn(EnemyType.tesla, 5, delay: 2), WaveSpawn(EnemyType.healer, 3, delay: 4)],
+        boss: BossType.eternityEngine,
       ));
       continue;
     }
