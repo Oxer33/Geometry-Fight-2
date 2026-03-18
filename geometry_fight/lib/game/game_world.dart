@@ -516,6 +516,23 @@ class GeometryFightGame extends FlameGame
     if (math.Random().nextDouble() < diffConfig.powerUpDropRate) {
       spawnPowerUp(enemy.position);
     }
+
+    // Notifica Necro nemici vicini della morte (per resurrezione)
+    for (final child in world.children) {
+      if (child is NecroEnemy) {
+        child.onNearbyEnemyDeath(_getEnemyType(enemy), enemy.position);
+      }
+    }
+  }
+
+  /// Determina il tipo EnemyType di un nemico dalla sua classe
+  EnemyType _getEnemyType(EnemyBase enemy) {
+    if (enemy is DroneEnemy) return EnemyType.drone;
+    if (enemy is SwarmDroneEnemy) return EnemyType.swarmDrone;
+    if (enemy is KamikazeEnemy) return EnemyType.kamikaze;
+    if (enemy is WeaverEnemy) return EnemyType.weaver;
+    if (enemy is BouncerEnemy) return EnemyType.bouncer;
+    return EnemyType.drone; // Default
   }
 
   void onBossKilled(BossBase boss) {
