@@ -212,6 +212,25 @@ class GeometryFightGame extends FlameGame
       if (_perfectWaveTimer <= 0) showPerfectWave = false;
     }
 
+    // Time Attack: countdown timer
+    if (isTimeAttackMode && gameState == GameState.playing) {
+      timeAttackTimer -= dt;
+      if (timeAttackTimer <= 0) {
+        timeAttackTimer = 0;
+        // Tempo scaduto = game over
+        gameState = GameState.gameOver;
+        final goldEarned = (sessionGeoms / geomToGoldRatio * saveData.xpBoostMultiplier).round();
+        saveData.goldGeoms += goldEarned;
+        final mode = gameMode.name;
+        if (scoreSystem.score > (saveData.highscores[mode] ?? 0)) {
+          saveData.highscores[mode] = scoreSystem.score;
+        }
+        SaveManager.save(saveData);
+        onGameOver?.call();
+        return;
+      }
+    }
+
     // Tunnel mode: aggiorna altezza corridoio (lerp verso il target)
     if (isTunnelMode) {
       tunnelTargetHeight = bossCount > 0 ? 1800 : 600; // Allarga per boss fight
@@ -525,7 +544,17 @@ class GeometryFightGame extends FlameGame
     _hitThisWave = false; // Reset per la prossima wave
   }
 
+  // Time Attack: timer countdown
+  double timeAttackTimer = 180; // 3 minuti
+  bool get isTimeAttackMode => gameMode == GameMode.timeAttack;
+
   void onPlayerDeath() {
+    // Zen mode: vite infinite - respawn immediato
+    if (gameMode == GameMode.zenMode) {
+      player.lives = 1; // Ripristina 1 vita
+      return;
+    }
+
     if (player.lives <= 0) {
       gameState = GameState.gameOver;
 
