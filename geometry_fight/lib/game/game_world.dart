@@ -63,6 +63,7 @@ import 'effects/grid_distortion.dart';
 import 'effects/screen_shake.dart';
 import 'effects/explosion.dart';
 import 'effects/space_background.dart';
+import 'effects/tunnel_renderer.dart';
 import 'systems/wave_system.dart';
 import 'systems/score_system.dart';
 import 'systems/powerup_system.dart';
@@ -152,6 +153,11 @@ class GeometryFightGame extends FlameGame
     // Add grid (sopra lo sfondo)
     grid = GridDistortion();
     world.add(grid);
+
+    // Add tunnel renderer per modalità Tunnel
+    if (isTunnelMode) {
+      world.add(TunnelRenderer());
+    }
 
     // Add player (applica difficoltà alle vite/bombe iniziali)
     player = Player();

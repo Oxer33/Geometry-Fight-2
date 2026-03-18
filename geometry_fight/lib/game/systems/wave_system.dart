@@ -120,15 +120,14 @@ class WaveSystem {
     _bossActive = false;
   }
 
-  /// Boss Rush: ogni wave è un boss, difficoltà crescente
+  /// Boss Rush: ogni wave è UN SOLO boss. I nemici li spawna il boss stesso
+  /// tramite _spawnMinions() nel boss_base.dart (automatico ogni 5s).
+  /// NESSUN spawn separato per evitare conflitti con _bossActive.
   WaveConfig _generateBossRushWave(int wave) {
     final bosses = BossType.values;
     final bossIndex = (wave - 1) % bosses.length;
-    // Pochi nemici di supporto
-    final spawns = <WaveSpawn>[
-      WaveSpawn(EnemyType.drone, 3 + wave * 2),
-    ];
-    return WaveConfig(waveNumber: wave, spawns: spawns, boss: bosses[bossIndex]);
+    // NESSUN spawn di nemici: il boss spawna i suoi minion automaticamente
+    return WaveConfig(waveNumber: wave, spawns: [], boss: bosses[bossIndex]);
   }
 
   /// Survival: wave infinite con nemici crescenti, nessun boss, nessuna pausa

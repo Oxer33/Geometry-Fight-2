@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
 import '../../../data/constants.dart';
+import '../../../data/wave_configs.dart';
 import '../../game_world.dart';
 import '../player.dart';
 
@@ -17,6 +18,11 @@ abstract class BossBase extends PositionComponent
   int currentPhase = 0;
   double _flashTimer = 0;
 
+  // Sistema spawn nemici durante boss fight
+  double _minionSpawnTimer = 3.0; // Timer iniziale prima del primo spawn
+  static const double _minionSpawnInterval = 5.0; // Ogni 5 secondi
+  static final _bossRandom = math.Random();
+
   BossBase({
     required this.hp,
     required this.bossName,
@@ -28,7 +34,10 @@ abstract class BossBase extends PositionComponent
 
   @override
   Future<void> onLoad() async {
-    add(CircleHitbox(radius: size.x / 2 * 0.8, anchor: Anchor.center)
+    // Hitbox proporzionato alla dimensione visiva del boss (95%)
+    // Usa il raggio più grande tra x e y per coprire tutta la forma
+    final hitboxRadius = math.max(size.x, size.y) / 2 * 0.95;
+    add(CircleHitbox(radius: hitboxRadius, anchor: Anchor.center)
       ..position = this.size / 2);
   }
 
@@ -50,6 +59,13 @@ abstract class BossBase extends PositionComponent
 
     updateBoss(dt);
 
+    // Spawn nemici a ondate regolari durante il boss fight
+    _minionSpawnTimer -= dt;
+    if (_minionSpawnTimer <= 0) {
+      _minionSpawnTimer = _minionSpawnInterval - currentPhase * 0.8; // Più veloce nelle fasi avanzate
+      _spawnMinions();
+    }
+
     // Clamp to arena
     position.x = position.x.clamp(50, arenaWidth - 50);
     position.y = position.y.clamp(50, arenaHeight - 50);
@@ -65,6 +81,33 @@ abstract class BossBase extends PositionComponent
     if (hp <= 0) {
       hp = 0;
       onDeath();
+    }
+  }
+
+  /// Spawna nemici di supporto durante il boss fight.
+  /// Il numero e tipo dipende dalla fase corrente del boss.
+  void _spawnMinions() {
+    final baseCount = 3 + currentPhase * 2; // 3, 5, 7, 9 nemici per fase
+    
+    // Tipi nemici per fase (progressivamente più difficili)
+    final minionTypes = <List<EnemyType>>[
+      [EnemyType.drone, EnemyType.drone, EnemyType.swarmDrone], // Fase 0
+      [EnemyType.drone, EnemyType.kamikaze, EnemyType.weaver],  // Fase 1
+      [EnemyType.kamikaze, EnemyType.weaver, EnemyType.bouncer], // Fase 2
+      [EnemyType.splitter, EnemyType.kamikaze, EnemyType.tesla], // Fase 3
+    ];
+    
+    final types = minionTypes[currentPhase.clamp(0, minionTypes.length - 1)];
+    
+    for (int i = 0; i < baseCount; i++) {
+      final type = types[_bossRandom.nextInt(types.length)];
+      final angle = _bossRandom.nextDouble() * math.pi * 2;
+      final dist = 100 + _bossRandom.nextDouble() * 150;
+      final spawnPos = position + Vector2(
+        math.cos(angle) * dist,
+        math.sin(angle) * dist,
+      );
+      game.spawnEnemy(type, spawnPos);
     }
   }
 
