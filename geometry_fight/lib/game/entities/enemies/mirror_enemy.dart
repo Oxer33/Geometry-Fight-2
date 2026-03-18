@@ -60,27 +60,73 @@ class MirrorEnemy extends EnemyBase {
     final cy = size.y / 2;
     final r = 12 * scale;
 
-    // Octagon shape
+    // Ottagono con rotazione lenta
     final path = Path();
+    final verts = <Offset>[];
     for (int i = 0; i < 8; i++) {
       final angle = i * math.pi / 4 + idlePhase * 0.5;
       final x = cx + r * math.cos(angle);
       final y = cy + r * math.sin(angle);
-      if (i == 0) {
-        path.moveTo(x, y);
-      } else {
-        path.lineTo(x, y);
-      }
+      verts.add(Offset(x, y));
+      if (i == 0) path.moveTo(x, y); else path.lineTo(x, y);
     }
     path.close();
     canvas.drawPath(path, paint);
 
-    // Shield flash when reflecting
+    if (scale <= 1.01) {
+      // Facce riflettenti (shimmer sulle facce dell'ottagono)
+      for (int i = 0; i < 8; i++) {
+        final next = (i + 1) % 8;
+        final shimmer = 0.15 + math.sin(idlePhase * 4 + i * 0.9) * 0.15;
+        final facePaint = Paint()
+          ..color = const Color(0xFFFFFFFF).withValues(alpha: shimmer)
+          ..strokeWidth = 1.5
+          ..style = PaintingStyle.stroke;
+        canvas.drawLine(verts[i], verts[next], facePaint);
+      }
+
+      // Linee interne diagonali (struttura prismatica)
+      final diagPaint = Paint()
+        ..color = paint.color.withValues(alpha: 0.15)
+        ..strokeWidth = 0.5;
+      for (int i = 0; i < 4; i++) {
+        canvas.drawLine(verts[i], verts[i + 4], diagPaint);
+      }
+
+      // Nucleo specchiato (riflette la luce)
+      final coreShimmer = 0.3 + math.sin(idlePhase * 6) * 0.3;
+      final corePaint = Paint()
+        ..color = const Color(0xFFFFFFFF).withValues(alpha: coreShimmer)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
+      canvas.drawCircle(Offset(cx, cy), r * 0.25, corePaint);
+
+      // Indicatore cooldown riflesso
+      if (_reflectCooldown > 0) {
+        final cooldownProgress = (_reflectCooldown / 0.3).clamp(0.0, 1.0);
+        final cdPaint = Paint()
+          ..color = NeonColors.magenta.withValues(alpha: cooldownProgress * 0.3)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1;
+        canvas.drawCircle(Offset(cx, cy), r * 1.1, cdPaint);
+      }
+    }
+
+    // Flash prismatico quando riflette
     if (_shieldFlash > 0) {
+      // Flash bianco centrale
       final flashPaint = Paint()
         ..color = NeonColors.white.withValues(alpha: _shieldFlash * 3)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8);
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10);
       canvas.drawCircle(Offset(cx, cy), r * 1.3, flashPaint);
+      // Effetto prismatico (arcobaleno)
+      final prismPaint = Paint()
+        ..color = NeonColors.cyan.withValues(alpha: _shieldFlash * 1.5)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
+      canvas.drawCircle(Offset(cx + 2, cy), r * 1.2, prismPaint);
+      prismPaint.color = NeonColors.spreadOrange.withValues(alpha: _shieldFlash * 1.5);
+      canvas.drawCircle(Offset(cx - 2, cy), r * 1.2, prismPaint);
     }
   }
 }
