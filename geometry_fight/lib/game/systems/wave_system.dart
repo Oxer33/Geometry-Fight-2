@@ -219,6 +219,28 @@ class WaveSystem {
       spawns.add(WaveSpawn(EnemyType.phantom, (wave ~/ 12).clamp(1, 4), delay: 5));
     }
 
+    // Batch 2+3 nemici nelle endless
+    spawns.add(WaveSpawn(EnemyType.swarmDrone, (wave * 2).clamp(5, 40), delay: 1));
+    if (wave % 3 == 0) {
+      spawns.add(WaveSpawn(EnemyType.laserTurret, (wave ~/ 20).clamp(1, 3), delay: 5));
+    }
+    if (wave % 4 == 0) {
+      spawns.add(WaveSpawn(EnemyType.timeBomb, (wave ~/ 15).clamp(1, 3), delay: 4));
+    }
+    if (wave % 5 == 0) {
+      spawns.add(WaveSpawn(EnemyType.gravityWell, 1, delay: 6));
+    }
+    if (wave % 2 == 0) {
+      spawns.add(WaveSpawn(EnemyType.decoy, (wave ~/ 8).clamp(1, 5), delay: 3));
+    }
+    spawns.add(WaveSpawn(EnemyType.healer, (wave ~/ 12).clamp(1, 2), delay: 5));
+    spawns.add(WaveSpawn(EnemyType.tesla, (wave ~/ 10).clamp(1, 4), delay: 4));
+    if (wave > 110) {
+      spawns.add(WaveSpawn(EnemyType.orbiter, (wave ~/ 15).clamp(1, 3), delay: 5));
+      spawns.add(WaveSpawn(EnemyType.siren, (wave ~/ 20).clamp(1, 2), delay: 6));
+      spawns.add(WaveSpawn(EnemyType.necro, 1, delay: 7));
+    }
+
     return WaveConfig(waveNumber: wave, spawns: spawns);
   }
 }
