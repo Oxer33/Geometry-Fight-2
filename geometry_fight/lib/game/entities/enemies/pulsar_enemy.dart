@@ -70,29 +70,75 @@ class PulsarEnemy extends EnemyBase {
     final cy = size.y / 2;
     final r = 10 * scale;
 
-    // Pentagon shape
+    // Pentagono con rotazione lenta
     final path = Path();
+    final vertices = <Offset>[];
     for (int i = 0; i < 5; i++) {
-      final angle = i * math.pi * 2 / 5 - math.pi / 2 + idlePhase;
+      final angle = i * math.pi * 2 / 5 - math.pi / 2 + idlePhase * 0.5;
       final x = cx + r * math.cos(angle);
       final y = cy + r * math.sin(angle);
-      if (i == 0) {
-        path.moveTo(x, y);
-      } else {
-        path.lineTo(x, y);
-      }
+      vertices.add(Offset(x, y));
+      if (i == 0) path.moveTo(x, y); else path.lineTo(x, y);
     }
     path.close();
     canvas.drawPath(path, paint);
 
-    // Pulse ring
+    // Dettagli interni solo sul layer principale
+    if (scale <= 1.01) {
+      // Indicatore di carica (cerchio che si riempie prima del pulse)
+      final chargeProgress = 1.0 - (_pulseTimer / 2.5).clamp(0.0, 1.0);
+      if (chargeProgress > 0.1) {
+        final chargePaint = Paint()
+          ..color = NeonColors.teal.withValues(alpha: chargeProgress * 0.4)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.5;
+        canvas.drawArc(
+          Rect.fromCircle(center: Offset(cx, cy), radius: r * 1.3),
+          -math.pi / 2, math.pi * 2 * chargeProgress, false, chargePaint,
+        );
+      }
+
+      // Nucleo pulsante teal (brilla di più prima del pulse)
+      final coreIntensity = 0.4 + chargeProgress * 0.4;
+      final corePaint = Paint()
+        ..color = const Color(0xFFFFFFFF).withValues(alpha: coreIntensity)
+        ..maskFilter = MaskFilter.blur(BlurStyle.normal, 3 + chargeProgress * 3);
+      canvas.drawCircle(Offset(cx, cy), r * 0.3, corePaint);
+
+      // Particelle luminose sui vertici
+      for (int i = 0; i < 5; i++) {
+        final dotAlpha = 0.3 + math.sin(idlePhase * 3 + i * 1.2) * 0.3;
+        final dotPaint = Paint()
+          ..color = paint.color.withValues(alpha: dotAlpha)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2);
+        canvas.drawCircle(vertices[i], 1.5, dotPaint);
+      }
+
+      // Linee interne dal centro ai vertici
+      final linePaint = Paint()
+        ..color = paint.color.withValues(alpha: 0.15)
+        ..strokeWidth = 0.5;
+      for (final v in vertices) {
+        canvas.drawLine(Offset(cx, cy), v, linePaint);
+      }
+    }
+
+    // Doppia onda pulse
     if (_pulsing) {
       final alpha = 1.0 - (_pulseRadius / 150);
-      final ringPaint = Paint()
+      // Onda interna brillante
+      final innerRing = Paint()
         ..color = NeonColors.teal.withValues(alpha: alpha * 0.5)
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 2;
-      canvas.drawCircle(Offset(cx, cy), _pulseRadius, ringPaint);
+        ..strokeWidth = 2.5
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
+      canvas.drawCircle(Offset(cx, cy), _pulseRadius, innerRing);
+      // Onda esterna sottile
+      final outerRing = Paint()
+        ..color = NeonColors.teal.withValues(alpha: alpha * 0.2)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1;
+      canvas.drawCircle(Offset(cx, cy), _pulseRadius * 1.2, outerRing);
     }
   }
 }
