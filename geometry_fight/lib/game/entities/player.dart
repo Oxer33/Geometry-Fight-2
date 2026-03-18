@@ -76,13 +76,15 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
       position += moveDir * actualSpeed * dt;
     }
 
-    // Clamp to arena (tunnel mode ha limiti Y diversi)
-    position.x = position.x.clamp(15, arenaWidth - 15);
+    // Clamp to arena
     if (game.isTunnelMode) {
+      // Tunnel: NO limiti X (scroll infinito orizzontale), solo limiti Y del corridoio
       final centerY = arenaHeight / 2;
       final halfH = game.tunnelHeight / 2;
       position.y = position.y.clamp(centerY - halfH + 15, centerY + halfH - 15);
     } else {
+      // Modalità normali: limiti sia X che Y
+      position.x = position.x.clamp(15, arenaWidth - 15);
       position.y = position.y.clamp(15, arenaHeight - 15);
     }
 

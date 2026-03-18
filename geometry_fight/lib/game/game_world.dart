@@ -150,9 +150,11 @@ class GeometryFightGame extends FlameGame
     spaceBackground = SpaceBackground();
     world.add(spaceBackground);
 
-    // Add grid (sopra lo sfondo)
+    // Add grid (sopra lo sfondo) - NO in tunnel mode
     grid = GridDistortion();
-    world.add(grid);
+    if (!isTunnelMode) {
+      world.add(grid);
+    }
 
     // Add tunnel renderer per modalità Tunnel
     if (isTunnelMode) {
