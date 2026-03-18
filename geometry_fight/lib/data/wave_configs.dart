@@ -22,6 +22,11 @@ enum EnemyType {
   siren,
   necro,
   tesla,
+  gravityWell,
+  swarmDrone,
+  laserTurret,
+  timeBomb,
+  decoy,
 }
 
 enum BossType {

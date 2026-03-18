@@ -35,6 +35,11 @@ import 'entities/enemies/orbiter_enemy.dart';
 import 'entities/enemies/siren_enemy.dart';
 import 'entities/enemies/necro_enemy.dart';
 import 'entities/enemies/tesla_enemy.dart';
+import 'entities/enemies/gravity_well_enemy.dart';
+import 'entities/enemies/swarm_drone_enemy.dart';
+import 'entities/enemies/laser_turret_enemy.dart';
+import 'entities/enemies/time_bomb_enemy.dart';
+import 'entities/enemies/decoy_enemy.dart';
 import 'entities/bosses/boss_base.dart';
 import 'entities/bosses/the_grid_boss.dart';
 import 'entities/bosses/hydra_boss.dart';
@@ -331,6 +336,16 @@ class GeometryFightGame extends FlameGame
         enemy = NecroEnemy();
       case EnemyType.tesla:
         enemy = TeslaEnemy();
+      case EnemyType.gravityWell:
+        enemy = GravityWellEnemy();
+      case EnemyType.swarmDrone:
+        enemy = SwarmDroneEnemy();
+      case EnemyType.laserTurret:
+        enemy = LaserTurretEnemy();
+      case EnemyType.timeBomb:
+        enemy = TimeBombEnemy();
+      case EnemyType.decoy:
+        enemy = DecoyEnemy();
     }
 
     // Applica moltiplicatori di difficoltà a HP e velocità
