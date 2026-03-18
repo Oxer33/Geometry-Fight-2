@@ -661,14 +661,27 @@ class GeometryFightGame extends FlameGame
     timeScale = 1.0;
     sessionGeoms = 0;
     sessionKills = 0;
+    _hitThisWave = false;
+    showPerfectWave = false;
+    hitFlashTimer = 0;
+    timeAttackTimer = 180;
+    tunnelHeight = 600;
     scoreSystem.reset();
 
     // Re-add components
     spaceBackground = SpaceBackground();
     world.add(spaceBackground);
 
+    // Grid solo se NON in tunnel mode
     grid = GridDistortion();
-    world.add(grid);
+    if (!isTunnelMode) {
+      world.add(grid);
+    }
+
+    // Tunnel renderer solo in tunnel mode
+    if (isTunnelMode) {
+      world.add(TunnelRenderer());
+    }
 
     player = Player();
     player.position = Vector2(arenaWidth / 2, arenaHeight / 2);
