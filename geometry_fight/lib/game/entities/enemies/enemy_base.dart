@@ -43,9 +43,15 @@ abstract class EnemyBase extends PositionComponent
     if (_flashTimer > 0) _flashTimer -= dt;
     if (_spawnPulse > 0) _spawnPulse -= dt;
 
-    // Clamp to arena
+    // Clamp to arena (tunnel mode ha limiti Y diversi)
     position.x = position.x.clamp(5, arenaWidth - 5);
-    position.y = position.y.clamp(5, arenaHeight - 5);
+    if (game.isTunnelMode) {
+      final centerY = arenaHeight / 2;
+      final halfH = game.tunnelHeight / 2;
+      position.y = position.y.clamp(centerY - halfH + 5, centerY + halfH - 5);
+    } else {
+      position.y = position.y.clamp(5, arenaHeight - 5);
+    }
 
     updateBehavior(dt);
   }
