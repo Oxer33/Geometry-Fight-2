@@ -176,4 +176,37 @@
 
 ---
 
+## ✅ COMPLETATO (Sessione 5 - Marzo 2026)
+
+### Fix Critici Gameplay
+- [x] Boss non perdevano vita: aggiunto BossBase check in PlayerBullet.onCollisionStart
+- [x] Proiettili rettangolari → rotondi (CircleHitbox radius:3, drawCircle)
+- [x] Proiettili rimbalzavano sui muri → distrutti quando escono dall'arena
+- [x] Splash screen navicella in retromarcia → punta a destra, stessa forma in-game
+- [x] Boss Rush 2 boss contemporanei → solo boss per wave, nemici dal boss stesso
+- [x] Hitbox boss 80% → 95% della dimensione visiva
+
+### Modalità Tunnel Completa
+- [x] TunnelRenderer con muri neon ondeggianti (curve sinusoidali)
+- [x] Ostacoli barriera laser (spawn periodico, danno al contatto)
+- [x] Doppia linea parallasse + linee guida velocità
+- [x] Arena dinamica 600px corridoio → 1800px per boss fight
+- [x] Player e nemici confinati nel tunnel
+
+### Boss Spawn Nemici
+- [x] Ogni boss spawna 3-9 nemici ogni 5s automaticamente
+- [x] Tipi nemici progressivi per fase (drone→kamikaze→splitter)
+- [x] Più veloce nelle fasi avanzate del boss
+
+### Meccaniche Modalità
+- [x] Zen mode: vite infinite (respawn immediato)
+- [x] Time Attack: timer 180s countdown con game over automatico
+- [x] Tutte le 6 modalità verificate e funzionanti
+
+### Icona App
+- [x] Generata programmaticamente (1024x1024 PNG)
+- [x] Configurata con flutter_launcher_icons per Android e iOS
+
+---
+
 *Ultimo aggiornamento: Marzo 2026*
