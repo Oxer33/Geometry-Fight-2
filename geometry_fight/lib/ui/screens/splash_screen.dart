@@ -93,27 +93,67 @@ class _SplashScreenState extends State<SplashScreen>
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: widget.onComplete,
-      child: Scaffold(
-        backgroundColor: Colors.black,
-        body: NeonAnimatedBuilder(
-          animation: Listenable.merge([_chaseController, _bgController, _logoController]),
-          builder: (context, _) {
-            final screenSize = MediaQuery.of(context).size;
-            return CustomPaint(
-              painter: _SplashPainter(
-                chaseProgress: _chaseController.value,
-                bgPhase: _bgController.value,
-                logoOpacity: _showLogo ? _logoOpacity.value : 0,
-                logoScale: _showLogo ? _logoScale.value : 0,
-                showExplosion: _showExplosion,
-                explosionPhase: _explosionPhase,
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: Stack(
+        children: [
+          // === ANIMAZIONE PRINCIPALE ===
+          NeonAnimatedBuilder(
+            animation: Listenable.merge([_chaseController, _bgController, _logoController]),
+            builder: (context, _) {
+              final screenSize = MediaQuery.of(context).size;
+              return CustomPaint(
+                painter: _SplashPainter(
+                  chaseProgress: _chaseController.value,
+                  bgPhase: _bgController.value,
+                  logoOpacity: _showLogo ? _logoOpacity.value : 0,
+                  logoScale: _showLogo ? _logoScale.value : 0,
+                  showExplosion: _showExplosion,
+                  explosionPhase: _explosionPhase,
+                ),
+                size: screenSize,
+              );
+            },
+          ),
+
+          // === TASTO SKIP (sempre visibile, in alto a destra) ===
+          Positioned(
+            top: MediaQuery.of(context).padding.top + 12,
+            right: 16,
+            child: GestureDetector(
+              onTap: widget.onComplete,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.white24, width: 1),
+                  borderRadius: BorderRadius.circular(20),
+                  color: Colors.black.withValues(alpha: 0.3),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'SKIP',
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.6),
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        fontFamily: 'monospace',
+                        letterSpacing: 2,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Icon(
+                      Icons.skip_next,
+                      color: Colors.white.withValues(alpha: 0.6),
+                      size: 16,
+                    ),
+                  ],
+                ),
               ),
-              size: screenSize,
-            );
-          },
-        ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -177,50 +217,98 @@ class _SplashPainter extends CustomPainter {
   }
 
   void _drawChaseScene(Canvas canvas, Size size) {
-    // Percorso curvo: drone scappa da sinistra a destra con curva
     final t = chaseProgress;
+    final cx = size.width / 2;
+    final cy = size.height / 2;
 
-    // Posizione drone (avanti, percorso sinusoidale)
-    final droneX = -50 + (size.width + 100) * (t * 1.1).clamp(0, 1);
-    final droneY = size.height * 0.5 + math.sin(t * math.pi * 3) * size.height * 0.15;
+    // === PERCORSO: entrano da sinistra, il drone scappa con curve, si avvicinano al centro ===
+    // Il drone parte dalla sinistra e si dirige verso il centro-destra con zigzag
+    final droneX = size.width * (-0.1 + t * 0.7); // Da -10% a 60% dello schermo
+    final droneY = cy + math.sin(t * math.pi * 4) * size.height * 0.12;
 
-    // Posizione navicella (insegue con leggero ritardo)
-    final shipT = (t - 0.08).clamp(0, 1).toDouble();
-    final shipX = -50 + (size.width + 100) * (shipT * 1.1).clamp(0, 1);
-    final shipY = size.height * 0.5 + math.sin(shipT * math.pi * 3) * size.height * 0.15;
+    // La navicella insegue con ritardo
+    final shipDelay = 0.12;
+    final shipT = (t - shipDelay).clamp(0.0, 1.0);
+    final shipX = size.width * (-0.1 + shipT * 0.7);
+    final shipY = cy + math.sin(shipT * math.pi * 4) * size.height * 0.12;
 
-    // Scia della navicella (trail luminoso)
-    for (int i = 1; i <= 12; i++) {
-      final trailT = (shipT - i * 0.015).clamp(0, 1).toDouble();
-      final tx = -50 + (size.width + 100) * (trailT * 1.1).clamp(0, 1);
-      final ty = size.height * 0.5 + math.sin(trailT * math.pi * 3) * size.height * 0.15;
-      final alpha = (1 - i / 12.0) * 0.3;
-      final trailSize = (1 - i / 12.0) * 4;
-      final tp = Paint()
-        ..color = Color.fromRGBO(0, 255, 255, alpha)
-        ..maskFilter = MaskFilter.blur(BlurStyle.normal, trailSize + 1);
-      canvas.drawCircle(Offset(tx, ty), trailSize, tp);
+    // === SCIA DRONE (rosa, più sottile) ===
+    for (int i = 1; i <= 8; i++) {
+      final dt2 = (t - i * 0.012).clamp(0.0, 1.0);
+      final dtx = size.width * (-0.1 + dt2 * 0.7);
+      final dty = cy + math.sin(dt2 * math.pi * 4) * size.height * 0.12;
+      final a = (1 - i / 8.0) * 0.2;
+      final s = (1 - i / 8.0) * 3;
+      canvas.drawCircle(
+        Offset(dtx, dty), s,
+        Paint()..color = Color.fromRGBO(255, 0, 170, a)..maskFilter = MaskFilter.blur(BlurStyle.normal, s),
+      );
     }
 
-    // Proiettili dalla navicella (punti gialli)
-    if (t > 0.2) {
-      for (int i = 0; i < 3; i++) {
-        final bulletT = t - 0.05 * i;
-        if (bulletT > 0.2) {
-          final bx = shipX + (droneX - shipX) * (0.3 + i * 0.2);
-          final by = shipY + (droneY - shipY) * (0.3 + i * 0.2);
-          final bp = Paint()
-            ..color = const Color(0xFFFFE500)
-            ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2);
-          canvas.drawCircle(Offset(bx, by), 2, bp);
+    // === SCIA NAVICELLA (cyan, luminosa) ===
+    for (int i = 1; i <= 12; i++) {
+      final st = (shipT - i * 0.012).clamp(0.0, 1.0);
+      final stx = size.width * (-0.1 + st * 0.7);
+      final sty = cy + math.sin(st * math.pi * 4) * size.height * 0.12;
+      final a = (1 - i / 12.0) * 0.35;
+      final s = (1 - i / 12.0) * 4;
+      canvas.drawCircle(
+        Offset(stx, sty), s,
+        Paint()..color = Color.fromRGBO(0, 255, 255, a)..maskFilter = MaskFilter.blur(BlurStyle.normal, s + 1),
+      );
+    }
+
+    // === PROIETTILI: sparati dalla navicella verso il drone ===
+    // Ogni proiettile viaggia dal punto di sparo verso dove era il drone
+    if (t > 0.15 && t < 0.95) {
+      for (int i = 0; i < 5; i++) {
+        // Ogni proiettile ha un momento di sparo diverso
+        final fireTime = 0.15 + i * 0.14;
+        if (t > fireTime) {
+          final bulletAge = (t - fireTime) / 0.12; // Velocità proiettile
+          if (bulletAge < 1.0) {
+            // Posizione di sparo (dove era la navicella)
+            final fst = (fireTime - shipDelay).clamp(0.0, 1.0);
+            final fromX = size.width * (-0.1 + fst * 0.7);
+            final fromY = cy + math.sin(fst * math.pi * 4) * size.height * 0.12;
+            // Posizione target (dove era il drone)
+            final toX = size.width * (-0.1 + fireTime * 0.7);
+            final toY = cy + math.sin(fireTime * math.pi * 4) * size.height * 0.12;
+            // Interpola posizione proiettile
+            final bx = fromX + (toX - fromX) * bulletAge * 2; // Proiettile più veloce
+            final by = fromY + (toY - fromY) * bulletAge * 2;
+
+            // Trail del proiettile
+            final trailPaint = Paint()
+              ..color = const Color(0xFFFFE500).withValues(alpha: 0.3)
+              ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
+            canvas.drawCircle(Offset(bx - (toX - fromX) * 0.05, by - (toY - fromY) * 0.05), 1.5, trailPaint);
+
+            // Proiettile principale
+            final bp = Paint()
+              ..color = const Color(0xFFFFE500)
+              ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2);
+            canvas.drawCircle(Offset(bx, by), 2.5, bp);
+
+            // Impatto: quando il proiettile raggiunge il drone, flash
+            if (bulletAge > 0.45 && bulletAge < 0.55) {
+              final impactPaint = Paint()
+                ..color = const Color(0xFFFFFFFF).withValues(alpha: 0.4)
+                ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8);
+              canvas.drawCircle(Offset(droneX, droneY), 15, impactPaint);
+            }
+          }
         }
       }
     }
 
-    // Drone (rombo rosa)
-    _drawDrone(canvas, droneX, droneY, t);
+    // === DRONE che lampeggia quando viene colpito (ultimi 20% dell'animazione) ===
+    final droneHit = t > 0.8;
+    if (!droneHit || ((t * 30).toInt() % 2 == 0)) {
+      _drawDrone(canvas, droneX, droneY, t);
+    }
 
-    // Navicella player (triangolo cyan)
+    // === NAVICELLA ===
     _drawShip(canvas, shipX, shipY, shipT);
   }
 
