@@ -259,6 +259,31 @@ List<WaveConfig> generateWaveConfigs() {
       spawns.add(WaveSpawn(EnemyType.necro, 1, delay: 7));
     }
 
+    // Swarm Drone dal wave 8 (gruppi enormi)
+    if (wave >= 8 && wave % 2 == 0) {
+      spawns.add(WaveSpawn(EnemyType.swarmDrone, 8 + wave, delay: 1));
+    }
+
+    // Time Bomb dal wave 20
+    if (wave >= 20 && wave % 3 == 0) {
+      spawns.add(WaveSpawn(EnemyType.timeBomb, 1 + wave ~/ 20, delay: 5));
+    }
+
+    // Laser Turret dal wave 24
+    if (wave >= 24) {
+      spawns.add(WaveSpawn(EnemyType.laserTurret, (wave ~/ 20).clamp(1, 3), delay: 6));
+    }
+
+    // Gravity Well dal wave 30 (max 1)
+    if (wave >= 30 && wave % 5 == 0) {
+      spawns.add(WaveSpawn(EnemyType.gravityWell, 1, delay: 7));
+    }
+
+    // Decoy dal wave 15 (trappole)
+    if (wave >= 15 && wave % 3 == 0) {
+      spawns.add(WaveSpawn(EnemyType.decoy, 2 + wave ~/ 10, delay: 4));
+    }
+
     configs.add(WaveConfig(waveNumber: wave, spawns: spawns));
   }
 

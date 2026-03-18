@@ -41,6 +41,8 @@ class WaveSystem {
         _currentConfig = _generateTimeAttackWave(wave);
       case GameMode.zenMode:
         _currentConfig = _generateZenWave(wave);
+      case GameMode.tunnel:
+        _currentConfig = _generateTunnelWave(wave);
       case GameMode.classic:
         _currentConfig = _configs.firstWhere(
           (c) => c.waveNumber == wave,
@@ -162,6 +164,26 @@ class WaveSystem {
     ];
     if (wave >= 5) spawns.add(WaveSpawn(EnemyType.bouncer, 1 + wave ~/ 3, delay: 3));
     return WaveConfig(waveNumber: wave, spawns: spawns);
+  }
+
+  /// Tunnel: nemici in corridoio, boss ogni 5 wave, difficoltà crescente veloce
+  WaveConfig _generateTunnelWave(int wave) {
+    final spawns = <WaveSpawn>[];
+    // Nel tunnel i nemici arrivano in fila, tanti e veloci
+    spawns.add(WaveSpawn(EnemyType.drone, 6 + wave * 3));
+    spawns.add(WaveSpawn(EnemyType.kamikaze, 2 + wave, delay: 0.5));
+    if (wave >= 3) spawns.add(WaveSpawn(EnemyType.swarmDrone, 10 + wave * 2, delay: 0.3));
+    if (wave >= 5) spawns.add(WaveSpawn(EnemyType.bouncer, wave, delay: 0.5));
+    if (wave >= 8) spawns.add(WaveSpawn(EnemyType.laserTurret, (wave ~/ 5).clamp(1, 3), delay: 1));
+    if (wave >= 10) spawns.add(WaveSpawn(EnemyType.titan, 1, delay: 2));
+
+    // Boss ogni 5 wave nel tunnel
+    BossType? boss;
+    if (wave % 5 == 0) {
+      final bosses = BossType.values;
+      boss = bosses[(wave ~/ 5 - 1) % bosses.length];
+    }
+    return WaveConfig(waveNumber: wave, spawns: spawns, boss: boss);
   }
 
   WaveConfig _generateEndlessWave(int wave) {

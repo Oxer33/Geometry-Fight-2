@@ -100,6 +100,7 @@ enum GameMode {
   survival,
   timeAttack,
   zenMode,
+  tunnel,
 }
 
 /// Configurazione per ogni modalità di gioco
@@ -170,5 +171,15 @@ const Map<GameMode, GameModeConfig> gameModeConfigs = {
     unlockCost: 1000,
     hasBosses: false,
     infiniteWaves: true,
+  ),
+  GameMode.tunnel: GameModeConfig(
+    name: 'TUNNEL',
+    description: 'Tunnel infinito che si allarga per le boss fight. Unico!',
+    icon: '🌀',
+    unlockCost: 3000,
+    hasBosses: true,
+    hasWaves: true,
+    infiniteWaves: true,
+    pauseBetweenWaves: false,
   ),
 };
