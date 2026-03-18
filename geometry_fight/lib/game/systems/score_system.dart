@@ -1,8 +1,8 @@
-import 'dart:ui';
-import 'package:flame/components.dart';
+import 'package:flame/components.dart' show Vector2;
 import '../../data/constants.dart';
-import '../effects/explosion.dart';
 
+/// Sistema di punteggio con moltiplicatore, combo e geomi.
+/// Gestisce score, multiplier progressivo e combo tracking.
 class ScoreSystem {
   int score = 0;
   int geoms = 0;

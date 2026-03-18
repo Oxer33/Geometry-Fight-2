@@ -85,7 +85,11 @@ class _ModeSelectScreenState extends State<ModeSelectScreen> {
                         scrollDirection: Axis.horizontal,
                         children: GameMode.values.map((mode) {
                           final config = gameModeConfigs[mode]!;
-                          final isUnlocked = config.unlockCost == 0 ||
+                          // DEBUG: tutte le modalità sbloccate per test
+                          // TODO: rimuovere in produzione
+                          const bool kDebugUnlockAll = true;
+                          final isUnlocked = kDebugUnlockAll ||
+                              config.unlockCost == 0 ||
                               saveData.unlockedModes.contains(mode.name);
                           final isSelected = _selectedMode == mode;
                           return _ModeCard(

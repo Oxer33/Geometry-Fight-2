@@ -493,8 +493,8 @@ class GeometryFightGame extends FlameGame
           (sessionGeoms / geomToGoldRatio * saveData.xpBoostMultiplier).round();
       saveData.goldGeoms += goldEarned;
 
-      // Update highscore
-      final mode = 'classic';
+      // Update highscore (usa la modalità di gioco corrente, non hardcoded)
+      final mode = gameMode.name;
       final currentHigh = saveData.highscores[mode] ?? 0;
       if (scoreSystem.score > currentHigh) {
         saveData.highscores[mode] = scoreSystem.score;
