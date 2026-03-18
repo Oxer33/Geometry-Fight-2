@@ -55,6 +55,47 @@ class GameHud extends StatelessWidget {
                 ),
               ),
 
+              // === TIMER TIME ATTACK (sotto wave indicator) ===
+              if (game.isTimeAttackMode)
+                Positioned(
+                  top: topPad + 24,
+                  left: 0,
+                  right: 0,
+                  child: Center(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(8),
+                        color: (game.timeAttackTimer < 30
+                            ? Colors.red : Colors.cyanAccent).withValues(alpha: 0.1),
+                        border: Border.all(
+                          color: (game.timeAttackTimer < 30
+                              ? Colors.red : Colors.cyanAccent).withValues(alpha: 0.3),
+                        ),
+                      ),
+                      child: Text(
+                        '⏱ ${_formatTime(game.timeAttackTimer)}',
+                        style: TextStyle(
+                          color: game.timeAttackTimer < 30
+                              ? Colors.redAccent
+                              : Colors.cyanAccent,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w900,
+                          fontFamily: 'monospace',
+                          letterSpacing: 2,
+                          shadows: [
+                            Shadow(
+                              color: game.timeAttackTimer < 30
+                                  ? Colors.red : Colors.cyanAccent,
+                              blurRadius: 8,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+
               // === BARRA HP BOSS (centro, sotto wave indicator) ===
               if (game.activeBoss != null)
                 Positioned(
@@ -142,6 +183,12 @@ class GameHud extends StatelessWidget {
         },
       ),
     );
+  }
+
+  String _formatTime(double seconds) {
+    final mins = (seconds / 60).floor();
+    final secs = (seconds % 60).floor();
+    return '${mins.toString().padLeft(2, '0')}:${secs.toString().padLeft(2, '0')}';
   }
 
   bool _hasActivePowerUps() {
