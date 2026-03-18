@@ -6,6 +6,7 @@ import 'package:flutter/painting.dart' show HSVColor;
 import '../../data/constants.dart';
 import '../game_world.dart';
 import 'enemies/enemy_base.dart';
+import 'bosses/boss_base.dart';
 import 'player.dart';
 
 class PlayerBullet extends PositionComponent
@@ -32,12 +33,14 @@ class PlayerBullet extends PositionComponent
     this.color = NeonColors.bulletYellow,
     this.maxBounces = 2,
     this.pierce = false,
-  }) : super(size: Vector2(bulletWidth, bulletHeight), anchor: Anchor.center);
+  }) : super(size: Vector2(6, 6), anchor: Anchor.center);
 
   @override
   Future<void> onLoad() async {
     _velocity = direction.normalized() * speed;
-    add(RectangleHitbox());
+    // Hitbox circolare per proiettili rotondi
+    add(CircleHitbox(radius: 3, anchor: Anchor.center)
+      ..position = size / 2);
   }
 
   @override
@@ -50,19 +53,9 @@ class PlayerBullet extends PositionComponent
 
     position += _velocity * dt;
 
-    // Bounce off walls
-    if (position.x <= 0 || position.x >= arenaWidth) {
-      _velocity.x = -_velocity.x;
-      position.x = position.x.clamp(0, arenaWidth);
-      _bounces++;
-    }
-    if (position.y <= 0 || position.y >= arenaHeight) {
-      _velocity.y = -_velocity.y;
-      position.y = position.y.clamp(0, arenaHeight);
-      _bounces++;
-    }
-
-    if (_bounces > maxBounces) {
+    // Distruggi quando esce dall'arena (NO rimbalzo)
+    if (position.x < -20 || position.x > arenaWidth + 20 ||
+        position.y < -20 || position.y > arenaHeight + 20) {
       removeFromParent();
       return;
     }
@@ -73,47 +66,51 @@ class PlayerBullet extends PositionComponent
 
   @override
   void render(Canvas canvas) {
-    // Trail
+    final cx = size.x / 2;
+    final cy = size.y / 2;
+
+    // Trail (scia luminosa dietro il proiettile)
     for (int i = 0; i < _trail.length; i++) {
       final alpha = 1.0 - (i / _maxTrailLength);
       final trailPaint = Paint()
-        ..color = color.withValues(alpha: alpha * 0.5)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
+        ..color = color.withValues(alpha: alpha * 0.4)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2);
       final offset = _trail[i] - position;
       canvas.drawCircle(
-        Offset(size.x / 2 + offset.x, size.y / 2 + offset.y),
-        2,
+        Offset(cx + offset.x, cy + offset.y),
+        1.5,
         trailPaint,
       );
     }
 
-    // Glow
+    // Glow esterno
     final glowPaint = Paint()
-      ..color = color.withValues(alpha: 0.5)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8);
-    canvas.drawRect(
-      Rect.fromCenter(
-          center: Offset(size.x / 2, size.y / 2),
-          width: size.x * 1.5,
-          height: size.y * 1.5),
-      glowPaint,
-    );
+      ..color = color.withValues(alpha: 0.4)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6);
+    canvas.drawCircle(Offset(cx, cy), 4, glowPaint);
 
-    // Main bullet
+    // Proiettile principale (cerchio pieno)
     final paint = Paint()..color = color;
-    canvas.drawRect(
-      Rect.fromCenter(
-          center: Offset(size.x / 2, size.y / 2),
-          width: size.x,
-          height: size.y),
-      paint,
-    );
+    canvas.drawCircle(Offset(cx, cy), 3, paint);
+
+    // Centro luminoso bianco
+    final corePaint = Paint()
+      ..color = const Color(0xFFFFFFFF).withValues(alpha: 0.7);
+    canvas.drawCircle(Offset(cx, cy), 1.2, corePaint);
   }
 
   @override
   void onCollisionStart(
       Set<Vector2> intersectionPoints, PositionComponent other) {
     if (other is EnemyBase) {
+      other.takeDamage(damage);
+      if (!pierce) {
+        removeFromParent();
+      }
+    }
+    // FIX CRITICO: i boss estendono BossBase, NON EnemyBase!
+    // Senza questo check i proiettili passavano attraverso i boss
+    if (other is BossBase) {
       other.takeDamage(damage);
       if (!pierce) {
         removeFromParent();

@@ -335,28 +335,50 @@ class _SplashPainter extends CustomPainter {
   void _drawShip(Canvas canvas, double x, double y, double t) {
     canvas.save();
     canvas.translate(x, y);
-    // Punta verso la direzione di movimento
-    final angle = math.sin(t * math.pi * 3) * 0.3;
-    canvas.rotate(angle - math.pi / 2);
+    // La navicella punta verso DESTRA (direzione di movimento) con leggera oscillazione
+    final wobble = math.sin(t * math.pi * 4) * 0.2;
+    canvas.rotate(wobble); // 0 = punta a destra
+
+    // Forma nave identica al gioco: freccia con ali che punta a DESTRA
+    // (nel gioco la punta è in alto perché è ruotata, qui punta a destra)
+    final s = 1.0;
+    final shipPath = Path()
+      ..moveTo(16 * s, 0)           // Punta (destra)
+      ..lineTo(6 * s, -4 * s)      // Lato sopra punta
+      ..lineTo(-10 * s, -13 * s)   // Ala sopra esterna
+      ..lineTo(-8 * s, -8 * s)     // Rientro ala sopra
+      ..lineTo(-14 * s, -5 * s)    // Coda sopra
+      ..lineTo(-10 * s, 0)         // Centro coda
+      ..lineTo(-14 * s, 5 * s)     // Coda sotto
+      ..lineTo(-8 * s, 8 * s)      // Rientro ala sotto
+      ..lineTo(-10 * s, 13 * s)    // Ala sotto esterna
+      ..lineTo(6 * s, 4 * s)       // Lato sotto punta
+      ..close();
 
     // Glow
     final gp = Paint()
       ..color = const Color(0xFF00FFFF).withValues(alpha: 0.3)
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 12);
-    final path = Path()..moveTo(0, -16)..lineTo(-10, 10)..lineTo(10, 10)..close();
-    canvas.drawPath(path, gp);
+    canvas.drawPath(shipPath, gp);
     // Corpo
     gp.color = const Color(0xFF00FFFF);
     gp.maskFilter = null;
-    canvas.drawPath(path, gp);
-    // Cockpit
+    canvas.drawPath(shipPath, gp);
+    // Cockpit (verso la punta)
     final cp = Paint()..color = const Color(0xFFFFFFFF).withValues(alpha: 0.7);
-    canvas.drawCircle(const Offset(0, -2), 2.5, cp);
-    // Thruster
+    canvas.drawCircle(const Offset(5, 0), 2.5, cp);
+    // Thruster (dietro, a sinistra della nave)
+    final thrusterSize = 3 + math.sin(t * 50) * 1.5;
     final fp = Paint()
       ..color = const Color(0xFFFF6600).withValues(alpha: 0.8)
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
-    canvas.drawCircle(Offset(0, 12 + math.sin(t * 50) * 2), 3, fp);
+    canvas.drawCircle(Offset(-13, -4), thrusterSize, fp);
+    canvas.drawCircle(Offset(-13, 4), thrusterSize, fp);
+    // Wing-tip lights
+    final leftLight = Paint()..color = Color.fromRGBO(255, 50, 50, 0.6 + math.sin(t * 8) * 0.3);
+    canvas.drawCircle(const Offset(-10, -12), 1.5, leftLight);
+    final rightLight = Paint()..color = Color.fromRGBO(50, 255, 100, 0.6 + math.sin(t * 8) * 0.3);
+    canvas.drawCircle(const Offset(-10, 12), 1.5, rightLight);
     canvas.restore();
   }
 

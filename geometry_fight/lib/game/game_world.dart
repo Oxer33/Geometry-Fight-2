@@ -121,6 +121,11 @@ class GeometryFightGame extends FlameGame
   // Screen flash rosso quando colpito
   double hitFlashTimer = 0;
 
+  // Tunnel mode: arena dinamica
+  double tunnelHeight = 600; // Altezza corridoio (si allarga per boss)
+  double tunnelTargetHeight = 600;
+  bool get isTunnelMode => gameMode == GameMode.tunnel;
+
   // Callbacks for UI
   void Function()? onGameOver;
   void Function()? onPause;
@@ -205,6 +210,12 @@ class GeometryFightGame extends FlameGame
     if (_perfectWaveTimer > 0) {
       _perfectWaveTimer -= dt;
       if (_perfectWaveTimer <= 0) showPerfectWave = false;
+    }
+
+    // Tunnel mode: aggiorna altezza corridoio (lerp verso il target)
+    if (isTunnelMode) {
+      tunnelTargetHeight = bossCount > 0 ? 1800 : 600; // Allarga per boss fight
+      tunnelHeight += (tunnelTargetHeight - tunnelHeight) * 2.0 * dt;
     }
 
     // Camera follow player
