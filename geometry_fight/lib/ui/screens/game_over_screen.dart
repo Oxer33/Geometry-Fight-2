@@ -23,28 +23,30 @@ class GameOverScreen extends StatelessWidget {
     return Container(
       color: Colors.black.withValues(alpha: 0.85),
       child: Center(
-        child: Column(
+        child: SingleChildScrollView(
+          child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            const SizedBox(height: 20),
             const Text(
               'GAME OVER',
               style: TextStyle(
                 color: Colors.redAccent,
-                fontSize: 42,
+                fontSize: 36,
                 fontWeight: FontWeight.bold,
                 fontFamily: 'monospace',
                 letterSpacing: 6,
                 shadows: [Shadow(color: Colors.redAccent, blurRadius: 15)],
               ),
             ),
-            const SizedBox(height: 30),
+            const SizedBox(height: 16),
 
             // Stats
             _StatRow(label: 'SCORE', value: '$score'),
             _StatRow(label: 'WAVE', value: '$wave'),
             _StatRow(label: 'GEOMS', value: '$geoms'),
 
-            const SizedBox(height: 16),
+            const SizedBox(height: 10),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
               decoration: BoxDecoration(
@@ -83,7 +85,9 @@ class GameOverScreen extends StatelessWidget {
               color: Colors.white70,
               onTap: onQuit,
             ),
+            const SizedBox(height: 20),
           ],
+        ),
         ),
       ),
     );
