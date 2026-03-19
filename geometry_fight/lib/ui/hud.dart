@@ -1,5 +1,9 @@
+import 'dart:math' as math;
+import 'package:flame/components.dart' show Vector2;
 import 'package:flutter/material.dart';
 import '../game/game_world.dart';
+import '../game/entities/enemies/enemy_base.dart';
+import '../game/entities/bosses/boss_base.dart';
 import 'widgets/animated_builder_widget.dart';
 
 /// HUD moderna e accattivante con effetti glassmorphism neon.
@@ -168,6 +172,9 @@ class GameHud extends StatelessWidget {
                     ),
                   ),
                 ),
+
+              // === FRECCE NEMICI FUORI SCHERMO ===
+              _OffscreenEnemyArrows(game: game),
 
               // === NEMICI RIMANENTI (mini-bar in basso al centro) ===
               Positioned(
@@ -983,6 +990,121 @@ class _NeonBarPainter extends CustomPainter {
 // ===================================================================
 // GAME NOTIFIER - Triggera rebuild della HUD ogni 80ms
 // ===================================================================
+/// Frecce rosse ai margini dello schermo che indicano nemici fuori vista.
+/// Mostra max 8 frecce per i nemici più vicini che sono fuori dall'area visibile.
+class _OffscreenEnemyArrows extends StatelessWidget {
+  final GeometryFightGame game;
+
+  const _OffscreenEnemyArrows({required this.game});
+
+  @override
+  Widget build(BuildContext context) {
+    return Positioned.fill(
+      child: CustomPaint(
+        painter: _ArrowPainter(game),
+      ),
+    );
+  }
+}
+
+class _ArrowPainter extends CustomPainter {
+  final GeometryFightGame game;
+  _ArrowPainter(this.game);
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final playerPos = game.player.position;
+    final camPos = game.camera.viewfinder.position;
+    final halfW = size.width / 2;
+    final halfH = size.height / 2;
+    final margin = 20.0; // Distanza dal bordo
+
+    // Raccogli nemici fuori schermo (max 8, i più vicini)
+    final offscreen = <_EnemyDir>[];
+    for (final child in game.world.children) {
+      if (child is EnemyBase) {
+        // Posizione relativa alla camera
+        final rel = child.position - camPos;
+        if (rel.x.abs() > halfW + 20 || rel.y.abs() > halfH + 20) {
+          offscreen.add(_EnemyDir(
+            direction: (child.position - playerPos).normalized(),
+            distance: child.position.distanceTo(playerPos),
+          ));
+        }
+      }
+      if (child is BossBase) {
+        final rel = child.position - camPos;
+        if (rel.x.abs() > halfW + 40 || rel.y.abs() > halfH + 40) {
+          offscreen.add(_EnemyDir(
+            direction: (child.position - playerPos).normalized(),
+            distance: child.position.distanceTo(playerPos),
+            isBoss: true,
+          ));
+        }
+      }
+    }
+
+    // Ordina per distanza e prendi max 8
+    offscreen.sort((a, b) => a.distance.compareTo(b.distance));
+    final arrows = offscreen.take(8);
+
+    for (final enemy in arrows) {
+      final dir = enemy.direction;
+      // Calcola posizione della freccia sul bordo dello schermo
+      double arrowX, arrowY;
+      // Interseca il bordo dello schermo
+      final scaleX = dir.x != 0 ? (halfW - margin) / dir.x.abs() : double.infinity;
+      final scaleY = dir.y != 0 ? (halfH - margin) / dir.y.abs() : double.infinity;
+      final scale = scaleX < scaleY ? scaleX : scaleY;
+      arrowX = halfW + dir.x * scale;
+      arrowY = halfH + dir.y * scale;
+
+      // Clamp
+      arrowX = arrowX.clamp(margin, size.width - margin);
+      arrowY = arrowY.clamp(margin, size.height - margin);
+
+      // Angolo della freccia: atan2 per puntare verso il nemico
+      final angle = math.atan2(dir.y, dir.x) + math.pi / 2;
+
+      // Disegna freccia
+      final arrowSize = enemy.isBoss ? 10.0 : 7.0;
+      final color = enemy.isBoss ? const Color(0xFFFFD700) : const Color(0xFFFF2244);
+      final alpha = (1.0 - (enemy.distance / 1500).clamp(0.0, 0.7));
+
+      canvas.save();
+      canvas.translate(arrowX, arrowY);
+      canvas.rotate(angle);
+
+      // Glow
+      final glowPaint = Paint()
+        ..color = color.withValues(alpha: alpha * 0.4)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
+      final path = Path()
+        ..moveTo(0, -arrowSize)
+        ..lineTo(arrowSize * 0.6, arrowSize * 0.4)
+        ..lineTo(-arrowSize * 0.6, arrowSize * 0.4)
+        ..close();
+      canvas.drawPath(path, glowPaint);
+
+      // Freccia solida
+      final paint = Paint()..color = color.withValues(alpha: alpha);
+      canvas.drawPath(path, paint);
+
+      canvas.restore();
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _ArrowPainter oldDelegate) => true;
+}
+
+class _EnemyDir {
+  final Vector2 direction;
+  final double distance;
+  final bool isBoss;
+  _EnemyDir({required this.direction, required this.distance, this.isBoss = false});
+}
+
 class _GameNotifier extends ChangeNotifier implements Listenable {
   final GeometryFightGame game;
   bool _disposed = false;

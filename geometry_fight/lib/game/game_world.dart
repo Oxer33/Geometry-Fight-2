@@ -143,8 +143,10 @@ class GeometryFightGame extends FlameGame
     // Load save data
     saveData = SaveManager.load();
 
-    // Camera setup - use the game's built-in camera
+    // Camera setup - centrata sulla navicella fin dall'inizio
     camera.viewfinder.anchor = Anchor.center;
+    // Posiziona la camera subito al centro dell'arena (dove spawna il player)
+    camera.viewfinder.position = Vector2(arenaWidth / 2, arenaHeight / 2);
 
     // Add space background (layer più basso)
     spaceBackground = SpaceBackground();
@@ -329,10 +331,15 @@ class GeometryFightGame extends FlameGame
     screenShake.shake(intensity, duration);
   }
 
+  // Limite massimo nemici attivi per performance (evita scatti con 50+)
+  static const int _maxActiveEnemies = 60;
+
   void spawnEnemy(EnemyType type, [Vector2? position]) {
+    // Limita nemici attivi per evitare scatti di performance
+    if (enemyCount >= _maxActiveEnemies) return;
+
     final pos = position ?? _randomSpawnPosition();
     EnemyBase enemy;
-    // Applica moltiplicatori di difficoltà dopo la creazione
 
     switch (type) {
       case EnemyType.drone:

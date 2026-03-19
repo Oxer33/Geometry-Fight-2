@@ -12,7 +12,7 @@ const double playerSpeed = 400;
 const double playerHurtboxRadius = 8;
 const int playerStartLives = 3;
 const int playerStartBombs = 1;
-const double playerInvincibilityDuration = 2.0;
+const double playerInvincibilityDuration = 5.0; // 5 secondi di invincibilità dopo perdita vita
 
 // Projectiles
 const double bulletSpeed = 700;

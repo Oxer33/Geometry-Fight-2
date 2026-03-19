@@ -71,21 +71,24 @@ class _GameScreenState extends State<GameScreen> {
           // === HUD OVERLAY ===
           GameHud(game: _game),
 
-          // === PULSANTE BOMBA (in basso al centro-destra) ===
+          // === PULSANTE BOMBA (vicino al joystick destro, in basso a destra) ===
           Positioned(
-            bottom: 24,
-            right: MediaQuery.of(context).size.width * 0.5 - 30,
+            bottom: 80,
+            right: MediaQuery.of(context).size.width * 0.25 - 28,
             child: _BombButton(onPressed: () => _game.bombPressed = true),
           ),
 
-          // === PULSANTE PAUSA ===
+          // === PULSANTE PAUSA (in alto al centro, non sovrapposto alle vite) ===
           Positioned(
-            top: MediaQuery.of(context).padding.top + 8,
-            right: 50,
-            child: _PauseButton(onPressed: () {
-              _game.togglePause();
-              setState(() => _showPause = true);
-            }),
+            top: MediaQuery.of(context).padding.top + 4,
+            left: 0,
+            right: 0,
+            child: Center(
+              child: _PauseButton(onPressed: () {
+                _game.togglePause();
+                setState(() => _showPause = true);
+              }),
+            ),
           ),
 
           // === OVERLAY PAUSA ===
