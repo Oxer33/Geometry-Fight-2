@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import '../../data/difficulty.dart';
 import '../../data/wave_configs.dart';
 import '../game_world.dart';
@@ -171,25 +172,63 @@ class WaveSystem {
     return WaveConfig(waveNumber: wave, spawns: spawns);
   }
 
-  /// Tunnel: TANTI nemici in corridoio, boss ogni 5 wave, difficoltà crescente veloce
-  WaveConfig _generateTunnelWave(int wave) {
-    final spawns = <WaveSpawn>[];
-    // Nel tunnel i nemici arrivano in fila, tanti e veloci
-    spawns.add(WaveSpawn(EnemyType.drone, 12 + wave * 5));
-    spawns.add(WaveSpawn(EnemyType.kamikaze, 4 + wave * 2, delay: 0.5));
-    if (wave >= 3) spawns.add(WaveSpawn(EnemyType.swarmDrone, 20 + wave * 4, delay: 0.3));
-    if (wave >= 5) spawns.add(WaveSpawn(EnemyType.bouncer, wave * 2, delay: 0.5));
-    if (wave >= 7) spawns.add(WaveSpawn(EnemyType.weaver, wave * 2, delay: 0.5));
-    if (wave >= 8) spawns.add(WaveSpawn(EnemyType.laserTurret, (wave ~/ 4).clamp(1, 4), delay: 1));
-    if (wave >= 10) spawns.add(WaveSpawn(EnemyType.titan, 1 + wave ~/ 10, delay: 2));
+  // === TUNNEL MODE: spawn continuo, no wave tradizionali ===
+  double _tunnelSpawnTimer = 0.5;
+  int _tunnelKillCount = 0; // Per boss ogni N kill
+  static final _tunnelRng = math.Random();
 
-    // Boss ogni 5 wave nel tunnel
-    BossType? boss;
-    if (wave % 5 == 0) {
-      final bosses = BossType.values;
-      boss = bosses[(wave ~/ 5 - 1) % bosses.length];
+  /// Tunnel: spawn continuo di nemici randomici davanti al player.
+  /// Mantiene sempre 10+ nemici vicini. Boss ogni 30 kill.
+  void updateTunnel(double dt) {
+    _tunnelSpawnTimer -= dt;
+
+    // Mantieni almeno 10 nemici attivi — spawna se ce ne sono meno
+    if (_tunnelSpawnTimer <= 0 || game.enemyCount < 10) {
+      _tunnelSpawnTimer = 0.3 + _tunnelRng.nextDouble() * 0.5;
+
+      // Spawna 2-4 nemici randomici ogni tick
+      final count = 2 + _tunnelRng.nextInt(3);
+      for (int i = 0; i < count; i++) {
+        if (game.enemyCount >= 30) break; // Max 30 nel tunnel
+        final type = _randomTunnelEnemyType();
+        game.spawnEnemy(type);
+      }
     }
-    return WaveConfig(waveNumber: wave, spawns: spawns, boss: boss);
+
+    // Boss ogni 30 kill
+    if (_tunnelKillCount > 0 && _tunnelKillCount % 30 == 0 && game.bossCount == 0) {
+      final bosses = BossType.values;
+      final bossIdx = (_tunnelKillCount ~/ 30 - 1) % bosses.length;
+      game.spawnBoss(bosses[bossIdx]);
+      _tunnelKillCount++; // Evita re-trigger
+    }
+  }
+
+  /// Tipo nemico casuale per il tunnel — tutti i tipi con pesi diversi
+  EnemyType _randomTunnelEnemyType() {
+    final roll = _tunnelRng.nextInt(100);
+    if (roll < 30) return EnemyType.drone;
+    if (roll < 45) return EnemyType.swarmDrone;
+    if (roll < 55) return EnemyType.kamikaze;
+    if (roll < 65) return EnemyType.weaver;
+    if (roll < 72) return EnemyType.bouncer;
+    if (roll < 78) return EnemyType.mine;
+    if (roll < 83) return EnemyType.splitter;
+    if (roll < 87) return EnemyType.shieldEnemy;
+    if (roll < 90) return EnemyType.glitch;
+    if (roll < 93) return EnemyType.tesla;
+    if (roll < 96) return EnemyType.titan;
+    return EnemyType.healer;
+  }
+
+  /// Chiamato da game_world quando un nemico muore in tunnel mode
+  void onTunnelKill() {
+    _tunnelKillCount++;
+  }
+
+  /// Genera wave dummy per tunnel (il vero spawn è in _updateTunnel)
+  WaveConfig _generateTunnelWave(int wave) {
+    return WaveConfig(waveNumber: wave, spawns: []);
   }
 
   WaveConfig _generateEndlessWave(int wave) {

@@ -201,7 +201,11 @@ class GeometryFightGame extends FlameGame
     // causando lag con molti nemici.
 
     // Update systems
-    waveSystem.update(scaledDt);
+    if (isTunnelMode) {
+      waveSystem.updateTunnel(scaledDt); // Tunnel: spawn continuo
+    } else {
+      waveSystem.update(scaledDt);
+    }
     scoreSystem.update(scaledDt);
     powerUpSystem.update(scaledDt);
 
@@ -516,6 +520,11 @@ class GeometryFightGame extends FlameGame
     AudioSystem.playEnemyDeath();
     scoreSystem.addKill(enemy.pointValue, enemy.position);
     sessionKills++;
+
+    // Tunnel mode: traccia kill per boss spawn ogni 30
+    if (isTunnelMode) {
+      waveSystem.onTunnelKill();
+    }
 
     // Drop geoms
     for (int i = 0; i < enemy.geomValue; i++) {
