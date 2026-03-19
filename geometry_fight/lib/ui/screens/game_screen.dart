@@ -1,12 +1,14 @@
 import 'package:flame/components.dart';
 import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../data/difficulty.dart';
 import '../../data/leaderboard.dart';
 import '../../game/game_world.dart';
 import '../hud.dart';
 import '../widgets/animated_builder_widget.dart';
 import '../widgets/virtual_joystick.dart';
+import '../widgets/tutorial_overlay.dart';
 import 'game_over_screen.dart';
 import 'pause_screen.dart';
 
@@ -31,6 +33,7 @@ class _GameScreenState extends State<GameScreen> {
   late GeometryFightGame _game;
   bool _showPause = false;
   bool _showGameOver = false;
+  bool _showTutorial = false;
 
   @override
   void initState() {
@@ -54,6 +57,24 @@ class _GameScreenState extends State<GameScreen> {
     _game.onPause = () {
       setState(() => _showPause = true);
     };
+    // Tutorial al primo avvio
+    _checkTutorial();
+  }
+
+  Future<void> _checkTutorial() async {
+    final prefs = await SharedPreferences.getInstance();
+    final seen = prefs.getBool('tutorial_seen') ?? false;
+    if (!seen && mounted) {
+      setState(() => _showTutorial = true);
+      _game.togglePause(); // Pausa durante il tutorial
+    }
+  }
+
+  Future<void> _dismissTutorial() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('tutorial_seen', true);
+    setState(() => _showTutorial = false);
+    _game.togglePause(); // Riprendi il gioco
   }
 
   @override
@@ -97,6 +118,10 @@ class _GameScreenState extends State<GameScreen> {
               },
               onQuit: widget.onQuit,
             ),
+
+          // === TUTORIAL PRIMO AVVIO ===
+          if (_showTutorial)
+            TutorialOverlay(onDismiss: _dismissTutorial),
 
           // === OVERLAY GAME OVER ===
           if (_showGameOver)

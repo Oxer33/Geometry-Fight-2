@@ -5,18 +5,18 @@
 ### Core Gameplay
 - [x] GameLoop base + player con movimento dual-stick
 - [x] Proiettili + collisione base (8 tipi arma)
-- [x] 17 nemici implementati con comportamenti distinti
-- [x] 6 boss implementati con fasi multiple
-- [x] Sistema wave (50 wave + endless mode)
+- [x] 27 nemici implementati con comportamenti distinti
+- [x] 16 boss implementati con fasi multiple
+- [x] Sistema wave (100 wave + endless mode)
 - [x] Griglia deformabile con spring simulation
 - [x] Sistema score/geomi/moltiplicatore
 - [x] Sistema combo
 - [x] 8 power-up funzionanti
-- [x] Proiettili rimbalzano sui muri
+- [x] Proiettili rotondi (non rimbalzano, si distruggono fuori arena)
 - [x] Input mobile (dual joystick visuale) e desktop (WASD)
 - [x] Camera follow player con smoothing
 - [x] 4 livelli di difficoltà (Facile, Normale, Difficile, Incubo)
-- [x] 5 modalità di gioco (Classica, Boss Rush, Sopravvivenza, Attacco a Tempo, Zen)
+- [x] 6 modalità di gioco (Classica, Boss Rush, Sopravvivenza, Attacco a Tempo, Zen, Tunnel)
 - [x] Perfect Wave bonus (+50 geomi se wave completata senza danni)
 - [x] Screen flash rosso quando player viene colpito
 - [x] Difficoltà applicata a: HP nemici, velocità, drop rate, vite, bombe
@@ -66,15 +66,15 @@
 ## 🔄 MIGLIORAMENTI FUTURI
 
 ### Alta Priorità
-- [ ] Audio BGM + SFX (flame_audio predisposto, servono asset audio)
-- [ ] Icona app personalizzata (flutter_launcher_icons)
+- [ ] Audio BGM + SFX reali (attualmente solo feedback aptico)
+- [x] Icona app personalizzata (generata + flutter_launcher_icons)
 - [ ] Tutorial pop-up primo avvio
-- [ ] Indicatori freccia per nemici/boss fuori schermo
+- [x] Indicatori freccia per nemici/boss fuori schermo (max 8, rosse+oro boss)
 
 ### Media Priorità
 - [ ] Ship skins visive nel gioco (attualmente solo dati)
 - [ ] Bullet trails cosmetici (fuoco, ghiaccio, plasma, arcobaleno)
-- [ ] Migliorare grafica nemici rimanenti (Shield, BlackHole, Spawner, Snake)
+- [x] Grafica nemici migliorata (tutti i 27 nemici con effetti spettacolari)
 - [ ] Slow-mo con desaturazione quando bomba attiva
 - [ ] Death spiral boss (rotazione elementi al centro)
 - [ ] Warp lines inizio wave (starfield warp)
@@ -83,7 +83,7 @@
 - [ ] Object pooling completo per proiettili/particelle/geomi
 - [ ] Fragment shader GLSL per glow avanzato
 - [ ] Leaderboard online
-- [ ] Vibrazione haptic su mobile
+- [x] Vibrazione haptic su mobile (AudioSystem con HapticFeedback)
 - [ ] FPS counter opzionale
 - [ ] Animazioni transizione tra screen
 - [ ] Doppler pitch proiettili nemici
