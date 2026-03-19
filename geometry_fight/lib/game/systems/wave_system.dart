@@ -182,14 +182,14 @@ class WaveSystem {
   void updateTunnel(double dt) {
     _tunnelSpawnTimer -= dt;
 
-    // Mantieni almeno 10 nemici attivi — spawna se ce ne sono meno
-    if (_tunnelSpawnTimer <= 0 || game.enemyCount < 10) {
-      _tunnelSpawnTimer = 0.3 + _tunnelRng.nextDouble() * 0.5;
+    // Mantieni almeno 5 nemici attivi — spawna se ce ne sono meno
+    if (_tunnelSpawnTimer <= 0 || game.enemyCount < 5) {
+      _tunnelSpawnTimer = 0.8 + _tunnelRng.nextDouble() * 1.0; // Più lento
 
-      // Spawna 2-4 nemici randomici ogni tick
-      final count = 2 + _tunnelRng.nextInt(3);
+      // Spawna 1-2 nemici randomici ogni tick (dimezzato)
+      final count = 1 + _tunnelRng.nextInt(2);
       for (int i = 0; i < count; i++) {
-        if (game.enemyCount >= 30) break; // Max 30 nel tunnel
+        if (game.enemyCount >= 15) break; // Max 15 nel tunnel (era 30)
         final type = _randomTunnelEnemyType();
         game.spawnEnemy(type);
       }

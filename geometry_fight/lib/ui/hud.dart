@@ -46,9 +46,9 @@ class GameHud extends StatelessWidget {
                 ),
               ),
 
-              // === WAVE INDICATOR (sotto il tasto pausa, più piccolo) ===
+              // === WAVE INDICATOR (margine superiore dello schermo) ===
               Positioned(
-                top: topPad + 28,
+                top: topPad,
                 left: 0,
                 right: 0,
                 child: Center(
@@ -113,9 +113,11 @@ class GameHud extends StatelessWidget {
                   ),
                 ),
 
-              // === COMBO POPUP (centro schermo) ===
+              // === COMBO POPUP (piccolo in alto a sinistra, sotto il score) ===
               if (game.scoreSystem.showingCombo)
-                Center(
+                Positioned(
+                  top: topPad + 45,
+                  left: 12,
                   child: _ComboPopup(
                     comboCount: game.scoreSystem.comboCount,
                   ),

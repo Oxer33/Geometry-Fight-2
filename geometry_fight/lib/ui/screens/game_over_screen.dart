@@ -72,18 +72,24 @@ class GameOverScreen extends StatelessWidget {
               ),
             ),
 
-            const SizedBox(height: 40),
+            const SizedBox(height: 20),
 
-            _GameOverButton(
-              text: 'RETRY',
-              color: Colors.cyanAccent,
-              onTap: onRetry,
-            ),
-            const SizedBox(height: 12),
-            _GameOverButton(
-              text: 'ESCI',
-              color: Colors.white70,
-              onTap: onQuit,
+            // Bottoni affiancati per non uscire dallo schermo
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _GameOverButton(
+                  text: 'RIPROVA',
+                  color: Colors.cyanAccent,
+                  onTap: onRetry,
+                ),
+                const SizedBox(width: 16),
+                _GameOverButton(
+                  text: 'ESCI',
+                  color: Colors.white70,
+                  onTap: onQuit,
+                ),
+              ],
             ),
             const SizedBox(height: 20),
           ],

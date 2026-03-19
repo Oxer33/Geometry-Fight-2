@@ -394,9 +394,10 @@ class GeometryFightGame extends FlameGame
     }
 
     // Applica moltiplicatori di difficoltà a HP e velocità
+    // Tutti i mob sono il 20% più lenti di base
     enemy.hp = (enemy.hp * diffConfig.enemyHpMultiplier);
     enemy.maxHp = enemy.hp;
-    enemy.speed = (enemy.speed * diffConfig.enemySpeedMultiplier);
+    enemy.speed = (enemy.speed * diffConfig.enemySpeedMultiplier * 0.8);
 
     enemy.position = pos;
     world.add(enemy);
