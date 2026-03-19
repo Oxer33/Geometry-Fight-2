@@ -90,9 +90,7 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
       if (position.x > _maxTunnelX) _maxTunnelX = position.x;
       // Non si può tornare indietro oltre la metà schermo dalla X massima
       position.x = position.x.clamp(_maxTunnelX - 200, double.infinity);
-      final centerY = arenaHeight / 2;
-      final halfH = game.tunnelHeight / 2;
-      position.y = position.y.clamp(centerY - halfH + 15, centerY + halfH - 15);
+      // Y: limitato dal tunnel renderer (che calcola i muri dinamici)
     } else {
       // Modalità normali: limiti sia X che Y
       position.x = position.x.clamp(15, arenaWidth - 15);

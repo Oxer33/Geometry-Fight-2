@@ -452,13 +452,11 @@ class GeometryFightGame extends FlameGame
     const viewHeight = 600.0;
     const padding = 200.0;
 
-    // Nel tunnel mode: nemici spawnano SEMPRE davanti al player (lato destro)
+    // Nel tunnel mode: nemici spawnano VICINI davanti al player (lato destro)
     if (isTunnelMode) {
-      final centerY = arenaHeight / 2;
-      final halfH = tunnelHeight / 2;
       return Vector2(
-        player.position.x + viewWidth / 2 + padding + random.nextDouble() * 300,
-        centerY + (random.nextDouble() - 0.5) * halfH * 1.5,
+        player.position.x + 300 + random.nextDouble() * 400, // 300-700px avanti (era 600-1100)
+        player.position.y + (random.nextDouble() - 0.5) * tunnelHeight * 0.8,
       );
     }
 
