@@ -46,9 +46,9 @@ class GameHud extends StatelessWidget {
                 ),
               ),
 
-              // === WAVE INDICATOR (top-center) ===
+              // === WAVE INDICATOR (sotto il tasto pausa, più piccolo) ===
               Positioned(
-                top: topPad,
+                top: topPad + 28,
                 left: 0,
                 right: 0,
                 child: Center(
