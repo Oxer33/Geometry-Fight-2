@@ -4,48 +4,55 @@ import 'package:flame/components.dart';
 import '../../../data/constants.dart';
 import 'enemy_base.dart';
 
+/// BOUNCER (Green Square) - Insegue il player con homing lento
+/// MA schiva i proiettili che si avvicinano (come Geometry Wars).
+/// Forma: quadrato verde con rotazione.
 class BouncerEnemy extends EnemyBase {
-  late Vector2 _velocity;
-  double _maxSpeed = 500;
+  double _dodgeCooldown = 0;
+  bool _isDodging = false;
+  double _dodgeTimer = 0;
 
   BouncerEnemy()
       : super(
-          hp: 3,
-          speed: 200,
+          hp: 2,
+          speed: 140,
           pointValue: 200,
           geomValue: 3,
-          neonColor: NeonColors.yellow,
+          neonColor: NeonColors.green,
           size: Vector2(16, 16),
         );
 
   @override
-  Future<void> onLoad() async {
-    await super.onLoad();
-    final angle = math.Random().nextDouble() * math.pi * 2;
-    _velocity = Vector2(math.cos(angle), math.sin(angle)) * speed;
-  }
-
-  @override
   void updateBehavior(double dt) {
-    position += _velocity * dt;
+    if (_dodgeCooldown > 0) _dodgeCooldown -= dt;
+    if (_dodgeTimer > 0) _dodgeTimer -= dt;
+    if (_dodgeTimer <= 0) _isDodging = false;
 
-    // Bounce off walls
-    if (position.x <= 8 || position.x >= arenaWidth - 8) {
-      _velocity.x = -_velocity.x;
-      position.x = position.x.clamp(8, arenaWidth - 8);
-      _accelerate();
-    }
-    if (position.y <= 8 || position.y >= arenaHeight - 8) {
-      _velocity.y = -_velocity.y;
-      position.y = position.y.clamp(8, arenaHeight - 8);
-      _accelerate();
-    }
-  }
+    // Insegue il player lentamente (homing)
+    final toPlayer = seekPlayer(speed);
 
-  void _accelerate() {
-    final currentSpeed = _velocity.length;
-    if (currentSpeed < _maxSpeed) {
-      _velocity = _velocity.normalized() * (currentSpeed * 1.1);
+    // Schiva proiettili vicini (meccanica Green Square di Geometry Wars)
+    if (_dodgeCooldown <= 0) {
+      for (final child in game.world.children) {
+        if (child is PositionComponent && child.runtimeType.toString().contains('PlayerBullet')) {
+          final dist = child.position.distanceTo(position);
+          if (dist < 80) {
+            // Proiettile vicino! Schiva lateralmente
+            final bulletDir = (child.position - position).normalized();
+            final dodgeDir = Vector2(-bulletDir.y, bulletDir.x); // Perpendicolare
+            position += dodgeDir * 120 * dt;
+            _isDodging = true;
+            _dodgeTimer = 0.2;
+            _dodgeCooldown = 0.5;
+            break;
+          }
+        }
+      }
+    }
+
+    // Movimento base: insegue il player
+    if (!_isDodging) {
+      position += toPlayer * dt;
     }
   }
 
@@ -55,53 +62,51 @@ class BouncerEnemy extends EnemyBase {
     final cy = size.y / 2;
     final r = 8 * scale;
 
-    // Cerchio principale
-    canvas.drawCircle(Offset(cx, cy), r, paint);
+    // Quadrato ruotato (come Green Square di Geometry Wars)
+    canvas.save();
+    canvas.translate(cx, cy);
+    canvas.rotate(idlePhase * 1.5);
+    canvas.drawRect(
+      Rect.fromCenter(center: Offset.zero, width: r * 1.8, height: r * 1.8),
+      paint,
+    );
 
-    // Dettagli solo sul layer principale (non glow)
     if (scale <= 1.01) {
-      // Velocità attuale come indicatore di luminosità
-      final speedFactor = (_velocity.length / _maxSpeed).clamp(0.0, 1.0);
+      // Effetto schivata (flash quando dodge attivo)
+      if (_isDodging) {
+        final dodgePaint = Paint()
+          ..color = const Color(0xFFFFFFFF).withValues(alpha: 0.5)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6);
+        canvas.drawRect(
+          Rect.fromCenter(center: Offset.zero, width: r * 2.2, height: r * 2.2),
+          dodgePaint,
+        );
+      }
 
-      // Anello esterno rotante
-      final ringPaint = Paint()
-        ..color = paint.color.withValues(alpha: 0.3 + speedFactor * 0.3)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1;
-      canvas.save();
-      canvas.translate(cx, cy);
-      canvas.rotate(idlePhase * 2);
-      // Arco parziale che indica la velocità
-      final sweepAngle = math.pi * (0.5 + speedFactor * 1.5);
-      canvas.drawArc(
-        Rect.fromCircle(center: Offset.zero, radius: r * 1.15),
-        0, sweepAngle, false, ringPaint,
-      );
-      canvas.restore();
+      // Diagonali interne
+      final diagPaint = Paint()
+        ..color = paint.color.withValues(alpha: 0.3)
+        ..strokeWidth = 0.6;
+      canvas.drawLine(Offset(-r * 0.6, -r * 0.6), Offset(r * 0.6, r * 0.6), diagPaint);
+      canvas.drawLine(Offset(r * 0.6, -r * 0.6), Offset(-r * 0.6, r * 0.6), diagPaint);
 
-      // Secondo arco (rotazione opposta)
-      canvas.save();
-      canvas.translate(cx, cy);
-      canvas.rotate(-idlePhase * 1.5);
-      ringPaint.color = paint.color.withValues(alpha: 0.2);
-      canvas.drawArc(
-        Rect.fromCircle(center: Offset.zero, radius: r * 1.3),
-        0, sweepAngle * 0.6, false, ringPaint,
-      );
-      canvas.restore();
-
-      // Nucleo luminoso (più luminoso = più veloce)
+      // Nucleo pulsante
+      final pulse = 0.4 + math.sin(idlePhase * 5) * 0.3;
       final corePaint = Paint()
-        ..color = Color.fromRGBO(255, 255, 255, 0.3 + speedFactor * 0.5)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
-      canvas.drawCircle(Offset(cx, cy), r * 0.35, corePaint);
+        ..color = const Color(0xFFFFFFFF).withValues(alpha: pulse)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2);
+      canvas.drawCircle(Offset.zero, r * 0.25, corePaint);
 
-      // Croce interna
-      final crossPaint = Paint()
-        ..color = paint.color.withValues(alpha: 0.2)
-        ..strokeWidth = 0.5;
-      canvas.drawLine(Offset(cx - r * 0.5, cy), Offset(cx + r * 0.5, cy), crossPaint);
-      canvas.drawLine(Offset(cx, cy - r * 0.5), Offset(cx, cy + r * 0.5), crossPaint);
+      // Punti agli angoli del quadrato
+      final dotPaint = Paint()
+        ..color = paint.color.withValues(alpha: 0.5)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 1.5);
+      final hr = r * 0.8;
+      canvas.drawCircle(Offset(-hr, -hr), 1.2, dotPaint);
+      canvas.drawCircle(Offset(hr, -hr), 1.2, dotPaint);
+      canvas.drawCircle(Offset(hr, hr), 1.2, dotPaint);
+      canvas.drawCircle(Offset(-hr, hr), 1.2, dotPaint);
     }
+    canvas.restore();
   }
 }
