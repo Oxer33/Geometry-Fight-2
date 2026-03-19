@@ -48,7 +48,11 @@ abstract class EnemyBase extends PositionComponent
       final centerY = arenaHeight / 2;
       final halfH = game.tunnelHeight / 2;
       position.y = position.y.clamp(centerY - halfH + 5, centerY + halfH - 5);
-      // NO clamp X nel tunnel (scroll infinito)
+      // Despawn nemici superati dal player (dietro il margine sinistro dello schermo)
+      if (position.x < game.player.position.x - 600) {
+        removeFromParent();
+        return;
+      }
     } else {
       position.x = position.x.clamp(5, arenaWidth - 5);
       position.y = position.y.clamp(5, arenaHeight - 5);

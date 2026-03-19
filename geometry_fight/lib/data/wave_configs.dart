@@ -209,8 +209,8 @@ List<WaveConfig> generateWaveConfigs() {
     final spawns = <WaveSpawn>[];
     final difficulty = wave / 10.0;
 
-    // Drones - always present (numeri RADDOPPIATI per più azione)
-    spawns.add(WaveSpawn(EnemyType.drone, 10 + wave * 4));
+    // Drones - sempre presenti, minimo 20 dalla wave 1
+    spawns.add(WaveSpawn(EnemyType.drone, 20 + wave * 3));
 
     // Mines from wave 2
     if (wave >= 2) {
