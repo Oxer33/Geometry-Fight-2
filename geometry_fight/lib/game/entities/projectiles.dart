@@ -297,11 +297,17 @@ class PlasmaBullet extends PositionComponent
     position += _velocity * dt;
     _phase += dt * 10;
 
-    if (position.x < -50 ||
-        position.x > arenaWidth + 50 ||
-        position.y < -50 ||
-        position.y > arenaHeight + 50) {
-      removeFromParent();
+    // Nel tunnel mode: NO limiti X, solo Y + distanza dal player
+    if (game.isTunnelMode) {
+      if (position.y < -50 || position.y > arenaHeight + 50 ||
+          (position - game.player.position).length > 1500) {
+        removeFromParent();
+      }
+    } else {
+      if (position.x < -50 || position.x > arenaWidth + 50 ||
+          position.y < -50 || position.y > arenaHeight + 50) {
+        removeFromParent();
+      }
     }
   }
 

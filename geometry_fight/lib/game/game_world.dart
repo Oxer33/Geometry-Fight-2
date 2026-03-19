@@ -499,7 +499,10 @@ class GeometryFightGame extends FlameGame
     );
     explosion.position = position.clone();
     world.add(explosion);
-    grid.applyForce(position, radius * 2, 500);
+    // Grid distortion solo se non in tunnel mode (la grid non è nel world in tunnel)
+    if (!isTunnelMode) {
+      grid.applyForce(position, radius * 2, 500);
+    }
     triggerScreenShake();
   }
 
@@ -667,8 +670,10 @@ class GeometryFightGame extends FlameGame
 
     // Screen shake intenso e prolungato
     triggerScreenShake(12, 0.6);
-    // Distorsione griglia massima
-    grid.applyForce(player.position, 1200, 3000);
+    // Distorsione griglia massima (solo se non tunnel mode)
+    if (!isTunnelMode) {
+      grid.applyForce(player.position, 1200, 3000);
+    }
   }
 
   void togglePause() {
