@@ -85,16 +85,18 @@ abstract class BossBase extends PositionComponent
   }
 
   /// Spawna nemici di supporto durante il boss fight.
-  /// Il numero e tipo dipende dalla fase corrente del boss.
+  /// Rispetta il limite _maxActiveEnemies del game_world per evitare lag.
   void _spawnMinions() {
-    final baseCount = 5 + currentPhase * 3; // 5, 8, 11, 14 nemici per fase
+    // Controlla quanti nemici ci sono già — se troppi, non spawnare
+    if (game.enemyCount >= 40) return; // Lascia spazio per altri spawn
     
-    // Tipi nemici per fase (progressivamente più difficili)
+    final baseCount = 3 + currentPhase * 2; // 3, 5, 7, 9 nemici per fase (ridotto per performance)
+    
     final minionTypes = <List<EnemyType>>[
-      [EnemyType.drone, EnemyType.drone, EnemyType.swarmDrone], // Fase 0
-      [EnemyType.drone, EnemyType.kamikaze, EnemyType.weaver],  // Fase 1
-      [EnemyType.kamikaze, EnemyType.weaver, EnemyType.bouncer], // Fase 2
-      [EnemyType.splitter, EnemyType.kamikaze, EnemyType.tesla], // Fase 3
+      [EnemyType.drone, EnemyType.drone, EnemyType.swarmDrone],
+      [EnemyType.drone, EnemyType.kamikaze, EnemyType.weaver],
+      [EnemyType.kamikaze, EnemyType.weaver, EnemyType.bouncer],
+      [EnemyType.splitter, EnemyType.kamikaze, EnemyType.tesla],
     ];
     
     final types = minionTypes[currentPhase.clamp(0, minionTypes.length - 1)];

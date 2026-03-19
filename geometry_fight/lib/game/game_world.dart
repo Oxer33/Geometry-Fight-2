@@ -201,13 +201,9 @@ class GeometryFightGame extends FlameGame
     // Update keyboard input
     _updateKeyboardInput();
 
-    // Update spatial hash
-    spatialHash.clear();
-    for (final child in world.children) {
-      if (child is PositionComponent) {
-        spatialHash.insert(child, child.position, 20);
-      }
-    }
+    // NOTA: spatial hash rimosso — Flame usa HasCollisionDetection built-in
+    // che è più efficiente. Il spatial hash iterava TUTTI i children ogni frame
+    // causando lag con molti nemici.
 
     // Update systems
     waveSystem.update(scaledDt);

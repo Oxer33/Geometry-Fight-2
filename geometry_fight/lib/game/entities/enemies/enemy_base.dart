@@ -70,7 +70,8 @@ abstract class EnemyBase extends PositionComponent
 
   void onDeath() {
     game.onEnemyKilled(this);
-    game.spawnExplosion(position, neonColor, radius: size.x, particleCount: 12);
+    // Particelle ridotte per performance (6 invece di 12)
+    game.spawnExplosion(position, neonColor, radius: size.x * 0.6, particleCount: 6);
     removeFromParent();
   }
 
@@ -89,65 +90,39 @@ abstract class EnemyBase extends PositionComponent
 
   double get idlePhase => _idlePhase;
 
+  // Paint cache riutilizzabili per evitare allocazioni ogni frame
+  // (con 60 nemici x 60fps = migliaia di allocazioni risparmiate)
+  static final _glowPaint = Paint()
+    ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8);
+  static final _mainPaint = Paint();
+  static final _pulsePaint = Paint()
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 2;
+  static final _hpBgPaint = Paint()..color = const Color(0x33FFFFFF);
+  static final _hpBarPaint = Paint();
+
   @override
   void render(Canvas canvas) {
     final cx = size.x / 2;
     final cy = size.y / 2;
 
-    // === SPAWN PULSE (doppio anello espansivo) ===
+    // === SPAWN PULSE (singolo anello, ottimizzato) ===
     if (_spawnPulse > 0) {
       final progress = 1 - _spawnPulse / 0.4;
       final alpha = _spawnPulse / 0.4;
-      // Anello esterno
-      final outerR = progress * 50;
-      final outerPaint = Paint()
-        ..color = neonColor.withValues(alpha: alpha * 0.3)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1;
-      canvas.drawCircle(Offset(cx, cy), outerR, outerPaint);
-      // Anello interno più luminoso
-      final innerR = progress * 30;
-      final innerPaint = Paint()
-        ..color = neonColor.withValues(alpha: alpha * 0.6)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 2
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
-      canvas.drawCircle(Offset(cx, cy), innerR, innerPaint);
+      _pulsePaint.color = neonColor.withValues(alpha: alpha * 0.5);
+      canvas.drawCircle(Offset(cx, cy), progress * 35, _pulsePaint);
     }
 
-    // === GLOW ESTERNO SOFT (alone ampio) ===
-    final softGlow = Paint()
-      ..color = neonColor.withValues(alpha: 0.12)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 16);
-    renderShape(canvas, softGlow, 1.6);
-
-    // === GLOW INTERNO BRIGHT ===
-    final brightGlow = Paint()
-      ..color = neonColor.withValues(alpha: 0.3)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8);
-    renderShape(canvas, brightGlow, 1.25);
+    // === GLOW (singolo layer, blur 8 — rimosso il softGlow blur 16 per performance) ===
+    _glowPaint.color = neonColor.withValues(alpha: 0.25);
+    renderShape(canvas, _glowPaint, 1.3);
 
     // === CORPO PRINCIPALE ===
     final isHit = _flashTimer > 0;
-    final mainColor = isHit ? const Color(0xFFFFFFFF) : neonColor;
-    final mainPaint = Paint()..color = mainColor;
-    renderShape(canvas, mainPaint, 1.0);
-
-    // === CHROMATIC ABERRATION SIMULATA (quando colpito) ===
-    if (isHit) {
-      final redShift = Paint()
-        ..color = const Color(0xFFFF0000).withValues(alpha: 0.3);
-      canvas.save();
-      canvas.translate(1.5, 0);
-      renderShape(canvas, redShift, 1.0);
-      canvas.restore();
-      final blueShift = Paint()
-        ..color = const Color(0xFF0000FF).withValues(alpha: 0.3);
-      canvas.save();
-      canvas.translate(-1.5, 0);
-      renderShape(canvas, blueShift, 1.0);
-      canvas.restore();
-    }
+    _mainPaint.color = isHit ? const Color(0xFFFFFFFF) : neonColor;
+    _mainPaint.maskFilter = null;
+    renderShape(canvas, _mainPaint, 1.0);
 
     // === MINI HP BAR (solo per nemici con più di 1 HP e non a vita piena) ===
     if (maxHp > 1 && hp < maxHp && hp > 0) {
@@ -155,7 +130,7 @@ abstract class EnemyBase extends PositionComponent
     }
   }
 
-  /// Mini barra HP sotto il nemico
+  /// Mini barra HP sotto il nemico (usa Paint cache)
   void _renderMiniHpBar(Canvas canvas, double cx, double cy) {
     final barWidth = size.x * 1.2;
     final barHeight = 2.0;
@@ -163,20 +138,15 @@ abstract class EnemyBase extends PositionComponent
     final barY = cy + size.y / 2 + 4;
     final hpPercent = (hp / maxHp).clamp(0.0, 1.0);
 
-    // Background
     canvas.drawRect(
       Rect.fromLTWH(barX, barY, barWidth, barHeight),
-      Paint()..color = const Color(0x33FFFFFF),
+      _hpBgPaint,
     );
-    // HP bar con colore dinamico
-    final barColor = hpPercent > 0.5
-        ? neonColor
-        : hpPercent > 0.25
-            ? const Color(0xFFFFAA00)
-            : const Color(0xFFFF2200);
+    _hpBarPaint.color = hpPercent > 0.5 ? neonColor
+        : hpPercent > 0.25 ? const Color(0xFFFFAA00) : const Color(0xFFFF2200);
     canvas.drawRect(
       Rect.fromLTWH(barX, barY, barWidth * hpPercent, barHeight),
-      Paint()..color = barColor,
+      _hpBarPaint,
     );
   }
 

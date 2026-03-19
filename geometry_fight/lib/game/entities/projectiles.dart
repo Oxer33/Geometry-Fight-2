@@ -64,39 +64,42 @@ class PlayerBullet extends PositionComponent
     if (_lifetime <= 0) removeFromParent();
   }
 
+  // Paint cache statici per evitare allocazioni ogni frame
+  // (con 50+ proiettili × 60fps = migliaia di allocazioni risparmiate)
+  static final _trailPaint = Paint()
+    ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2);
+  static final _glowPaint = Paint()
+    ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5);
+  static final _bodyPaint = Paint();
+  static final _corePaint = Paint()
+    ..color = const Color(0xFFFFFFFF).withValues(alpha: 0.7);
+
   @override
   void render(Canvas canvas) {
     final cx = size.x / 2;
     final cy = size.y / 2;
 
-    // Trail (scia luminosa dietro il proiettile)
-    for (int i = 0; i < _trail.length; i++) {
-      final alpha = 1.0 - (i / _maxTrailLength);
-      final trailPaint = Paint()
-        ..color = color.withValues(alpha: alpha * 0.4)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2);
+    // Trail (scia luminosa - solo ultimi 4 punti per performance)
+    final trailLen = _trail.length.clamp(0, 4);
+    for (int i = 0; i < trailLen; i++) {
+      final alpha = 1.0 - (i / 4);
+      _trailPaint.color = color.withValues(alpha: alpha * 0.3);
       final offset = _trail[i] - position;
       canvas.drawCircle(
-        Offset(cx + offset.x, cy + offset.y),
-        1.5,
-        trailPaint,
+        Offset(cx + offset.x, cy + offset.y), 1.5, _trailPaint,
       );
     }
 
     // Glow esterno
-    final glowPaint = Paint()
-      ..color = color.withValues(alpha: 0.4)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6);
-    canvas.drawCircle(Offset(cx, cy), 4, glowPaint);
+    _glowPaint.color = color.withValues(alpha: 0.35);
+    canvas.drawCircle(Offset(cx, cy), 4, _glowPaint);
 
     // Proiettile principale (cerchio pieno)
-    final paint = Paint()..color = color;
-    canvas.drawCircle(Offset(cx, cy), 3, paint);
+    _bodyPaint.color = color;
+    canvas.drawCircle(Offset(cx, cy), 3, _bodyPaint);
 
     // Centro luminoso bianco
-    final corePaint = Paint()
-      ..color = const Color(0xFFFFFFFF).withValues(alpha: 0.7);
-    canvas.drawCircle(Offset(cx, cy), 1.2, corePaint);
+    canvas.drawCircle(Offset(cx, cy), 1.2, _corePaint);
   }
 
   @override
