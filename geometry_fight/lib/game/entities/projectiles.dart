@@ -227,7 +227,7 @@ class LaserBeam extends PositionComponent
     _lifetime -= dt;
     if (_lifetime <= 0) removeFromParent();
 
-    // Damage enemies along the beam
+    // Damage enemies AND bosses along the beam
     final dir = direction.normalized();
     for (final child in game.world.children) {
       if (child is EnemyBase) {
@@ -236,6 +236,16 @@ class LaserBeam extends PositionComponent
         if (dot > 0 && dot < 800) {
           final perpDist = (toEnemy - dir * dot).length;
           if (perpDist < 20) {
+            child.takeDamage(damage * dt * 60);
+          }
+        }
+      }
+      if (child is BossBase) {
+        final toBoss = child.position - position;
+        final dot = toBoss.dot(dir);
+        if (dot > 0 && dot < 800) {
+          final perpDist = (toBoss - dir * dot).length;
+          if (perpDist < 30) {
             child.takeDamage(damage * dt * 60);
           }
         }
@@ -310,9 +320,15 @@ class PlasmaBullet extends PositionComponent
   }
 
   void _explode() {
-    // Damage all enemies in radius
+    // Damage all enemies AND bosses in radius
     for (final child in game.world.children) {
       if (child is EnemyBase) {
+        final dist = child.position.distanceTo(position);
+        if (dist < 80) {
+          child.takeDamage(damage);
+        }
+      }
+      if (child is BossBase) {
         final dist = child.position.distanceTo(position);
         if (dist < 80) {
           child.takeDamage(damage);
@@ -325,7 +341,7 @@ class PlasmaBullet extends PositionComponent
   @override
   void onCollisionStart(
       Set<Vector2> intersectionPoints, PositionComponent other) {
-    if (other is EnemyBase) {
+    if (other is EnemyBase || other is BossBase) {
       _explode();
       removeFromParent();
     }
@@ -354,11 +370,18 @@ class HomingMissile extends PositionComponent
   void update(double dt) {
     super.update(dt);
 
-    // Find nearest enemy
-    EnemyBase? nearest;
+    // Find nearest enemy or boss
+    PositionComponent? nearest;
     double nearestDist = double.infinity;
     for (final child in game.world.children) {
       if (child is EnemyBase) {
+        final dist = child.position.distanceTo(position);
+        if (dist < nearestDist) {
+          nearestDist = dist;
+          nearest = child;
+        }
+      }
+      if (child is BossBase) {
         final dist = child.position.distanceTo(position);
         if (dist < nearestDist) {
           nearestDist = dist;
@@ -408,6 +431,11 @@ class HomingMissile extends PositionComponent
       game.spawnExplosion(position, NeonColors.cyan, radius: 20, particleCount: 8);
       removeFromParent();
     }
+    if (other is BossBase) {
+      other.takeDamage(damage);
+      game.spawnExplosion(position, NeonColors.cyan, radius: 20, particleCount: 8);
+      removeFromParent();
+    }
     super.onCollisionStart(intersectionPoints, other);
   }
 }
@@ -428,7 +456,7 @@ class OverdriveBeam extends PositionComponent
     _phase += dt * 20;
     if (_lifetime <= 0) removeFromParent();
 
-    // Kill everything in path
+    // Kill everything in path (enemies AND bosses)
     final dir = direction.normalized();
     for (final child in game.world.children.toList()) {
       if (child is EnemyBase) {
@@ -438,6 +466,16 @@ class OverdriveBeam extends PositionComponent
           final perpDist = (toEnemy - dir * dot).length;
           if (perpDist < 30) {
             child.takeDamage(999);
+          }
+        }
+      }
+      if (child is BossBase) {
+        final toBoss = child.position - position;
+        final dot = toBoss.dot(dir);
+        if (dot > 0 && dot < 1200) {
+          final perpDist = (toBoss - dir * dot).length;
+          if (perpDist < 30) {
+            child.takeDamage(10); // Danno boss dall'overdrive
           }
         }
       }
