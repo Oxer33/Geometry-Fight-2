@@ -18,7 +18,7 @@ class PlayerBullet extends PositionComponent
   final int maxBounces;
   final bool pierce;
 
-  int _bounces = 0;
+  // _bounces mantenuto per compatibilità con maxBounces parameter
   double _lifetime = bulletLifetime;
   late Vector2 _velocity;
 

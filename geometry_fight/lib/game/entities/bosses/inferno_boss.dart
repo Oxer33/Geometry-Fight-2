@@ -1,7 +1,6 @@
 import 'dart:math' as math;
 import 'dart:ui';
 import 'package:flame/components.dart';
-import '../../../data/constants.dart';
 import '../../game_world.dart';
 import 'boss_base.dart';
 

@@ -9,9 +9,7 @@ import '../data/constants.dart';
 import '../data/difficulty.dart';
 import '../data/save_data.dart';
 import '../data/wave_configs.dart';
-import '../utils/spatial_hash.dart';
 import 'entities/player.dart';
-import 'entities/projectiles.dart';
 import 'entities/enemies/enemy_base.dart';
 import 'entities/enemies/drone_enemy.dart';
 import 'entities/enemies/snake_enemy.dart';
@@ -58,7 +56,6 @@ import 'entities/bosses/graviton_boss.dart';
 import 'entities/bosses/inferno_boss.dart';
 import 'entities/bosses/eternity_engine_boss.dart';
 import 'entities/geom.dart';
-import 'entities/powerups.dart';
 import 'effects/grid_distortion.dart';
 import 'effects/screen_shake.dart';
 import 'effects/explosion.dart';
@@ -80,9 +77,6 @@ class GeometryFightGame extends FlameGame
   late WaveSystem waveSystem;
   late ScoreSystem scoreSystem;
   late PowerUpSystem powerUpSystem;
-
-  final SpatialHash<PositionComponent> spatialHash =
-      SpatialHash(cellSize: spatialCellSize);
 
   GameState gameState = GameState.playing;
   double timeScale = 1.0;

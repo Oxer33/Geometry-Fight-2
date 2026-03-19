@@ -1,5 +1,3 @@
-import 'dart:math' as math;
-import 'dart:typed_data';
 import 'package:flutter/services.dart';
 
 /// Sistema audio minimale con feedback aptico.

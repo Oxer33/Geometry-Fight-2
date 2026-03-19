@@ -1,7 +1,6 @@
 import 'dart:math' as math;
 import 'dart:ui';
 import 'package:flame/components.dart';
-import '../../../data/constants.dart';
 import '../../../data/wave_configs.dart';
 import 'enemy_base.dart';
 

@@ -207,7 +207,7 @@ List<WaveConfig> generateWaveConfigs() {
 
     // Regular waves - progressive difficulty
     final spawns = <WaveSpawn>[];
-    final difficulty = wave / 10.0;
+    // difficulty non usata direttamente, il wave number serve come indicatore
 
     // Drones - sempre presenti, minimo 20 dalla wave 1
     spawns.add(WaveSpawn(EnemyType.drone, 20 + wave * 3));

@@ -136,6 +136,7 @@ abstract class BossBase extends PositionComponent
     // NOTA: barra HP rimossa dalla testa del boss — la HUD ha già la barra in basso
   }
 
+  // Metodo mantenuto per possibile uso futuro
   void _renderHpBar(Canvas canvas) {
     final barWidth = size.x * 1.2;
     final barHeight = 4.0;

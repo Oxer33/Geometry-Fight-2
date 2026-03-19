@@ -1,10 +1,8 @@
-import 'dart:math' as math;
 import 'dart:ui';
 import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
 import '../../../data/constants.dart';
 import '../../game_world.dart';
-import '../player.dart';
 
 abstract class EnemyBase extends PositionComponent
     with HasGameReference<GeometryFightGame>, CollisionCallbacks {

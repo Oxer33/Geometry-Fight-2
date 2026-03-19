@@ -1,7 +1,6 @@
 import 'dart:math' as math;
 import 'dart:ui';
 import 'package:flame/components.dart';
-import '../../../data/constants.dart';
 import 'enemy_base.dart';
 
 /// LASER TURRET - Nemico stazionario che spara raggi laser rotanti.

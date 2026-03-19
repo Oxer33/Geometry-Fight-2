@@ -4,7 +4,6 @@ import 'package:flame/components.dart';
 import '../../../data/constants.dart';
 import '../../../data/wave_configs.dart';
 import 'boss_base.dart';
-import '../projectiles.dart';
 
 class SwarmMotherBoss extends BossBase {
   double _spawnTimer = 3;
