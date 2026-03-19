@@ -437,6 +437,10 @@ class GeometryFightGame extends FlameGame
         boss = EternityEngineBoss();
     }
 
+    // HP dimezzati per tutti i boss (bilanciamento)
+    boss.hp = (boss.hp * 0.5).roundToDouble();
+    boss.maxHp = boss.hp;
+
     boss.position = pos;
     world.add(boss);
     onBossStart?.call(boss.bossName);

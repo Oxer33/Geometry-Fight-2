@@ -88,7 +88,7 @@ abstract class BossBase extends PositionComponent
   /// Rispetta il limite _maxActiveEnemies del game_world per evitare lag.
   void _spawnMinions() {
     // Controlla quanti nemici ci sono già — se troppi, non spawnare
-    if (game.enemyCount >= 40) return; // Lascia spazio per altri spawn
+    if (game.enemyCount >= 15) return; // Non spawnare se ci sono già 15+ nemici
     
     final baseCount = 3 + currentPhase * 2; // 3, 5, 7, 9 nemici per fase (ridotto per performance)
     

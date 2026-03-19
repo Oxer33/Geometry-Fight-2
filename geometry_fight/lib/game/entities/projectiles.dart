@@ -120,14 +120,15 @@ class PlayerBullet extends PositionComponent
       Set<Vector2> intersectionPoints, PositionComponent other) {
     if (other is EnemyBase) {
       other.takeDamage(damage);
+      // Mini esplosione pixel luminosi al contatto
+      game.spawnExplosion(position, color, radius: 8, particleCount: 4);
       if (!pierce) {
         removeFromParent();
       }
     }
-    // FIX CRITICO: i boss estendono BossBase, NON EnemyBase!
-    // Senza questo check i proiettili passavano attraverso i boss
     if (other is BossBase) {
       other.takeDamage(damage);
+      game.spawnExplosion(position, color, radius: 10, particleCount: 5);
       if (!pierce) {
         removeFromParent();
       }

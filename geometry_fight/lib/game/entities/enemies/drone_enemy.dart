@@ -4,47 +4,24 @@ import 'package:flame/components.dart';
 import '../../../data/constants.dart';
 import 'enemy_base.dart';
 
-/// DRONE (Wanderer) - Nemico base più comune. Rombo rosa.
-/// Come in Geometry Wars: rimbalza sui muri con direzione casuale.
-/// NON insegue il player. Si muove in linea retta rimbalzando.
+/// DRONE - Nemico base più comune. Rombo rosa che insegue il player.
+/// Lento ma persistente, spawna in grandi numeri.
 class DroneEnemy extends EnemyBase {
-  late Vector2 _velocity;
-  static final _rng = math.Random();
-
   DroneEnemy()
       : super(
           hp: 1,
-          speed: 160,
+          speed: 150,
           pointValue: 50,
           geomValue: 1,
           neonColor: NeonColors.pink,
           size: Vector2(18, 18),
-        ) {
-    // Direzione iniziale casuale
-    final angle = _rng.nextDouble() * math.pi * 2;
-    _velocity = Vector2(math.cos(angle), math.sin(angle)) * speed;
-  }
+        );
 
   @override
   void updateBehavior(double dt) {
-    // Movimento rettilineo con rimbalzo sui muri (come Geometry Wars)
-    position += _velocity * dt;
-
-    // Rimbalzo sui bordi dell'arena
-    if (game.isTunnelMode) {
-      final centerY = arenaHeight / 2;
-      final halfH = game.tunnelHeight / 2;
-      if (position.y <= centerY - halfH + 10 || position.y >= centerY + halfH - 10) {
-        _velocity.y = -_velocity.y;
-      }
-    } else {
-      if (position.x <= 10 || position.x >= arenaWidth - 10) {
-        _velocity.x = -_velocity.x;
-      }
-      if (position.y <= 10 || position.y >= arenaHeight - 10) {
-        _velocity.y = -_velocity.y;
-      }
-    }
+    // Insegue il player lentamente
+    final velocity = seekPlayer(speed);
+    position += velocity * dt;
   }
 
   @override

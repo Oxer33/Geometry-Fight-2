@@ -56,10 +56,11 @@ class SnakeEnemy extends EnemyBase {
   void takeDamage(double amount) {
     hp -= amount;
     if (hp <= 0) {
+      // Quando la testa muore, tutto il verme esplode
+      for (final seg in _segments) {
+        game.spawnExplosion(seg, neonColor, radius: 15, particleCount: 3);
+      }
       onDeath();
-    } else if (_segments.length > 2 && hp <= _segments.length / 2) {
-      // Split into two snakes
-      _split();
     }
   }
 
