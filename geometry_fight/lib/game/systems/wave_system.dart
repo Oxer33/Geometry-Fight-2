@@ -107,7 +107,7 @@ class WaveSystem {
     game.onWaveComplete();
 
     // Delay tra wave dipende dalla modalità
-    final delayMs = _mode == GameMode.survival ? 500 : 2000;
+    final delayMs = (_mode == GameMode.survival || _mode == GameMode.tunnel) ? 500 : 2000;
 
     Future.delayed(Duration(milliseconds: delayMs), () {
       if (game.gameState == GameState.playing) {
