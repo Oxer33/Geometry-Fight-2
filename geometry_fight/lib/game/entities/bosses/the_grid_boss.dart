@@ -145,45 +145,86 @@ class TheGridBoss extends BossBase {
     final cy = size.y / 2;
     final s = size.x / 2 * scale * 0.9;
 
-    // Phase color shift
-    if (currentPhase == 2) {
-      paint.color = paint.color == const Color(0xFFFFFFFF)
-          ? const Color(0xFFFFFFFF)
-          : NeonColors.red;
-    }
+    // Colore per fase (bianco → giallo → rosso)
+    Color phaseColor;
+    if (currentPhase == 0) phaseColor = NeonColors.white;
+    else if (currentPhase == 1) phaseColor = NeonColors.yellow;
+    else phaseColor = NeonColors.red;
 
-    // Main square
+    // Se il paint è per il glow, usa alpha ridotto
+    final isGlow = scale > 1.1;
+    if (!isGlow) paint.color = phaseColor;
+
+    // Quadrato esterno principale
+    paint.style = PaintingStyle.stroke;
+    paint.strokeWidth = 3 * scale;
     canvas.drawRect(
       Rect.fromCenter(center: Offset(cx, cy), width: s * 2, height: s * 2),
-      paint..style = PaintingStyle.stroke..strokeWidth = 3 * scale,
+      paint,
     );
 
-    // Internal grid pattern
-    final gridLines = 4;
+    // Griglia interna animata
+    final gridLines = 4 + currentPhase; // Più linee nelle fasi avanzate
     for (int i = 1; i < gridLines; i++) {
       final t = i / gridLines;
+      final wobble = math.sin(_gridPhase * 2 + i * 0.5) * 3; // Oscillazione
       final offset = -s + s * 2 * t;
-      canvas.drawLine(Offset(cx - s, cy + offset), Offset(cx + s, cy + offset), paint);
-      canvas.drawLine(Offset(cx + offset, cy - s), Offset(cx + offset, cy + s), paint);
+      canvas.drawLine(
+        Offset(cx - s, cy + offset + wobble),
+        Offset(cx + s, cy + offset + wobble), paint);
+      canvas.drawLine(
+        Offset(cx + offset + wobble, cy - s),
+        Offset(cx + offset + wobble, cy + s), paint);
     }
 
     paint.style = PaintingStyle.fill;
 
-    // Laser beam
+    if (scale <= 1.01) {
+      // Nucleo centrale pulsante (più grande nelle fasi avanzate)
+      final pulseR = s * (0.15 + currentPhase * 0.05) + math.sin(_gridPhase * 3) * 5;
+      final corePaint = Paint()
+        ..color = phaseColor.withValues(alpha: 0.5)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8);
+      canvas.drawCircle(Offset(cx, cy), pulseR, corePaint);
+      // Centro bianco
+      canvas.drawCircle(Offset(cx, cy), pulseR * 0.4,
+        Paint()..color = const Color(0xFFFFFFFF).withValues(alpha: 0.6));
+
+      // Punti luminosi ai 4 angoli del quadrato
+      final cornerGlow = 0.4 + math.sin(_gridPhase * 4) * 0.3;
+      final cornerPaint = Paint()
+        ..color = phaseColor.withValues(alpha: cornerGlow)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
+      canvas.drawCircle(Offset(cx - s, cy - s), 4, cornerPaint);
+      canvas.drawCircle(Offset(cx + s, cy - s), 4, cornerPaint);
+      canvas.drawCircle(Offset(cx + s, cy + s), 4, cornerPaint);
+      canvas.drawCircle(Offset(cx - s, cy + s), 4, cornerPaint);
+
+      // Indicatore fase (punti sotto il boss)
+      for (int i = 0; i <= currentPhase; i++) {
+        canvas.drawCircle(
+          Offset(cx - 8 + i * 8.0, cy + s + 12), 2,
+          Paint()..color = phaseColor);
+      }
+    }
+
+    // Laser beam (fase 2+)
     if (_laserActive) {
       final laserPaint = Paint()
         ..color = NeonColors.laserRed.withValues(alpha: 0.6)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8);
-
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10);
       canvas.save();
       canvas.translate(cx, cy);
       canvas.rotate(_laserAngle);
-      canvas.drawRect(
-          Rect.fromLTWH(0, -4, 1500, 8), laserPaint);
-
+      // Glow laser
+      canvas.drawRect(Rect.fromLTWH(0, -6, 1500, 12), laserPaint);
+      // Core laser
       laserPaint.color = NeonColors.laserRed;
       laserPaint.maskFilter = null;
       canvas.drawRect(Rect.fromLTWH(0, -2, 1500, 4), laserPaint);
+      // Centro bianco del laser
+      canvas.drawRect(Rect.fromLTWH(0, -1, 1500, 2),
+        Paint()..color = const Color(0xFFFFFFFF).withValues(alpha: 0.5));
       canvas.restore();
     }
   }
