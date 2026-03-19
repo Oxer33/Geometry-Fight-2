@@ -41,7 +41,7 @@ const int projectilePoolSize = 200;
 const int geomPoolSize = 100;
 
 // Geom
-const double geomLifetime = 8.0;
+const double geomLifetime = 7.0; // Despawn dopo 7s, lampeggio dopo 5s
 const double geomCollectRadius = 30;
 const double magnetRadius = 400;
 const int geomToGoldRatio = 10;

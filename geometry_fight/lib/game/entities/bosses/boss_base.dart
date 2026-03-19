@@ -133,8 +133,7 @@ abstract class BossBase extends PositionComponent
     final paint = Paint()..color = color;
     renderBoss(canvas, paint, 1.0);
 
-    // HP bar above boss
-    _renderHpBar(canvas);
+    // NOTA: barra HP rimossa dalla testa del boss — la HUD ha già la barra in basso
   }
 
   void _renderHpBar(Canvas canvas) {

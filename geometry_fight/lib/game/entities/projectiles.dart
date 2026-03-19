@@ -149,12 +149,13 @@ class EnemyBullet extends PositionComponent
     required this.direction,
     this.speed = 300,
     this.color = NeonColors.red,
-  }) : super(size: Vector2(6, 6), anchor: Anchor.center);
+  }) : super(size: Vector2(18, 18), anchor: Anchor.center); // 3x più grandi
 
   @override
   Future<void> onLoad() async {
     _velocity = direction.normalized() * speed;
-    add(CircleHitbox());
+    add(CircleHitbox(radius: 9, anchor: Anchor.center)
+      ..position = size / 2);
   }
 
   @override

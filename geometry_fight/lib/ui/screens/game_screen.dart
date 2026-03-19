@@ -78,17 +78,14 @@ class _GameScreenState extends State<GameScreen> {
             child: _BombButton(onPressed: () => _game.bombPressed = true),
           ),
 
-          // === PULSANTE PAUSA (in alto al centro, non sovrapposto alle vite) ===
+          // === PULSANTE PAUSA (lato destro, sopra il tasto bomba) ===
           Positioned(
-            top: MediaQuery.of(context).padding.top + 4,
-            left: 0,
-            right: 0,
-            child: Center(
-              child: _PauseButton(onPressed: () {
-                _game.togglePause();
-                setState(() => _showPause = true);
-              }),
-            ),
+            bottom: 145,
+            right: 24,
+            child: _PauseButton(onPressed: () {
+              _game.togglePause();
+              setState(() => _showPause = true);
+            }),
           ),
 
           // === OVERLAY PAUSA ===
@@ -157,8 +154,8 @@ class _GameScreenState extends State<GameScreen> {
               _game.aimInput.y = direction.dy;
             },
             onRelease: () {
-              _game.aimInput = Vector2.zero();
-              _game.isShooting = false;
+              // NON azzerare aimInput e NON smettere di sparare
+              // Il player continua a sparare nell'ultima direzione di mira
               _game.usingTouchAim = false;
             },
           ),

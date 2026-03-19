@@ -50,10 +50,13 @@ class WaveSystem {
         );
     }
 
-    // Check for boss
-    if (_currentConfig!.boss != null) {
+    // Check for boss — spawna solo se non c'è già un boss attivo
+    if (_currentConfig!.boss != null && game.bossCount == 0) {
       _bossActive = true;
       game.spawnBoss(_currentConfig!.boss!);
+    } else if (_currentConfig!.boss != null && game.bossCount > 0) {
+      // C'è già un boss — aspetta che muoia prima di spawnare il nuovo
+      _bossActive = true;
     }
 
     game.onWaveStart?.call(wave);

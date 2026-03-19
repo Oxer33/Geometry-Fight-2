@@ -632,8 +632,8 @@ class GeometryFightGame extends FlameGame
     if (player.bombs <= 0) return;
     player.bombs--;
 
-    // Slow-mo drammatico
-    activateSlowMo(0.8, 0.2);
+    // Slow-mo breve (0.3s, scala 0.5 — meno aggressivo)
+    activateSlowMo(0.3, 0.5);
 
     // Uccidi TUTTI i nemici nell'intera area visibile (raggio enorme)
     final enemies = world.children.whereType<EnemyBase>().toList();

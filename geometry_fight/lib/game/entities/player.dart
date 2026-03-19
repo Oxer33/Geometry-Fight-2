@@ -66,19 +66,24 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
 
   @override
   void update(double dt) {
-    super.update(dt);
+    // Il player NON è affetto dal slow-motion: compensa il timeScale
+    // Quando timeScale=0.5, dt è già scalato, quindi il player moltiplica per 1/timeScale
+    final realDt = game.timeScale > 0.01 ? dt / game.timeScale : dt;
+    super.update(realDt);
 
-    // Movement
+    // Movement (usa realDt per non essere rallentato dallo slow-mo)
     final moveDir = game.moveInput;
     if (moveDir.length > 0) {
       final actualSpeed = speed * (hasOverdrive ? 1.5 : 1.0) *
           game.saveData.speedMultiplier;
-      position += moveDir * actualSpeed * dt;
+      position += moveDir * actualSpeed * realDt;
     }
 
     // Clamp to arena
     if (game.isTunnelMode) {
-      // Tunnel: NO limiti X (scroll infinito orizzontale), solo limiti Y del corridoio
+      // Tunnel: scroll SOLO verso destra, non si può tornare indietro
+      // Il player avanza automaticamente + può muoversi solo avanti e su/giù
+      position.x = position.x.clamp(position.x, double.infinity); // NO indietro
       final centerY = arenaHeight / 2;
       final halfH = game.tunnelHeight / 2;
       position.y = position.y.clamp(centerY - halfH + 15, centerY + halfH - 15);

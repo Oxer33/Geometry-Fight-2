@@ -100,12 +100,12 @@ class GameHud extends StatelessWidget {
                   ),
                 ),
 
-              // === BARRA HP BOSS (centro, sotto wave indicator) ===
+              // === BARRA HP BOSS (in basso, piccola e non invasiva) ===
               if (game.activeBoss != null)
                 Positioned(
-                  top: topPad + 28,
-                  left: MediaQuery.of(context).size.width * 0.2,
-                  right: MediaQuery.of(context).size.width * 0.2,
+                  bottom: 30,
+                  left: MediaQuery.of(context).size.width * 0.3,
+                  right: MediaQuery.of(context).size.width * 0.3,
                   child: _BossHpBar(
                     bossName: game.activeBoss!.bossName,
                     healthPercent: game.activeBoss!.healthPercent,

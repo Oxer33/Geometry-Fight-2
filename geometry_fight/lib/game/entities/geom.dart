@@ -75,7 +75,11 @@ class Geom extends PositionComponent
 
   @override
   void render(Canvas canvas) {
-    final alpha = _lifetime < 2 ? _lifetime / 2 : 1.0;
+    // Lampeggio dopo 5s (quando _lifetime < 2, cioè 7-5=2s rimanenti)
+    final blinkActive = _lifetime < 2.0;
+    final blinkVisible = !blinkActive || ((_lifetime * 8).toInt() % 2 == 0);
+    if (!blinkVisible) return; // Non renderizzare durante il blink off
+    final alpha = _lifetime < 2 ? (_lifetime / 2).clamp(0.2, 1.0) : 1.0;
     final gemSize = 4.0 + value * 1.5;
 
     // Glow
