@@ -28,8 +28,8 @@ const double cameraSmoothing = 0.08;
 // Grid
 const int gridCols = 50;
 const int gridRows = 50;
-const double gridSpringStiffness = 3.0;
-const double gridDamping = 0.92;
+const double gridSpringStiffness = 12.0; // Più rigida = ritorno più veloce (era 3.0)
+const double gridDamping = 0.85; // Meno damping = più rimbalzo elastico (era 0.92)
 
 // Spatial hash
 const double spatialCellSize = 64;

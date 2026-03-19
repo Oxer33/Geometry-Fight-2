@@ -71,10 +71,10 @@ class _GameScreenState extends State<GameScreen> {
           // === HUD OVERLAY ===
           GameHud(game: _game),
 
-          // === PULSANTE BOMBA (vicino al joystick destro, in basso a destra) ===
+          // === PULSANTE BOMBA (lato destro, sopra il joystick aim) ===
           Positioned(
-            bottom: 80,
-            right: MediaQuery.of(context).size.width * 0.25 - 28,
+            bottom: 90,
+            right: 20,
             child: _BombButton(onPressed: () => _game.bombPressed = true),
           ),
 

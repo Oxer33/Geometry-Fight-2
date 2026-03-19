@@ -61,6 +61,18 @@ class PowerUp extends PositionComponent
     _pulsePhase += dt * 6;
     _lifetime -= dt;
     if (_lifetime <= 0) removeFromParent();
+
+    // Attrazione verso il player (come i geomi, raggio 120px)
+    final player = game.player;
+    final dist = position.distanceTo(player.position);
+    if (dist < 120) {
+      final dir = (player.position - position);
+      if (dir.length > 0) {
+        dir.normalize();
+        final attractSpeed = 300.0 + (1.0 - dist / 120) * 200;
+        position += dir * attractSpeed * dt;
+      }
+    }
   }
 
   void applyTo(Player player) {

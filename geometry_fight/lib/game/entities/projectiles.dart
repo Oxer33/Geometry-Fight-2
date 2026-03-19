@@ -53,11 +53,24 @@ class PlayerBullet extends PositionComponent
 
     position += _velocity * dt;
 
-    // Distruggi quando esce dall'arena (NO rimbalzo)
-    if (position.x < -20 || position.x > arenaWidth + 20 ||
-        position.y < -20 || position.y > arenaHeight + 20) {
-      removeFromParent();
-      return;
+    // Distruggi quando esce dall'arena
+    // Nel tunnel mode: NO limiti X (scroll infinito), solo Y + lifetime
+    if (game.isTunnelMode) {
+      if (position.y < -50 || position.y > arenaHeight + 50) {
+        removeFromParent();
+        return;
+      }
+      // Nel tunnel distruggi solo se troppo lontano dal player (>1500px)
+      if ((position - game.player.position).length > 1500) {
+        removeFromParent();
+        return;
+      }
+    } else {
+      if (position.x < -20 || position.x > arenaWidth + 20 ||
+          position.y < -20 || position.y > arenaHeight + 20) {
+        removeFromParent();
+        return;
+      }
     }
 
     _lifetime -= dt;

@@ -67,6 +67,7 @@ import 'effects/tunnel_renderer.dart';
 import 'systems/wave_system.dart';
 import 'systems/score_system.dart';
 import 'systems/powerup_system.dart';
+import 'systems/audio_system.dart';
 
 enum GameState { playing, paused, gameOver, bossIntro, waveIntro }
 
@@ -449,12 +450,22 @@ class GeometryFightGame extends FlameGame
 
   Vector2 _randomSpawnPosition() {
     final random = math.Random();
-    final side = random.nextInt(4);
-    // Approximate visible area based on typical screen size
     const viewWidth = 800.0;
     const viewHeight = 600.0;
     const padding = 200.0;
 
+    // Nel tunnel mode: nemici spawnano SEMPRE davanti al player (lato destro)
+    if (isTunnelMode) {
+      final centerY = arenaHeight / 2;
+      final halfH = tunnelHeight / 2;
+      return Vector2(
+        player.position.x + viewWidth / 2 + padding + random.nextDouble() * 300,
+        centerY + (random.nextDouble() - 0.5) * halfH * 1.5,
+      );
+    }
+
+    // Modalità normali: spawn da tutti e 4 i lati
+    final side = random.nextInt(4);
     switch (side) {
       case 0: // top
         return Vector2(
@@ -503,6 +514,7 @@ class GeometryFightGame extends FlameGame
   }
 
   void onEnemyKilled(EnemyBase enemy) {
+    AudioSystem.playEnemyDeath();
     scoreSystem.addKill(enemy.pointValue, enemy.position);
     sessionKills++;
 
@@ -554,6 +566,7 @@ class GeometryFightGame extends FlameGame
   }
 
   void onPlayerHit() {
+    AudioSystem.playPlayerHit();
     scoreSystem.resetMultiplier();
     triggerScreenShake(6, 0.3);
     hitFlashTimer = 0.3; // Flash rosso sullo schermo per 0.3s
