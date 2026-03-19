@@ -79,7 +79,7 @@ class GameOverScreen extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             _GameOverButton(
-              text: 'MENU',
+              text: 'ESCI',
               color: Colors.white70,
               onTap: onQuit,
             ),

@@ -103,25 +103,25 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
       _rotation = math.atan2(aimDir.y, aimDir.x) + math.pi / 2;
     }
 
-    // Shooting
-    _fireTimer -= dt;
+    // Shooting (usa realDt per non essere rallentato dallo slow-mo)
+    _fireTimer -= realDt;
     if ((game.isShooting || aimDir.length > 0.3) && _fireTimer <= 0) {
       _shoot(aimDir.length > 0.3 ? aimDir : Vector2(0, -1));
     }
 
-    // Timers
-    if (_invincibleTimer > 0) _invincibleTimer -= dt;
-    if (rapidFireTimer > 0) rapidFireTimer -= dt;
-    if (overdriveTimer > 0) overdriveTimer -= dt;
-    if (magnetTimer > 0) magnetTimer -= dt;
+    // Timers (tutti con realDt — il player non è affetto dal slow-mo)
+    if (_invincibleTimer > 0) _invincibleTimer -= realDt;
+    if (rapidFireTimer > 0) rapidFireTimer -= realDt;
+    if (overdriveTimer > 0) overdriveTimer -= realDt;
+    if (magnetTimer > 0) magnetTimer -= realDt;
     if (timeSlowTimer > 0) {
-      timeSlowTimer -= dt;
+      timeSlowTimer -= realDt;
       if (timeSlowTimer <= 0) {
         game.timeScale = 1.0;
       }
     }
     if (weaponTimer > 0) {
-      weaponTimer -= dt;
+      weaponTimer -= realDt;
       if (weaponTimer <= 0) {
         temporaryWeapon = null;
       }
@@ -175,7 +175,10 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
 
     switch (weapon) {
       case WeaponType.basic:
-        _spawnBullet(dir, damageMultiplier, NeonColors.bulletYellow, pierce: pierce);
+        // Due file parallele di proiettili
+        final perp = Vector2(-dir.y, dir.x) * 6; // 6px di distanza
+        _spawnBullet(dir, damageMultiplier, NeonColors.bulletYellow, offset: perp, pierce: pierce);
+        _spawnBullet(dir, damageMultiplier, NeonColors.bulletYellow, offset: -perp, pierce: pierce);
       case WeaponType.spread:
         for (final angle in [-0.52, -0.26, 0.0, 0.26, 0.52]) {
           final rotDir = _rotateVector(dir, angle);

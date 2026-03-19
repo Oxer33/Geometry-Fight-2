@@ -101,7 +101,7 @@ class _GameScreenState extends State<GameScreen> {
 
           // === PULSANTE PAUSA (lato destro, sopra il tasto bomba) ===
           Positioned(
-            bottom: 145,
+            bottom: 165,
             right: 24,
             child: _PauseButton(onPressed: () {
               _game.togglePause();

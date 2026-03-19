@@ -43,9 +43,8 @@ abstract class EnemyBase extends PositionComponent
 
     // Clamp to arena (tunnel mode ha limiti Y diversi e NO limiti X)
     if (game.isTunnelMode) {
-      final centerY = arenaHeight / 2;
-      final halfH = game.tunnelHeight / 2;
-      position.y = position.y.clamp(centerY - halfH + 5, centerY + halfH - 5);
+      // Tunnel: NO clamp Y statico (il tunnel renderer gestisce i muri dinamici)
+      // NO clamp X (scroll infinito)
       // Despawn nemici superati dal player (dietro il margine sinistro dello schermo)
       if (position.x < game.player.position.x - 600) {
         removeFromParent();
