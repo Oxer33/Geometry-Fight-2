@@ -56,6 +56,9 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
   static const int _maxTrailLength = 18;
   double _trailTimer = 0;
 
+  // Tunnel: posizione X massima raggiunta (non si può tornare indietro)
+  double _maxTunnelX = 0;
+
   Player() : super(size: Vector2(30, 34), anchor: Anchor.center);
 
   @override
@@ -81,9 +84,12 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
 
     // Clamp to arena
     if (game.isTunnelMode) {
-      // Tunnel: scroll SOLO verso destra, non si può tornare indietro
-      // Il player avanza automaticamente + può muoversi solo avanti e su/giù
-      position.x = position.x.clamp(position.x, double.infinity); // NO indietro
+      // Tunnel: avanzamento automatico lento + non si può tornare indietro
+      position.x += 80 * realDt; // Avanzamento automatico
+      // Aggiorna la X massima raggiunta
+      if (position.x > _maxTunnelX) _maxTunnelX = position.x;
+      // Non si può tornare indietro oltre la metà schermo dalla X massima
+      position.x = position.x.clamp(_maxTunnelX - 200, double.infinity);
       final centerY = arenaHeight / 2;
       final halfH = game.tunnelHeight / 2;
       position.y = position.y.clamp(centerY - halfH + 15, centerY + halfH - 15);

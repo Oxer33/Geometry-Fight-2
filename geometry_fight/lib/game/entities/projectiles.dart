@@ -164,24 +164,41 @@ class EnemyBullet extends PositionComponent
     position += _velocity * dt;
 
     _lifetime -= dt;
-    if (_lifetime <= 0 ||
-        position.x < -50 ||
-        position.x > arenaWidth + 50 ||
-        position.y < -50 ||
-        position.y > arenaHeight + 50) {
-      removeFromParent();
+    // Nel tunnel mode: NO limiti X, solo lifetime e distanza dal player
+    if (game.isTunnelMode) {
+      if (_lifetime <= 0 || position.y < -50 || position.y > arenaHeight + 50) {
+        removeFromParent();
+      }
+      if ((position - game.player.position).length > 1200) {
+        removeFromParent();
+      }
+    } else {
+      if (_lifetime <= 0 ||
+          position.x < -50 ||
+          position.x > arenaWidth + 50 ||
+          position.y < -50 ||
+          position.y > arenaHeight + 50) {
+        removeFromParent();
+      }
     }
   }
 
   @override
   void render(Canvas canvas) {
-    final paint = Paint()
-      ..color = color
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
-    canvas.drawCircle(Offset(size.x / 2, size.y / 2), 3, paint);
-
-    paint.maskFilter = null;
-    canvas.drawCircle(Offset(size.x / 2, size.y / 2), 2, paint);
+    final cx = size.x / 2;
+    final cy = size.y / 2;
+    // Glow esterno (proporzionato al size 18x18)
+    final glowPaint = Paint()
+      ..color = color.withValues(alpha: 0.4)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6);
+    canvas.drawCircle(Offset(cx, cy), 8, glowPaint);
+    // Corpo principale
+    final paint = Paint()..color = color;
+    canvas.drawCircle(Offset(cx, cy), 6, paint);
+    // Centro luminoso
+    final corePaint = Paint()
+      ..color = const Color(0xFFFFFFFF).withValues(alpha: 0.6);
+    canvas.drawCircle(Offset(cx, cy), 3, corePaint);
   }
 
   @override
