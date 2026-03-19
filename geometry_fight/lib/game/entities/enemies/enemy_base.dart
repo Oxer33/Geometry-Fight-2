@@ -120,11 +120,14 @@ abstract class EnemyBase extends PositionComponent
     _glowPaint.color = neonColor.withValues(alpha: 0.25);
     renderShape(canvas, _glowPaint, 1.3);
 
-    // === CORPO PRINCIPALE ===
+    // === CORPO PRINCIPALE (bordi neon con interno trasparente — stile Geometry Wars) ===
     final isHit = _flashTimer > 0;
     _mainPaint.color = isHit ? const Color(0xFFFFFFFF) : neonColor;
     _mainPaint.maskFilter = null;
+    _mainPaint.style = PaintingStyle.stroke;
+    _mainPaint.strokeWidth = 2.0;
     renderShape(canvas, _mainPaint, 1.0);
+    _mainPaint.style = PaintingStyle.fill; // Reset per chi usa fill internamente
 
     // === MINI HP BAR (solo per nemici con più di 1 HP e non a vita piena) ===
     if (maxHp > 1 && hp < maxHp && hp > 0) {
