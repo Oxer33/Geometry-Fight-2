@@ -259,8 +259,8 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
   }
 
   void _attractGeoms() {
-    final range = hasMagnet ? magnetRadius : game.saveData.magnetRange;
-    // Geom attraction is handled in Geom.update
+    // L'attrazione dei geomi è gestita direttamente in Geom.update()
+    // Questo metodo è mantenuto come hook per eventuali effetti visivi futuri
   }
 
   void takeDamage() {

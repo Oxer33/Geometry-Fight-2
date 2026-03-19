@@ -139,7 +139,6 @@ class SnakeEnemy extends EnemyBase {
     // === TESTA: più grande con occhi ===
     if (scale <= 1.01 && _segments.isNotEmpty) {
       final head = _segments[0] - position;
-      final headR = 6.0 * scale;
       // Occhi (nella direzione di movimento)
       final moveDir = _segments.length > 1
           ? (_segments[0] - _segments[1]).normalized()

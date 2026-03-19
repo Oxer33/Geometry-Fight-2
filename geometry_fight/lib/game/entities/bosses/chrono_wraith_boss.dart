@@ -134,8 +134,6 @@ class ChronoWraithBoss extends BossBase {
   }
 
   void _shoot() {
-    final toPlayer = (playerPosition - position).normalized();
-
     // Predictive shooting - aim where player will be
     final playerVel = game.moveInput * playerSpeed;
     final timeToReach = position.distanceTo(playerPosition) / 300;

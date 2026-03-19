@@ -5,11 +5,10 @@ import 'package:flutter/services.dart';
 /// Struttura pronta per integrare file audio reali in futuro.
 class AudioSystem {
   static bool _vibrationEnabled = true;
-  static bool _initialized = false;
 
-  /// Inizializza il sistema audio
+  /// Inizializza il sistema audio (placeholder per audio reale futuro)
   static Future<void> init() async {
-    _initialized = true;
+    // Pronto per integrare flame_audio o audioplayers in futuro
   }
 
   /// Abilita/disabilita vibrazioni

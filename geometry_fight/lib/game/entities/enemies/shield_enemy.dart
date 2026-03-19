@@ -37,9 +37,7 @@ class ShieldEnemy extends EnemyBase {
 
   @override
   void takeDamage(double amount) {
-    // Check if bullet is hitting from front (facing player)
-    final toPlayer = (playerPosition - position).normalized();
-    // For simplicity, shield always faces player
+    // Lo scudo frontale assorbe sempre i danni indipendentemente dalla direzione
     if (shieldHp > 0) {
       shieldHp -= amount;
       if (shieldHp < 0) shieldHp = 0;

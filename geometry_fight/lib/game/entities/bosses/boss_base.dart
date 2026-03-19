@@ -136,30 +136,7 @@ abstract class BossBase extends PositionComponent
     // NOTA: barra HP rimossa dalla testa del boss — la HUD ha già la barra in basso
   }
 
-  // Metodo mantenuto per possibile uso futuro
-  void _renderHpBar(Canvas canvas) {
-    final barWidth = size.x * 1.2;
-    final barHeight = 4.0;
-    final barX = (size.x - barWidth) / 2;
-    final barY = -15.0;
-
-    // Background
-    canvas.drawRect(
-      Rect.fromLTWH(barX, barY, barWidth, barHeight),
-      Paint()..color = const Color(0x44FFFFFF),
-    );
-
-    // HP
-    final hpColor = healthPercent > 0.5
-        ? NeonColors.green
-        : healthPercent > 0.25
-            ? NeonColors.yellow
-            : NeonColors.red;
-    canvas.drawRect(
-      Rect.fromLTWH(barX, barY, barWidth * healthPercent, barHeight),
-      Paint()..color = hpColor,
-    );
-  }
+  // Barra HP rimossa dalla testa del boss — la HUD mostra la barra in basso
 
   void renderBoss(Canvas canvas, Paint paint, double scale);
 

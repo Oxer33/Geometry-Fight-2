@@ -10,7 +10,7 @@ import '../game_world.dart';
 /// barriere laser che appaiono periodicamente.
 class TunnelRenderer extends PositionComponent
     with HasGameReference<GeometryFightGame> {
-  double _scrollOffset = 0;
+  double _scrollOffset = 0; // Usato per tracking posizione scroll
   final List<_TunnelObstacle> _obstacles = [];
   double _obstacleSpawnTimer = 5.0;
   static final _random = math.Random();

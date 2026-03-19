@@ -218,7 +218,6 @@ class _SplashPainter extends CustomPainter {
 
   void _drawChaseScene(Canvas canvas, Size size) {
     final t = chaseProgress;
-    final cx = size.width / 2;
     final cy = size.height / 2;
 
     // === PERCORSO: entrano da sinistra, il drone scappa con curve, si avvicinano al centro ===

@@ -11,7 +11,7 @@ class WaveSystem {
   bool _bossActive = false;
   bool _allSpawned = false; // Tutti i gruppi sono stati spawnati
   double _postSpawnDelay = 0; // Delay dopo l'ultimo spawn prima di controllare completamento
-  int _totalSpawned = 0; // Contatore nemici spawnati in questa wave
+  int _totalSpawnedThisWave = 0; // Debug: contatore nemici spawnati
   late List<WaveConfig> _configs;
   WaveConfig? _currentConfig;
 
@@ -29,7 +29,7 @@ class WaveSystem {
     _spawnTimer = 1.0; // Delay iniziale prima del primo spawn
     _allSpawned = false;
     _postSpawnDelay = 0;
-    _totalSpawned = 0;
+    _totalSpawnedThisWave = 0;
 
     // Genera config in base alla modalità di gioco
     switch (_mode) {
@@ -80,7 +80,7 @@ class WaveSystem {
         final spawn = _currentConfig!.spawns[_spawnIndex];
         for (int i = 0; i < spawn.count; i++) {
           game.spawnEnemy(spawn.type);
-          _totalSpawned++;
+          _totalSpawnedThisWave++;
         }
         _spawnIndex++;
 
