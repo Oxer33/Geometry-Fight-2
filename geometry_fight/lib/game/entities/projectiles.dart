@@ -45,13 +45,15 @@ class PlayerBullet extends PositionComponent
 
   @override
   void update(double dt) {
-    super.update(dt);
+    // Proiettili player NON affetti dal slow-motion: compensano il timeScale
+    final realDt = game.timeScale > 0.01 ? dt / game.timeScale : dt;
+    super.update(realDt);
 
     // Store trail position
     _trail.insert(0, position.clone());
     if (_trail.length > _maxTrailLength) _trail.removeLast();
 
-    position += _velocity * dt;
+    position += _velocity * realDt;
 
     // Distruggi quando esce dall'arena
     // Nel tunnel mode: NO limiti statici, solo distanza dal player

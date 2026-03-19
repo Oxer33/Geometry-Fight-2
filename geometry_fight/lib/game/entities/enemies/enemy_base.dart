@@ -93,12 +93,8 @@ abstract class EnemyBase extends PositionComponent
 
   // Paint cache riutilizzabili per evitare allocazioni ogni frame
   // (con 60 nemici x 60fps = migliaia di allocazioni risparmiate)
-  static final _glowPaint = Paint()
-    ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8);
+  static final _glowPaint = Paint(); // NO MaskFilter.blur — troppo costoso su mobile!
   static final _mainPaint = Paint();
-  static final _pulsePaint = Paint()
-    ..style = PaintingStyle.stroke
-    ..strokeWidth = 2;
   static final _hpBgPaint = Paint()..color = const Color(0x33FFFFFF);
   static final _hpBarPaint = Paint();
 
@@ -107,16 +103,9 @@ abstract class EnemyBase extends PositionComponent
     final cx = size.x / 2;
     final cy = size.y / 2;
 
-    // === SPAWN PULSE (singolo anello, ottimizzato) ===
-    if (_spawnPulse > 0) {
-      final progress = 1 - _spawnPulse / 0.4;
-      final alpha = _spawnPulse / 0.4;
-      _pulsePaint.color = neonColor.withValues(alpha: alpha * 0.5);
-      canvas.drawCircle(Offset(cx, cy), progress * 35, _pulsePaint);
-    }
-
-    // === GLOW (singolo layer, blur 8 — rimosso il softGlow blur 16 per performance) ===
-    _glowPaint.color = neonColor.withValues(alpha: 0.25);
+    // === GLOW (senza blur per performance — solo colore più grande e trasparente) ===
+    _glowPaint.color = neonColor.withValues(alpha: 0.2);
+    _glowPaint.maskFilter = null;
     renderShape(canvas, _glowPaint, 1.3);
 
     // === CORPO PRINCIPALE (bordi neon con interno trasparente — stile Geometry Wars) ===
