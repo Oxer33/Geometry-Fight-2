@@ -111,11 +111,28 @@ class WaveSystem {
     game.onWaveComplete();
 
     // Delay tra wave dipende dalla modalità
-    final delayMs = (_mode == GameMode.survival || _mode == GameMode.tunnel) ? 500 : 2000;
+    int delayMs;
+    if (_mode == GameMode.survival || _mode == GameMode.tunnel) {
+      delayMs = 500;
+    } else if (_mode == GameMode.bossRush) {
+      delayMs = 3000; // Boss Rush: 3s tra boss per dare respiro
+    } else {
+      delayMs = 2000;
+    }
 
     Future.delayed(Duration(milliseconds: delayMs), () {
       if (game.gameState == GameState.playing) {
-        startWave(currentWave + 1);
+        // Aspetta che il boss precedente sia completamente rimosso
+        if (game.bossCount > 0) {
+          // Riprova tra 500ms se il boss non è ancora stato rimosso
+          Future.delayed(const Duration(milliseconds: 500), () {
+            if (game.gameState == GameState.playing) {
+              startWave(currentWave + 1);
+            }
+          });
+        } else {
+          startWave(currentWave + 1);
+        }
       }
     });
   }

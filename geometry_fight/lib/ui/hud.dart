@@ -29,8 +29,8 @@ class GameHud extends StatelessWidget {
                 left: 12,
                 child: _ScorePanel(
                   score: game.scoreSystem.score,
-                  multiplier: game.scoreSystem.multiplier,
-                  hasDoubleMultiplier: game.scoreSystem.hasDoubleMultiplier,
+                  multiplier: game.scoreSystem.multiplier.toDouble(),
+                  hasDoubleMultiplier: false,
                 ),
               ),
 
@@ -113,15 +113,7 @@ class GameHud extends StatelessWidget {
                   ),
                 ),
 
-              // === COMBO POPUP (piccolo in alto a sinistra, sotto il score) ===
-              if (game.scoreSystem.showingCombo)
-                Positioned(
-                  top: topPad + 45,
-                  left: 12,
-                  child: _ComboPopup(
-                    comboCount: game.scoreSystem.comboCount,
-                  ),
-                ),
+              // Combo popup rimosso (moltiplicatore basato su geom, non combo)
 
               // === POWER-UP ATTIVI (sotto score, a sinistra) ===
               if (_hasActivePowerUps())

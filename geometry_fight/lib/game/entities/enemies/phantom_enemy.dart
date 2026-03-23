@@ -4,14 +4,20 @@ import 'package:flame/components.dart';
 import '../../../data/constants.dart';
 import 'enemy_base.dart';
 
-/// NEW ENEMY: Phantom - phases in and out of visibility, only vulnerable when visible
+/// PHANTOM - Si fa invisibile e attacca dai fianchi.
+/// Movimento: FLANKING - non va dritto verso il player, ma cerca di avvicinarsi
+/// da un angolo laterale/posteriore. Quando è invisibile accelera per
+/// riposizionarsi, quando è visibile avanza lento per colpire.
 class PhantomEnemy extends EnemyBase {
   double _phaseTimer = 0;
   bool _visible = true;
   double _opacity = 1.0;
+  final double _flankAngle;
 
   PhantomEnemy()
-      : super(
+      : _flankAngle =
+            (math.Random().nextBool() ? 1.0 : -1.0) * math.pi * 0.6,
+        super(
           hp: 3,
           speed: 160,
           pointValue: 400,
@@ -40,9 +46,27 @@ class PhantomEnemy extends EnemyBase {
       _visible = false;
     }
 
-    // Always move towards player
-    final velocity = seekPlayer(speed);
-    position += velocity * dt;
+    final toPlayer = playerPosition - position;
+    if (toPlayer.length == 0) return;
+
+    if (!_visible) {
+      // INVISIBILE: riposizionamento veloce verso il fianco del player
+      // Calcola posizione target sul fianco
+      final playerAngle = math.atan2(toPlayer.y, toPlayer.x);
+      final targetAngle = playerAngle + _flankAngle;
+      final targetDist = 80.0; // Vicino al player ma non addosso
+
+      final targetPos = playerPosition -
+          Vector2(math.cos(targetAngle), math.sin(targetAngle)) * targetDist;
+
+      final toTarget = targetPos - position;
+      if (toTarget.length > 10) {
+        position += toTarget.normalized() * speed * 1.3 * dt; // Più veloce
+      }
+    } else {
+      // VISIBILE: avanza diretto ma più lento (l'attacco vero)
+      position += toPlayer.normalized() * speed * 0.7 * dt;
+    }
   }
 
   @override

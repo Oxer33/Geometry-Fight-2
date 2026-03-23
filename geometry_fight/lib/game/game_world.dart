@@ -207,6 +207,11 @@ class GeometryFightGame extends FlameGame
       waveSystem.update(scaledDt);
     }
     scoreSystem.update(scaledDt);
+    // Vite extra per soglie punteggio (10K, 100K, 1M, 10M, 100M, 1B)
+    if (scoreSystem.earnedExtraLife) {
+      player.lives++;
+      triggerScreenShake(3, 0.1);
+    }
     powerUpSystem.update(scaledDt);
 
     // Timer flash rosso

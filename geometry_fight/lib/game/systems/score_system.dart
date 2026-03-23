@@ -1,78 +1,58 @@
 import 'package:flame/components.dart' show Vector2;
-import '../../data/constants.dart';
 
-/// Sistema di punteggio con moltiplicatore, combo e geomi.
-/// Gestisce score, multiplier progressivo e combo tracking.
+/// Sistema di punteggio stile Geometry Wars RE2.
+/// Moltiplicatore: +1x per ogni geom raccolto, reset a 1x quando si muore.
+/// Vite extra a: 10K, 100K, 1M, 10M, 100M, 1B punti.
 class ScoreSystem {
   int score = 0;
   int geoms = 0;
-  double multiplier = 1.0;
-  double _doubleMultiplierTimer = 0;
-  bool get hasDoubleMultiplier => _doubleMultiplierTimer > 0;
+  int multiplier = 1; // Intero: +1 per geom raccolto
 
-  // Combo tracking
-  final List<double> _recentKillTimes = [];
-  int comboCount = 0;
-  double _comboDisplayTimer = 0;
-
-  double _gameTime = 0;
+  // Soglie vite extra (potenze di 10 da 10K)
+  final List<int> _extraLifeThresholds = [
+    10000, 100000, 1000000, 10000000, 100000000, 1000000000,
+  ];
+  int _nextLifeIndex = 0;
+  bool _extraLifeEarned = false; // Flag per il game_world
 
   void update(double dt) {
-    _gameTime += dt;
-
-    if (_doubleMultiplierTimer > 0) {
-      _doubleMultiplierTimer -= dt;
+    // Check vite extra
+    _extraLifeEarned = false;
+    if (_nextLifeIndex < _extraLifeThresholds.length &&
+        score >= _extraLifeThresholds[_nextLifeIndex]) {
+      _extraLifeEarned = true;
+      _nextLifeIndex++;
     }
-
-    if (_comboDisplayTimer > 0) {
-      _comboDisplayTimer -= dt;
-    }
-
-    // Clean old kill times
-    _recentKillTimes.removeWhere((t) => _gameTime - t > comboTimeWindow);
   }
+
+  /// True se il player ha guadagnato una vita extra in questo frame
+  bool get earnedExtraLife => _extraLifeEarned;
 
   void addKill(int points, Vector2 position) {
-    final effectiveMultiplier =
-        multiplier * (hasDoubleMultiplier ? 2.0 : 1.0);
-    final earnedPoints = (points * effectiveMultiplier).round();
+    final earnedPoints = (points * multiplier).round();
     score += earnedPoints;
-
-    // Increase multiplier
-    multiplier = (multiplier + multiplierPerKill).clamp(1.0, maxMultiplier);
-
-    // Track combo
-    _recentKillTimes.add(_gameTime);
-    if (_recentKillTimes.length >= comboThreshold) {
-      comboCount = _recentKillTimes.length;
-      _comboDisplayTimer = 1.5;
-      score += comboCount * 100; // Bonus combo points
-    }
   }
 
+  /// Chiamato quando si raccoglie un geom: aumenta il moltiplicatore di 1
   void addGeoms(int amount) {
     geoms += amount;
+    multiplier += amount; // +1x per geom raccolto (come GW RE2)
   }
 
+  /// Reset moltiplicatore a 1x (quando il player muore)
   void resetMultiplier() {
-    multiplier = 1.0;
-    comboCount = 0;
-    _recentKillTimes.clear();
-  }
-
-  void activateDoubleMultiplier(double seconds) {
-    _doubleMultiplierTimer = seconds;
+    multiplier = 1;
   }
 
   void reset() {
     score = 0;
     geoms = 0;
-    multiplier = 1.0;
-    _doubleMultiplierTimer = 0;
-    comboCount = 0;
-    _recentKillTimes.clear();
-    _gameTime = 0;
+    multiplier = 1;
+    _nextLifeIndex = 0;
+    _extraLifeEarned = false;
   }
 
-  bool get showingCombo => _comboDisplayTimer > 0;
+  // Combo rimossa (non più necessaria)
+  int comboCount = 0;
+  bool get showingCombo => false;
 }

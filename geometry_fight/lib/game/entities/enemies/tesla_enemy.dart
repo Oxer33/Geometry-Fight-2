@@ -4,17 +4,19 @@ import 'package:flame/components.dart';
 import 'enemy_base.dart';
 
 /// TESLA - Nemico che crea archi elettrici tra sé e altri nemici vicini.
-/// Forma: ottagono con scariche elettriche
-/// Colore: giallo elettrico (#FFEE44)
-/// Meccanica unica: crea connessioni elettriche con nemici vicini (150px).
-/// Se il player tocca un arco elettrico, subisce danno.
-/// Più Tesla sono vicini, più archi pericolosi creano.
+/// Movimento: PACK FLANKING - cerca di posizionarsi sul lato opposto del player
+/// rispetto ad altri Tesla, formando un triangolo/rete attorno al player.
+/// Se solo, circla il player a distanza media.
 class TeslaEnemy extends EnemyBase {
   double _sparkPhase = 0;
   final List<Vector2> _connectedPositions = [];
+  double _flankAngle;
+  static const double _orbitDistance = 130.0;
+  static const double _soloOrbitSpeed = 1.5; // rad/s quando solo
 
   TeslaEnemy()
-      : super(
+      : _flankAngle = math.Random().nextDouble() * math.pi * 2,
+        super(
           hp: 3,
           speed: 110,
           pointValue: 350,
@@ -27,9 +29,49 @@ class TeslaEnemy extends EnemyBase {
   void updateBehavior(double dt) {
     _sparkPhase += dt * 12;
 
-    // Movimento verso il player
-    final velocity = seekPlayer(speed);
-    position += velocity * dt;
+    // Trova altri Tesla per comportamento a branco
+    final otherTeslas = <TeslaEnemy>[];
+    for (final child in game.world.children) {
+      if (child is TeslaEnemy && child != this) {
+        otherTeslas.add(child);
+      }
+    }
+
+    if (otherTeslas.isEmpty) {
+      // SOLO: orbita attorno al player
+      _flankAngle += _soloOrbitSpeed * dt;
+      final targetPos = playerPosition +
+          Vector2(math.cos(_flankAngle), math.sin(_flankAngle)) *
+              _orbitDistance;
+      final toTarget = targetPos - position;
+      if (toTarget.length > 5) {
+        position += toTarget.normalized() * speed * dt;
+      }
+    } else {
+      // PACK: posizionati sul lato opposto del player rispetto agli altri Tesla
+      // Calcola angolo medio degli altri Tesla rispetto al player
+      double avgAngle = 0;
+      for (final other in otherTeslas) {
+        final diff = other.position - playerPosition;
+        avgAngle += math.atan2(diff.y, diff.x);
+      }
+      avgAngle /= otherTeslas.length;
+
+      // Vai sul lato opposto + offset per non sovrapporsi
+      final myIndex =
+          game.world.children.whereType<TeslaEnemy>().toList().indexOf(this);
+      final spreadAngle = math.pi / (otherTeslas.length + 1);
+      final targetAngle =
+          avgAngle + math.pi + (myIndex - otherTeslas.length / 2) * spreadAngle;
+
+      final targetPos = playerPosition +
+          Vector2(math.cos(targetAngle), math.sin(targetAngle)) *
+              _orbitDistance;
+      final toTarget = targetPos - position;
+      if (toTarget.length > 5) {
+        position += toTarget.normalized() * speed * dt;
+      }
+    }
 
     // Trova nemici vicini per creare archi
     _connectedPositions.clear();
@@ -41,7 +83,9 @@ class TeslaEnemy extends EnemyBase {
 
           // Se il player è vicino all'arco, danno!
           final playerDist = _distanceToLine(
-            game.player.position, position, child.position,
+            game.player.position,
+            position,
+            child.position,
           );
           if (playerDist < 15) {
             game.player.takeDamage();
@@ -83,7 +127,11 @@ class TeslaEnemy extends EnemyBase {
       final angle = i * math.pi / 4;
       final x = r * math.cos(angle);
       final y = r * math.sin(angle);
-      if (i == 0) path.moveTo(x, y); else path.lineTo(x, y);
+      if (i == 0) {
+        path.moveTo(x, y);
+      } else {
+        path.lineTo(x, y);
+      }
     }
     path.close();
     canvas.drawPath(path, paint);
@@ -114,7 +162,8 @@ class TeslaEnemy extends EnemyBase {
   }
 
   /// Disegna un arco elettrico tra due punti
-  void _drawLightning(Canvas canvas, double x1, double y1, double x2, double y2) {
+  void _drawLightning(
+      Canvas canvas, double x1, double y1, double x2, double y2) {
     final random = math.Random((_sparkPhase * 10).toInt());
     final dx = x2 - x1;
     final dy = y2 - y1;

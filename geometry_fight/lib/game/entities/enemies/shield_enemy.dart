@@ -4,10 +4,24 @@ import 'package:flame/components.dart';
 import '../../../data/constants.dart';
 import 'enemy_base.dart';
 
+/// SHIELD ENEMY - Avanza a scatti con lo scudo avanti.
+/// Stati: APPROACH (lento) → LOCK_ON (pausa, mira) → CHARGE (dash veloce con scudo)
+/// Lo scudo assorbe danni frontali. Vulnerabile dal retro e durante recovery.
 class ShieldEnemy extends EnemyBase {
   double shieldHp = 5;
   double _shieldRegenTimer = 0;
   final double _shieldRegenDelay = 4.0;
+
+  // State machine per il movimento a cariche
+  _ShieldState _state = _ShieldState.approach;
+  double _stateTimer = 0;
+  Vector2 _chargeDir = Vector2.zero();
+  static const double _approachSpeed = 60; // Lento
+  static const double _chargeSpeed = 400; // Veloce!
+  static const double _lockOnDuration = 1.0;
+  static const double _chargeDuration = 0.6;
+  static const double _recoverDuration = 1.2;
+  static const double _chargeRange = 200; // Distanza per iniziare lock-on
 
   ShieldEnemy()
       : super(
@@ -21,9 +35,7 @@ class ShieldEnemy extends EnemyBase {
 
   @override
   void updateBehavior(double dt) {
-    // Move towards player, facing them
-    final velocity = seekPlayer(speed);
-    position += velocity * dt;
+    _stateTimer += dt;
 
     // Shield regen
     if (shieldHp <= 0) {
@@ -33,12 +45,55 @@ class ShieldEnemy extends EnemyBase {
         _shieldRegenTimer = 0;
       }
     }
+
+    switch (_state) {
+      case _ShieldState.approach:
+        // Avvicinamento lento al player
+        final velocity = seekPlayer(_approachSpeed);
+        position += velocity * dt;
+        // Quando abbastanza vicino, inizia lock-on
+        if (distanceToPlayer < _chargeRange) {
+          _state = _ShieldState.lockOn;
+          _stateTimer = 0;
+        }
+        break;
+
+      case _ShieldState.lockOn:
+        // Fermo, si orienta verso il player (piccolo movimento)
+        final velocity = seekPlayer(15);
+        position += velocity * dt;
+        _chargeDir = (playerPosition - position).normalized();
+        // Dopo lock-on, carica!
+        if (_stateTimer >= _lockOnDuration) {
+          _state = _ShieldState.charging;
+          _stateTimer = 0;
+        }
+        break;
+
+      case _ShieldState.charging:
+        // Dash veloce nella direzione fissata al lock-on
+        position += _chargeDir * _chargeSpeed * dt;
+        // Fine carica
+        if (_stateTimer >= _chargeDuration) {
+          _state = _ShieldState.recovering;
+          _stateTimer = 0;
+        }
+        break;
+
+      case _ShieldState.recovering:
+        // Fermo, vulnerabile
+        if (_stateTimer >= _recoverDuration) {
+          _state = _ShieldState.approach;
+          _stateTimer = 0;
+        }
+        break;
+    }
   }
 
   @override
   void takeDamage(double amount) {
-    // Lo scudo frontale assorbe sempre i danni indipendentemente dalla direzione
-    if (shieldHp > 0) {
+    // Lo scudo assorbe i danni durante approach e charging (scudo avanti)
+    if (shieldHp > 0 && _state != _ShieldState.recovering) {
       shieldHp -= amount;
       if (shieldHp < 0) shieldHp = 0;
       return;
@@ -64,12 +119,21 @@ class ShieldEnemy extends EnemyBase {
         ..strokeWidth = 0.8;
       canvas.drawCircle(Offset(cx, cy), r * 0.6, ringPaint);
 
-      // Nucleo pulsante
-      final pulse = 0.4 + math.sin(idlePhase * 4) * 0.3;
+      // Nucleo pulsante (più veloce durante lock-on)
+      final pulseSpeed = _state == _ShieldState.lockOn ? 12.0 : 4.0;
+      final pulse = 0.4 + math.sin(idlePhase * pulseSpeed) * 0.3;
       final corePaint = Paint()
         ..color = const Color(0xFFFFFFFF).withValues(alpha: pulse)
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2);
       canvas.drawCircle(Offset(cx, cy), r * 0.25, corePaint);
+
+      // Indicatore stato (flash durante charging)
+      if (_state == _ShieldState.charging) {
+        final rushPaint = Paint()
+          ..color = const Color(0xFFFFFFFF).withValues(alpha: 0.4)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8);
+        canvas.drawCircle(Offset(cx, cy), r * 1.3, rushPaint);
+      }
     }
 
     // Scudo frontale force field
@@ -88,17 +152,27 @@ class ShieldEnemy extends EnemyBase {
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6);
       canvas.drawArc(
         Rect.fromCircle(center: Offset.zero, radius: 15 * scale),
-        -math.pi / 3, math.pi * 2 / 3, false, glowPaint..strokeWidth = 5..style = PaintingStyle.stroke,
+        -math.pi / 3,
+        math.pi * 2 / 3,
+        false,
+        glowPaint
+          ..strokeWidth = 5
+          ..style = PaintingStyle.stroke,
       );
 
-      // Scudo principale
+      // Scudo principale (più largo durante charge)
+      final shieldArc =
+          _state == _ShieldState.charging ? math.pi * 0.9 : math.pi * 2 / 3;
       final shieldPaint = Paint()
         ..color = NeonColors.purple.withValues(alpha: shieldAlpha * 0.7)
         ..style = PaintingStyle.stroke
         ..strokeWidth = 2.5 * scale;
       canvas.drawArc(
         Rect.fromCircle(center: Offset.zero, radius: 14 * scale),
-        -math.pi / 3, math.pi * 2 / 3, false, shieldPaint,
+        -shieldArc / 2,
+        shieldArc,
+        false,
+        shieldPaint,
       );
 
       // Segmenti HP scudo (puntini lungo l'arco)
@@ -119,7 +193,8 @@ class ShieldEnemy extends EnemyBase {
       canvas.restore();
     } else if (scale <= 1.01) {
       // Indicatore rigenerazione (cerchio tratteggiato debole)
-      final regenProgress = (_shieldRegenTimer / _shieldRegenDelay).clamp(0.0, 1.0);
+      final regenProgress =
+          (_shieldRegenTimer / _shieldRegenDelay).clamp(0.0, 1.0);
       if (regenProgress > 0) {
         final regenPaint = Paint()
           ..color = NeonColors.purple.withValues(alpha: regenProgress * 0.2)
@@ -130,3 +205,5 @@ class ShieldEnemy extends EnemyBase {
     }
   }
 }
+
+enum _ShieldState { approach, lockOn, charging, recovering }

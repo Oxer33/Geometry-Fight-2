@@ -8,9 +8,14 @@ enum SplitterSize { large, medium, small }
 
 class SplitterEnemy extends EnemyBase {
   final SplitterSize splitterSize;
+  // Orbital homing per mini-splitter (medium/small)
+  double _orbitAngle;
+  late final Vector2 _orbitCenter;
+  double _orbitExpand = 0; // quanto l'orbita si allarga nel tempo
 
   SplitterEnemy({this.splitterSize = SplitterSize.large})
-      : super(
+      : _orbitAngle = math.Random().nextDouble() * math.pi * 2,
+        super(
           hp: 1,
           speed: _speedForSize(splitterSize),
           pointValue: _pointsForSize(splitterSize),
@@ -24,9 +29,9 @@ class SplitterEnemy extends EnemyBase {
       case SplitterSize.large:
         return 100;
       case SplitterSize.medium:
-        return 180;
+        return 150; // ridotto per bilanciare l'orbita
       case SplitterSize.small:
-        return 300;
+        return 250;
     }
   }
 
@@ -64,9 +69,39 @@ class SplitterEnemy extends EnemyBase {
   }
 
   @override
+  Future<void> onLoad() async {
+    await super.onLoad();
+    _orbitCenter = position.clone();
+  }
+
+  @override
   void updateBehavior(double dt) {
-    final velocity = seekPlayer(speed);
-    position += velocity * dt;
+    if (splitterSize == SplitterSize.large) {
+      // Large: homing diretto come GW (NON schiva, a differenza del Weaver)
+      final velocity = seekPlayer(speed);
+      position += velocity * dt;
+    } else {
+      // Medium/Small: ORBITAL HOMING (come GW)
+      // Orbitano attorno al punto di spawn mentre derivano verso il player
+      final orbitRadius = (splitterSize == SplitterSize.medium ? 40.0 : 30.0) +
+          _orbitExpand;
+      final angularSpeed =
+          splitterSize == SplitterSize.medium ? 4.5 : 6.0; // rad/s
+      final driftSpeed = splitterSize == SplitterSize.medium ? 30.0 : 40.0;
+
+      _orbitAngle += angularSpeed * dt;
+      _orbitExpand += 8 * dt; // orbita si allarga lentamente
+
+      // Il centro dell'orbita deriva verso il player
+      final toPlayer = (playerPosition - _orbitCenter);
+      if (toPlayer.length > 0) {
+        _orbitCenter += toPlayer.normalized() * driftSpeed * dt;
+      }
+
+      // Posizione = centro orbita + offset orbitale
+      position.x = _orbitCenter.x + math.cos(_orbitAngle) * orbitRadius;
+      position.y = _orbitCenter.y + math.sin(_orbitAngle) * orbitRadius;
+    }
   }
 
   @override
@@ -123,8 +158,10 @@ class SplitterEnemy extends EnemyBase {
           ..style = PaintingStyle.stroke;
         // 3 linee dal centro ai vertici
         canvas.drawLine(Offset.zero, Offset(0, -r * 0.7), fracturePaint);
-        canvas.drawLine(Offset.zero, Offset(r * 0.6, r * 0.35), fracturePaint);
-        canvas.drawLine(Offset.zero, Offset(-r * 0.6, r * 0.35), fracturePaint);
+        canvas.drawLine(
+            Offset.zero, Offset(r * 0.6, r * 0.35), fracturePaint);
+        canvas.drawLine(
+            Offset.zero, Offset(-r * 0.6, r * 0.35), fracturePaint);
       }
 
       // Nucleo pulsante (colore diverso per dimensione)
@@ -140,15 +177,21 @@ class SplitterEnemy extends EnemyBase {
       canvas.drawCircle(Offset.zero, r * 0.2, corePaint);
 
       // Indicatore livello (puntini per quante volte può ancora dividersi)
-      final dotsCount = splitterSize == SplitterSize.large ? 3 : splitterSize == SplitterSize.medium ? 2 : 0;
+      final dotsCount = splitterSize == SplitterSize.large
+          ? 3
+          : splitterSize == SplitterSize.medium
+              ? 2
+              : 0;
       for (int i = 0; i < dotsCount; i++) {
         final dotAngle = i * math.pi * 2 / 3 - math.pi / 2;
         final dotPaint = Paint()
           ..color = paint.color.withValues(alpha: 0.5)
           ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 1);
         canvas.drawCircle(
-          Offset(r * 0.4 * math.cos(dotAngle), r * 0.4 * math.sin(dotAngle)),
-          1.0, dotPaint,
+          Offset(
+              r * 0.4 * math.cos(dotAngle), r * 0.4 * math.sin(dotAngle)),
+          1.0,
+          dotPaint,
         );
       }
     }

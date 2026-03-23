@@ -4,34 +4,51 @@ import 'package:flame/components.dart';
 import '../../../data/constants.dart';
 import 'enemy_base.dart';
 
+/// WEAVER (Green Scare) - Quadrato verde che insegue il player.
+/// Come in GW: homing + SCHIVA i proiettili che si avvicinano.
+/// Leggermente più veloce del player. 85% probabilità di schivare.
 class WeaverEnemy extends EnemyBase {
-  double _waveOffset = 0;
+  double _dodgeCooldown = 0;
+  final double _waveOffset = math.Random().nextDouble() * math.pi * 2;
 
   WeaverEnemy()
       : super(
-          hp: 2,
-          speed: 220,
-          pointValue: 150,
+          hp: 1,
+          speed: 220, // Leggermente più veloce del player (200)
+          pointValue: 100,
           geomValue: 2,
-          neonColor: NeonColors.lightBlue,
-          size: Vector2(16, 24),
-        ) {
-    _waveOffset = math.Random().nextDouble() * math.pi * 2;
-  }
+          neonColor: NeonColors.green, // Verde come GW
+          size: Vector2(16, 16),
+        );
 
   @override
   void updateBehavior(double dt) {
-    final toPlayer = playerPosition - position;
-    if (toPlayer.length > 0) {
-      final forward = toPlayer.normalized();
-      final side = Vector2(-forward.y, forward.x);
+    if (_dodgeCooldown > 0) _dodgeCooldown -= dt;
 
-      // Sinusoidal side movement
-      final sideOffset = math.sin(idlePhase * 4 + _waveOffset) * 200;
-      final targetVelocity = forward * speed + side * sideOffset * dt * 3;
+    // Homing verso il player
+    final toPlayer = seekPlayer(speed);
 
-      position += targetVelocity * dt;
+    // SCHIVA proiettili vicini (85% probabilità, come GW)
+    if (_dodgeCooldown <= 0) {
+      for (final child in game.world.children) {
+        if (child is PositionComponent &&
+            child.runtimeType.toString().contains('PlayerBullet')) {
+          final dist = child.position.distanceTo(position);
+          if (dist < 80) {
+            // 85% probabilità di schivare
+            if (math.Random().nextDouble() < 0.85) {
+              final bulletDir = (child.position - position).normalized();
+              final dodgeDir = Vector2(-bulletDir.y, bulletDir.x);
+              position += dodgeDir * 150 * dt;
+              _dodgeCooldown = 0.3;
+            }
+            break;
+          }
+        }
+      }
     }
+
+    position += toPlayer * dt;
   }
 
   @override

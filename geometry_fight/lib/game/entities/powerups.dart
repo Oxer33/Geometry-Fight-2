@@ -96,7 +96,8 @@ class PowerUp extends PositionComponent
           player.bombs++;
         }
       case PowerUpType.scoreMultiplier:
-        player.game.scoreSystem.activateDoubleMultiplier(20);
+        // Bonus: aggiunge 10 al moltiplicatore (come raccogliere 10 geom)
+        player.game.scoreSystem.addGeoms(10);
     }
   }
 

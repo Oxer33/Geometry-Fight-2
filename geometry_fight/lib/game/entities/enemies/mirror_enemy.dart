@@ -5,13 +5,20 @@ import '../../../data/constants.dart';
 import 'enemy_base.dart';
 import '../projectiles.dart';
 
-/// NEW ENEMY: Mirror - reflects player bullets back at them
+/// MIRROR - Riflette i proiettili del player.
+/// Movimento: STRAFING a distanza media (120-180px dal player).
+/// Vuole stare nella linea di fuoco per massimizzare le riflessioni.
+/// Orbita attorno al player mantenendo la distanza ideale.
 class MirrorEnemy extends EnemyBase {
   double _reflectCooldown = 0;
   double _shieldFlash = 0;
+  double _orbitAngle;
+  static const double _idealDistance = 150.0;
+  static const double _orbitSpeed = 1.8; // rad/s
 
   MirrorEnemy()
-      : super(
+      : _orbitAngle = math.Random().nextDouble() * math.pi * 2,
+        super(
           hp: 5,
           speed: 90,
           pointValue: 300,
@@ -22,19 +29,30 @@ class MirrorEnemy extends EnemyBase {
 
   @override
   void updateBehavior(double dt) {
-    // Slowly approach player
-    final velocity = seekPlayer(speed);
-    position += velocity * dt;
-
     if (_reflectCooldown > 0) _reflectCooldown -= dt;
     if (_shieldFlash > 0) _shieldFlash -= dt;
+
+    // Strafing: orbita attorno al player a distanza ideale
+    _orbitAngle += _orbitSpeed * dt;
+
+    if (distanceToPlayer > 0) {
+      // Posizione target: punto sull'orbita attorno al player
+      final targetPos = playerPosition +
+          Vector2(math.cos(_orbitAngle), math.sin(_orbitAngle)) *
+              _idealDistance;
+
+      final toTarget = targetPos - position;
+      if (toTarget.length > 5) {
+        position += toTarget.normalized() * speed * dt;
+      }
+    }
 
     // Check for nearby player bullets and reflect them
     if (_reflectCooldown <= 0) {
       for (final child in game.world.children.toList()) {
         if (child is PlayerBullet) {
-          final dist = child.position.distanceTo(position);
-          if (dist < 30) {
+          final bulletDist = child.position.distanceTo(position);
+          if (bulletDist < 30) {
             // Reflect: remove player bullet, spawn enemy bullet going back
             final reflectDir = (child.position - position).normalized();
             final reflected = EnemyBullet(
@@ -68,7 +86,11 @@ class MirrorEnemy extends EnemyBase {
       final x = cx + r * math.cos(angle);
       final y = cy + r * math.sin(angle);
       verts.add(Offset(x, y));
-      if (i == 0) path.moveTo(x, y); else path.lineTo(x, y);
+      if (i == 0) {
+        path.moveTo(x, y);
+      } else {
+        path.lineTo(x, y);
+      }
     }
     path.close();
     canvas.drawPath(path, paint);
@@ -125,7 +147,8 @@ class MirrorEnemy extends EnemyBase {
         ..strokeWidth = 1
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
       canvas.drawCircle(Offset(cx + 2, cy), r * 1.2, prismPaint);
-      prismPaint.color = NeonColors.spreadOrange.withValues(alpha: _shieldFlash * 1.5);
+      prismPaint.color =
+          NeonColors.spreadOrange.withValues(alpha: _shieldFlash * 1.5);
       canvas.drawCircle(Offset(cx - 2, cy), r * 1.2, prismPaint);
     }
   }

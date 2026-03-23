@@ -9,6 +9,10 @@ class SnakeEnemy extends EnemyBase {
   final List<Vector2> _segments = [];
   final List<Vector2> _segmentVelocities = [];
   final bool isFragment;
+  // Sine wave homing (come GW originale)
+  double _sinePhase = 0;
+  static const double _sineAmplitude = 60.0; // px
+  static const double _sineFrequency = 0.8; // Hz
 
   SnakeEnemy({this.segmentCount = 8, this.isFragment = false})
       : super(
@@ -34,9 +38,32 @@ class SnakeEnemy extends EnemyBase {
 
   @override
   void updateBehavior(double dt) {
-    // Head follows player
-    final dir = seekPlayer(speed);
-    position += dir * dt;
+    _sinePhase += dt;
+
+    // Direzione base verso il player
+    final toPlayer = (playerPosition - position);
+    if (toPlayer.length == 0) return;
+    final baseDir = toPlayer.normalized();
+
+    // Vettore perpendicolare per l'onda sinusoidale
+    final perpDir = Vector2(-baseDir.y, baseDir.x);
+
+    // Offset sinusoidale (come GW: traiettoria a serpentina)
+    final sineOffset =
+        math.sin(_sinePhase * _sineFrequency * math.pi * 2) * _sineAmplitude;
+    final moveDir = baseDir * speed + perpDir * sineOffset;
+
+    if (moveDir.length > 0) {
+      position += moveDir.normalized() * speed * dt;
+    }
+
+    // Rimbalza sui muri (come GW)
+    if (position.x <= 10 || position.x >= arenaWidth - 10) {
+      position.x = position.x.clamp(10, arenaWidth - 10);
+    }
+    if (position.y <= 10 || position.y >= arenaHeight - 10) {
+      position.y = position.y.clamp(10, arenaHeight - 10);
+    }
 
     // Update segment positions (follow the leader)
     if (_segments.isNotEmpty) {
@@ -46,7 +73,8 @@ class SnakeEnemy extends EnemyBase {
         final current = _segments[i];
         final toTarget = target - current;
         if (toTarget.length > 14) {
-          _segments[i] = current + toTarget.normalized() * (toTarget.length - 14);
+          _segments[i] =
+              current + toTarget.normalized() * (toTarget.length - 14);
         }
       }
     }
@@ -120,10 +148,11 @@ class SnakeEnemy extends EnemyBase {
 
       // Segmento con colore che sfuma verso il turchese
       final segColor = Color.lerp(
-        paint.color,
-        paint.color.withValues(alpha: 0.4),
-        progress,
-      ) ?? paint.color;
+            paint.color,
+            paint.color.withValues(alpha: 0.4),
+            progress,
+          ) ??
+          paint.color;
       final segPaint = Paint()..color = segColor.withValues(alpha: segAlpha);
       canvas.drawCircle(Offset(cx + seg.x, cy + seg.y), radius, segPaint);
 
@@ -133,7 +162,8 @@ class SnakeEnemy extends EnemyBase {
         final corePaint = Paint()
           ..color = const Color(0xFFFFFFFF).withValues(alpha: pulse)
           ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 1.5);
-        canvas.drawCircle(Offset(cx + seg.x, cy + seg.y), radius * 0.35, corePaint);
+        canvas.drawCircle(
+            Offset(cx + seg.x, cy + seg.y), radius * 0.35, corePaint);
       }
     }
 

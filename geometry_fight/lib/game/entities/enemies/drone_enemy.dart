@@ -4,23 +4,28 @@ import 'package:flame/components.dart';
 import '../../../data/constants.dart';
 import 'enemy_base.dart';
 
-/// DRONE - Nemico base più comune. Rombo rosa che insegue il player.
-/// Lento ma persistente, spawna in grandi numeri.
+/// DRONE (Grunt) - Rombo blu che insegue il player.
+/// Come in GW: parte lento e ACCELERA nel tempo (+2px/s per secondo di vita).
+/// Dopo 60s raggiunge la velocità del player, dopo 120s la supera.
 class DroneEnemy extends EnemyBase {
+  double _aliveTime = 0;
+
   DroneEnemy()
       : super(
           hp: 1,
-          speed: 150,
+          speed: 80, // Parte lento come GW (80 px/s)
           pointValue: 50,
           geomValue: 1,
-          neonColor: NeonColors.pink,
+          neonColor: const Color(0xFF4488FF), // Blu brillante come GW
           size: Vector2(18, 18),
         );
 
   @override
   void updateBehavior(double dt) {
-    // Insegue il player lentamente
-    final velocity = seekPlayer(speed);
+    _aliveTime += dt;
+    // Accelera nel tempo: +2px/s per secondo di vita (come GW Grunt)
+    final currentSpeed = speed + _aliveTime * 2.0;
+    final velocity = seekPlayer(currentSpeed.clamp(80, 500));
     position += velocity * dt;
   }
 
