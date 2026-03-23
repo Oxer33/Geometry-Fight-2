@@ -94,6 +94,7 @@ class GeometryFightGame extends FlameGame
     this.gameMode = GameMode.classic,
   }) {
     diffConfig = difficultyConfigs[difficulty]!;
+    scoreSystem.geomValueMultiplier = diffConfig.geomValueMultiplier;
   }
 
   // Input state

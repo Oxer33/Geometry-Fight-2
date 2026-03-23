@@ -29,7 +29,7 @@ class GameHud extends StatelessWidget {
                 left: 12,
                 child: _ScorePanel(
                   score: game.scoreSystem.score,
-                  multiplier: game.scoreSystem.multiplier,
+                  multiplier: game.scoreSystem.multiplierDisplay,
                   hasDoubleMultiplier: false,
                 ),
               ),

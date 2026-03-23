@@ -18,6 +18,7 @@ class DifficultyConfig {
   final double spawnDelayMultiplier; // < 1 = più veloce
   final double powerUpDropRate;
   final double geomDropMultiplier;
+  final double geomValueMultiplier; // Quanto vale ogni geom per il moltiplicatore (1.0 = +1x, 1.5 = +1.5x)
   final double scoreMultiplier;
   final int startingLives;
   final int startingBombs;
@@ -31,6 +32,7 @@ class DifficultyConfig {
     required this.spawnDelayMultiplier,
     required this.powerUpDropRate,
     required this.geomDropMultiplier,
+    required this.geomValueMultiplier,
     required this.scoreMultiplier,
     required this.startingLives,
     required this.startingBombs,
@@ -48,6 +50,7 @@ const Map<Difficulty, DifficultyConfig> difficultyConfigs = {
     spawnDelayMultiplier: 1.3,
     powerUpDropRate: 0.10,
     geomDropMultiplier: 1.5,
+    geomValueMultiplier: 1.0, // ogni geom = +1x
     scoreMultiplier: 0.5,
     startingLives: 5,
     startingBombs: 3,
@@ -61,6 +64,7 @@ const Map<Difficulty, DifficultyConfig> difficultyConfigs = {
     spawnDelayMultiplier: 1.0,
     powerUpDropRate: 0.05,
     geomDropMultiplier: 1.0,
+    geomValueMultiplier: 1.0, // ogni geom = +1x
     scoreMultiplier: 1.0,
     startingLives: 3,
     startingBombs: 1,
@@ -69,11 +73,12 @@ const Map<Difficulty, DifficultyConfig> difficultyConfigs = {
     name: 'DIFFICILE',
     description: 'Per i veterani. Nemici aggressivi e resistenti.',
     enemyHpMultiplier: 1.5,
-    enemySpeedMultiplier: 1.2,
+    enemySpeedMultiplier: 1.25,
     enemyCountMultiplier: 1.3,
     spawnDelayMultiplier: 0.8,
     powerUpDropRate: 0.03,
     geomDropMultiplier: 1.5,
+    geomValueMultiplier: 1.25, // ogni geom = +1.25x
     scoreMultiplier: 2.0,
     startingLives: 2,
     startingBombs: 1,
@@ -82,11 +87,12 @@ const Map<Difficulty, DifficultyConfig> difficultyConfigs = {
     name: 'INCUBO',
     description: 'Impossibile? Forse. Solo per i migliori.',
     enemyHpMultiplier: 2.0,
-    enemySpeedMultiplier: 1.4,
+    enemySpeedMultiplier: 1.5,
     enemyCountMultiplier: 1.6,
     spawnDelayMultiplier: 0.6,
     powerUpDropRate: 0.02,
     geomDropMultiplier: 2.0,
+    geomValueMultiplier: 1.5, // ogni geom = +1.5x
     scoreMultiplier: 4.0,
     startingLives: 1,
     startingBombs: 0,

@@ -1,12 +1,13 @@
 import 'package:flame/components.dart' show Vector2;
 
 /// Sistema di punteggio stile Geometry Wars RE2.
-/// Moltiplicatore: +1x per ogni geom raccolto, reset a 1x quando si muore.
+/// Moltiplicatore: +geomValueMultiplier per ogni geom raccolto, reset a 1x quando si muore.
 /// Vite extra a: 10K, 100K, 1M, 10M, 100M, 1B punti.
 class ScoreSystem {
   int score = 0;
   int geoms = 0;
-  int multiplier = 1; // Intero: +1 per geom raccolto
+  double multiplier = 1.0; // Double per supportare incrementi frazionari (+1.25x, +1.5x)
+  double geomValueMultiplier = 1.0; // Quanto vale ogni geom per il moltiplicatore (da difficulty)
 
   // Soglie vite extra (potenze di 10 da 10K)
   final List<int> _extraLifeThresholds = [
@@ -28,26 +29,29 @@ class ScoreSystem {
   /// True se il player ha guadagnato una vita extra in questo frame
   bool get earnedExtraLife => _extraLifeEarned;
 
+  /// Multiplier troncato a intero per il display
+  int get multiplierDisplay => multiplier.toInt();
+
   void addKill(int points, Vector2 position) {
     final earnedPoints = (points * multiplier).round();
     score += earnedPoints;
   }
 
-  /// Chiamato quando si raccoglie un geom: aumenta il moltiplicatore di 1
+  /// Chiamato quando si raccoglie un geom: aumenta il moltiplicatore
   void addGeoms(int amount) {
     geoms += amount;
-    multiplier += amount; // +1x per geom raccolto (come GW RE2)
+    multiplier += amount * geomValueMultiplier; // +Nx per geom raccolto (scala con difficoltà)
   }
 
   /// Reset moltiplicatore a 1x (quando il player muore)
   void resetMultiplier() {
-    multiplier = 1;
+    multiplier = 1.0;
   }
 
   void reset() {
     score = 0;
     geoms = 0;
-    multiplier = 1;
+    multiplier = 1.0;
     _nextLifeIndex = 0;
     _extraLifeEarned = false;
   }
