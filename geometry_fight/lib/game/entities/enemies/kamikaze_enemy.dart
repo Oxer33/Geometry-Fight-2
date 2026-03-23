@@ -88,18 +88,17 @@ class KamikazeEnemy extends EnemyBase {
         }
       }
 
-      // Scia di fuoco durante il rush
+      // Scia di fuoco durante il rush (senza blur per performance)
       if (_state == KamikazeState.rushing && _rushDirection != null) {
         final trailDir = -_rushDirection!;
-        for (int i = 1; i <= 5; i++) {
-          final trailAlpha = 0.4 - i * 0.07;
-          final trailSize = 3.0 - i * 0.4;
+        for (int i = 1; i <= 3; i++) {
+          final trailAlpha = 0.35 - i * 0.1;
+          final trailSize = 2.5 - i * 0.6;
           if (trailAlpha > 0 && trailSize > 0) {
             final trailPaint = Paint()
-              ..color = const Color(0xFFFF4400).withValues(alpha: trailAlpha)
-              ..maskFilter = MaskFilter.blur(BlurStyle.normal, trailSize + 1);
+              ..color = const Color(0xFFFF4400).withValues(alpha: trailAlpha);
             canvas.drawCircle(
-              Offset(cx + trailDir.x * i * 5, cy + trailDir.y * i * 5),
+              Offset(cx + trailDir.x * i * 6, cy + trailDir.y * i * 6),
               trailSize, trailPaint,
             );
           }
@@ -140,12 +139,11 @@ class KamikazeEnemy extends EnemyBase {
         ..strokeWidth = 0.5;
       canvas.drawLine(Offset(0, -h * 0.6), Offset(0, h * 0.3), linePaint);
 
-      // Nucleo incandescente durante charging/rushing
+      // Nucleo incandescente durante charging/rushing (senza blur)
       if (_state == KamikazeState.charging || _state == KamikazeState.rushing) {
         final glowAlpha = _state == KamikazeState.rushing ? 0.8 : 0.4;
         final corePaint = Paint()
-          ..color = const Color(0xFFFF6600).withValues(alpha: glowAlpha)
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
+          ..color = const Color(0xFFFF6600).withValues(alpha: glowAlpha);
         canvas.drawCircle(Offset(0, -h * 0.2), 3, corePaint);
       }
     }

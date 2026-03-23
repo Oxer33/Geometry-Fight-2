@@ -197,6 +197,9 @@ class GeometryFightGame extends FlameGame
     // Update keyboard input
     _updateKeyboardInput();
 
+    // Update global swarm enrage timer (performance: evita iterazione O(n²))
+    SwarmDroneEnemy.updateGlobalEnrage(scaledDt);
+
     // NOTA: spatial hash rimosso — Flame usa HasCollisionDetection built-in
     // che è più efficiente. Il spatial hash iterava TUTTI i children ogni frame
     // causando lag con molti nemici.
@@ -332,8 +335,8 @@ class GeometryFightGame extends FlameGame
     screenShake.shake(intensity, duration);
   }
 
-  // Limite massimo nemici attivi per performance (evita scatti con 50+)
-  static const int _maxActiveEnemies = 60;
+  // Limite massimo nemici attivi — ottimizzato per 150+ con blur rimossi dai mob di massa
+  static const int _maxActiveEnemies = 150;
 
   void spawnEnemy(EnemyType type, [Vector2? position]) {
     // Limita nemici attivi per evitare scatti di performance

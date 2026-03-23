@@ -48,7 +48,7 @@ class DroneEnemy extends EnemyBase {
       ..close();
     canvas.drawPath(path, paint);
 
-    // Solo per il layer principale (non glow)
+    // Solo per il layer principale (non glow) — NO blur per performance con 100+ nemici
     if (scale <= 1.01) {
       // Croce interna luminosa
       final crossPaint = Paint()
@@ -58,22 +58,11 @@ class DroneEnemy extends EnemyBase {
       canvas.drawLine(Offset(0, -s * 0.5), Offset(0, s * 0.5), crossPaint);
       canvas.drawLine(Offset(-s * 0.5, 0), Offset(s * 0.5, 0), crossPaint);
 
-      // Nucleo pulsante al centro
+      // Nucleo pulsante al centro (senza blur)
       final pulse = 0.5 + math.sin(idlePhase * 6) * 0.3;
       final corePaint = Paint()
-        ..color = const Color(0xFFFFFFFF).withValues(alpha: pulse)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2);
+        ..color = const Color(0xFFFFFFFF).withValues(alpha: pulse);
       canvas.drawCircle(Offset.zero, s * 0.2, corePaint);
-
-      // Punti energetici sui 4 vertici del rombo
-      final dotAlpha = 0.4 + math.sin(idlePhase * 4) * 0.3;
-      final dotPaint = Paint()
-        ..color = paint.color.withValues(alpha: dotAlpha)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2);
-      canvas.drawCircle(Offset(0, -s * 0.8), 1.2, dotPaint);
-      canvas.drawCircle(Offset(s * 0.8, 0), 1.2, dotPaint);
-      canvas.drawCircle(Offset(0, s * 0.8), 1.2, dotPaint);
-      canvas.drawCircle(Offset(-s * 0.8, 0), 1.2, dotPaint);
     }
 
     canvas.restore();

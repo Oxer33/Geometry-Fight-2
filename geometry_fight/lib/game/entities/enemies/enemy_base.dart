@@ -71,8 +71,9 @@ abstract class EnemyBase extends PositionComponent
 
   void onDeath() {
     game.onEnemyKilled(this);
-    // Particelle ridotte per performance (6 invece di 12)
-    game.spawnExplosion(position, neonColor, radius: size.x * 0.6, particleCount: 6);
+    // Mob di massa (1 geom): 3 particelle. Mob rari: 6 particelle.
+    final particles = geomValue <= 1 ? 3 : 6;
+    game.spawnExplosion(position, neonColor, radius: size.x * 0.6, particleCount: particles);
     removeFromParent();
   }
 

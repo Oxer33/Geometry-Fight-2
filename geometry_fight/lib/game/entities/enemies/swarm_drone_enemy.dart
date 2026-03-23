@@ -33,7 +33,7 @@ class SwarmDroneEnemy extends EnemyBase {
       if (_enrageTimer <= 0) _enraged = false;
     }
 
-    final currentSpeed = _enraged ? speed * 1.8 : speed;
+    final currentSpeed = (_enraged || isGloballyEnraged) ? speed * 1.8 : speed;
     final baseDir = seekPlayer(currentSpeed);
 
     // Movimento con leggera oscillazione laterale (formazione)
@@ -46,18 +46,18 @@ class SwarmDroneEnemy extends EnemyBase {
 
   @override
   void onDeath() {
-    // Enrage nemici SwarmDrone vicini
-    for (final child in game.world.children) {
-      if (child is SwarmDroneEnemy && child != this) {
-        final dist = child.position.distanceTo(position);
-        if (dist < 200) {
-          child._enraged = true;
-          child._enrageTimer = 1.5;
-        }
-      }
-    }
+    // Enrage: tutti gli SwarmDrone si enragiano globalmente per 1.5s
+    // (evita iterazione O(n²) che causa lag con 100+ nemici)
+    _globalEnrageTimer = 1.5;
     super.onDeath();
   }
+
+  // Timer globale condiviso: quando uno muore, tutti si enragiano
+  static double _globalEnrageTimer = 0;
+  static void updateGlobalEnrage(double dt) {
+    if (_globalEnrageTimer > 0) _globalEnrageTimer -= dt;
+  }
+  bool get isGloballyEnraged => _globalEnrageTimer > 0;
 
   @override
   void renderShape(Canvas canvas, Paint paint, double scale) {
@@ -74,7 +74,7 @@ class SwarmDroneEnemy extends EnemyBase {
     ) + math.pi / 2;
     canvas.rotate(angle);
 
-    final color = _enraged
+    final color = (_enraged || isGloballyEnraged)
         ? const Color(0xFFFF0000)
         : paint.color;
     final p = Paint()..color = color;
@@ -86,11 +86,10 @@ class SwarmDroneEnemy extends EnemyBase {
       ..close();
     canvas.drawPath(path, p);
 
-    // Nucleo quando enraged
-    if (_enraged && scale <= 1.01) {
+    // Nucleo quando enraged (senza blur per performance)
+    if ((_enraged || isGloballyEnraged) && scale <= 1.01) {
       final ragePaint = Paint()
-        ..color = const Color(0xFFFF4400).withValues(alpha: 0.6)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
+        ..color = const Color(0xFFFF4400).withValues(alpha: 0.6);
       canvas.drawCircle(Offset.zero, s * 0.4, ragePaint);
     }
 

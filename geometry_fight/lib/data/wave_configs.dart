@@ -205,130 +205,146 @@ List<WaveConfig> generateWaveConfigs() {
       continue;
     }
 
-    // Regular waves - progressive difficulty
+    // ═══════════════════════════════════════════════════════════════
+    // STILE GEOMETRY WARS: ~70% mob stupidi (wanderer/swarm) + 30% pericolosi
+    // I mob stupidi riempiono l'arena e creano caos visivo,
+    // i pericolosi sono pochi ma richiedono attenzione.
+    // ═══════════════════════════════════════════════════════════════
     final spawns = <WaveSpawn>[];
-    // difficulty non usata direttamente, il wave number serve come indicatore
 
-    // Drones - sempre presenti, minimo 20 dalla wave 1
-    spawns.add(WaveSpawn(EnemyType.drone, 20 + wave * 3));
+    // ── MOB STUPIDI (massa) ── spawnano subito, riempiono l'arena ──
 
-    // Mines from wave 2
+    // Bouncer (Wanderer): random walk, non insegue — SEMPRE presenti, tanti
+    spawns.add(WaveSpawn(EnemyType.bouncer, (15 + wave * 2).clamp(15, 60)));
+
+    // SwarmDrone: seguono vagamente ma sono debolissimi — ondate enormi
     if (wave >= 2) {
-      spawns.add(WaveSpawn(EnemyType.mine, 5 + wave, delay: 1));
+      spawns.add(WaveSpawn(EnemyType.swarmDrone, (10 + wave * 2).clamp(10, 50), delay: 0.3));
     }
 
-    // Snakes from wave 3
+    // Drone (Grunt): lento homing, diventa pericoloso solo col tempo
+    spawns.add(WaveSpawn(EnemyType.drone, (8 + wave).clamp(8, 30), delay: 0.5));
+
+    // Mine: statiche, pericolose ma non inseguono
     if (wave >= 3) {
-      spawns.add(WaveSpawn(EnemyType.snake, 2 + wave ~/ 2, delay: 2));
+      spawns.add(WaveSpawn(EnemyType.mine, (2 + wave ~/ 2).clamp(2, 12), delay: 1));
     }
 
-    // Weavers and Bouncers from wave 4
+    // ── MOB PERICOLOSI (minoranza) ── spawnano con delay, pochi ma letali ──
+
+    // Kamikaze: veloci e diretti
     if (wave >= 4) {
-      spawns.add(WaveSpawn(EnemyType.weaver, 4 + wave ~/ 2, delay: 1.5));
-      spawns.add(WaveSpawn(EnemyType.bouncer, 2 + wave ~/ 2, delay: 3));
+      spawns.add(WaveSpawn(EnemyType.kamikaze, (2 + wave ~/ 3).clamp(2, 10), delay: 2));
     }
 
-    // Spawners and Kamikazes from wave 5
+    // Weaver: schiva proiettili
     if (wave >= 5) {
-      spawns.add(WaveSpawn(EnemyType.spawner, 2 + wave ~/ 5, delay: 4));
-      spawns.add(WaveSpawn(EnemyType.kamikaze, 6 + wave, delay: 2));
+      spawns.add(WaveSpawn(EnemyType.weaver, (1 + wave ~/ 4).clamp(1, 8), delay: 2.5));
     }
 
-    // Splitters from wave 6
+    // Snake: sine wave, corpo invulnerabile
+    if (wave >= 5) {
+      spawns.add(WaveSpawn(EnemyType.snake, (1 + wave ~/ 5).clamp(1, 5), delay: 3));
+    }
+
+    // Splitter: si divide alla morte
     if (wave >= 6) {
-      spawns.add(WaveSpawn(EnemyType.splitter, 2 + wave ~/ 3, delay: 3));
+      spawns.add(WaveSpawn(EnemyType.splitter, (1 + wave ~/ 5).clamp(1, 6), delay: 3));
     }
 
-    // Shield enemies from wave 7
+    // Shield: carica e ha scudo
     if (wave >= 7) {
-      spawns.add(WaveSpawn(EnemyType.shieldEnemy, 2 + wave ~/ 4, delay: 4));
+      spawns.add(WaveSpawn(EnemyType.shieldEnemy, (1 + wave ~/ 6).clamp(1, 5), delay: 4));
     }
 
-    // Black Holes from wave 8 (max 1 per wave)
-    if (wave >= 8 && wave % 3 == 0) {
+    // Spawner: genera mini nemici
+    if (wave >= 8) {
+      spawns.add(WaveSpawn(EnemyType.spawner, (wave ~/ 8).clamp(1, 3), delay: 4));
+    }
+
+    // Black Hole: raro ma devastante
+    if (wave >= 9 && wave % 4 == 0) {
       spawns.add(WaveSpawn(EnemyType.blackHole, 1, delay: 5));
     }
 
-    // New enemies from wave 9+
-    if (wave >= 9) {
-      spawns.add(WaveSpawn(EnemyType.pulsar, 1 + wave ~/ 7, delay: 3));
+    // Pulsar: onde d'urto
+    if (wave >= 10) {
+      spawns.add(WaveSpawn(EnemyType.pulsar, (wave ~/ 8).clamp(1, 4), delay: 3.5));
     }
 
-    if (wave >= 11) {
-      spawns.add(WaveSpawn(EnemyType.mirror, 1 + wave ~/ 8, delay: 4));
-    }
-
-    if (wave >= 13) {
-      spawns.add(WaveSpawn(EnemyType.phantom, 1 + wave ~/ 10, delay: 5));
-    }
-
-    if (wave >= 15) {
-      spawns.add(WaveSpawn(EnemyType.vortex, wave ~/ 12, delay: 6));
-    }
-
-    // Leech dal wave 12 (parassiti veloci)
+    // Leech: parassiti veloci
     if (wave >= 12) {
-      spawns.add(WaveSpawn(EnemyType.leech, 2 + wave ~/ 6, delay: 3));
+      spawns.add(WaveSpawn(EnemyType.leech, (wave ~/ 7).clamp(1, 5), delay: 3));
     }
 
-    // Titan dal wave 14 (tank corazzati, max 2)
-    if (wave >= 14 && wave % 2 == 0) {
-      spawns.add(WaveSpawn(EnemyType.titan, (wave ~/ 14).clamp(1, 2), delay: 5));
+    // Mirror: strafing orbitale
+    if (wave >= 14) {
+      spawns.add(WaveSpawn(EnemyType.mirror, (wave ~/ 10).clamp(1, 4), delay: 4));
     }
 
-    // Glitch dal wave 16 (teletrasporto)
+    // Glitch: teletrasporto
     if (wave >= 16) {
-      spawns.add(WaveSpawn(EnemyType.glitch, 1 + wave ~/ 10, delay: 4));
+      spawns.add(WaveSpawn(EnemyType.glitch, (wave ~/ 12).clamp(1, 3), delay: 4));
     }
 
-    // Healer dal wave 18 (cura nemici vicini - priorità alta!)
-    if (wave >= 18 && wave % 2 == 0) {
-      spawns.add(WaveSpawn(EnemyType.healer, (wave ~/ 18).clamp(1, 2), delay: 5));
+    // Phantom: flanking invisibile
+    if (wave >= 18) {
+      spawns.add(WaveSpawn(EnemyType.phantom, (wave ~/ 12).clamp(1, 3), delay: 5));
     }
 
-    // Orbiter dal wave 20 (orbita e spara)
+    // Titan: tank
+    if (wave >= 15 && wave % 3 == 0) {
+      spawns.add(WaveSpawn(EnemyType.titan, (wave ~/ 15).clamp(1, 2), delay: 5));
+    }
+
+    // Vortex
     if (wave >= 20) {
-      spawns.add(WaveSpawn(EnemyType.orbiter, 1 + wave ~/ 12, delay: 4));
+      spawns.add(WaveSpawn(EnemyType.vortex, (wave ~/ 15).clamp(1, 3), delay: 5));
     }
 
-    // Tesla dal wave 22 (archi elettrici tra nemici)
+    // Healer: cura nemici (priorità target!)
+    if (wave >= 20 && wave % 3 == 0) {
+      spawns.add(WaveSpawn(EnemyType.healer, (wave ~/ 20).clamp(1, 2), delay: 5));
+    }
+
+    // Tesla: archi elettrici in pack
     if (wave >= 22) {
-      spawns.add(WaveSpawn(EnemyType.tesla, 1 + wave ~/ 15, delay: 5));
+      spawns.add(WaveSpawn(EnemyType.tesla, (wave ~/ 15).clamp(1, 3), delay: 5));
     }
 
-    // Siren dal wave 25 (rallenta proiettili)
+    // Orbiter
     if (wave >= 25) {
-      spawns.add(WaveSpawn(EnemyType.siren, (wave ~/ 15).clamp(1, 3), delay: 6));
+      spawns.add(WaveSpawn(EnemyType.orbiter, (wave ~/ 15).clamp(1, 3), delay: 4));
     }
 
-    // Necro dal wave 28 (resuscita nemici morti)
-    if (wave >= 28 && wave % 3 == 0) {
+    // Siren: rallenta proiettili
+    if (wave >= 28) {
+      spawns.add(WaveSpawn(EnemyType.siren, (wave ~/ 20).clamp(1, 2), delay: 6));
+    }
+
+    // Necro: resuscita nemici
+    if (wave >= 30 && wave % 4 == 0) {
       spawns.add(WaveSpawn(EnemyType.necro, 1, delay: 7));
     }
 
-    // Swarm Drone dal wave 8 (gruppi enormi)
-    if (wave >= 8 && wave % 2 == 0) {
-      spawns.add(WaveSpawn(EnemyType.swarmDrone, 8 + wave, delay: 1));
+    // Laser Turret
+    if (wave >= 28) {
+      spawns.add(WaveSpawn(EnemyType.laserTurret, (wave ~/ 25).clamp(1, 2), delay: 6));
     }
 
-    // Time Bomb dal wave 20
-    if (wave >= 20 && wave % 3 == 0) {
-      spawns.add(WaveSpawn(EnemyType.timeBomb, 1 + wave ~/ 20, delay: 5));
+    // Time Bomb
+    if (wave >= 24 && wave % 3 == 0) {
+      spawns.add(WaveSpawn(EnemyType.timeBomb, (wave ~/ 20).clamp(1, 2), delay: 5));
     }
 
-    // Laser Turret dal wave 24
-    if (wave >= 24) {
-      spawns.add(WaveSpawn(EnemyType.laserTurret, (wave ~/ 20).clamp(1, 3), delay: 6));
-    }
-
-    // Gravity Well dal wave 30 (max 1)
-    if (wave >= 30 && wave % 5 == 0) {
+    // Gravity Well: raro
+    if (wave >= 35 && wave % 5 == 0) {
       spawns.add(WaveSpawn(EnemyType.gravityWell, 1, delay: 7));
     }
 
-    // Decoy dal wave 15 (trappole)
-    if (wave >= 15 && wave % 3 == 0) {
-      spawns.add(WaveSpawn(EnemyType.decoy, 2 + wave ~/ 10, delay: 4));
+    // Decoy: trappole
+    if (wave >= 18 && wave % 3 == 0) {
+      spawns.add(WaveSpawn(EnemyType.decoy, (wave ~/ 10).clamp(1, 4), delay: 4));
     }
 
     configs.add(WaveConfig(waveNumber: wave, spawns: spawns));

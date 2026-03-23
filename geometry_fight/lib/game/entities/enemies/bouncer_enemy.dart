@@ -101,11 +101,10 @@ class BouncerEnemy extends EnemyBase {
     canvas.drawPath(path, paint);
 
     if (scale <= 1.01) {
-      // Nucleo centrale pulsante
+      // Nucleo centrale pulsante (senza blur per performance)
       final pulse = 0.4 + math.sin(idlePhase * 4) * 0.3;
       final corePaint = Paint()
-        ..color = const Color(0xFFFFFFFF).withValues(alpha: pulse)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2);
+        ..color = const Color(0xFFFFFFFF).withValues(alpha: pulse);
       canvas.drawCircle(Offset.zero, r * 0.2, corePaint);
     }
     canvas.restore();

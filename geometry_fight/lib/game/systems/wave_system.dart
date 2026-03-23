@@ -151,31 +151,38 @@ class WaveSystem {
     return WaveConfig(waveNumber: wave, spawns: [], boss: bosses[bossIndex]);
   }
 
-  /// Survival: wave infinite con TANTI nemici crescenti, nessun boss, nessuna pausa
+  /// Survival: wave infinite stile GW — TANTISSIMI mob stupidi + pochi letali
   WaveConfig _generateSurvivalWave(int wave) {
     final spawns = <WaveSpawn>[];
-    spawns.add(WaveSpawn(EnemyType.drone, (15 + wave * 6).clamp(15, 150)));
-    if (wave >= 2) spawns.add(WaveSpawn(EnemyType.kamikaze, (wave * 3).clamp(3, 50), delay: 0.5));
-    if (wave >= 3) spawns.add(WaveSpawn(EnemyType.weaver, (wave * 2).clamp(2, 30), delay: 0.5));
-    if (wave >= 4) spawns.add(WaveSpawn(EnemyType.swarmDrone, (wave * 4).clamp(8, 60), delay: 0.3));
-    if (wave >= 5) spawns.add(WaveSpawn(EnemyType.splitter, (wave).clamp(1, 15), delay: 0.5));
-    if (wave >= 7) spawns.add(WaveSpawn(EnemyType.bouncer, (wave ~/ 2).clamp(1, 12), delay: 0.5));
-    if (wave >= 10) spawns.add(WaveSpawn(EnemyType.titan, 1 + wave ~/ 10, delay: 1));
-    if (wave >= 12) spawns.add(WaveSpawn(EnemyType.glitch, (wave ~/ 3).clamp(1, 8), delay: 0.5));
-    if (wave >= 15) spawns.add(WaveSpawn(EnemyType.blackHole, 1, delay: 2));
+    // Massa stupida (70%)
+    spawns.add(WaveSpawn(EnemyType.bouncer, (20 + wave * 3).clamp(20, 60)));
+    spawns.add(WaveSpawn(EnemyType.swarmDrone, (15 + wave * 3).clamp(15, 50), delay: 0.3));
+    spawns.add(WaveSpawn(EnemyType.drone, (10 + wave * 2).clamp(10, 30), delay: 0.5));
+    // Pericolosi (30%)
+    if (wave >= 2) spawns.add(WaveSpawn(EnemyType.kamikaze, (1 + wave).clamp(1, 12), delay: 1));
+    if (wave >= 3) spawns.add(WaveSpawn(EnemyType.weaver, (wave ~/ 2).clamp(1, 8), delay: 1.5));
+    if (wave >= 4) spawns.add(WaveSpawn(EnemyType.mine, (wave ~/ 2).clamp(1, 8), delay: 1));
+    if (wave >= 5) spawns.add(WaveSpawn(EnemyType.splitter, (wave ~/ 3).clamp(1, 6), delay: 2));
+    if (wave >= 7) spawns.add(WaveSpawn(EnemyType.shieldEnemy, (wave ~/ 5).clamp(1, 4), delay: 3));
+    if (wave >= 10) spawns.add(WaveSpawn(EnemyType.titan, (wave ~/ 10).clamp(1, 2), delay: 4));
+    if (wave >= 12) spawns.add(WaveSpawn(EnemyType.glitch, (wave ~/ 6).clamp(1, 4), delay: 3));
+    if (wave >= 15) spawns.add(WaveSpawn(EnemyType.blackHole, 1, delay: 5));
     return WaveConfig(waveNumber: wave, spawns: spawns);
   }
 
-  /// Time Attack: TANTISSIMI nemici facili per fare punti velocemente
+  /// Time Attack: TANTISSIMI mob per fare punti — massa di stupidi + pochi pericolosi
   WaveConfig _generateTimeAttackWave(int wave) {
     final spawns = <WaveSpawn>[
-      WaveSpawn(EnemyType.drone, 25 + wave * 8),
-      WaveSpawn(EnemyType.kamikaze, 8 + wave * 3, delay: 0.3),
-      WaveSpawn(EnemyType.weaver, 5 + wave * 2, delay: 0.3),
-      WaveSpawn(EnemyType.swarmDrone, 15 + wave * 5, delay: 0.2),
+      // Massa stupida per il punteggio
+      WaveSpawn(EnemyType.bouncer, (25 + wave * 4).clamp(25, 60)),
+      WaveSpawn(EnemyType.swarmDrone, (20 + wave * 4).clamp(20, 50), delay: 0.2),
+      WaveSpawn(EnemyType.drone, (10 + wave * 2).clamp(10, 25), delay: 0.3),
+      // Pericolosi per il challenge
+      WaveSpawn(EnemyType.kamikaze, (2 + wave).clamp(2, 10), delay: 1),
+      WaveSpawn(EnemyType.weaver, (1 + wave ~/ 2).clamp(1, 6), delay: 1.5),
     ];
-    if (wave >= 3) spawns.add(WaveSpawn(EnemyType.bouncer, wave * 2, delay: 0.5));
-    if (wave >= 5) spawns.add(WaveSpawn(EnemyType.mine, wave * 2, delay: 0.5));
+    if (wave >= 3) spawns.add(WaveSpawn(EnemyType.mine, (2 + wave).clamp(2, 10), delay: 1));
+    if (wave >= 5) spawns.add(WaveSpawn(EnemyType.splitter, (wave ~/ 3).clamp(1, 5), delay: 2));
     return WaveConfig(waveNumber: wave, spawns: spawns);
   }
 
@@ -199,14 +206,14 @@ class WaveSystem {
   void updateTunnel(double dt) {
     _tunnelSpawnTimer -= dt;
 
-    // Mantieni almeno 5 nemici attivi — spawna se ce ne sono meno
-    if (_tunnelSpawnTimer <= 0 || game.enemyCount < 5) {
-      _tunnelSpawnTimer = 0.8 + _tunnelRng.nextDouble() * 1.0; // Più lento
+    // Mantieni almeno 10 nemici attivi — spawna se ce ne sono meno
+    if (_tunnelSpawnTimer <= 0 || game.enemyCount < 10) {
+      _tunnelSpawnTimer = 0.5 + _tunnelRng.nextDouble() * 0.8;
 
-      // Spawna 1-2 nemici randomici ogni tick (dimezzato)
-      final count = 1 + _tunnelRng.nextInt(2);
+      // Spawna 2-4 nemici randomici ogni tick
+      final count = 2 + _tunnelRng.nextInt(3);
       for (int i = 0; i < count; i++) {
-        if (game.enemyCount >= 15) break; // Max 15 nel tunnel (era 30)
+        if (game.enemyCount >= 40) break; // Max 40 nel tunnel
         final type = _randomTunnelEnemyType();
         game.spawnEnemy(type);
       }
@@ -221,20 +228,22 @@ class WaveSystem {
     }
   }
 
-  /// Tipo nemico casuale per il tunnel — tutti i tipi con pesi diversi
+  /// Tipo nemico casuale per il tunnel — 70% stupidi, 30% pericolosi
   EnemyType _randomTunnelEnemyType() {
     final roll = _tunnelRng.nextInt(100);
-    if (roll < 30) return EnemyType.drone;
-    if (roll < 45) return EnemyType.swarmDrone;
-    if (roll < 55) return EnemyType.kamikaze;
-    if (roll < 65) return EnemyType.weaver;
-    if (roll < 72) return EnemyType.bouncer;
-    if (roll < 78) return EnemyType.mine;
-    if (roll < 83) return EnemyType.splitter;
-    if (roll < 87) return EnemyType.shieldEnemy;
-    if (roll < 90) return EnemyType.glitch;
-    if (roll < 93) return EnemyType.tesla;
-    if (roll < 96) return EnemyType.titan;
+    // 70% mob stupidi
+    if (roll < 30) return EnemyType.bouncer;
+    if (roll < 50) return EnemyType.swarmDrone;
+    if (roll < 65) return EnemyType.drone;
+    if (roll < 70) return EnemyType.mine;
+    // 30% pericolosi
+    if (roll < 76) return EnemyType.kamikaze;
+    if (roll < 82) return EnemyType.weaver;
+    if (roll < 86) return EnemyType.splitter;
+    if (roll < 90) return EnemyType.shieldEnemy;
+    if (roll < 93) return EnemyType.glitch;
+    if (roll < 96) return EnemyType.tesla;
+    if (roll < 98) return EnemyType.titan;
     return EnemyType.healer;
   }
 
@@ -249,54 +258,36 @@ class WaveSystem {
   }
 
   WaveConfig _generateEndlessWave(int wave) {
-    // Genera ondate sempre più difficili oltre le wave configurate
+    // Endless: stile GW — massa enorme di mob stupidi + crescente varietà di pericolosi
     final spawns = <WaveSpawn>[];
 
-    // Nemici base sempre presenti (RADDOPPIATI)
-    spawns.add(WaveSpawn(EnemyType.drone, (20 + wave * 5).clamp(20, 120)));
-    spawns.add(WaveSpawn(EnemyType.kamikaze, (wave).clamp(5, 40), delay: 1));
-    spawns.add(WaveSpawn(EnemyType.weaver, (wave ~/ 2).clamp(3, 25), delay: 2));
-    spawns.add(WaveSpawn(EnemyType.splitter, (wave ~/ 3).clamp(2, 12), delay: 3));
-    spawns.add(WaveSpawn(EnemyType.shieldEnemy, (wave ~/ 4).clamp(2, 10), delay: 4));
-    spawns.add(WaveSpawn(EnemyType.vortex, (wave ~/ 8).clamp(1, 5), delay: 5));
+    // ── MASSA STUPIDA (~70%) ──
+    spawns.add(WaveSpawn(EnemyType.bouncer, (25 + wave * 2).clamp(25, 60)));
+    spawns.add(WaveSpawn(EnemyType.swarmDrone, (20 + wave * 2).clamp(20, 50), delay: 0.3));
+    spawns.add(WaveSpawn(EnemyType.drone, (12 + wave).clamp(12, 30), delay: 0.5));
+    spawns.add(WaveSpawn(EnemyType.mine, (3 + wave ~/ 3).clamp(3, 12), delay: 1));
 
-    // Nuovi nemici nelle endless waves
-    spawns.add(WaveSpawn(EnemyType.leech, (wave ~/ 5).clamp(2, 10), delay: 3));
-    spawns.add(WaveSpawn(EnemyType.glitch, (wave ~/ 8).clamp(1, 5), delay: 4));
-    spawns.add(WaveSpawn(EnemyType.pulsar, (wave ~/ 7).clamp(1, 6), delay: 3));
-    spawns.add(WaveSpawn(EnemyType.mirror, (wave ~/ 9).clamp(1, 4), delay: 5));
+    // ── PERICOLOSI (~30%) ──
+    spawns.add(WaveSpawn(EnemyType.kamikaze, (2 + wave ~/ 3).clamp(2, 10), delay: 2));
+    spawns.add(WaveSpawn(EnemyType.weaver, (1 + wave ~/ 4).clamp(1, 8), delay: 2.5));
+    spawns.add(WaveSpawn(EnemyType.splitter, (1 + wave ~/ 5).clamp(1, 6), delay: 3));
+    spawns.add(WaveSpawn(EnemyType.shieldEnemy, (1 + wave ~/ 6).clamp(1, 5), delay: 3));
+    spawns.add(WaveSpawn(EnemyType.leech, (wave ~/ 6).clamp(1, 5), delay: 3));
+    spawns.add(WaveSpawn(EnemyType.pulsar, (wave ~/ 8).clamp(1, 4), delay: 3.5));
+    spawns.add(WaveSpawn(EnemyType.glitch, (wave ~/ 10).clamp(1, 3), delay: 4));
+    spawns.add(WaveSpawn(EnemyType.mirror, (wave ~/ 10).clamp(1, 3), delay: 4));
+    spawns.add(WaveSpawn(EnemyType.vortex, (wave ~/ 12).clamp(1, 3), delay: 5));
+    spawns.add(WaveSpawn(EnemyType.phantom, (wave ~/ 12).clamp(1, 3), delay: 5));
+    spawns.add(WaveSpawn(EnemyType.tesla, (wave ~/ 12).clamp(1, 3), delay: 5));
 
-    // Titan (tank) ogni 3 wave
-    if (wave % 3 == 0) {
-      spawns.add(WaveSpawn(EnemyType.titan, (wave ~/ 15).clamp(1, 3), delay: 6));
-    }
-
-    // Black Hole ogni 5 wave
-    if (wave % 5 == 0) {
-      spawns.add(WaveSpawn(EnemyType.blackHole, 1, delay: 6));
-    }
-
-    // Phantom nelle wave avanzate
-    if (wave > 60) {
-      spawns.add(WaveSpawn(EnemyType.phantom, (wave ~/ 12).clamp(1, 4), delay: 5));
-    }
-
-    // Batch 2+3 nemici nelle endless
-    spawns.add(WaveSpawn(EnemyType.swarmDrone, (wave * 2).clamp(5, 40), delay: 1));
-    if (wave % 3 == 0) {
-      spawns.add(WaveSpawn(EnemyType.laserTurret, (wave ~/ 20).clamp(1, 3), delay: 5));
-    }
-    if (wave % 4 == 0) {
-      spawns.add(WaveSpawn(EnemyType.timeBomb, (wave ~/ 15).clamp(1, 3), delay: 4));
-    }
-    if (wave % 5 == 0) {
-      spawns.add(WaveSpawn(EnemyType.gravityWell, 1, delay: 6));
-    }
-    if (wave % 2 == 0) {
-      spawns.add(WaveSpawn(EnemyType.decoy, (wave ~/ 8).clamp(1, 5), delay: 3));
-    }
-    spawns.add(WaveSpawn(EnemyType.healer, (wave ~/ 12).clamp(1, 2), delay: 5));
-    spawns.add(WaveSpawn(EnemyType.tesla, (wave ~/ 10).clamp(1, 4), delay: 4));
+    // Rari/speciali
+    if (wave % 3 == 0) spawns.add(WaveSpawn(EnemyType.titan, (wave ~/ 15).clamp(1, 2), delay: 5));
+    if (wave % 4 == 0) spawns.add(WaveSpawn(EnemyType.blackHole, 1, delay: 6));
+    if (wave % 3 == 0) spawns.add(WaveSpawn(EnemyType.healer, (wave ~/ 20).clamp(1, 2), delay: 5));
+    if (wave % 4 == 0) spawns.add(WaveSpawn(EnemyType.laserTurret, (wave ~/ 25).clamp(1, 2), delay: 6));
+    if (wave % 5 == 0) spawns.add(WaveSpawn(EnemyType.gravityWell, 1, delay: 7));
+    if (wave % 3 == 0) spawns.add(WaveSpawn(EnemyType.timeBomb, (wave ~/ 20).clamp(1, 2), delay: 5));
+    if (wave % 2 == 0) spawns.add(WaveSpawn(EnemyType.decoy, (wave ~/ 10).clamp(1, 3), delay: 4));
     if (wave > 110) {
       spawns.add(WaveSpawn(EnemyType.orbiter, (wave ~/ 15).clamp(1, 3), delay: 5));
       spawns.add(WaveSpawn(EnemyType.siren, (wave ~/ 20).clamp(1, 2), delay: 6));

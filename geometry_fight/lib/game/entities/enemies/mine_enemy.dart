@@ -102,29 +102,14 @@ class MineEnemy extends EnemyBase {
 
     canvas.drawPath(path, paint);
 
-    // Dettagli interni (solo layer principale)
+    // Dettagli interni (solo layer principale, senza blur per performance)
     if (scale <= 1.01) {
       // Nucleo interno
       final coreColor = _detonating
           ? const Color(0xFFFF0000).withValues(alpha: 0.8)
           : paint.color.withValues(alpha: 0.5);
-      final corePaint = Paint()
-        ..color = coreColor
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
+      final corePaint = Paint()..color = coreColor;
       canvas.drawCircle(Offset(cx, cy), r * 0.25, corePaint);
-
-      // Punti scintillanti sulle punte esterne
-      for (int i = 0; i < 8; i++) {
-        final angle = i * math.pi / 4 + idlePhase * 0.5;
-        final sparkAlpha = 0.3 + math.sin(idlePhase * 5 + i) * 0.3;
-        final sparkPaint = Paint()
-          ..color = paint.color.withValues(alpha: sparkAlpha)
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 1.5);
-        canvas.drawCircle(
-          Offset(cx + r * 0.9 * math.cos(angle), cy + r * 0.9 * math.sin(angle)),
-          1.0, sparkPaint,
-        );
-      }
     }
   }
 }
