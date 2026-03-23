@@ -27,7 +27,7 @@ class ShieldEnemy extends EnemyBase {
       : super(
           hp: 3,
           speed: 100,
-          pointValue: 350,
+          pointValue: 12,
           geomValue: 4,
           neonColor: NeonColors.purple,
           size: Vector2(24, 24),

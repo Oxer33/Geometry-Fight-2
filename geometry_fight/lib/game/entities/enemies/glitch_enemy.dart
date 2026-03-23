@@ -27,7 +27,7 @@ class GlitchEnemy extends EnemyBase {
       : super(
           hp: 3,
           speed: 100, // Lento normalmente (si teletrasporta)
-          pointValue: 300,
+          pointValue: 10,
           geomValue: 4,
           neonColor: const Color(0xFF00EEFF), // Ciano elettrico
           size: Vector2(18, 18),

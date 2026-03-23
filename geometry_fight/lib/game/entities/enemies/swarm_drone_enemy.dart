@@ -18,7 +18,7 @@ class SwarmDroneEnemy extends EnemyBase {
       : super(
           hp: 1,
           speed: 200,
-          pointValue: 20,
+          pointValue: 1,
           geomValue: 1,
           neonColor: const Color(0xFFFF3388),
           size: Vector2(10, 10),

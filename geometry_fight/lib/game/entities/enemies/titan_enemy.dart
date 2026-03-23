@@ -20,7 +20,7 @@ class TitanEnemy extends EnemyBase {
       : super(
           hp: 25, // Molto resistente!
           speed: 60, // Molto lento
-          pointValue: 800,
+          pointValue: 25,
           geomValue: 8,
           neonColor: const Color(0xFFCC8844), // Bronzo/rame
           size: Vector2(40, 40), // Grande

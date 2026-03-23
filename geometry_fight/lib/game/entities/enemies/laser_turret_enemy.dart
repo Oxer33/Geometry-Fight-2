@@ -19,7 +19,7 @@ class LaserTurretEnemy extends EnemyBase {
       : super(
           hp: 6,
           speed: 0, // Stazionario
-          pointValue: 400,
+          pointValue: 15,
           geomValue: 5,
           neonColor: const Color(0xFFFF1144),
           size: Vector2(22, 22),

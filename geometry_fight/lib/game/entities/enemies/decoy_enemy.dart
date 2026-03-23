@@ -17,7 +17,7 @@ class DecoyEnemy extends EnemyBase {
       : super(
           hp: 2,
           speed: 0, // Stazionario come un power-up
-          pointValue: 150,
+          pointValue: 5,
           geomValue: 3,
           neonColor: const Color(0xFF44FF88), // Verde ingannevole
           size: Vector2(22, 22),

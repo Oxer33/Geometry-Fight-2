@@ -28,7 +28,7 @@ class LeechEnemy extends EnemyBase {
       : super(
           hp: 2,
           speed: 250, // Veloce per raggiungere il player
-          pointValue: 200,
+          pointValue: 7,
           geomValue: 3,
           neonColor: const Color(0xFF88FF00), // Verde acido
           size: Vector2(14, 14),

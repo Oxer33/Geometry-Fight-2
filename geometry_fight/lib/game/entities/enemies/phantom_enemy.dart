@@ -20,7 +20,7 @@ class PhantomEnemy extends EnemyBase {
         super(
           hp: 3,
           speed: 160,
-          pointValue: 400,
+          pointValue: 15,
           geomValue: 5,
           neonColor: NeonColors.electricBlue,
           size: Vector2(20, 20),

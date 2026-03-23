@@ -16,7 +16,7 @@ class SirenEnemy extends EnemyBase {
       : super(
           hp: 5,
           speed: 80,
-          pointValue: 400,
+          pointValue: 15,
           geomValue: 4,
           neonColor: const Color(0xFFBB66FF),
           size: Vector2(22, 22),

@@ -27,7 +27,7 @@ class SplitterEnemy extends EnemyBase {
   static double _speedForSize(SplitterSize s) {
     switch (s) {
       case SplitterSize.large:
-        return 100;
+        return 4;
       case SplitterSize.medium:
         return 150; // ridotto per bilanciare l'orbita
       case SplitterSize.small:
@@ -38,11 +38,11 @@ class SplitterEnemy extends EnemyBase {
   static int _pointsForSize(SplitterSize s) {
     switch (s) {
       case SplitterSize.large:
-        return 300;
+        return 10;
       case SplitterSize.medium:
-        return 100;
+        return 4;
       case SplitterSize.small:
-        return 50;
+        return 2;
     }
   }
 

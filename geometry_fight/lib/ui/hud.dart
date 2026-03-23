@@ -29,7 +29,7 @@ class GameHud extends StatelessWidget {
                 left: 12,
                 child: _ScorePanel(
                   score: game.scoreSystem.score,
-                  multiplier: game.scoreSystem.multiplier.toDouble(),
+                  multiplier: game.scoreSystem.multiplier,
                   hasDoubleMultiplier: false,
                 ),
               ),
@@ -206,7 +206,7 @@ class GameHud extends StatelessWidget {
 // ===================================================================
 class _ScorePanel extends StatelessWidget {
   final int score;
-  final double multiplier;
+  final int multiplier;
   final bool hasDoubleMultiplier;
 
   const _ScorePanel({
@@ -264,14 +264,16 @@ class _ScorePanel extends StatelessWidget {
   }
 
   Color _getScoreGlowColor() {
-    if (score > 100000) return const Color(0xFFFF00FF);
-    if (score > 50000) return const Color(0xFFFFD700);
-    if (score > 10000) return const Color(0xFF00FFFF);
+    if (score > 10000000) return const Color(0xFFFF00FF);
+    if (score > 1000000) return const Color(0xFFFFD700);
+    if (score > 100000) return const Color(0xFF00FFFF);
     return const Color(0xFF4488FF);
   }
 
   String _formatScore(int s) {
+    if (s >= 1000000000) return '${(s ~/ 1000000)}M';
     if (s >= 1000000) return '${(s / 1000000).toStringAsFixed(1)}M';
+    if (s >= 10000) return '${(s ~/ 1000)}K';
     if (s >= 1000) return '${(s / 1000).toStringAsFixed(1)}K';
     return '$s';
   }
@@ -281,7 +283,7 @@ class _ScorePanel extends StatelessWidget {
 // BADGE MOLTIPLICATORE - Cambia colore in base al valore
 // ===================================================================
 class _MultiplierBadge extends StatelessWidget {
-  final double multiplier;
+  final int multiplier;
 
   const _MultiplierBadge({required this.multiplier});
 
@@ -296,7 +298,7 @@ class _MultiplierBadge extends StatelessWidget {
         color: color.withValues(alpha: 0.1),
       ),
       child: Text(
-        'x${multiplier.toStringAsFixed(1)}',
+        'x$multiplier',
         style: TextStyle(
           color: color,
           fontSize: 14,
@@ -309,10 +311,10 @@ class _MultiplierBadge extends StatelessWidget {
   }
 
   Color _getColor() {
-    if (multiplier >= 15) return const Color(0xFFFF2244);
-    if (multiplier >= 10) return const Color(0xFFFF6600);
-    if (multiplier >= 5) return const Color(0xFFFFD700);
-    if (multiplier >= 2) return const Color(0xFF00FFAA);
+    if (multiplier >= 100) return const Color(0xFFFF2244);
+    if (multiplier >= 50) return const Color(0xFFFF6600);
+    if (multiplier >= 20) return const Color(0xFFFFD700);
+    if (multiplier >= 5) return const Color(0xFF00FFAA);
     return const Color(0xFF8899AA);
   }
 }

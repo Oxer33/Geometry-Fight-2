@@ -21,7 +21,7 @@ class MirrorEnemy extends EnemyBase {
         super(
           hp: 5,
           speed: 90,
-          pointValue: 300,
+          pointValue: 10,
           geomValue: 4,
           neonColor: NeonColors.magenta,
           size: Vector2(26, 26),

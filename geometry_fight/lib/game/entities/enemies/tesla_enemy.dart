@@ -19,7 +19,7 @@ class TeslaEnemy extends EnemyBase {
         super(
           hp: 3,
           speed: 110,
-          pointValue: 350,
+          pointValue: 12,
           geomValue: 4,
           neonColor: const Color(0xFFFFEE44),
           size: Vector2(20, 20),

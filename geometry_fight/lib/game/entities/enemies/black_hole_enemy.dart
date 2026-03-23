@@ -14,7 +14,7 @@ class BlackHoleEnemy extends EnemyBase {
       : super(
           hp: 20,
           speed: 0,
-          pointValue: 1000,
+          pointValue: 30,
           geomValue: 10,
           neonColor: NeonColors.darkRed,
           size: Vector2(40, 40),

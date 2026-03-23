@@ -15,7 +15,7 @@ class BouncerEnemy extends EnemyBase {
       : super(
           hp: 1,
           speed: 45, // GW Wanderer: 35-50 px/s
-          pointValue: 25,
+          pointValue: 1,
           geomValue: 1,
           neonColor: NeonColors.purple, // Viola come GW Wanderer
           size: Vector2(16, 16),

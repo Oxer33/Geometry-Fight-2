@@ -14,7 +14,7 @@ class DroneEnemy extends EnemyBase {
       : super(
           hp: 1,
           speed: 80, // Parte lento come GW (80 px/s)
-          pointValue: 50,
+          pointValue: 2,
           geomValue: 1,
           neonColor: const Color(0xFF4488FF), // Blu brillante come GW
           size: Vector2(18, 18),

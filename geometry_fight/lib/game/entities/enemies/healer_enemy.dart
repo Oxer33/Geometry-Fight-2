@@ -21,7 +21,7 @@ class HealerEnemy extends EnemyBase {
       : super(
           hp: 4,
           speed: 130,
-          pointValue: 500,
+          pointValue: 18,
           geomValue: 5,
           neonColor: const Color(0xFF00FF88),
           size: Vector2(22, 22),

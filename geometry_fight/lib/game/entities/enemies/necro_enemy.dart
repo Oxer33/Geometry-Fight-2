@@ -19,7 +19,7 @@ class NecroEnemy extends EnemyBase {
       : super(
           hp: 6,
           speed: 70,
-          pointValue: 600,
+          pointValue: 20,
           geomValue: 6,
           neonColor: const Color(0xFF8800AA),
           size: Vector2(24, 24),

@@ -18,7 +18,7 @@ class SnakeEnemy extends EnemyBase {
       : super(
           hp: 1,
           speed: 120,
-          pointValue: 100,
+          pointValue: 5,
           geomValue: 2,
           neonColor: NeonColors.green,
           size: Vector2(12, 12),

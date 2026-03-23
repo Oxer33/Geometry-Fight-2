@@ -14,7 +14,7 @@ class VortexEnemy extends EnemyBase {
       : super(
           hp: 8,
           speed: 50,
-          pointValue: 500,
+          pointValue: 18,
           geomValue: 6,
           neonColor: NeonColors.lime,
           size: Vector2(28, 28),

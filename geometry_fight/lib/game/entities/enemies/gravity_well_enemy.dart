@@ -17,7 +17,7 @@ class GravityWellEnemy extends EnemyBase {
       : super(
           hp: 8,
           speed: 40,
-          pointValue: 450,
+          pointValue: 15,
           geomValue: 5,
           neonColor: const Color(0xFF4400CC),
           size: Vector2(28, 28),

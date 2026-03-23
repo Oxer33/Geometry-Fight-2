@@ -20,7 +20,7 @@ class TimeBombEnemy extends EnemyBase {
       : super(
           hp: 4,
           speed: 90,
-          pointValue: 350,
+          pointValue: 12,
           geomValue: 4,
           neonColor: const Color(0xFFFF6600),
           size: Vector2(24, 24),

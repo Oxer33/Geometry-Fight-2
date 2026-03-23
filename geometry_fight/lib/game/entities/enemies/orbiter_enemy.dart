@@ -19,7 +19,7 @@ class OrbiterEnemy extends EnemyBase {
       : super(
           hp: 4,
           speed: 200,
-          pointValue: 250,
+          pointValue: 8,
           geomValue: 3,
           neonColor: const Color(0xFFFF9933),
           size: Vector2(20, 20),

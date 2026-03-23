@@ -12,7 +12,7 @@ class MineEnemy extends EnemyBase {
       : super(
           hp: 2,
           speed: 0,
-          pointValue: 75,
+          pointValue: 3,
           geomValue: 2,
           neonColor: NeonColors.gray,
           size: Vector2(20, 20),

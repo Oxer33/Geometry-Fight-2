@@ -15,7 +15,7 @@ class PulsarEnemy extends EnemyBase {
       : super(
           hp: 4,
           speed: 80,
-          pointValue: 250,
+          pointValue: 8,
           geomValue: 3,
           neonColor: NeonColors.teal,
           size: Vector2(22, 22),

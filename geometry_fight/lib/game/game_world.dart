@@ -593,8 +593,8 @@ class GeometryFightGame extends FlameGame
       // PERFECT WAVE! Nessun colpo subito durante la wave
       showPerfectWave = true;
       _perfectWaveTimer = 2.5;
-      // Bonus: geomi raddoppiati per questa wave
-      scoreSystem.addGeoms(50);
+      // Bonus: +10 al moltiplicatore per perfect wave
+      scoreSystem.addGeoms(10);
     }
     _hitThisWave = false; // Reset per la prossima wave
   }
@@ -637,8 +637,8 @@ class GeometryFightGame extends FlameGame
   }
 
   void collectGeom(int value) {
-    final actualValue = (value * scoreSystem.multiplier).round();
-    scoreSystem.addGeoms(actualValue);
+    // Ogni geom raccolto aggiunge +1 al moltiplicatore (non moltiplicato)
+    scoreSystem.addGeoms(value);
     sessionGeoms += value;
   }
 

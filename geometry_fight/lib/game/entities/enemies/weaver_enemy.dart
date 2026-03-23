@@ -15,7 +15,7 @@ class WeaverEnemy extends EnemyBase {
       : super(
           hp: 1,
           speed: 220, // Leggermente più veloce del player (200)
-          pointValue: 100,
+          pointValue: 4,
           geomValue: 2,
           neonColor: NeonColors.green, // Verde come GW
           size: Vector2(16, 16),

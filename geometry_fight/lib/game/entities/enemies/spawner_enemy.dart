@@ -12,7 +12,7 @@ class SpawnerEnemy extends EnemyBase {
       : super(
           hp: 15,
           speed: 60,
-          pointValue: 500,
+          pointValue: 18,
           geomValue: 5,
           neonColor: NeonColors.orange,
           size: Vector2(30, 30),

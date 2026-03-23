@@ -16,7 +16,7 @@ class KamikazeEnemy extends EnemyBase {
       : super(
           hp: 1,
           speed: 800,
-          pointValue: 100,
+          pointValue: 4,
           geomValue: 2,
           neonColor: NeonColors.red,
           size: Vector2(16, 22),
