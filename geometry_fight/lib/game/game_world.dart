@@ -428,7 +428,13 @@ class GeometryFightGame extends FlameGame
   }
 
   void spawnBoss(BossType type) {
-    final pos = Vector2(arenaWidth / 2, arenaHeight / 2 - 300);
+    // In tunnel mode: spawna davanti alla camera (visibile)
+    final pos = isTunnelMode
+        ? Vector2(
+            camera.viewfinder.position.x + size.x / 2 + 100,
+            camera.viewfinder.position.y,
+          )
+        : Vector2(arenaWidth / 2, arenaHeight / 2 - 300);
     BossBase boss;
 
     switch (type) {
