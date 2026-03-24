@@ -94,7 +94,7 @@ class GeometryFightGame extends FlameGame
     this.gameMode = GameMode.classic,
   }) {
     diffConfig = difficultyConfigs[difficulty]!;
-    scoreSystem.geomValueMultiplier = diffConfig.geomValueMultiplier;
+    // scoreSystem.geomValueMultiplier viene settato in onLoad() dopo l'inizializzazione
   }
 
   // Input state
@@ -174,6 +174,7 @@ class GeometryFightGame extends FlameGame
 
     // Systems
     scoreSystem = ScoreSystem();
+    scoreSystem.geomValueMultiplier = diffConfig.geomValueMultiplier;
     waveSystem = WaveSystem(this);
     powerUpSystem = PowerUpSystem(this);
 
