@@ -118,10 +118,12 @@ class GeometryFightGame extends FlameGame
   // Screen flash rosso quando colpito
   double hitFlashTimer = 0;
 
-  // Tunnel mode: arena dinamica
+  // Tunnel mode: arena dinamica con scrolling automatico
   double tunnelHeight = 600; // Altezza corridoio (si allarga per boss)
   double tunnelTargetHeight = 600;
   bool get isTunnelMode => gameMode == GameMode.tunnel;
+  double tunnelScrollSpeed = 100; // Velocità scroll camera (px/s, cresce nel tempo)
+  double _tunnelCameraX = 0; // Posizione X della camera (avanza indipendentemente dal player)
 
   // Callbacks for UI
   void Function()? onGameOver;
@@ -249,13 +251,26 @@ class GeometryFightGame extends FlameGame
     if (isTunnelMode) {
       tunnelTargetHeight = bossCount > 0 ? 1800 : 600; // Allarga per boss fight
       tunnelHeight += (tunnelTargetHeight - tunnelHeight) * 2.0 * dt;
-    }
 
-    // Camera follow player
-    final targetPos = player.position.clone();
-    final currentPos = camera.viewfinder.position;
-    camera.viewfinder.position =
-        currentPos + (targetPos - currentPos) * cameraSmoothing;
+      // Camera avanza automaticamente verso destra (side-scroller)
+      // Accelera lentamente nel tempo: da 100 a ~200 px/s in ~5 minuti
+      tunnelScrollSpeed = 100 + (_tunnelCameraX * 0.005).clamp(0, 120);
+      _tunnelCameraX += tunnelScrollSpeed * dt;
+
+      // Camera X: scrolling costante. Camera Y: segue player per comfort
+      final currentPos = camera.viewfinder.position;
+      final targetY = player.position.y;
+      camera.viewfinder.position = Vector2(
+        _tunnelCameraX + arenaWidth / 2, // Offset iniziale + scroll
+        currentPos.y + (targetY - currentPos.y) * cameraSmoothing,
+      );
+    } else {
+      // Modalità normali: camera segue player
+      final targetPos = player.position.clone();
+      final currentPos = camera.viewfinder.position;
+      camera.viewfinder.position =
+          currentPos + (targetPos - currentPos) * cameraSmoothing;
+    }
 
     super.update(scaledDt);
   }
@@ -466,10 +481,12 @@ class GeometryFightGame extends FlameGame
     const viewHeight = 600.0;
     const padding = 200.0;
 
-    // Nel tunnel mode: nemici spawnano VICINI davanti al player (lato destro)
+    // Nel tunnel mode: nemici spawnano davanti alla camera (fuori schermo a destra)
     if (isTunnelMode) {
+      final cameraX = camera.viewfinder.position.x;
+      final screenHalfW = size.x / 2;
       return Vector2(
-        player.position.x + 300 + random.nextDouble() * 400, // 300-700px avanti (era 600-1100)
+        cameraX + screenHalfW + 50 + random.nextDouble() * 300, // Appena fuori schermo a destra
         player.position.y + (random.nextDouble() - 0.5) * tunnelHeight * 0.8,
       );
     }
@@ -719,6 +736,8 @@ class GeometryFightGame extends FlameGame
     hitFlashTimer = 0;
     timeAttackTimer = 180;
     tunnelHeight = 600;
+    tunnelScrollSpeed = 100;
+    _tunnelCameraX = 0;
     scoreSystem.reset();
 
     // Re-add components

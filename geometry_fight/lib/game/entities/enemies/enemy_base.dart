@@ -45,8 +45,9 @@ abstract class EnemyBase extends PositionComponent
     if (game.isTunnelMode) {
       // Tunnel: NO clamp Y statico (il tunnel renderer gestisce i muri dinamici)
       // NO clamp X (scroll infinito)
-      // Despawn nemici superati dal player (dietro il margine sinistro dello schermo)
-      if (position.x < game.player.position.x - 600) {
+      // Despawn nemici superati dalla camera (dietro il bordo sinistro dello schermo)
+      final cameraLeft = game.camera.viewfinder.position.x - game.size.x / 2 - 200;
+      if (position.x < cameraLeft) {
         removeFromParent();
         return;
       }

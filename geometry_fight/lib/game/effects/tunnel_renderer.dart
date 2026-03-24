@@ -39,10 +39,12 @@ class TunnelRenderer extends PositionComponent
     }
 
     // Aggiorna ostacoli
+    final cameraLeft = game.camera.viewfinder.position.x - game.size.x / 2 - 100;
     for (int i = _obstacles.length - 1; i >= 0; i--) {
       _obstacles[i].lifetime -= dt;
       _obstacles[i].phase += dt * 3;
-      if (_obstacles[i].lifetime <= 0) {
+      // Rimuovi ostacoli scaduti o passati dietro la camera
+      if (_obstacles[i].lifetime <= 0 || _obstacles[i].x < cameraLeft) {
         _obstacles.removeAt(i);
         continue;
       }
@@ -76,8 +78,10 @@ class TunnelRenderer extends PositionComponent
   }
 
   void _spawnObstacle() {
-    // Spawna un ostacolo avanti al player
-    final aheadX = game.player.position.x + 400 + _random.nextDouble() * 300;
+    // Spawna un ostacolo avanti alla camera (fuori schermo a destra)
+    final cameraX = game.camera.viewfinder.position.x;
+    final screenHalfW = game.size.x / 2;
+    final aheadX = cameraX + screenHalfW + 100 + _random.nextDouble() * 300;
     _obstacles.add(_TunnelObstacle(
       x: aheadX,
       isTop: _random.nextBool(),
@@ -91,10 +95,11 @@ class TunnelRenderer extends PositionComponent
   void render(Canvas canvas) {
     if (!game.isTunnelMode) return;
 
-    final playerX = game.player.position.x;
-    final viewWidth = 900.0; // Larghezza visibile
-    final startX = playerX - viewWidth;
-    final endX = playerX + viewWidth;
+    // Usa la posizione della camera per il viewport (non il player!)
+    final cameraX = game.camera.viewfinder.position.x;
+    final viewWidth = game.size.x / 2 + 100; // Larghezza visibile + margine
+    final startX = cameraX - viewWidth;
+    final endX = cameraX + viewWidth;
 
     final topWallY = centerY - tunnelH / 2;
     final bottomWallY = centerY + tunnelH / 2;

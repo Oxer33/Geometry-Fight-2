@@ -56,9 +56,6 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
   static const int _maxTrailLength = 18;
   double _trailTimer = 0;
 
-  // Tunnel: posizione X massima raggiunta (non si può tornare indietro)
-  double _maxTunnelX = 0;
-
   Player() : super(size: Vector2(30, 34), anchor: Anchor.center);
 
   @override
@@ -84,16 +81,21 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
 
     // Clamp to arena
     if (game.isTunnelMode) {
-      // Tunnel: avanzamento automatico lento + non si può tornare indietro
-      position.x += 80 * realDt; // Avanzamento automatico
-      // Aggiorna la X massima raggiunta
-      if (position.x > _maxTunnelX) _maxTunnelX = position.x;
-      // Non si può tornare indietro oltre il bordo sinistro dello schermo
-      // Il bordo sinistro è la posizione della camera - metà larghezza schermo (~400px)
+      // Tunnel side-scroller: il player si muove liberamente dentro lo schermo visibile.
+      // La camera avanza da sola — il player NON può uscire dalla vista.
       final cameraX = game.camera.viewfinder.position.x;
       final screenHalfW = game.size.x / 2;
-      position.x = position.x.clamp(cameraX - screenHalfW + 20, double.infinity);
-      // Y: limitato dal tunnel renderer (che calcola i muri dinamici)
+      final screenHalfH = game.size.y / 2;
+      // Clamp X: non può andare dietro al bordo sinistro né oltre il bordo destro
+      position.x = position.x.clamp(
+        cameraX - screenHalfW + 20,
+        cameraX + screenHalfW - 20,
+      );
+      // Clamp Y: limitato dalla vista della camera (il tunnel renderer fa il clamp fine sui muri)
+      position.y = position.y.clamp(
+        game.camera.viewfinder.position.y - screenHalfH + 20,
+        game.camera.viewfinder.position.y + screenHalfH - 20,
+      );
     } else {
       // Modalità normali: limiti sia X che Y
       position.x = position.x.clamp(15, arenaWidth - 15);
