@@ -262,7 +262,11 @@ class GeometryFightGame extends FlameGame
 
       // Camera avanza automaticamente verso destra (side-scroller)
       // Accelera lentamente nel tempo: da 100 a ~200 px/s in ~5 minuti
-      tunnelScrollSpeed = 100.0 + (_tunnelCameraX * 0.005).clamp(0.0, 120.0);
+      // Durante boss fight: rallenta a 25 px/s per dare spazio al combattimento
+      final baseSpeed = 100.0 + (_tunnelCameraX * 0.005).clamp(0.0, 120.0);
+      final targetSpeed = bossCount > 0 ? 25.0 : baseSpeed;
+      // Lerp graduale verso la velocità target (non scatto improvviso)
+      tunnelScrollSpeed += (targetSpeed - tunnelScrollSpeed) * 3.0 * dt;
       _tunnelCameraX += tunnelScrollSpeed * dt;
 
       // Camera X: scrolling costante. Camera Y: segue player per comfort

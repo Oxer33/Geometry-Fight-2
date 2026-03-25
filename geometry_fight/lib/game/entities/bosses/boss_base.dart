@@ -66,23 +66,27 @@ abstract class BossBase extends PositionComponent
       _spawnMinions();
     }
 
-    // Clamp to arena (tunnel mode: segue la camera, non limiti fissi)
+    // Clamp to arena
     if (game.isTunnelMode) {
+      // TUNNEL BOSS: stile side-scroller — boss ancorato al lato destro dello schermo.
+      // La X è forzata a seguire la camera (lato destro ~60% dello schermo).
+      // Solo il movimento Y è libero (su/giù nel tunnel).
       final cam = game.camera.viewfinder.position;
       final halfW = game.size.x > 0 ? game.size.x / 2 : 400.0;
       final halfH = game.size.y > 0 ? game.size.y / 2 : 300.0;
-      // Despawn se il boss è rimasto troppo indietro rispetto alla camera
-      if (position.x < cam.x - halfW - 300) {
-        onDeath();
-        return;
-      }
-      position.x = position.x.clamp(
-        cam.x - halfW + 50,
-        cam.x + halfW - 50,
-      );
+
+      // X: ancorato al lato destro dello schermo (60% a destra dal centro)
+      position.x = cam.x + halfW * 0.55;
+
+      // Y: segue il player con smoothing + oscillazione sinusoidale per varietà
+      final targetY = game.player.position.y;
+      position.y += (targetY - position.y) * 1.5 * dt; // Insegue Y del player lentamente
+      position.y += math.sin(_flashTimer * 10 + hp) * 30 * dt; // Micro-oscillazione
+
+      // Clamp Y ai limiti del tunnel visibile
       position.y = position.y.clamp(
-        cam.y - halfH + 50,
-        cam.y + halfH - 50,
+        cam.y - halfH + size.y / 2 + 20,
+        cam.y + halfH - size.y / 2 - 20,
       );
     } else {
       position.x = position.x.clamp(50.0, arenaWidth - 50);
