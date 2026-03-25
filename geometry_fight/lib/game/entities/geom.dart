@@ -47,6 +47,15 @@ class Geom extends PositionComponent
       return;
     }
 
+    // Tunnel mode: despawn geom dietro la camera (evita accumulo infinito)
+    if (game.isTunnelMode) {
+      final cameraLeft = game.camera.viewfinder.position.x - (game.size.x > 0 ? game.size.x / 2 : 400) - 200;
+      if (position.x < cameraLeft) {
+        removeFromParent();
+        return;
+      }
+    }
+
     // Attrazione geomi: sempre attiva con raggio base 80px
     // Power-up Magnet aumenta il raggio a 400px
     // Upgrade magnetRange aggiunge raggio extra

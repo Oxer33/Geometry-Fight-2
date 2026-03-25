@@ -56,9 +56,10 @@ class PlayerBullet extends PositionComponent
     position += _velocity * realDt;
 
     // Distruggi quando esce dall'arena
-    // Nel tunnel mode: NO limiti statici, solo distanza dal player
     if (game.isTunnelMode) {
-      if ((position - game.player.position).length > 1500) {
+      // Tunnel: despawn se troppo lontano dal player O dietro la camera
+      final cameraLeft = game.camera.viewfinder.position.x - (game.size.x > 0 ? game.size.x / 2 : 400) - 200;
+      if (position.x < cameraLeft || (position - game.player.position).length > 1200) {
         removeFromParent();
         return;
       }
@@ -292,10 +293,10 @@ class PlasmaBullet extends PositionComponent
     position += _velocity * dt;
     _phase += dt * 10;
 
-    // Nel tunnel mode: NO limiti X, solo Y + distanza dal player
     if (game.isTunnelMode) {
-      if (position.y < -50 || position.y > arenaHeight + 50 ||
-          (position - game.player.position).length > 1500) {
+      // Tunnel: despawn se dietro la camera o troppo lontano dal player
+      final cameraLeft = game.camera.viewfinder.position.x - (game.size.x > 0 ? game.size.x / 2 : 400) - 200;
+      if (position.x < cameraLeft || (position - game.player.position).length > 1200) {
         removeFromParent();
       }
     } else {

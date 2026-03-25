@@ -60,7 +60,18 @@ class PowerUp extends PositionComponent
     _phase += dt * 3;
     _pulsePhase += dt * 6;
     _lifetime -= dt;
-    if (_lifetime <= 0) removeFromParent();
+    if (_lifetime <= 0) {
+      removeFromParent();
+      return;
+    }
+    // Tunnel mode: despawn power-up dietro la camera
+    if (game.isTunnelMode) {
+      final cameraLeft = game.camera.viewfinder.position.x - (game.size.x > 0 ? game.size.x / 2 : 400) - 100;
+      if (position.x < cameraLeft) {
+        removeFromParent();
+        return;
+      }
+    }
 
     // Attrazione verso il player (come i geomi, raggio 120px)
     final player = game.player;

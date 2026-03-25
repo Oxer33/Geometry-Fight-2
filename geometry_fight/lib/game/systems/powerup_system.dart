@@ -20,10 +20,22 @@ class PowerUpSystem {
   }
 
   void _spawnRandomInArena() {
-    final pos = Vector2(
-      100 + _random.nextDouble() * (arenaWidth - 200),
-      100 + _random.nextDouble() * (arenaHeight - 200),
-    );
+    final Vector2 pos;
+    if (game.isTunnelMode) {
+      // Tunnel: spawna nella zona visibile della camera
+      final cam = game.camera.viewfinder.position;
+      final halfW = game.size.x > 0 ? game.size.x / 2 : 400.0;
+      final halfH = game.size.y > 0 ? game.size.y / 2 : 300.0;
+      pos = Vector2(
+        cam.x + (_random.nextDouble() - 0.3) * halfW * 1.5, // Leggermente avanti
+        cam.y + (_random.nextDouble() - 0.5) * halfH * 1.2,
+      );
+    } else {
+      pos = Vector2(
+        100 + _random.nextDouble() * (arenaWidth - 200),
+        100 + _random.nextDouble() * (arenaHeight - 200),
+      );
+    }
     spawnRandomPowerUp(pos);
   }
 
