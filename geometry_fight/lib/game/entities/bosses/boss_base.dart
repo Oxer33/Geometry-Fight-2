@@ -66,9 +66,19 @@ abstract class BossBase extends PositionComponent
       _spawnMinions();
     }
 
-    // Clamp to arena
-    position.x = position.x.clamp(50, arenaWidth - 50);
-    position.y = position.y.clamp(50, arenaHeight - 50);
+    // Clamp to arena (tunnel mode: segue la camera, non limiti fissi)
+    if (game.isTunnelMode) {
+      final cameraX = game.camera.viewfinder.position.x;
+      final screenHalfW = game.size.x / 2;
+      position.x = position.x.clamp(
+        cameraX - screenHalfW + 50,
+        cameraX + screenHalfW - 50,
+      );
+      // Y: limitato dal tunnel
+    } else {
+      position.x = position.x.clamp(50.0, arenaWidth - 50);
+      position.y = position.y.clamp(50.0, arenaHeight - 50);
+    }
   }
 
   int getPhase();

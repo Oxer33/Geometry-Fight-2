@@ -84,7 +84,10 @@ class _GameScreenState extends State<GameScreen> {
       body: Stack(
         children: [
           // === GAME ENGINE ===
-          GameWidget(game: _game),
+          GameWidget(
+            game: _game,
+            loadingBuilder: (context) => Container(color: Colors.black),
+          ),
 
           // === JOYSTICK VISUALI (dual-stick) ===
           _buildDualJoysticks(),
