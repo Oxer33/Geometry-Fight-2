@@ -68,6 +68,14 @@ class _NavigationWrapperState extends State<NavigationWrapper> {
 
   @override
   Widget build(BuildContext context) {
+    // Container nero costante per evitare flash bianchi durante le transizioni
+    return Container(
+      color: Colors.black,
+      child: _buildScreen(),
+    );
+  }
+
+  Widget _buildScreen() {
     switch (_currentScreen) {
       case AppScreen.splash:
         return SplashScreen(
