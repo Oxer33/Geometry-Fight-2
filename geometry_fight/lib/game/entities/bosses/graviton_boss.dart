@@ -62,8 +62,10 @@ class GravitonBoss extends BossBase {
       }
     }
 
-    // Movimento lento verso centro arena
-    final center = Vector2(arenaWidth / 2, arenaHeight / 2);
+    // Movimento lento verso centro arena (o camera in tunnel mode)
+    final center = game.isTunnelMode
+        ? game.camera.viewfinder.position
+        : Vector2(arenaWidth / 2, arenaHeight / 2);
     final toCenter = center - position;
     if (toCenter.length > 100) {
       position += toCenter.normalized() * 30 * dt;

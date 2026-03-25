@@ -51,9 +51,12 @@ class OmegaCoreBoss extends BossBase {
     _phase += dt * 4;
     _spiralAngle += dt * 2;
 
-    // Movimento: orbita lenta attorno al centro arena
-    final centerX = arenaWidth / 2;
-    final centerY = arenaHeight / 2;
+    // Movimento: orbita lenta attorno al centro arena (o camera in tunnel mode)
+    final center = game.isTunnelMode
+        ? game.camera.viewfinder.position
+        : Vector2(arenaWidth / 2, arenaHeight / 2);
+    final centerX = center.x;
+    final centerY = center.y;
     final orbitR = 300 + math.sin(_phase * 0.3) * 100;
     final targetPos = Vector2(
       centerX + math.cos(_phase * 0.15) * orbitR,

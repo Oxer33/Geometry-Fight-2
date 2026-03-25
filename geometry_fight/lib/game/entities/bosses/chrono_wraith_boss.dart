@@ -125,10 +125,20 @@ class ChronoWraithBoss extends BossBase {
     // Teleport behind the player
     final behind = playerPosition +
         (playerPosition - position).normalized() * -200;
-    position = Vector2(
-      behind.x.clamp(100, arenaWidth - 100),
-      behind.y.clamp(100, arenaHeight - 100),
-    );
+    if (game.isTunnelMode) {
+      final cam = game.camera.viewfinder.position;
+      final halfW = game.size.x > 0 ? game.size.x / 2 : 400.0;
+      final halfH = game.size.y > 0 ? game.size.y / 2 : 300.0;
+      position = Vector2(
+        behind.x.clamp(cam.x - halfW + 50, cam.x + halfW - 50),
+        behind.y.clamp(cam.y - halfH + 50, cam.y + halfH - 50),
+      );
+    } else {
+      position = Vector2(
+        behind.x.clamp(100, arenaWidth - 100),
+        behind.y.clamp(100, arenaHeight - 100),
+      );
+    }
 
     game.spawnExplosion(position, NeonColors.deepPurple, radius: 40, particleCount: 15);
   }

@@ -33,9 +33,12 @@ class TheArchitectBoss extends BossBase {
   void updateBoss(double dt) {
     _phase += dt;
 
-    // Orbital movement around arena center
-    final centerX = arenaWidth / 2;
-    final centerY = arenaHeight / 2;
+    // Orbital movement around arena center (or camera in tunnel mode)
+    final center = game.isTunnelMode
+        ? game.camera.viewfinder.position
+        : Vector2(arenaWidth / 2, arenaHeight / 2);
+    final centerX = center.x;
+    final centerY = center.y;
     final orbitRadius = 300.0 - currentPhase * 50;
     position = Vector2(
       centerX + math.cos(_phase * 0.5) * orbitRadius,

@@ -58,8 +58,16 @@ class PhantomKingBoss extends BossBase {
         final angle = math.Random().nextDouble() * math.pi * 2;
         final dist = 150 + math.Random().nextDouble() * 200;
         position = playerPosition + Vector2(math.cos(angle) * dist, math.sin(angle) * dist);
-        position.x = position.x.clamp(100, arenaWidth - 100);
-        position.y = position.y.clamp(100, arenaHeight - 100);
+        if (game.isTunnelMode) {
+          final cam = game.camera.viewfinder.position;
+          final halfW = game.size.x > 0 ? game.size.x / 2 : 400.0;
+          final halfH = game.size.y > 0 ? game.size.y / 2 : 300.0;
+          position.x = position.x.clamp(cam.x - halfW + 50, cam.x + halfW - 50);
+          position.y = position.y.clamp(cam.y - halfH + 50, cam.y + halfH - 50);
+        } else {
+          position.x = position.x.clamp(100, arenaWidth - 100);
+          position.y = position.y.clamp(100, arenaHeight - 100);
+        }
       }
     }
 

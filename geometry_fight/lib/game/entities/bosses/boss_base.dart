@@ -68,13 +68,22 @@ abstract class BossBase extends PositionComponent
 
     // Clamp to arena (tunnel mode: segue la camera, non limiti fissi)
     if (game.isTunnelMode) {
-      final cameraX = game.camera.viewfinder.position.x;
-      final screenHalfW = game.size.x / 2;
+      final cam = game.camera.viewfinder.position;
+      final halfW = game.size.x > 0 ? game.size.x / 2 : 400.0;
+      final halfH = game.size.y > 0 ? game.size.y / 2 : 300.0;
+      // Despawn se il boss è rimasto troppo indietro rispetto alla camera
+      if (position.x < cam.x - halfW - 300) {
+        onDeath();
+        return;
+      }
       position.x = position.x.clamp(
-        cameraX - screenHalfW + 50,
-        cameraX + screenHalfW - 50,
+        cam.x - halfW + 50,
+        cam.x + halfW - 50,
       );
-      // Y: limitato dal tunnel
+      position.y = position.y.clamp(
+        cam.y - halfH + 50,
+        cam.y + halfH - 50,
+      );
     } else {
       position.x = position.x.clamp(50.0, arenaWidth - 50);
       position.y = position.y.clamp(50.0, arenaHeight - 50);

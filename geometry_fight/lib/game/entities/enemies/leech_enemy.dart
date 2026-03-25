@@ -14,12 +14,13 @@ class LeechEnemy extends EnemyBase {
   bool _attached = false; // Se è agganciato al player
   double _tentaclePhase = 0;
   double _attachTimer = 0; // Durata dell'aggancio prima di staccarsi
+  double _originalPlayerSpeed = 200; // Velocità originale del player salvata all'aggancio
 
   @override
   void onDeath() {
     // Ripristina velocità player se agganciato alla morte
     if (_attached) {
-      game.player.speed = playerSpeed;
+      game.player.speed = _originalPlayerSpeed;
     }
     super.onDeath();
   }
@@ -47,13 +48,13 @@ class LeechEnemy extends EnemyBase {
 
       // EFFETTO RALLENTAMENTO: riduce la velocità del player del 30%
       // Il player.speed viene temporaneamente ridotto
-      game.player.speed = playerSpeed * 0.7;
+      game.player.speed = _originalPlayerSpeed * 0.7;
       
       _attachTimer -= dt;
       // Dopo 5 secondi si stacca e ripristina la velocità
       if (_attachTimer <= 0) {
         _attached = false;
-        game.player.speed = playerSpeed; // Ripristina velocità
+        game.player.speed = _originalPlayerSpeed; // Ripristina velocità
       }
       return;
     }
@@ -64,6 +65,7 @@ class LeechEnemy extends EnemyBase {
       // Si aggancia!
       _attached = true;
       _attachTimer = 5.0;
+      _originalPlayerSpeed = game.player.speed;
     } else {
       // Seek veloce con zigzag
       final baseDir = seekPlayer(speed);

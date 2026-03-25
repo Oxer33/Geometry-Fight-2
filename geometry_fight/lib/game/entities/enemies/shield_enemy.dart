@@ -64,6 +64,13 @@ class ShieldEnemy extends EnemyBase {
         position += velocity * dt;
         _chargeDir = (playerPosition - position).normalized();
         // Dopo lock-on, carica!
+        // Safety check: ensure _chargeDir is never zero when transitioning to charge
+        if (_chargeDir.length == 0) {
+          final fallback = playerPosition - position;
+          _chargeDir = fallback.length > 0
+              ? fallback.normalized()
+              : Vector2(1, 0); // default rightward if player is exactly on top
+        }
         if (_stateTimer >= _lockOnDuration) {
           _state = _ShieldState.charging;
           _stateTimer = 0;

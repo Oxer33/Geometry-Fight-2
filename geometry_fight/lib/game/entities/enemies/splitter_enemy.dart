@@ -10,7 +10,7 @@ class SplitterEnemy extends EnemyBase {
   final SplitterSize splitterSize;
   // Orbital homing per mini-splitter (medium/small)
   double _orbitAngle;
-  late final Vector2 _orbitCenter;
+  Vector2 _orbitCenter = Vector2.zero();
   double _orbitExpand = 0; // quanto l'orbita si allarga nel tempo
 
   SplitterEnemy({this.splitterSize = SplitterSize.large})

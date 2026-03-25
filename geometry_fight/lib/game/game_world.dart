@@ -75,7 +75,8 @@ class GeometryFightGame extends FlameGame
   late GridDistortion grid;
   late ScreenShakeEffect screenShake;
   late WaveSystem waveSystem;
-  late ScoreSystem scoreSystem;
+  ScoreSystem scoreSystem = ScoreSystem();
+  // waveSystem inizializzato late perché necessita di `this` (game reference)
   late PowerUpSystem powerUpSystem;
 
   GameState gameState = GameState.playing;
@@ -94,7 +95,9 @@ class GeometryFightGame extends FlameGame
     this.gameMode = GameMode.classic,
   }) {
     diffConfig = difficultyConfigs[difficulty]!;
-    // scoreSystem.geomValueMultiplier viene settato in onLoad() dopo l'inizializzazione
+    scoreSystem.geomValueMultiplier = diffConfig.geomValueMultiplier;
+    scoreSystem.scoreMultiplier = diffConfig.scoreMultiplier;
+    waveSystem = WaveSystem(this);
   }
 
   // Input state

@@ -37,7 +37,10 @@ class SwarmMotherBoss extends BossBase {
     if (phase == 2) _split = false;
     if (phase == 3) {
       // Berserk - spawn black hole
-      game.spawnEnemy(EnemyType.blackHole, Vector2(arenaWidth / 2, arenaHeight / 2));
+      final bhCenter = game.isTunnelMode
+          ? game.camera.viewfinder.position
+          : Vector2(arenaWidth / 2, arenaHeight / 2);
+      game.spawnEnemy(EnemyType.blackHole, bhCenter);
     }
   }
 

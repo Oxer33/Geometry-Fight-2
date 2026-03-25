@@ -43,11 +43,23 @@ class NexusPrimeBoss extends BossBase {
   void _createPortals(int count) {
     _portalPositions.clear();
     final random = math.Random();
-    for (int i = 0; i < count; i++) {
-      _portalPositions.add(Vector2(
-        300 + random.nextDouble() * (arenaWidth - 600),
-        300 + random.nextDouble() * (arenaHeight - 600),
-      ));
+    if (game.isTunnelMode) {
+      final cam = game.camera.viewfinder.position;
+      final halfW = game.size.x > 0 ? game.size.x / 2 : 400.0;
+      final halfH = game.size.y > 0 ? game.size.y / 2 : 300.0;
+      for (int i = 0; i < count; i++) {
+        _portalPositions.add(Vector2(
+          cam.x - halfW + 100 + random.nextDouble() * (halfW * 2 - 200),
+          cam.y - halfH + 100 + random.nextDouble() * (halfH * 2 - 200),
+        ));
+      }
+    } else {
+      for (int i = 0; i < count; i++) {
+        _portalPositions.add(Vector2(
+          300 + random.nextDouble() * (arenaWidth - 600),
+          300 + random.nextDouble() * (arenaHeight - 600),
+        ));
+      }
     }
   }
 

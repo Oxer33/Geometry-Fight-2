@@ -61,8 +61,10 @@ class EternityEngineBoss extends BossBase {
     _ringRotation2 -= dt * 0.7;
     _ringRotation3 += dt * 0.4;
 
-    // Movimento: orbita lenta attorno al centro arena
-    final center = Vector2(arenaWidth / 2, arenaHeight / 2);
+    // Movimento: orbita lenta attorno al centro arena (o camera in tunnel mode)
+    final center = game.isTunnelMode
+        ? game.camera.viewfinder.position
+        : Vector2(arenaWidth / 2, arenaHeight / 2);
     final orbitR = 200 + math.sin(_phase * 0.2) * 80;
     final targetPos = center + Vector2(
       math.cos(_phase * 0.1) * orbitR,
