@@ -41,7 +41,9 @@ class OmegaCoreBoss extends BossBase {
   @override
   void onPhaseChange(int phase) {
     game.triggerScreenShake(10, 0.5);
-    game.grid.applyForce(position, 300, 1500);
+    if (!game.isTunnelMode) {
+      game.grid.applyForce(position, 300, 1500);
+    }
   }
 
   @override
@@ -94,7 +96,9 @@ class OmegaCoreBoss extends BossBase {
     }
 
     // Griglia deformazione costante
-    game.grid.applyForce(position, 100, 100 * dt);
+    if (!game.isTunnelMode) {
+      game.grid.applyForce(position, 100, 100 * dt);
+    }
   }
 
   void _shootSpiral() {
@@ -131,7 +135,9 @@ class OmegaCoreBoss extends BossBase {
     if (distanceToPlayer < 200) {
       game.triggerScreenShake(5, 0.2);
     }
-    game.grid.applyForce(position, 200, 800);
+    if (!game.isTunnelMode) {
+      game.grid.applyForce(position, 200, 800);
+    }
   }
 
   Color _getCurrentColor() {

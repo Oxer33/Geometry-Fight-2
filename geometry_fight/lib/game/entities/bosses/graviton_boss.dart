@@ -54,10 +54,12 @@ class GravitonBoss extends BossBase {
     }
 
     // Distorci griglia
-    if (_isPulling) {
-      game.grid.applyAttraction(position, _gravityRadius * 0.5, 200 * dt);
-    } else {
-      game.grid.applyForce(position, _gravityRadius * 0.5, 200 * dt);
+    if (!game.isTunnelMode) {
+      if (_isPulling) {
+        game.grid.applyAttraction(position, _gravityRadius * 0.5, 200 * dt);
+      } else {
+        game.grid.applyForce(position, _gravityRadius * 0.5, 200 * dt);
+      }
     }
 
     // Movimento lento verso centro arena

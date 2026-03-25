@@ -33,7 +33,9 @@ class GravityWellEnemy extends EnemyBase {
     position += velocity * dt;
 
     // Distorci la griglia costantemente
-    game.grid.applyAttraction(position, _invertRadius, 50 * dt);
+    if (!game.isTunnelMode) {
+      game.grid.applyAttraction(position, _invertRadius, 50 * dt);
+    }
   }
 
   @override

@@ -41,7 +41,9 @@ class EternityEngineBoss extends BossBase {
   @override
   void onPhaseChange(int phase) {
     game.triggerScreenShake(12, 0.6);
-    game.grid.applyForce(position, 400, 2000);
+    if (!game.isTunnelMode) {
+      game.grid.applyForce(position, 400, 2000);
+    }
     // Ogni fase spawna nemici di supporto
     for (int i = 0; i < 3 + phase * 2; i++) {
       final angle = math.Random().nextDouble() * math.pi * 2;
@@ -72,7 +74,9 @@ class EternityEngineBoss extends BossBase {
     }
 
     // Distorsione griglia costante
-    game.grid.applyForce(position, 150, 80 * dt);
+    if (!game.isTunnelMode) {
+      game.grid.applyForce(position, 150, 80 * dt);
+    }
 
     // Attacco in base alla fase
     _attackTimer -= dt;

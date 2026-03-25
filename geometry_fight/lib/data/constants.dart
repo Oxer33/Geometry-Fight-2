@@ -46,12 +46,6 @@ const double geomCollectRadius = 30;
 const double magnetRadius = 400;
 const int geomToGoldRatio = 10;
 
-// Score
-const double maxMultiplier = 20.0;
-const double multiplierPerKill = 0.1;
-const int comboThreshold = 5;
-const double comboTimeWindow = 0.5;
-
 // Power-ups
 const double powerUpDuration = 15.0;
 

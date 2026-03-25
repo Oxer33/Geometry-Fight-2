@@ -58,11 +58,18 @@ class SnakeEnemy extends EnemyBase {
     }
 
     // Rimbalza sui muri (come GW)
-    if (position.x <= 10 || position.x >= arenaWidth - 10) {
-      position.x = position.x.clamp(10, arenaWidth - 10);
-    }
-    if (position.y <= 10 || position.y >= arenaHeight - 10) {
-      position.y = position.y.clamp(10, arenaHeight - 10);
+    if (game.isTunnelMode) {
+      // Tunnel mode: solo clamp Y (basato su tunnelHeight), niente X
+      final camY = game.camera.viewfinder.position.y;
+      final halfH = game.tunnelHeight / 2;
+      position.y = position.y.clamp(camY - halfH + 10, camY + halfH - 10);
+    } else {
+      if (position.x <= 10 || position.x >= arenaWidth - 10) {
+        position.x = position.x.clamp(10, arenaWidth - 10);
+      }
+      if (position.y <= 10 || position.y >= arenaHeight - 10) {
+        position.y = position.y.clamp(10, arenaHeight - 10);
+      }
     }
 
     // Update segment positions (follow the leader)

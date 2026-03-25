@@ -52,19 +52,34 @@ class BouncerEnemy extends EnemyBase {
     position.y += math.sin(_moveAngle) * speed * dt;
 
     // Rimbalzo sui muri (reflection)
-    if (position.x <= 10) {
-      _moveAngle = math.pi - _moveAngle;
-      position.x = 10;
-    } else if (position.x >= arenaWidth - 10) {
-      _moveAngle = math.pi - _moveAngle;
-      position.x = arenaWidth - 10;
-    }
-    if (position.y <= 10) {
-      _moveAngle = -_moveAngle;
-      position.y = 10;
-    } else if (position.y >= arenaHeight - 10) {
-      _moveAngle = -_moveAngle;
-      position.y = arenaHeight - 10;
+    if (game.isTunnelMode) {
+      // Tunnel mode: solo rimbalzo Y (basato su tunnelHeight), niente X
+      final camY = game.camera.viewfinder.position.y;
+      final halfH = game.tunnelHeight / 2;
+      final minY = camY - halfH + 10;
+      final maxY = camY + halfH - 10;
+      if (position.y <= minY) {
+        _moveAngle = -_moveAngle;
+        position.y = minY;
+      } else if (position.y >= maxY) {
+        _moveAngle = -_moveAngle;
+        position.y = maxY;
+      }
+    } else {
+      if (position.x <= 10) {
+        _moveAngle = math.pi - _moveAngle;
+        position.x = 10;
+      } else if (position.x >= arenaWidth - 10) {
+        _moveAngle = math.pi - _moveAngle;
+        position.x = arenaWidth - 10;
+      }
+      if (position.y <= 10) {
+        _moveAngle = -_moveAngle;
+        position.y = 10;
+      } else if (position.y >= arenaHeight - 10) {
+        _moveAngle = -_moveAngle;
+        position.y = arenaHeight - 10;
+      }
     }
   }
 

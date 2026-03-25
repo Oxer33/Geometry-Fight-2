@@ -83,9 +83,11 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
     if (game.isTunnelMode) {
       // Tunnel side-scroller: il player si muove liberamente dentro lo schermo visibile.
       // La camera avanza da sola — il player NON può uscire dalla vista.
+      // Guard: game.size potrebbe essere zero durante i primi frame
+      final screenHalfW = game.size.x > 0 ? game.size.x / 2 : 400.0;
+      final screenHalfH = game.size.y > 0 ? game.size.y / 2 : 300.0;
       final cameraX = game.camera.viewfinder.position.x;
-      final screenHalfW = game.size.x / 2;
-      final screenHalfH = game.size.y / 2;
+      final cameraY = game.camera.viewfinder.position.y;
       // Clamp X: non può andare dietro al bordo sinistro né oltre il bordo destro
       position.x = position.x.clamp(
         cameraX - screenHalfW + 20,
@@ -93,8 +95,8 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
       );
       // Clamp Y: limitato dalla vista della camera (il tunnel renderer fa il clamp fine sui muri)
       position.y = position.y.clamp(
-        game.camera.viewfinder.position.y - screenHalfH + 20,
-        game.camera.viewfinder.position.y + screenHalfH - 20,
+        cameraY - screenHalfH + 20,
+        cameraY + screenHalfH - 20,
       );
     } else {
       // Modalità normali: limiti sia X che Y

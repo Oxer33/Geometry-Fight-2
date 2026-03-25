@@ -87,7 +87,9 @@ class VoidReaperBoss extends BossBase {
       radius: 60 + currentPhase * 20.0,
       lifetime: 8.0,
     ));
-    game.grid.applyForce(playerPosition + offset, 80, 300);
+    if (!game.isTunnelMode) {
+      game.grid.applyForce(playerPosition + offset, 80, 300);
+    }
   }
 
   @override

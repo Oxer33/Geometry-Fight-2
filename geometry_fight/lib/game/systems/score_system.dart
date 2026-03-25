@@ -1,3 +1,4 @@
+import 'dart:math' show min;
 import 'package:flame/components.dart' show Vector2;
 
 /// Sistema di punteggio stile Geometry Wars RE2.
@@ -6,18 +7,20 @@ import 'package:flame/components.dart' show Vector2;
 class ScoreSystem {
   int score = 0;
   int geoms = 0;
-  double multiplier = 1.0; // Double per supportare incrementi frazionari (+1.25x, +1.5x)
-  double geomValueMultiplier = 1.0; // Quanto vale ogni geom per il moltiplicatore (da difficulty)
+  double multiplier = 1.0;
+  double geomValueMultiplier = 1.0; // +Nx per geom (1.0 easy/normal, 1.25 hard, 1.5 nightmare)
+  double scoreMultiplier = 1.0; // Moltiplicatore punti per difficoltà (0.5x easy → 4x nightmare)
+
+  static const double _maxMultiplier = 9999; // Cap ragionevole per evitare overflow
 
   // Soglie vite extra (potenze di 10 da 10K)
   final List<int> _extraLifeThresholds = [
     10000, 100000, 1000000, 10000000, 100000000, 1000000000,
   ];
   int _nextLifeIndex = 0;
-  bool _extraLifeEarned = false; // Flag per il game_world
+  bool _extraLifeEarned = false;
 
   void update(double dt) {
-    // Check vite extra
     _extraLifeEarned = false;
     if (_nextLifeIndex < _extraLifeThresholds.length &&
         score >= _extraLifeThresholds[_nextLifeIndex]) {
@@ -29,18 +32,20 @@ class ScoreSystem {
   /// True se il player ha guadagnato una vita extra in questo frame
   bool get earnedExtraLife => _extraLifeEarned;
 
-  /// Multiplier troncato a intero per il display
-  int get multiplierDisplay => multiplier.toInt();
+  /// Multiplier arrotondato per il display
+  int get multiplierDisplay => multiplier.round();
 
   void addKill(int points, Vector2 position) {
-    final earnedPoints = (points * multiplier).round();
+    // Punti = base × multiplier geom × scoreMultiplier difficoltà
+    final earnedPoints = (points * multiplier * scoreMultiplier).round();
     score += earnedPoints;
   }
 
   /// Chiamato quando si raccoglie un geom: aumenta il moltiplicatore
   void addGeoms(int amount) {
     geoms += amount;
-    multiplier += amount * geomValueMultiplier; // +Nx per geom raccolto (scala con difficoltà)
+    multiplier += amount * geomValueMultiplier;
+    multiplier = min(multiplier, _maxMultiplier); // Cap al massimo
   }
 
   /// Reset moltiplicatore a 1x (quando il player muore)
@@ -54,9 +59,7 @@ class ScoreSystem {
     multiplier = 1.0;
     _nextLifeIndex = 0;
     _extraLifeEarned = false;
+    // NOTA: geomValueMultiplier e scoreMultiplier NON resettati qui
+    // perché sono settati dalla difficoltà in game_world
   }
-
-  // Combo rimossa (non più necessaria)
-  int comboCount = 0;
-  bool get showingCombo => false;
 }

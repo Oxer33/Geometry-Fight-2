@@ -60,7 +60,9 @@ class TimeBombEnemy extends EnemyBase {
     }
     // Esplosione enorme
     game.spawnExplosion(position, neonColor, radius: _explosionRadius, particleCount: 40);
-    game.grid.applyForce(position, _explosionRadius * 1.5, 1500);
+    if (!game.isTunnelMode) {
+      game.grid.applyForce(position, _explosionRadius * 1.5, 1500);
+    }
     game.triggerScreenShake(8, 0.4);
     removeFromParent();
     game.onEnemyKilled(this);

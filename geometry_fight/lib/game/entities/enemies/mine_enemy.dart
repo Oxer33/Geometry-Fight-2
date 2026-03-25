@@ -49,7 +49,9 @@ class MineEnemy extends EnemyBase {
       game.player.takeDamage();
     }
     game.spawnExplosion(position, NeonColors.gray, radius: 100, particleCount: 25);
-    game.grid.applyForce(position, 150, 800);
+    if (!game.isTunnelMode) {
+      game.grid.applyForce(position, 150, 800);
+    }
     removeFromParent();
     game.onEnemyKilled(this);
   }

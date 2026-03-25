@@ -75,23 +75,39 @@ class GlitchEnemy extends EnemyBase {
     );
 
     // Clamp all'arena
-    newPos.x = newPos.x.clamp(20, arenaWidth - 20);
-    newPos.y = newPos.y.clamp(20, arenaHeight - 20);
+    if (game.isTunnelMode) {
+      // Tunnel mode: clamp solo Y a tunnelHeight, X relativo alla camera
+      final camX = game.camera.viewfinder.position.x;
+      final camY = game.camera.viewfinder.position.y;
+      final halfH = game.tunnelHeight / 2;
+      final halfScreenW = game.size.x / 2;
+      newPos.x = newPos.x.clamp(camX - halfScreenW, camX + halfScreenW + 200);
+      newPos.y = newPos.y.clamp(camY - halfH + 20, camY + halfH - 20);
+    } else {
+      newPos.x = newPos.x.clamp(20, arenaWidth - 20);
+      newPos.y = newPos.y.clamp(20, arenaHeight - 20);
+    }
 
     position = newPos;
 
     // Distorci la griglia nel punto di arrivo
-    game.grid.applyForce(position, 80, 300);
+    if (!game.isTunnelMode) {
+      game.grid.applyForce(position, 80, 300);
+    }
     // E nel punto di partenza
     if (_prevPosition != null) {
-      game.grid.applyForce(_prevPosition!, 60, 200);
+      if (!game.isTunnelMode) {
+        game.grid.applyForce(_prevPosition!, 60, 200);
+      }
     }
   }
 
   @override
   void onDeath() {
     // Flash di distorsione alla morte
-    game.grid.applyForce(position, 120, 600);
+    if (!game.isTunnelMode) {
+      game.grid.applyForce(position, 120, 600);
+    }
     super.onDeath();
   }
 

@@ -72,7 +72,9 @@ class NexusPrimeBoss extends BossBase {
       _currentPortal = (_currentPortal + 1) % _portalPositions.length;
       position = _portalPositions[_currentPortal].clone();
       game.triggerScreenShake(3, 0.15);
-      game.grid.applyForce(position, 100, 400);
+      if (!game.isTunnelMode) {
+        game.grid.applyForce(position, 100, 400);
+      }
     }
 
     // Attacco: spara proiettili radiali

@@ -419,10 +419,9 @@ class _LeaderboardRow extends StatelessWidget {
   }
 
   String _formatScore(int s) {
-    if (s >= 1000000000) return '${(s ~/ 1000000)}M';
-    if (s >= 1000000) return '${(s / 1000000).toStringAsFixed(1)}M';
-    if (s >= 10000) return '${(s ~/ 1000)}K';
-    if (s >= 1000) return '${(s / 1000).toStringAsFixed(1)}K';
+    if (s >= 1000000000) return '${s ~/ 1000000}M';
+    if (s >= 1000000) return '${s ~/ 1000}K';
+    if (s >= 1000) return '${s ~/ 1000}K';
     return '$s';
   }
 }

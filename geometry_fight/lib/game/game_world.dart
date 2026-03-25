@@ -175,6 +175,7 @@ class GeometryFightGame extends FlameGame
     // Systems
     scoreSystem = ScoreSystem();
     scoreSystem.geomValueMultiplier = diffConfig.geomValueMultiplier;
+    scoreSystem.scoreMultiplier = diffConfig.scoreMultiplier;
     waveSystem = WaveSystem(this);
     powerUpSystem = PowerUpSystem(this);
 
@@ -202,6 +203,9 @@ class GeometryFightGame extends FlameGame
 
     // Update global swarm enrage timer (performance: evita iterazione O(n²))
     SwarmDroneEnemy.updateGlobalEnrage(scaledDt);
+
+    // Cache conteggi nemici/boss (evita O(n) per ogni chiamata)
+    _updateEntityCounts();
 
     // NOTA: spatial hash rimosso — Flame usa HasCollisionDetection built-in
     // che è più efficiente. Il spatial hash iterava TUTTI i children ogni frame
@@ -746,6 +750,8 @@ class GeometryFightGame extends FlameGame
     tunnelScrollSpeed = 100;
     _tunnelCameraX = 0;
     scoreSystem.reset();
+    scoreSystem.geomValueMultiplier = diffConfig.geomValueMultiplier;
+    scoreSystem.scoreMultiplier = diffConfig.scoreMultiplier;
 
     // Re-add components
     spaceBackground = SpaceBackground();
@@ -773,12 +779,26 @@ class GeometryFightGame extends FlameGame
     resumeEngine();
   }
 
-  int get enemyCount => world.children.whereType<EnemyBase>().length;
-  int get bossCount => world.children.whereType<BossBase>().length;
+  // Cache conteggi nemici/boss — aggiornati una volta per frame in update()
+  int _cachedEnemyCount = 0;
+  int _cachedBossCount = 0;
+  BossBase? _cachedActiveBoss;
+  double _countCacheTimer = 0;
+
+  int get enemyCount => _cachedEnemyCount;
+  int get bossCount => _cachedBossCount;
 
   /// Ritorna il boss attivo (se presente) per mostrare la barra HP nella HUD
-  BossBase? get activeBoss {
+  BossBase? get activeBoss => _cachedActiveBoss;
+
+  /// Aggiorna i conteggi cached (chiamato una volta per frame)
+  void _updateEntityCounts() {
+    _countCacheTimer -= 1;
+    if (_countCacheTimer > 0) return;
+    _countCacheTimer = 6; // Aggiorna ogni 6 frame (~10 volte/sec a 60fps)
+    _cachedEnemyCount = world.children.whereType<EnemyBase>().length;
     final bosses = world.children.whereType<BossBase>();
-    return bosses.isEmpty ? null : bosses.first;
+    _cachedBossCount = bosses.length;
+    _cachedActiveBoss = bosses.isEmpty ? null : bosses.first;
   }
 }
