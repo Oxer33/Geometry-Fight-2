@@ -13,6 +13,8 @@ class WaveSystem {
   bool _allSpawned = false; // Tutti i gruppi sono stati spawnati
   double _postSpawnDelay = 0; // Delay dopo l'ultimo spawn prima di controllare completamento
   int _totalSpawnedThisWave = 0; // Debug: contatore nemici spawnati
+  double _interWaveDelay = 0; // Timer tra una wave e la successiva
+  int? _pendingWave; // Wave da avviare dopo il delay
   late List<WaveConfig> _configs;
   WaveConfig? _currentConfig;
 
@@ -64,6 +66,18 @@ class WaveSystem {
   }
 
   void update(double dt) {
+    // Gestione delay tra wave (sostituisce Future.delayed)
+    if (_pendingWave != null) {
+      _interWaveDelay -= dt;
+      if (_interWaveDelay <= 0 && game.bossCount == 0 &&
+          game.gameState == GameState.playing) {
+        final wave = _pendingWave!;
+        _pendingWave = null;
+        startWave(wave);
+      }
+      return;
+    }
+
     if (!_waveActive) return;
 
     if (_bossActive) {
@@ -90,7 +104,7 @@ class WaveSystem {
         } else {
           // Tutti i gruppi spawnati - avvia il delay di sicurezza
           _allSpawned = true;
-          _postSpawnDelay = 1.5; // Aspetta 1.5s prima di controllare il completamento
+          _postSpawnDelay = 1.5;
         }
       }
     }
@@ -110,31 +124,19 @@ class WaveSystem {
     // Notifica il game che la wave è completa (per Perfect Wave bonus)
     game.onWaveComplete();
 
-    // Delay tra wave dipende dalla modalità
-    int delayMs;
+    // Delay tra wave dipende dalla modalità (in secondi)
+    double delaySec;
     if (_mode == GameMode.survival || _mode == GameMode.tunnel) {
-      delayMs = 500;
+      delaySec = 0.5;
     } else if (_mode == GameMode.bossRush) {
-      delayMs = 3000; // Boss Rush: 3s tra boss per dare respiro
+      delaySec = 3.0;
     } else {
-      delayMs = 2000;
+      delaySec = 2.0;
     }
 
-    Future.delayed(Duration(milliseconds: delayMs), () {
-      if (game.gameState == GameState.playing) {
-        // Aspetta che il boss precedente sia completamente rimosso
-        if (game.bossCount > 0) {
-          // Riprova tra 500ms se il boss non è ancora stato rimosso
-          Future.delayed(const Duration(milliseconds: 500), () {
-            if (game.gameState == GameState.playing) {
-              startWave(currentWave + 1);
-            }
-          });
-        } else {
-          startWave(currentWave + 1);
-        }
-      }
-    });
+    // Schedula la prossima wave tramite timer (gestito in update)
+    _pendingWave = currentWave + 1;
+    _interWaveDelay = delaySec;
   }
 
   void onBossDefeated() {

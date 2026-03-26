@@ -145,7 +145,7 @@ class GameHud extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        '+50 GEOMI BONUS',
+                        '+10 GEOMI BONUS',
                         style: TextStyle(
                           color: const Color(0xFF00FF88).withValues(alpha: 0.6),
                           fontSize: 12,

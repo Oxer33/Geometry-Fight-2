@@ -88,7 +88,8 @@ class PhantomKingBoss extends BossBase {
 
     // Crea cloni periodicamente
     _cloneTimer -= dt;
-    if (_cloneTimer <= 0 && _cloneCount < 3 + currentPhase) {
+    if (_cloneTimer <= 0) {
+      _cloneCount = 0; // Reset per permettere nuovi cloni ogni ciclo
       _cloneTimer = currentPhase == 2 ? 5.0 : 8.0;
       _spawnClone();
     }

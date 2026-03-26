@@ -2,6 +2,7 @@ import 'package:flame/components.dart';
 import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../data/constants.dart';
 import '../../data/difficulty.dart';
 import '../../data/leaderboard.dart';
 import '../../game/game_world.dart';
@@ -34,6 +35,7 @@ class _GameScreenState extends State<GameScreen> {
   bool _showPause = false;
   bool _showGameOver = false;
   bool _showTutorial = false;
+  bool _leaderboardSaved = false;
   // Overlay nero per nascondere il flash bianco del GameWidget durante l'init
   double _fadeOverlayOpacity = 1.0;
 
@@ -45,15 +47,7 @@ class _GameScreenState extends State<GameScreen> {
       gameMode: widget.gameMode,
     );
     _game.onGameOver = () {
-      // Salva nella leaderboard
-      LeaderboardManager.addEntry(LeaderboardEntry(
-        mode: widget.gameMode.name,
-        difficulty: widget.difficulty.name,
-        score: _game.scoreSystem.score,
-        wave: _game.waveSystem.currentWave,
-        kills: _game.sessionKills,
-        date: DateTime.now(),
-      ));
+      _saveLeaderboard();
       setState(() => _showGameOver = true);
     };
     _game.onPause = () {
@@ -65,6 +59,19 @@ class _GameScreenState extends State<GameScreen> {
     Future.delayed(const Duration(milliseconds: 300), () {
       if (mounted) setState(() => _fadeOverlayOpacity = 0.0);
     });
+  }
+
+  void _saveLeaderboard() {
+    if (_leaderboardSaved || _game.scoreSystem.score <= 0) return;
+    _leaderboardSaved = true;
+    LeaderboardManager.addEntry(LeaderboardEntry(
+      mode: widget.gameMode.name,
+      difficulty: widget.difficulty.name,
+      score: _game.scoreSystem.score,
+      wave: _game.waveSystem.currentWave,
+      kills: _game.sessionKills,
+      date: DateTime.now(),
+    ));
   }
 
   Future<void> _checkTutorial() async {
@@ -127,17 +134,7 @@ class _GameScreenState extends State<GameScreen> {
               },
               onQuit: () {
                 _game.saveSessionData();
-                // Salva nella leaderboard anche quando si esce dalla pausa
-                if (_game.scoreSystem.score > 0) {
-                  LeaderboardManager.addEntry(LeaderboardEntry(
-                    mode: widget.gameMode.name,
-                    difficulty: widget.difficulty.name,
-                    score: _game.scoreSystem.score,
-                    wave: _game.waveSystem.currentWave,
-                    kills: _game.sessionKills,
-                    date: DateTime.now(),
-                  ));
-                }
+                _saveLeaderboard();
                 widget.onQuit();
               },
             ),
@@ -152,9 +149,12 @@ class _GameScreenState extends State<GameScreen> {
               score: _game.scoreSystem.score,
               wave: _game.waveSystem.currentWave,
               geoms: _game.sessionGeoms,
-              goldEarned: (_game.sessionGeoms / 10).round(),
+              goldEarned: (_game.sessionGeoms / geomToGoldRatio).round(),
               onRetry: () {
-                setState(() => _showGameOver = false);
+                setState(() {
+                  _showGameOver = false;
+                  _leaderboardSaved = false;
+                });
                 _game.restartGame();
               },
               onQuit: widget.onQuit,

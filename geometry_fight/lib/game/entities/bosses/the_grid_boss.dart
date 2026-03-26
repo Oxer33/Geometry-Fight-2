@@ -53,7 +53,7 @@ class TheGridBoss extends BossBase {
 
     // Phase 1+: Mines
     _mineTimer -= dt;
-    if (_mineTimer <= 0 && currentPhase >= 0) {
+    if (_mineTimer <= 0 && currentPhase >= 1) {
       _mineTimer = 4;
       game.spawnEnemy(EnemyType.mine, position + Vector2(
         (math.Random().nextDouble() - 0.5) * 150,

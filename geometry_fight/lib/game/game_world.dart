@@ -688,11 +688,12 @@ class GeometryFightGame extends FlameGame
     // Slow-mo breve (0.3s, scala 0.5 — meno aggressivo)
     activateSlowMo(0.3, 0.5);
 
-    // Uccidi TUTTI i nemici nell'intera area visibile (raggio enorme)
+    // Uccidi TUTTI i nemici nell'area dell'esplosione (raggio = visual)
+    const bombRadius = 800.0;
     final enemies = world.children.whereType<EnemyBase>().toList();
     for (final enemy in enemies) {
       final dist = enemy.position.distanceTo(player.position);
-      if (dist < 1200) {
+      if (dist < bombRadius) {
         enemy.takeDamage(999);
       }
     }
@@ -701,7 +702,7 @@ class GeometryFightGame extends FlameGame
     final bosses = world.children.whereType<BossBase>().toList();
     for (final boss in bosses) {
       final dist = boss.position.distanceTo(player.position);
-      if (dist < 1200) {
+      if (dist < bombRadius) {
         boss.takeDamage(50); // Danno significativo ai boss
       }
     }
@@ -728,7 +729,7 @@ class GeometryFightGame extends FlameGame
     triggerScreenShake(12, 0.6);
     // Distorsione griglia massima (solo se non tunnel mode)
     if (!isTunnelMode) {
-      grid.applyForce(player.position, 1200, 3000);
+      grid.applyForce(player.position, bombRadius, 3000);
     }
   }
 

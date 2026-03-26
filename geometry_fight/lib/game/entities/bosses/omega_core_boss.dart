@@ -19,7 +19,7 @@ class OmegaCoreBoss extends BossBase {
   double _attackTimer = 2.0;
   double _spiralAngle = 0;
   double _specialTimer = 6.0;
-  final List<Vector2> _deathZones = [];
+  final List<_DeathZone> _deathZones = [];
 
   OmegaCoreBoss()
       : super(
@@ -89,9 +89,14 @@ class OmegaCoreBoss extends BossBase {
       }
     }
 
-    // Aggiorna zone di morte
+    // Aggiorna zone di morte (con TTL)
     for (int i = _deathZones.length - 1; i >= 0; i--) {
-      final dist = game.player.position.distanceTo(_deathZones[i]);
+      _deathZones[i].lifetime -= dt;
+      if (_deathZones[i].lifetime <= 0) {
+        _deathZones.removeAt(i);
+        continue;
+      }
+      final dist = game.player.position.distanceTo(_deathZones[i].position);
       if (dist < 50) {
         game.player.takeDamage();
         _deathZones.removeAt(i);
@@ -126,9 +131,12 @@ class OmegaCoreBoss extends BossBase {
 
   void _createDeathZone() {
     final random = math.Random();
-    _deathZones.add(playerPosition + Vector2(
-      (random.nextDouble() - 0.5) * 200,
-      (random.nextDouble() - 0.5) * 200,
+    _deathZones.add(_DeathZone(
+      position: playerPosition + Vector2(
+        (random.nextDouble() - 0.5) * 200,
+        (random.nextDouble() - 0.5) * 200,
+      ),
+      lifetime: 8.0,
     ));
     if (_deathZones.length > 5) _deathZones.removeAt(0);
   }
@@ -157,7 +165,7 @@ class OmegaCoreBoss extends BossBase {
     // Zone di morte visibili
     if (scale <= 1.01) {
       for (final zone in _deathZones) {
-        final offset = zone - position;
+        final offset = zone.position - position;
         final zonePaint = Paint()
           ..color = const Color(0xFFFF2200).withValues(alpha: 0.2)
           ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8);
@@ -260,4 +268,11 @@ class _OmegaBullet extends PositionComponent with HasGameReference<GeometryFight
     p.color = const Color(0xFFFFFFFF).withValues(alpha: 0.8);
     canvas.drawCircle(Offset(size.x / 2, size.y / 2), 2, p);
   }
+}
+
+class _DeathZone {
+  final Vector2 position;
+  double lifetime;
+
+  _DeathZone({required this.position, required this.lifetime});
 }
