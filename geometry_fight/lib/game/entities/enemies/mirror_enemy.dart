@@ -49,24 +49,22 @@ class MirrorEnemy extends EnemyBase {
 
     // Check for nearby player bullets and reflect them
     if (_reflectCooldown <= 0) {
-      for (final child in game.world.children.toList()) {
-        if (child is PlayerBullet) {
-          final bulletDist = child.position.distanceTo(position);
-          if (bulletDist < 30) {
-            // Reflect: remove player bullet, spawn enemy bullet going back
-            final reflectDir = (child.position - position).normalized();
-            final reflected = EnemyBullet(
-              direction: reflectDir,
-              speed: 400,
-              color: NeonColors.magenta,
-            );
-            reflected.position = child.position.clone();
-            game.world.add(reflected);
-            child.removeFromParent();
-            _reflectCooldown = 0.3;
-            _shieldFlash = 0.2;
-            break;
-          }
+      for (final child in game.world.children.whereType<PlayerBullet>()) {
+        final bulletDist = child.position.distanceTo(position);
+        if (bulletDist < 30) {
+          // Reflect: remove player bullet, spawn enemy bullet going back
+          final reflectDir = (child.position - position).normalized();
+          final reflected = EnemyBullet(
+            direction: reflectDir,
+            speed: 400,
+            color: NeonColors.magenta,
+          );
+          reflected.position = child.position.clone();
+          game.world.add(reflected);
+          child.removeFromParent();
+          _reflectCooldown = 0.3;
+          _shieldFlash = 0.2;
+          break;
         }
       }
     }

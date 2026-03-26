@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'dart:ui';
 import 'package:flame/components.dart';
 import 'enemy_base.dart';
+import '../projectiles.dart';
 
 /// SIREN - Nemico che emette onde soniche che rallentano i proiettili del player.
 /// Forma: pentagono con onde concentriche che si espandono
@@ -30,14 +31,14 @@ class SirenEnemy extends EnemyBase {
     final velocity = seekPlayer(speed);
     position += velocity * dt;
 
-    // Rallenta i proiettili del player nel raggio
-    for (final child in game.world.children.toList()) {
-      if (child is PositionComponent && child.runtimeType.toString().contains('PlayerBullet')) {
-        final dist = child.position.distanceTo(position);
-        if (dist < _interferenceRadius) {
-          // Rallenta il proiettile spingendolo leggermente indietro
-          final pushDir = (child.position - position).normalized();
-          child.position -= pushDir * 100 * dt; // Controvento
+    // Rallenta i proiettili del player nel raggio (usa whereType per efficienza)
+    for (final bullet in game.world.children.whereType<PlayerBullet>()) {
+      final dist = bullet.position.distanceTo(position);
+      if (dist < _interferenceRadius) {
+        final pushDir = (bullet.position - position);
+        if (pushDir.length > 0) {
+          pushDir.normalize();
+          bullet.position -= pushDir * 100 * dt; // Controvento
         }
       }
     }

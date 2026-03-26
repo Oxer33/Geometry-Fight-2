@@ -175,11 +175,8 @@ class GeometryFightGame extends FlameGame
     screenShake = ScreenShakeEffect();
     camera.viewfinder.add(screenShake);
 
-    // Systems
-    scoreSystem = ScoreSystem();
-    scoreSystem.geomValueMultiplier = diffConfig.geomValueMultiplier;
-    scoreSystem.scoreMultiplier = diffConfig.scoreMultiplier;
-    waveSystem = WaveSystem(this);
+    // Systems — scoreSystem e waveSystem già inizializzati nel costruttore
+    // Li ri-creiamo qui solo per powerUpSystem che necessita del game caricato
     powerUpSystem = PowerUpSystem(this);
 
     // Start first wave
@@ -243,13 +240,7 @@ class GeometryFightGame extends FlameGame
         timeAttackTimer = 0;
         // Tempo scaduto = game over
         gameState = GameState.gameOver;
-        final goldEarned = (sessionGeoms / geomToGoldRatio * saveData.xpBoostMultiplier).round();
-        saveData.goldGeoms += goldEarned;
-        final mode = gameMode.name;
-        if (scoreSystem.score > (saveData.highscores[mode] ?? 0)) {
-          saveData.highscores[mode] = scoreSystem.score;
-        }
-        SaveManager.save(saveData);
+        saveSessionData();
         onGameOver?.call();
         return;
       }
@@ -642,6 +633,34 @@ class GeometryFightGame extends FlameGame
   double timeAttackTimer = 180; // 3 minuti
   bool get isTimeAttackMode => gameMode == GameMode.timeAttack;
 
+  bool _sessionSaved = false;
+
+  /// Salva dati sessione (highscore, gold, stats). Idempotente.
+  void saveSessionData() {
+    if (_sessionSaved) return;
+    _sessionSaved = true;
+
+    // Convert session geoms to gold
+    final goldEarned =
+        (sessionGeoms / geomToGoldRatio * saveData.xpBoostMultiplier).round();
+    saveData.goldGeoms += goldEarned;
+
+    // Update highscore
+    final mode = gameMode.name;
+    final currentHigh = saveData.highscores[mode] ?? 0;
+    if (scoreSystem.score > currentHigh) {
+      saveData.highscores[mode] = scoreSystem.score;
+    }
+
+    // Update stats
+    saveData.stats['totalKills'] =
+        (saveData.stats['totalKills'] ?? 0) + sessionKills;
+    saveData.stats['gamesPlayed'] =
+        (saveData.stats['gamesPlayed'] ?? 0) + 1;
+
+    SaveManager.save(saveData);
+  }
+
   void onPlayerDeath() {
     // Zen mode: vite infinite - respawn immediato
     if (gameMode == GameMode.zenMode) {
@@ -651,26 +670,7 @@ class GeometryFightGame extends FlameGame
 
     if (player.lives <= 0) {
       gameState = GameState.gameOver;
-
-      // Convert session geoms to gold
-      final goldEarned =
-          (sessionGeoms / geomToGoldRatio * saveData.xpBoostMultiplier).round();
-      saveData.goldGeoms += goldEarned;
-
-      // Update highscore (usa la modalità di gioco corrente, non hardcoded)
-      final mode = gameMode.name;
-      final currentHigh = saveData.highscores[mode] ?? 0;
-      if (scoreSystem.score > currentHigh) {
-        saveData.highscores[mode] = scoreSystem.score;
-      }
-
-      // Update stats
-      saveData.stats['totalKills'] =
-          (saveData.stats['totalKills'] ?? 0) + sessionKills;
-      saveData.stats['gamesPlayed'] =
-          (saveData.stats['gamesPlayed'] ?? 0) + 1;
-
-      SaveManager.save(saveData);
+      saveSessionData();
       onGameOver?.call();
     }
   }
@@ -750,6 +750,7 @@ class GeometryFightGame extends FlameGame
     sessionGeoms = 0;
     sessionKills = 0;
     _hitThisWave = false;
+    _sessionSaved = false;
     showPerfectWave = false;
     hitFlashTimer = 0;
     timeAttackTimer = 180;
@@ -798,11 +799,11 @@ class GeometryFightGame extends FlameGame
   /// Ritorna il boss attivo (se presente) per mostrare la barra HP nella HUD
   BossBase? get activeBoss => _cachedActiveBoss;
 
-  /// Aggiorna i conteggi cached (chiamato una volta per frame)
+  /// Aggiorna i conteggi cached (chiamato ogni 2 frame)
   void _updateEntityCounts() {
     _countCacheTimer -= 1;
     if (_countCacheTimer > 0) return;
-    _countCacheTimer = 6; // Aggiorna ogni 6 frame (~10 volte/sec a 60fps)
+    _countCacheTimer = 2; // Aggiorna ogni 2 frame (~30 volte/sec a 60fps)
     _cachedEnemyCount = world.children.whereType<EnemyBase>().length;
     final bosses = world.children.whereType<BossBase>();
     _cachedBossCount = bosses.length;

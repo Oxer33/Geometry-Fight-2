@@ -199,6 +199,7 @@ class WaveSystem {
   // === TUNNEL MODE: spawn continuo, no wave tradizionali ===
   double _tunnelSpawnTimer = 0.5;
   int _tunnelKillCount = 0; // Per boss ogni N kill
+  int _nextBossAt = 30; // Soglia kill per il prossimo boss
   static final _tunnelRng = math.Random();
 
   /// Tunnel: spawn continuo di nemici randomici davanti al player.
@@ -219,12 +220,12 @@ class WaveSystem {
       }
     }
 
-    // Boss ogni 30 kill
-    if (_tunnelKillCount > 0 && _tunnelKillCount % 30 == 0 && game.bossCount == 0) {
+    // Boss ogni 30 kill — usa _nextBossAt per evitare off-by-one
+    if (_tunnelKillCount >= _nextBossAt && game.bossCount == 0) {
       final bosses = BossType.values;
-      final bossIdx = (_tunnelKillCount ~/ 30 - 1) % bosses.length;
+      final bossIdx = (_nextBossAt ~/ 30 - 1) % bosses.length;
       game.spawnBoss(bosses[bossIdx]);
-      _tunnelKillCount++; // Evita re-trigger
+      _nextBossAt += 30; // Prossimo boss a +30 kill
     }
   }
 

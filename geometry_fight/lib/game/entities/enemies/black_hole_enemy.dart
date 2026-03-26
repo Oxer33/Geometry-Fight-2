@@ -31,19 +31,14 @@ class BlackHoleEnemy extends EnemyBase {
       game.player.position += force;
     }
 
-    // Attract nearby enemies
+    // Attract nearby enemies + curve player projectiles (singolo loop)
     for (final child in game.world.children) {
       if (child is EnemyBase && child != this) {
-        final toHole = position - child.position;
-        if (toHole.length > 0 && toHole.length < 200) {
-          child.position += toHole.normalized() * 30 * dt;
+        final toHole2 = position - child.position;
+        if (toHole2.length > 0 && toHole2.length < 200) {
+          child.position += toHole2.normalized() * 30 * dt;
         }
-      }
-    }
-
-    // Curve player projectiles
-    for (final child in game.world.children) {
-      if (child is PlayerBullet) {
+      } else if (child is PlayerBullet) {
         final toBH = position - child.position;
         if (toBH.length > 0 && toBH.length < 200) {
           child.position += toBH.normalized() * 80 * dt;

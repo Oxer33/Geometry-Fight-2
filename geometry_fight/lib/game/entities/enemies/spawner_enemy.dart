@@ -27,9 +27,9 @@ class SpawnerEnemy extends EnemyBase {
       position += awayDir * speed * dt;
     }
 
-    // Spawn drones periodically
+    // Spawn drones periodically (solo se ci sono meno di 60 nemici attivi)
     _spawnTimer -= dt;
-    if (_spawnTimer <= 0) {
+    if (_spawnTimer <= 0 && game.enemyCount < 60) {
       _spawnTimer = 3.0;
       for (int i = 0; i < 2; i++) {
         final offset = Vector2(

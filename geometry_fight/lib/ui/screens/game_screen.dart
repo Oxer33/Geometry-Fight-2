@@ -125,7 +125,21 @@ class _GameScreenState extends State<GameScreen> {
                 setState(() => _showPause = false);
                 _game.togglePause();
               },
-              onQuit: widget.onQuit,
+              onQuit: () {
+                _game.saveSessionData();
+                // Salva nella leaderboard anche quando si esce dalla pausa
+                if (_game.scoreSystem.score > 0) {
+                  LeaderboardManager.addEntry(LeaderboardEntry(
+                    mode: widget.gameMode.name,
+                    difficulty: widget.difficulty.name,
+                    score: _game.scoreSystem.score,
+                    wave: _game.waveSystem.currentWave,
+                    kills: _game.sessionKills,
+                    date: DateTime.now(),
+                  ));
+                }
+                widget.onQuit();
+              },
             ),
 
           // === TUTORIAL PRIMO AVVIO ===
