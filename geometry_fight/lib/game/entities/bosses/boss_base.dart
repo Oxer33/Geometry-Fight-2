@@ -62,7 +62,7 @@ abstract class BossBase extends PositionComponent
     // Spawn nemici a ondate regolari durante il boss fight
     _minionSpawnTimer -= dt;
     if (_minionSpawnTimer <= 0) {
-      _minionSpawnTimer = _minionSpawnInterval - currentPhase * 0.8; // Più veloce nelle fasi avanzate
+      _minionSpawnTimer = (_minionSpawnInterval - currentPhase * 0.8).clamp(1.0, _minionSpawnInterval);
       _spawnMinions();
     }
 

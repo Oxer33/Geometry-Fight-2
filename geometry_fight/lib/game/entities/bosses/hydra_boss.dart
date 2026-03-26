@@ -167,20 +167,21 @@ class HydraBoss extends BossBase {
 
   @override
   void takeDamage(double amount) {
-    // Check if damage hits a head
+    // Distribuisce il danno alla prima testa viva (non a tutte + super)
     for (final head in _heads) {
       if (!head.alive) continue;
       final headWorldPos = position + head.position;
-      // Simple proximity check - any damage near a head damages it
-      head.hp -= amount * 0.5;
+      head.hp -= amount;
       if (head.hp <= 0) {
         head.alive = false;
         head.deathTime = 0;
         game.spawnExplosion(headWorldPos, NeonColors.green, radius: 30);
       }
+      break; // Solo la prima testa prende danno
     }
 
-    super.takeDamage(amount);
+    // Il boss prende danno ridotto (il grosso va alle teste)
+    super.takeDamage(amount * 0.3);
   }
 
   @override

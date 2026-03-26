@@ -15,6 +15,12 @@ class NecroEnemy extends EnemyBase {
   final List<_PendingResurrection> _pendingRes = [];
   static const double _resurrectionRadius = 200.0;
 
+  @override
+  void onDeath() {
+    _pendingRes.clear(); // Annulla resurrezioni pending
+    super.onDeath();
+  }
+
   NecroEnemy()
       : super(
           hp: 6,

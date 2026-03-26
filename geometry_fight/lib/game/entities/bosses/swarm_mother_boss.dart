@@ -66,16 +66,16 @@ class SwarmMotherBoss extends BossBase {
     if (_spawnTimer <= 0) {
       switch (currentPhase) {
         case 0:
-          _spawnTimer = 3;
-          for (int i = 0; i < 20; i++) {
+          _spawnTimer = 4;
+          for (int i = 0; i < 6; i++) {
             game.spawnEnemy(EnemyType.drone, position + Vector2(
               (math.Random().nextDouble() - 0.5) * 200,
               (math.Random().nextDouble() - 0.5) * 200,
             ));
           }
         case 1:
-          _spawnTimer = 2.5;
-          for (int i = 0; i < 10; i++) {
+          _spawnTimer = 3;
+          for (int i = 0; i < 5; i++) {
             game.spawnEnemy(EnemyType.drone, position + Vector2(
               (math.Random().nextDouble() - 0.5) * 150,
               (math.Random().nextDouble() - 0.5) * 150,

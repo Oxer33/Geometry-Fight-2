@@ -9,16 +9,37 @@ import 'widgets/animated_builder_widget.dart';
 /// HUD moderna e accattivante con effetti glassmorphism neon.
 /// Mostra: score, moltiplicatore, vite, bombe, geomi, wave, combo,
 /// power-up attivi, e barra HP boss durante le boss fight.
-class GameHud extends StatelessWidget {
+class GameHud extends StatefulWidget {
   final GeometryFightGame game;
 
   const GameHud({super.key, required this.game});
 
   @override
+  State<GameHud> createState() => _GameHudState();
+}
+
+class _GameHudState extends State<GameHud> {
+  late final _GameNotifier _notifier;
+
+  GeometryFightGame get game => widget.game;
+
+  @override
+  void initState() {
+    super.initState();
+    _notifier = _GameNotifier(game);
+  }
+
+  @override
+  void dispose() {
+    _notifier.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return IgnorePointer(
       child: NeonAnimatedBuilder(
-        animation: _GameNotifier(game),
+        animation: _notifier,
         builder: (context, _) {
           final topPad = MediaQuery.of(context).padding.top + 8;
           return Stack(
