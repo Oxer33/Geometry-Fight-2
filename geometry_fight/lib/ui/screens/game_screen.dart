@@ -34,6 +34,8 @@ class _GameScreenState extends State<GameScreen> {
   bool _showPause = false;
   bool _showGameOver = false;
   bool _showTutorial = false;
+  // Overlay nero per nascondere il flash bianco del GameWidget durante l'init
+  double _fadeOverlayOpacity = 1.0;
 
   @override
   void initState() {
@@ -59,6 +61,10 @@ class _GameScreenState extends State<GameScreen> {
     };
     // Tutorial al primo avvio
     _checkTutorial();
+    // Dissolvi l'overlay nero dopo che il GameWidget ha renderizzato i primi frame
+    Future.delayed(const Duration(milliseconds: 300), () {
+      if (mounted) setState(() => _fadeOverlayOpacity = 0.0);
+    });
   }
 
   Future<void> _checkTutorial() async {
@@ -139,6 +145,15 @@ class _GameScreenState extends State<GameScreen> {
               },
               onQuit: widget.onQuit,
             ),
+
+          // === OVERLAY NERO anti-flash (si dissolve in 300ms dopo l'init) ===
+          IgnorePointer(
+            child: AnimatedOpacity(
+              opacity: _fadeOverlayOpacity,
+              duration: const Duration(milliseconds: 250),
+              child: Container(color: Colors.black),
+            ),
+          ),
         ],
       ),
     );
