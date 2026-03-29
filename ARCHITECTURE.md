@@ -28,7 +28,7 @@
 
 ## Overview
 
-Geometry Fight 2 è un twin-stick shooter 2D con estetica neon, 32 tipi di nemici, 15 boss, 8 modalità di gioco, sistema di progressione con shop/achievement/modifier, e 100 wave procedurali.
+Geometry Fight 2 è un twin-stick shooter 2D con estetica neon, 30 tipi di nemici, 15 boss, 8 modalità di gioco, sistema di progressione con shop/achievement/modifier, e 100 wave procedurali.
 
 Il gioco gira su **Flutter** per la UI nativa (menu, HUD, shop) e **Flame** per il game loop (60fps rendering, collision detection, entity management).
 
@@ -67,7 +67,7 @@ geometry_fight/lib/
 │   │   ├── projectiles.dart          # PlayerBullet, PlasmaBullet, HomingMissile
 │   │   ├── powerups.dart             # 8 tipi di power-up
 │   │   ├── geom.dart                 # Collezionabili (score multiplier)
-│   │   ├── enemies/                  # 32 tipi di nemici
+│   │   ├── enemies/                  # 30 tipi di nemici
 │   │   │   ├── enemy_base.dart       # Classe base astratta
 │   │   │   ├── drone_enemy.dart      # Homing base
 │   │   │   ├── bouncer_enemy.dart    # Random walk
@@ -80,12 +80,19 @@ geometry_fight/lib/
 │   │   │   ├── mutator_enemy.dart    # Potenzia altri nemici
 │   │   │   ├── splitter_enemy.dart   # Si divide alla morte
 │   │   │   ├── kamikaze_enemy.dart   # Carica veloce
-│   │   │   └── ... (altri 20 tipi)
+│   │   │   ├── orbiter_enemy.dart   # Orbita circolare
+│   │   │   ├── leech_enemy.dart     # Parassita veloce
+│   │   │   ├── time_bomb_enemy.dart # Esplosione ritardata
+│   │   │   ├── pulsar_enemy.dart    # Shockwave periodica
+│   │   │   ├── mirror_enemy.dart    # Strafing con riflesso
+│   │   │   ├── gravity_well_enemy.dart # Distorsione gravità
+│   │   │   └── ... (altri 14 tipi)
 │   │   └── bosses/                   # 15 boss
 │   │       ├── boss_base.dart        # Classe base, fasi, pattern
 │   │       ├── the_grid_boss.dart    # Wave 10
 │   │       ├── hydra_boss.dart       # Wave 20
-│   │       └── ... (altri 12 boss)
+│   │       ├── void_reaper_boss.dart # Wave 60
+│   │       └── ... (altri 11 boss)
 │   ├── effects/                      # Effetti visivi
 │   │   ├── explosion.dart            # Particelle esplosione
 │   │   ├── grid_distortion.dart      # Griglia con spring physics
@@ -188,7 +195,7 @@ Valori chiave del gioco:
 - 70% mob "stupidi" (drone, bouncer, swarm) → caos visivo, bassa minaccia individuale
 - 30% nemici pericolosi (kamikaze, shield, black_hole, etc.) → minaccia strategica
 
-**Enemy Types:** 32 tipi nell'enum `EnemyType`
+**Enemy Types:** 30 tipi nell'enum `EnemyType`
 **Boss Schedule:** Wave 10, 20, 30, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100
 
 ### Save Data (`save_data.dart`)
@@ -288,7 +295,7 @@ PositionComponent (Flame)
 │   ├── Lives + bombs + shield
 │   └── Movement trail rendering
 ├── EnemyBase (abstract)
-│   ├── 30 enemy subclasses
+│   ├── 29 enemy subclasses (+ GateEnemy separato)
 │   ├── Spawn invulnerability (0.8s)
 │   ├── Fear mechanic
 │   └── Flash on damage
@@ -431,6 +438,9 @@ Fase sciame: flock behavior con separation + cohesion + alignment
 | Splitter | Si divide alla morte | 2 | `clearSpawnInvulnerability()` sui figli |
 | Kamikaze | Carica veloce | 1 | 400+ px/s |
 | Snake | Onda sinusoidale | 3 (testa) | Corpo invulnerabile |
+| Orbiter | Orbita circolare attorno al player | 2 | Strafing |
+| Leech | Parassita veloce | 1 | Fast, aggressivo |
+| TimeBomb | Esplosione ritardata | 2 | Timer → area damage |
 
 #### Tier 3 — Nemici Avanzati (meccaniche GW:RE2)
 
@@ -456,6 +466,9 @@ Fase sciame: flock behavior con separation + cohesion + alignment
 | Siren | Rallenta proiettili | 2 |
 | Vortex | Vortice | 3 |
 | Decoy | Falso bersaglio | 1 |
+| Pulsar | Emissione shockwave periodica | 3 |
+| Mirror | Strafing orbitale con riflesso | 2 |
+| GravityWell | Distorsione gravitazionale | 3 |
 
 ### Dettaglio Meccaniche Chiave
 
@@ -544,15 +557,15 @@ abstract class BossBase extends PositionComponent {
 | 45 | The Architect | Costruzione pattern |
 | 50 | Chrono Wraith | Manipolazione tempo |
 | 55 | Nexus Prime | Numeri primi |
-| 60 | Tesla Lord | Scariche elettriche |
-| 65 | Phantom King | Invisibilità a fasi |
-| 70 | Omega Core | Distruzione core |
-| 75 | Mirror Master | Riflesso |
-| 80 | Swarm Queen | Sciami infiniti |
-| 85 | Graviton | Gravità |
-| 90 | Inferno | Fuoco ed esplosioni |
-| 95 | Eternity Engine | Boss finale combinato |
-| 100 | Eternity Engine+ | Versione potenziata |
+| 60 | Void Reaper | Attacchi void |
+| 65 | Tesla Lord | Scariche elettriche |
+| 70 | Phantom King | Invisibilità a fasi |
+| 75 | Omega Core | Distruzione core |
+| 80 | Mirror Master | Riflesso |
+| 85 | Swarm Queen | Sciami infiniti |
+| 90 | Graviton | Gravità |
+| 95 | Inferno | Fuoco ed esplosioni |
+| 100 | Eternity Engine | Boss finale combinato |
 
 ---
 

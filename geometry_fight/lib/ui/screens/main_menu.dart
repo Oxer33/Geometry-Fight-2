@@ -600,9 +600,7 @@ class _MainMenuScreenState extends State<MainMenuScreen>
           onTap: widget.onPlay,
           child: Transform.scale(
             scale: scale,
-            child: Stack(
-              children: [
-                // === ANIMATED BORDER (rotating gradient) ===
+            child: // === ANIMATED BORDER (rotating gradient) ===
                 NeonAnimatedBuilder(
                   animation: _borderController,
                   builder: (context, _) {
@@ -675,8 +673,6 @@ class _MainMenuScreenState extends State<MainMenuScreen>
                     );
                   },
                 ),
-              ],
-            ),
           ),
         );
       },
