@@ -121,6 +121,15 @@ class ChronoWraithBoss extends BossBase {
     }
   }
 
+  @override
+  void onDeath() {
+    // Ripristina timeScale se il boss muore durante time warp
+    if (_timeWarping) {
+      game.timeScale = 1.0;
+    }
+    super.onDeath();
+  }
+
   void _teleport() {
     // Teleport behind the player
     final behind = playerPosition +

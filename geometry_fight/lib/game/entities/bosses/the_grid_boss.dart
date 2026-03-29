@@ -13,6 +13,7 @@ class TheGridBoss extends BossBase {
   double _laserAngle = 0;
   bool _laserActive = false;
   double _laserTimer = 0;
+  double _laserCooldown = 6.0; // Cooldown tra laser sweep
   int _patternIndex = 0;
   double _gridPhase = 0;
 
@@ -96,11 +97,15 @@ class TheGridBoss extends BossBase {
     }
 
     // Activate laser periodically in phase 3
-    if (currentPhase >= 2 && !_laserActive && _attackTimer < -3) {
-      _laserActive = true;
-      _laserTimer = 3.0;
-      _laserAngle = math.atan2(
-          playerPosition.y - position.y, playerPosition.x - position.x);
+    if (currentPhase >= 2 && !_laserActive) {
+      _laserCooldown -= dt;
+      if (_laserCooldown <= 0) {
+        _laserActive = true;
+        _laserTimer = 3.0;
+        _laserCooldown = 6.0;
+        _laserAngle = math.atan2(
+            playerPosition.y - position.y, playerPosition.x - position.x);
+      }
     }
   }
 

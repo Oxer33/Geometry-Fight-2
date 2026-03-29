@@ -10,6 +10,7 @@ class SwarmMotherBoss extends BossBase {
   double _laserAngle = 0;
   bool _laserActive = false;
   double _laserTimer = 0;
+  double _laserCooldown = 8.0;
   double _phase = 0;
   bool _split = false;
   Vector2? _halfOffset;
@@ -99,7 +100,9 @@ class SwarmMotherBoss extends BossBase {
 
     // Laser sweep (phase 2+)
     if (currentPhase >= 2) {
-      if (!_laserActive && (_phase % 8) < dt * 2) {
+      _laserCooldown -= dt;
+      if (!_laserActive && _laserCooldown <= 0) {
+        _laserCooldown = 8.0;
         _laserActive = true;
         _laserTimer = 3.0;
         _laserAngle = math.atan2(

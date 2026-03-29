@@ -17,6 +17,7 @@ class LeechEnemy extends EnemyBase {
 
   // Contatore globale leeches agganciati: applica slow solo quando > 0
   static int _attachedCount = 0;
+  static void resetAttachedCount() => _attachedCount = 0;
 
   @override
   void onDeath() {

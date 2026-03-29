@@ -143,18 +143,23 @@ abstract class BossBase extends PositionComponent
     removeFromParent();
   }
 
+  // Paint cache — boss è uno solo, ma evita allocazioni costanti
+  static final _bossGlowPaint = Paint();
+  static final _bossMainPaint = Paint();
+
   @override
   void render(Canvas canvas) {
-    // Glow
-    final glowPaint = Paint()
-      ..color = neonColor.withValues(alpha: 0.3)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 16);
-    renderBoss(canvas, glowPaint, 1.2);
+    // Glow (senza blur — singolo boss, ma 16px blur è costoso)
+    _bossGlowPaint.color = neonColor.withValues(alpha: 0.2);
+    _bossGlowPaint.maskFilter = null;
+    renderBoss(canvas, _bossGlowPaint, 1.2);
 
     // Main
     final color = _flashTimer > 0 ? const Color(0xFFFFFFFF) : neonColor;
-    final paint = Paint()..color = color;
-    renderBoss(canvas, paint, 1.0);
+    _bossMainPaint.color = color;
+    _bossMainPaint.maskFilter = null;
+    _bossMainPaint.style = PaintingStyle.fill;
+    renderBoss(canvas, _bossMainPaint, 1.0);
 
     // NOTA: barra HP rimossa dalla testa del boss — la HUD ha già la barra in basso
   }

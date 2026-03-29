@@ -12,6 +12,7 @@ class TheArchitectBoss extends BossBase {
   double _phase = 0;
   final List<_Structure> _structures = [];
   double _wallAttackTimer = 6;
+  double _bossShootTimer = 0.6;
 
   TheArchitectBoss()
       : super(
@@ -84,7 +85,9 @@ class TheArchitectBoss extends BossBase {
 
     // Phase 2: Structures shoot faster and boss shoots too
     if (currentPhase >= 2) {
-      if ((_phase * 5).floor() % 3 == 0 && (_phase * 5) % 1 < dt * 6) {
+      _bossShootTimer -= dt;
+      if (_bossShootTimer <= 0) {
+        _bossShootTimer = 0.6;
         final dir = (playerPosition - position).normalized();
         final bullet = EnemyBullet(
             direction: dir, speed: 280, color: NeonColors.white);

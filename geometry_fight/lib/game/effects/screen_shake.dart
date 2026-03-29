@@ -7,10 +7,11 @@ class ScreenShakeEffect extends Component {
   double _timer = 0;
   final _random = math.Random();
 
-  Vector2 offset = Vector2.zero();
+  Vector2 _previousOffset = Vector2.zero();
 
   void shake(double intensity, double duration) {
-    _intensity = intensity;
+    if (duration <= 0) return;
+    _intensity = math.max(_intensity, intensity);
     _duration = duration;
     _timer = duration;
   }
@@ -19,24 +20,41 @@ class ScreenShakeEffect extends Component {
   void update(double dt) {
     super.update(dt);
 
+    if (parent is! PositionComponent) return;
+    final p = parent as PositionComponent;
+
     if (_timer > 0) {
       _timer -= dt;
-      final progress = _timer / _duration;
+      final progress = (_timer / _duration).clamp(0.0, 1.0);
       final currentIntensity = _intensity * progress;
 
-      offset = Vector2(
+      final newOffset = Vector2(
         (_random.nextDouble() - 0.5) * 2 * currentIntensity,
         (_random.nextDouble() - 0.5) * 2 * currentIntensity,
       );
 
-      if (parent is PositionComponent) {
-        (parent as PositionComponent).position = offset;
+      // Apply delta: undo previous offset, apply new one
+      p.position -= _previousOffset;
+      p.position += newOffset;
+      _previousOffset = newOffset;
+
+      if (_timer <= 0) {
+        _intensity = 0;
       }
-    } else if (offset.length > 0) {
-      offset = Vector2.zero();
-      if (parent is PositionComponent) {
-        (parent as PositionComponent).position = Vector2.zero();
-      }
+    } else if (_previousOffset.length > 0) {
+      // Undo last offset to restore original position
+      p.position -= _previousOffset;
+      _previousOffset = Vector2.zero();
     }
+  }
+
+  @override
+  void onRemove() {
+    // Safety: undo any remaining offset when removed
+    if (parent is PositionComponent && _previousOffset.length > 0) {
+      (parent as PositionComponent).position -= _previousOffset;
+      _previousOffset = Vector2.zero();
+    }
+    super.onRemove();
   }
 }

@@ -79,12 +79,14 @@ class HydraBoss extends BossBase {
     for (int i = 0; i < _heads.length; i++) {
       final head = _heads[i];
       if (!head.alive) {
-        // Regen timer
-        head.deathTime += dt;
-        if (head.deathTime > 5) {
-          head.alive = true;
-          head.hp = head.maxHp;
-          head.deathTime = 0;
+        // No regen in rage mode
+        if (!_rageMode) {
+          head.deathTime += dt;
+          if (head.deathTime > 5) {
+            head.alive = true;
+            head.hp = head.maxHp;
+            head.deathTime = 0;
+          }
         }
         continue;
       }
@@ -167,7 +169,8 @@ class HydraBoss extends BossBase {
 
   @override
   void takeDamage(double amount) {
-    // Distribuisce il danno alla prima testa viva (non a tutte + super)
+    // Distribuisce il danno alla prima testa viva
+    bool hitHead = false;
     for (final head in _heads) {
       if (!head.alive) continue;
       final headWorldPos = position + head.position;
@@ -177,11 +180,12 @@ class HydraBoss extends BossBase {
         head.deathTime = 0;
         game.spawnExplosion(headWorldPos, NeonColors.green, radius: 30);
       }
+      hitHead = true;
       break; // Solo la prima testa prende danno
     }
 
-    // Il boss prende danno ridotto (il grosso va alle teste)
-    super.takeDamage(amount * 0.3);
+    // Se nessuna testa viva, danno pieno al corpo; altrimenti ridotto
+    super.takeDamage(hitHead ? amount * 0.15 : amount);
   }
 
   @override

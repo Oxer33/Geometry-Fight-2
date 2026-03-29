@@ -123,6 +123,8 @@ class SplitterEnemy extends EnemyBase {
         final angle = i * math.pi * 2 / 3;
         child.position =
             position + Vector2(math.cos(angle), math.sin(angle)) * 20;
+        // Figli generati in-game: killabili immediatamente (no spawn invulnerability)
+        child.clearSpawnInvulnerability();
         game.world.add(child);
       }
     }

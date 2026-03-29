@@ -14,6 +14,7 @@ class TitanEnemy extends EnemyBase {
   double _shockwaveTimer = 4.0; // Timer onda d'urto
   double _shockwaveRadius = 0; // Raggio attuale dell'onda
   bool _shockwaveActive = false;
+  bool _shockwavePushed = false; // Impedisce push multipli per onda
   double _armorPhase = 0;
 
   TitanEnemy()
@@ -39,6 +40,7 @@ class TitanEnemy extends EnemyBase {
     if (_shockwaveTimer <= 0) {
       _shockwaveActive = true;
       _shockwaveRadius = 0;
+      _shockwavePushed = false;
       _shockwaveTimer = 5.0; // Reset timer
     }
 
@@ -50,11 +52,12 @@ class TitanEnemy extends EnemyBase {
         _shockwaveRadius = 0;
       }
 
-      // Spingi via il player se nel raggio
+      // Spingi via il player una sola volta quando l'onda lo raggiunge
       final dist = distanceToPlayer;
-      if (dist < _shockwaveRadius && dist > 0) {
+      if (!_shockwavePushed && dist < _shockwaveRadius && dist > 0) {
+        _shockwavePushed = true;
         final pushDir = (playerPosition - position).normalized();
-        game.player.position += pushDir * 200 * dt;
+        game.player.position += pushDir * 80; // Impulso singolo
       }
     }
   }

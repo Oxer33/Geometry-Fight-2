@@ -1,9 +1,9 @@
 import 'dart:ui';
 
-// Arena (metà dell'originale 3000x3000 = 1500x1500)
+// Arena (ridotta del 50% rispetto a 1500x1500 = 750x750)
 // Tunnel mode usa dimensioni separate per il corridoio lungo
-const double arenaWidth = 1500;
-const double arenaHeight = 1500;
+const double arenaWidth = 750;
+const double arenaHeight = 750;
 const double tunnelArenaWidth = 3000; // Solo per tunnel mode
 const double tunnelArenaHeight = 3000;
 
@@ -50,7 +50,7 @@ const int geomToGoldRatio = 10;
 const double powerUpDuration = 15.0;
 
 // Neon Colors
-class NeonColors {
+abstract final class NeonColors {
   static const Color cyan = Color(0xFF00FFFF);
   static const Color pink = Color(0xFFFF00AA);
   static const Color green = Color(0xFF00FF44);

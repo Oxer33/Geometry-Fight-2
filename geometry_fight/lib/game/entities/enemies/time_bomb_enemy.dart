@@ -15,6 +15,7 @@ class TimeBombEnemy extends EnemyBase {
   static const double _explosionRadius = 200.0;
   bool _activated = false;
   double _activationTimer = 2.0;
+  bool _dead = false;
 
   TimeBombEnemy()
       : super(
@@ -54,6 +55,8 @@ class TimeBombEnemy extends EnemyBase {
   }
 
   void _explode() {
+    if (_dead) return;
+    _dead = true;
     // Danno area al player
     if (distanceToPlayer < _explosionRadius) {
       game.player.takeDamage();
@@ -64,12 +67,14 @@ class TimeBombEnemy extends EnemyBase {
       game.grid.applyForce(position, _explosionRadius * 1.5, 1500);
     }
     game.triggerScreenShake(8, 0.4);
-    removeFromParent();
     game.onEnemyKilled(this);
+    removeFromParent();
   }
 
   @override
   void onDeath() {
+    if (_dead) return;
+    _dead = true;
     // Ucciso dal player: no esplosione, drop power-up garantito
     game.spawnPowerUp(position);
     game.onEnemyKilled(this);

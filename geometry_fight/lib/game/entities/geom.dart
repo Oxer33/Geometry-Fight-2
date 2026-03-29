@@ -62,10 +62,10 @@ class Geom extends PositionComponent
     final player = game.player;
     final dist = position.distanceTo(player.position);
     
-    // Raggio base passivo (80px) + upgrade + power-up
+    // Raggio base passivo (80px) + upgrade + power-up (stackano)
     const double baseAttractionRange = 80.0;
     final upgradeRange = game.saveData.magnetRange;
-    final magnetRange = player.hasMagnet ? magnetRadius : baseAttractionRange + upgradeRange;
+    final magnetRange = (player.hasMagnet ? magnetRadius : baseAttractionRange) + upgradeRange;
 
     if (dist < magnetRange) {
       _attracted = true;
@@ -82,6 +82,10 @@ class Geom extends PositionComponent
     }
   }
 
+  // Paint cache — con 100 geomi sullo schermo, risparmia 200 allocazioni/frame
+  static final _geomGlowPaint = Paint();
+  static final _geomBodyPaint = Paint();
+
   @override
   void render(Canvas canvas) {
     // Lampeggio dopo 5s (quando _lifetime < 2, cioè 7-5=2s rimanenti)
@@ -91,17 +95,16 @@ class Geom extends PositionComponent
     final alpha = _lifetime < 2 ? (_lifetime / 2).clamp(0.2, 1.0) : 1.0;
     final gemSize = 4.0 + value * 1.5;
 
-    // Glow
-    final glowPaint = Paint()
-      ..color = _color.withValues(alpha: alpha * 0.4)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8);
-    canvas.drawCircle(Offset(size.x / 2, size.y / 2), gemSize * 1.5, glowPaint);
-
-    // Diamond shape
-    final paint = Paint()..color = _color.withValues(alpha: alpha);
     final cx = size.x / 2;
     final cy = size.y / 2;
 
+    // Glow (senza blur — con 100 geomi = 100 blur in meno)
+    _geomGlowPaint.color = _color.withValues(alpha: alpha * 0.3);
+    _geomGlowPaint.maskFilter = null;
+    canvas.drawCircle(Offset(cx, cy), gemSize * 1.5, _geomGlowPaint);
+
+    // Diamond shape
+    _geomBodyPaint.color = _color.withValues(alpha: alpha);
     canvas.save();
     canvas.translate(cx, cy);
     canvas.rotate(_phase);
@@ -112,7 +115,7 @@ class Geom extends PositionComponent
       ..lineTo(0, gemSize)
       ..lineTo(-gemSize * 0.6, 0)
       ..close();
-    canvas.drawPath(path, paint);
+    canvas.drawPath(path, _geomBodyPaint);
     canvas.restore();
   }
 

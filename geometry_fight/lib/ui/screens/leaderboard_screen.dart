@@ -24,6 +24,8 @@ class _LeaderboardScreenState extends State<LeaderboardScreen> {
     ('timeAttack', 'TEMPO', '⏱️'),
     ('zenMode', 'ZEN', '🧘'),
     ('tunnel', 'TUNNEL', '🌀'),
+    ('endlessBoss', 'BOSS INF.', '💀'),
+    ('dailyChallenge', 'GIORNALIERA', '📅'),
   ];
 
   static const _difficulties = [
@@ -405,7 +407,7 @@ class _LeaderboardRow extends StatelessWidget {
           SizedBox(
             width: 50,
             child: Text(
-              '${entry.date.day}/${entry.date.month}',
+              '${entry.date.day.toString().padLeft(2, '0')}/${entry.date.month.toString().padLeft(2, '0')}',
               style: TextStyle(
                 color: Colors.white.withValues(alpha: 0.2),
                 fontSize: 9,

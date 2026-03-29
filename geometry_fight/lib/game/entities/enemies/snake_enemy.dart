@@ -109,6 +109,7 @@ class SnakeEnemy extends EnemyBase {
         segmentCount: _segments.length - midPoint, isFragment: true);
     tailSnake.position = _segments[midPoint].clone();
     tailSnake.hp = (_segments.length - midPoint).toDouble();
+    tailSnake.clearSpawnInvulnerability(); // Generato in-game, killabile subito
     game.world.add(tailSnake);
 
     // Trim current snake

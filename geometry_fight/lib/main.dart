@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'data/save_data.dart';
 import 'data/leaderboard.dart';
+import 'data/achievements.dart';
 import 'data/difficulty.dart';
 import 'ui/screens/main_menu.dart';
 import 'ui/screens/game_screen.dart';
@@ -11,6 +12,8 @@ import 'ui/screens/settings_screen.dart';
 import 'ui/screens/mode_select_screen.dart';
 import 'ui/screens/leaderboard_screen.dart';
 import 'ui/screens/splash_screen.dart';
+import 'ui/screens/stats_screen.dart';
+import 'ui/screens/achievements_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -23,9 +26,19 @@ void main() async {
   await SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
 
   // Initialize Hive per save data e leaderboard
-  await Hive.initFlutter();
-  await SaveManager.init();
-  await LeaderboardManager.init();
+  try {
+    await Hive.initFlutter();
+    await SaveManager.init();
+    await LeaderboardManager.init();
+    await AchievementManager.init();
+  } catch (_) {
+    // Se Hive fallisce (dati corrotti), cancella e riprova
+    await Hive.deleteFromDisk();
+    await Hive.initFlutter();
+    await SaveManager.init();
+    await LeaderboardManager.init();
+    await AchievementManager.init();
+  }
 
   runApp(const GeometryFightApp());
 }
@@ -46,7 +59,7 @@ class GeometryFightApp extends StatelessWidget {
   }
 }
 
-enum AppScreen { splash, mainMenu, modeSelect, game, shop, settings, leaderboard }
+enum AppScreen { splash, mainMenu, modeSelect, game, shop, settings, leaderboard, stats, achievements }
 
 class NavigationWrapper extends StatefulWidget {
   const NavigationWrapper({super.key});
@@ -87,6 +100,8 @@ class _NavigationWrapperState extends State<NavigationWrapper> {
           onShop: () => _navigateTo(AppScreen.shop),
           onSettings: () => _navigateTo(AppScreen.settings),
           onLeaderboard: () => _navigateTo(AppScreen.leaderboard),
+          onStats: () => _navigateTo(AppScreen.stats),
+          onAchievements: () => _navigateTo(AppScreen.achievements),
         );
       case AppScreen.modeSelect:
         return ModeSelectScreen(
@@ -113,6 +128,14 @@ class _NavigationWrapperState extends State<NavigationWrapper> {
         );
       case AppScreen.leaderboard:
         return LeaderboardScreen(
+          onBack: () => _navigateTo(AppScreen.mainMenu),
+        );
+      case AppScreen.stats:
+        return StatsScreen(
+          onBack: () => _navigateTo(AppScreen.mainMenu),
+        );
+      case AppScreen.achievements:
+        return AchievementsScreen(
           onBack: () => _navigateTo(AppScreen.mainMenu),
         );
     }

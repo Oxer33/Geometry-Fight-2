@@ -17,6 +17,16 @@ abstract class EnemyBase extends PositionComponent
   double _spawnPulse = 0.4; // Pulse ring on spawn
   double _idlePhase = 0;
 
+  // Spawn invulnerability (come GW:RE2 — nemici appaiono con effetto materializzazione)
+  double _spawnInvulnTimer = 0.8; // 0.8s invulnerabile allo spawn
+  bool get isSpawnInvulnerable => _spawnInvulnTimer > 0;
+  /// Azzera invulnerabilità spawn (per nemici generati in-game, non spawnati)
+  void clearSpawnInvulnerability() => _spawnInvulnTimer = 0;
+
+  // Fear mechanic (come GW:RE2 — nemici fuggono brevemente quando colpiti da proiettili vicini)
+  double _fearTimer = 0;
+  Vector2? _fearDirection;
+
   EnemyBase({
     required this.hp,
     required this.speed,
@@ -40,33 +50,56 @@ abstract class EnemyBase extends PositionComponent
     _idlePhase += dt;
     if (_flashTimer > 0) _flashTimer -= dt;
     if (_spawnPulse > 0) _spawnPulse -= dt;
+    if (_spawnInvulnTimer > 0) _spawnInvulnTimer -= dt;
+    if (_fearTimer > 0) _fearTimer -= dt;
 
-    // Clamp to arena (tunnel mode ha limiti Y diversi e NO limiti X)
+    // Tunnel mode: despawn nemici dietro la camera
     if (game.isTunnelMode) {
-      // Tunnel: NO clamp Y statico (il tunnel renderer gestisce i muri dinamici)
-      // NO clamp X (scroll infinito)
-      // Despawn nemici superati dalla camera (dietro il bordo sinistro dello schermo)
       final cameraLeft = game.camera.viewfinder.position.x - game.size.x / 2 - 200;
       if (position.x < cameraLeft) {
         removeFromParent();
         return;
       }
+    }
+
+    // Fear: fuggi nella direzione opposta brevemente
+    if (_fearTimer > 0 && _fearDirection != null) {
+      position += _fearDirection! * speed * 2.5 * dt;
+    } else {
+      updateBehavior(dt);
+    }
+
+    // Clamp to arena DOPO il movimento (fear + updateBehavior) per evitare jitter
+    if (game.isTunnelMode) {
+      // Tunnel: NO clamp statico (il tunnel renderer gestisce i muri dinamici)
     } else {
       position.x = position.x.clamp(5, arenaWidth - 5);
       position.y = position.y.clamp(5, arenaHeight - 5);
     }
-
-    updateBehavior(dt);
   }
 
   void updateBehavior(double dt);
 
   void takeDamage(double amount) {
+    // Invulnerabile durante spawn (materializzazione come GW:RE2)
+    if (_spawnInvulnTimer > 0) return;
+
     hp -= amount;
     _flashTimer = 0.1;
 
     if (hp <= 0) {
       onDeath();
+    }
+  }
+
+  /// Fear: un proiettile passa vicino senza colpire — il nemico fugge brevemente.
+  /// Chiamato dal sistema proiettili quando un bullet esplode nelle vicinanze.
+  void applyFear(Vector2 bulletPos) {
+    if (_fearTimer > 0) return; // Gi spaventato
+    final away = position - bulletPos;
+    if (away.length > 0) {
+      _fearDirection = away.normalized();
+      _fearTimer = 0.3; // Fugge per 0.3s
     }
   }
 
@@ -93,17 +126,36 @@ abstract class EnemyBase extends PositionComponent
 
   double get idlePhase => _idlePhase;
 
+  // ══════════════════════════════════════════════════════════════
+  // PERFORMANCE: LOD (Level of Detail) system
+  // Quando ci sono molti nemici a schermo, skip dettagli costosi
+  // (blur, particelle extra, linee decorative) per mantenere 60fps.
+  // ══════════════════════════════════════════════════════════════
+
+  /// true = pochi nemici → dettagli completi (blur, particelle, decorazioni)
+  /// false = molti nemici → solo forma base senza blur
+  bool get highDetail => game.enemyCount < 60;
+
   // Paint cache riutilizzabili per evitare allocazioni ogni frame
   // (con 60 nemici x 60fps = migliaia di allocazioni risparmiate)
   static final _glowPaint = Paint(); // NO MaskFilter.blur — troppo costoso su mobile!
   static final _mainPaint = Paint();
   static final _hpBgPaint = Paint()..color = const Color(0x33FFFFFF);
   static final _hpBarPaint = Paint();
+  // Paint cache condiviso per dettagli (usabile da qualsiasi subclass)
+  static final detailPaint = Paint();
 
   @override
   void render(Canvas canvas) {
     final cx = size.x / 2;
     final cy = size.y / 2;
+
+    // === SPAWN INVULNERABILITY — effetto materializzazione (come GW:RE2) ===
+    // Skip rendering nei frame "off" del flash (NO saveLayer — troppo costoso con 100+ nemici)
+    if (_spawnInvulnTimer > 0) {
+      final flashOff = ((_spawnInvulnTimer * 12).toInt() % 2 == 0);
+      if (flashOff) return; // Non renderizza questo frame → effetto flash
+    }
 
     // === GLOW (senza blur per performance — solo colore più grande e trasparente) ===
     _glowPaint.color = neonColor.withValues(alpha: 0.2);
@@ -116,13 +168,18 @@ abstract class EnemyBase extends PositionComponent
     _mainPaint.maskFilter = null;
     _mainPaint.style = PaintingStyle.stroke;
     _mainPaint.strokeWidth = 2.0;
-    renderShape(canvas, _mainPaint, 1.0);
+    // LOD: quando ci sono 60+ nemici, usa scale 1.02 così tutti i check
+    // "if (scale <= 1.01)" nei renderShape skippano automaticamente
+    // blur, particelle e dettagli costosi → massima performance.
+    final mainScale = highDetail ? 1.0 : 1.02;
+    renderShape(canvas, _mainPaint, mainScale);
     _mainPaint.style = PaintingStyle.fill; // Reset per chi usa fill internamente
 
     // === MINI HP BAR (solo per nemici con più di 1 HP e non a vita piena) ===
     if (maxHp > 1 && hp < maxHp && hp > 0) {
       _renderMiniHpBar(canvas, cx, cy);
     }
+
   }
 
   /// Mini barra HP sotto il nemico (usa Paint cache)

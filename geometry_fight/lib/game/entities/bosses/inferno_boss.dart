@@ -171,14 +171,14 @@ class _FireBullet extends PositionComponent with HasGameReference<GeometryFightG
     }
   }
 
+  static final _bulletPaint = Paint();
+  static final _bulletCorePaint = Paint();
+
   @override
   void render(Canvas canvas) {
-    final p = Paint()
-      ..color = const Color(0xFFFF6600)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
-    canvas.drawCircle(Offset(size.x / 2, size.y / 2), 4, p);
-    p.color = const Color(0xFFFFDD00).withValues(alpha: 0.8);
-    p.maskFilter = null;
-    canvas.drawCircle(Offset(size.x / 2, size.y / 2), 2, p);
+    _bulletPaint.color = const Color(0xFFFF6600);
+    canvas.drawCircle(Offset(size.x / 2, size.y / 2), 3.5, _bulletPaint);
+    _bulletCorePaint.color = const Color(0xFFFFFFFF).withValues(alpha: 0.7);
+    canvas.drawCircle(Offset(size.x / 2, size.y / 2), 1.5, _bulletCorePaint);
   }
 }

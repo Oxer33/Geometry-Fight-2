@@ -144,6 +144,7 @@ class OmegaCoreBoss extends BossBase {
   void _lightningStrike() {
     // Danno al player se vicino
     if (distanceToPlayer < 200) {
+      game.player.takeDamage();
       game.triggerScreenShake(5, 0.2);
     }
     if (!game.isTunnelMode) {
@@ -260,13 +261,15 @@ class _OmegaBullet extends PositionComponent with HasGameReference<GeometryFight
     }
   }
 
+  static final _bulletPaint = Paint();
+  static final _bulletCorePaint = Paint();
+
   @override
   void render(Canvas canvas) {
-    final p = Paint()..color = color..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
-    canvas.drawCircle(Offset(size.x / 2, size.y / 2), 4, p);
-    p.maskFilter = null;
-    p.color = const Color(0xFFFFFFFF).withValues(alpha: 0.8);
-    canvas.drawCircle(Offset(size.x / 2, size.y / 2), 2, p);
+    _bulletPaint.color = color;
+    canvas.drawCircle(Offset(size.x / 2, size.y / 2), 3.5, _bulletPaint);
+    _bulletCorePaint.color = const Color(0xFFFFFFFF).withValues(alpha: 0.7);
+    canvas.drawCircle(Offset(size.x / 2, size.y / 2), 1.5, _bulletCorePaint);
   }
 }
 

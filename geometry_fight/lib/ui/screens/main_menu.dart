@@ -10,6 +10,8 @@ class MainMenuScreen extends StatefulWidget {
   final VoidCallback onShop;
   final VoidCallback onSettings;
   final VoidCallback? onLeaderboard;
+  final VoidCallback? onStats;
+  final VoidCallback? onAchievements;
 
   const MainMenuScreen({
     super.key,
@@ -17,6 +19,8 @@ class MainMenuScreen extends StatefulWidget {
     required this.onShop,
     required this.onSettings,
     this.onLeaderboard,
+    this.onStats,
+    this.onAchievements,
   });
 
   @override
@@ -216,6 +220,24 @@ class _MainMenuScreenState extends State<MainMenuScreen>
             icon: Icons.emoji_events,
             color: const Color(0xFFFFD700),
             onTap: widget.onLeaderboard!,
+          ),
+        ],
+        if (widget.onStats != null) ...[
+          const SizedBox(height: 10),
+          _NeonButton(
+            text: 'STATISTICHE',
+            icon: Icons.bar_chart,
+            color: Colors.cyanAccent,
+            onTap: widget.onStats!,
+          ),
+        ],
+        if (widget.onAchievements != null) ...[
+          const SizedBox(height: 10),
+          _NeonButton(
+            text: 'ACHIEVEMENT',
+            icon: Icons.military_tech,
+            color: Colors.greenAccent,
+            onTap: widget.onAchievements!,
           ),
         ],
         const SizedBox(height: 10),

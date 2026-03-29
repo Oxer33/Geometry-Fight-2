@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:flame/components.dart';
 import '../../../data/constants.dart';
 import 'enemy_base.dart';
+import '../projectiles.dart';
 
 /// SHIELD ENEMY - Avanza a scatti con lo scudo avanti.
 /// Stati: APPROACH (lento) → LOCK_ON (pausa, mira) → CHARGE (dash veloce con scudo)
@@ -11,6 +12,9 @@ class ShieldEnemy extends EnemyBase {
   double shieldHp = 5;
   double _shieldRegenTimer = 0;
   final double _shieldRegenDelay = 4.0;
+
+  // Throttle per repel bullets (ogni 3 frame, non ogni frame)
+  int _repelFrameCounter = 0;
 
   // State machine per il movimento a cariche
   _ShieldState _state = _ShieldState.approach;
@@ -44,6 +48,13 @@ class ShieldEnemy extends EnemyBase {
         shieldHp = 5;
         _shieldRegenTimer = 0;
       }
+    }
+
+    // GW Repulsor mechanic: respingi proiettili frontali attivamente (throttled: ogni 3 frame)
+    _repelFrameCounter++;
+    if (_repelFrameCounter >= 3 && shieldHp > 0 && _state != _ShieldState.recovering) {
+      _repelFrameCounter = 0;
+      _repelNearbyBullets();
     }
 
     switch (_state) {
@@ -94,6 +105,37 @@ class ShieldEnemy extends EnemyBase {
           _stateTimer = 0;
         }
         break;
+    }
+  }
+
+  /// GW:RE2 Repulsor mechanic: lo scudo respinge attivamente i proiettili del player.
+  /// I proiettili rimbalzano via nella direzione opposta allo scudo.
+  void _repelNearbyBullets() {
+    final shieldDir = (playerPosition - position);
+    if (shieldDir.length == 0) return;
+    final shieldNormal = shieldDir.normalized();
+
+    // Colleziona i proiettili da respingere (senza rimuoverli durante l'iterazione)
+    final toRepel = <PlayerBullet>[];
+    for (final child in game.world.children) {
+      if (child is PlayerBullet) {
+        final toBullet = child.position - position;
+        if (toBullet.length > 0 && toBullet.length < 25) {
+          final dot = toBullet.normalized().dot(shieldNormal);
+          if (dot > 0.3) {
+            toRepel.add(child);
+          }
+        }
+      }
+    }
+    // Rimuovi fuori dal loop per evitare ConcurrentModificationError
+    for (final bullet in toRepel) {
+      final pushDir = (bullet.position - position).normalized();
+      bullet.position += pushDir * 30;
+      game.spawnExplosion(bullet.position, NeonColors.purple, radius: 8, particleCount: 3);
+      bullet.removeFromParent();
+      shieldHp -= 0.5;
+      if (shieldHp < 0) shieldHp = 0;
     }
   }
 

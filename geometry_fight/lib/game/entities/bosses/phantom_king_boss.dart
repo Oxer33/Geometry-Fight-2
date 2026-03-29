@@ -14,7 +14,7 @@ import 'boss_base.dart';
 /// Crea 2-4 cloni con 1 HP che confondono il player.
 /// Solo il vero boss ha il glow più intenso.
 class PhantomKingBoss extends BossBase {
-  double _invisTimer = 0;
+  double _invisTimer = 5.0; // Inizia visibile per 5s
   bool _isInvisible = false;
   double _attackTimer = 2.0;
   double _cloneTimer = 8.0;
@@ -46,6 +46,7 @@ class PhantomKingBoss extends BossBase {
       _invisTimer -= dt;
       if (_invisTimer <= 0) {
         _isInvisible = false;
+        _invisTimer = currentPhase == 2 ? 3.0 : 5.0; // Durata fase visibile
         // Attacco sorpresa al riapparire
         _shootBurst();
       }
@@ -201,9 +202,14 @@ class _PhantomBullet extends PositionComponent with HasGameReference<GeometryFig
     }
   }
 
+  static final _bulletPaint = Paint();
+  static final _bulletCorePaint = Paint();
+
   @override
   void render(Canvas canvas) {
-    final p = Paint()..color = color..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
-    canvas.drawCircle(Offset(size.x / 2, size.y / 2), 3.5, p);
+    _bulletPaint.color = color;
+    canvas.drawCircle(Offset(size.x / 2, size.y / 2), 3.5, _bulletPaint);
+    _bulletCorePaint.color = const Color(0xFFFFFFFF).withValues(alpha: 0.7);
+    canvas.drawCircle(Offset(size.x / 2, size.y / 2), 1.5, _bulletCorePaint);
   }
 }

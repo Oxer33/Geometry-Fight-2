@@ -10,6 +10,8 @@ class SaveData {
   Map<String, int> highscores;
   int totalPlaytime;
   Map<String, int> stats;
+  List<String> playedModes;
+  List<String> activeModifiers;
   String activeSkin;
   String activeTrail;
   String startingWeapon;
@@ -24,6 +26,8 @@ class SaveData {
     Map<String, int>? highscores,
     this.totalPlaytime = 0,
     Map<String, int>? stats,
+    List<String>? playedModes,
+    List<String>? activeModifiers,
     this.activeSkin = 'classic',
     this.activeTrail = 'normal',
     this.startingWeapon = 'basic',
@@ -33,7 +37,9 @@ class SaveData {
         unlockedModes = unlockedModes ?? ['classic'],
         unlockedWeapons = unlockedWeapons ?? ['basic'],
         highscores = highscores ?? {},
-        stats = stats ?? {};
+        stats = stats ?? {},
+        playedModes = playedModes ?? [],
+        activeModifiers = activeModifiers ?? [];
 
   int getUpgradeLevel(String id) => upgrades[id] ?? 0;
 
@@ -92,6 +98,8 @@ class SaveData {
         'highscores': highscores,
         'totalPlaytime': totalPlaytime,
         'stats': stats,
+        'playedModes': playedModes,
+        'activeModifiers': activeModifiers,
         'activeSkin': activeSkin,
         'activeTrail': activeTrail,
         'startingWeapon': startingWeapon,
@@ -108,6 +116,8 @@ class SaveData {
         highscores: Map<String, int>.from(json['highscores'] ?? {}),
         totalPlaytime: json['totalPlaytime'] ?? 0,
         stats: Map<String, int>.from(json['stats'] ?? {}),
+        playedModes: List<String>.from(json['playedModes'] ?? []),
+        activeModifiers: List<String>.from(json['activeModifiers'] ?? []),
         activeSkin: json['activeSkin'] ?? 'classic',
         activeTrail: json['activeTrail'] ?? 'normal',
         startingWeapon: json['startingWeapon'] ?? 'basic',
@@ -122,9 +132,14 @@ class SaveManager {
   }
 
   static SaveData load() {
-    final json = _box.get('save');
-    if (json == null) return SaveData();
-    return SaveData.fromJson(Map<String, dynamic>.from(json));
+    try {
+      final json = _box.get('save');
+      if (json == null) return SaveData();
+      return SaveData.fromJson(Map<String, dynamic>.from(json));
+    } catch (_) {
+      // Dati corrotti: ritorna defaults
+      return SaveData();
+    }
   }
 
   static Future<void> save(SaveData data) async {

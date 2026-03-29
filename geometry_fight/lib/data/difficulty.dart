@@ -107,6 +107,8 @@ enum GameMode {
   timeAttack,
   zenMode,
   tunnel,
+  endlessBoss,
+  dailyChallenge,
 }
 
 /// Configurazione per ogni modalità di gioco
@@ -140,7 +142,7 @@ class GameModeConfig {
 const Map<GameMode, GameModeConfig> gameModeConfigs = {
   GameMode.classic: GameModeConfig(
     name: 'CLASSICA',
-    description: '50 wave + boss ogni 10. L\'esperienza completa.',
+    description: '100 wave con boss crescenti. L\'esperienza completa.',
     icon: '⚔️',
     unlockCost: 0,
   ),
@@ -187,5 +189,24 @@ const Map<GameMode, GameModeConfig> gameModeConfigs = {
     hasWaves: true,
     infiniteWaves: true,
     pauseBetweenWaves: false,
+  ),
+  GameMode.endlessBoss: GameModeConfig(
+    name: 'BOSS INFINITI',
+    description: 'Boss dopo boss, sempre più forti. Quanti ne riesci a battere?',
+    icon: '💀',
+    unlockCost: 3500,
+    hasBosses: true,
+    hasWaves: false,
+    infiniteWaves: true,
+    pauseBetweenWaves: false,
+  ),
+  GameMode.dailyChallenge: GameModeConfig(
+    name: 'SFIDA GIORNALIERA',
+    description: 'Stessa sfida per tutti. Seed giornaliero. Chi fa più punti?',
+    icon: '📅',
+    unlockCost: 0,
+    hasBosses: true,
+    hasWaves: true,
+    infiniteWaves: false,
   ),
 };

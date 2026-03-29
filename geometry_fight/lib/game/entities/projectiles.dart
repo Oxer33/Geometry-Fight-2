@@ -117,9 +117,16 @@ class PlayerBullet extends PositionComponent
   void onCollisionStart(
       Set<Vector2> intersectionPoints, PositionComponent other) {
     if (other is EnemyBase) {
+      // GW:RE2: proiettili passano ATTRAVERSO nemici in fase di materializzazione
+      if (other.isSpawnInvulnerable) return;
+
       other.takeDamage(damage);
       // Mini esplosione pixel luminosi al contatto
       game.spawnExplosion(position, color, radius: 8, particleCount: 4);
+
+      // GW:RE2 Fear mechanic: nemici vicini si spaventano quando un proiettile colpisce
+      _applyFearToNearby();
+
       if (!pierce) {
         removeFromParent();
       }
@@ -132,6 +139,24 @@ class PlayerBullet extends PositionComponent
       }
     }
     super.onCollisionStart(intersectionPoints, other);
+  }
+
+  /// GW:RE2 Fear: quando un proiettile colpisce, nemici deboli vicini fuggono brevemente.
+  /// Solo nemici con 1-2 HP sono suscettibili — nemici forti non si spaventano.
+  /// Max 5 nemici spaventati per impatto per limitare il costo O(n).
+  void _applyFearToNearby() {
+    const fearRadius = 80.0;
+    int fearCount = 0;
+    for (final child in game.world.children) {
+      if (fearCount >= 5) break; // Limita a 5 per performance
+      if (child is EnemyBase && child.maxHp <= 2) {
+        final dist = child.position.distanceTo(position);
+        if (dist < fearRadius && dist > 5) {
+          child.applyFear(position);
+          fearCount++;
+        }
+      }
+    }
   }
 }
 
@@ -179,22 +204,24 @@ class EnemyBullet extends PositionComponent
     }
   }
 
+  // Paint cache statico — evita 50+ allocazioni/frame con molti proiettili nemici
+  static final _ebGlowPaint = Paint();
+  static final _ebBodyPaint = Paint();
+  static final _ebCorePaint = Paint()..color = const Color(0xFFFFFFFF).withValues(alpha: 0.6);
+
   @override
   void render(Canvas canvas) {
     final cx = size.x / 2;
     final cy = size.y / 2;
-    // Glow esterno (proporzionato al size 18x18)
-    final glowPaint = Paint()
-      ..color = color.withValues(alpha: 0.4)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6);
-    canvas.drawCircle(Offset(cx, cy), 8, glowPaint);
+    // Glow esterno (SENZA blur per performance — con 50 proiettili = 50 blur)
+    _ebGlowPaint.color = color.withValues(alpha: 0.3);
+    _ebGlowPaint.maskFilter = null;
+    canvas.drawCircle(Offset(cx, cy), 8, _ebGlowPaint);
     // Corpo principale
-    final paint = Paint()..color = color;
-    canvas.drawCircle(Offset(cx, cy), 6, paint);
+    _ebBodyPaint.color = color;
+    canvas.drawCircle(Offset(cx, cy), 6, _ebBodyPaint);
     // Centro luminoso
-    final corePaint = Paint()
-      ..color = const Color(0xFFFFFFFF).withValues(alpha: 0.6);
-    canvas.drawCircle(Offset(cx, cy), 3, corePaint);
+    canvas.drawCircle(Offset(cx, cy), 3, _ebCorePaint);
   }
 
   @override
@@ -343,6 +370,8 @@ class PlasmaBullet extends PositionComponent
   @override
   void onCollisionStart(
       Set<Vector2> intersectionPoints, PositionComponent other) {
+    // Passa attraverso nemici in materializzazione
+    if (other is EnemyBase && other.isSpawnInvulnerable) return;
     if (other is EnemyBase || other is BossBase) {
       _explode();
       removeFromParent();
@@ -429,6 +458,8 @@ class HomingMissile extends PositionComponent
   void onCollisionStart(
       Set<Vector2> intersectionPoints, PositionComponent other) {
     if (other is EnemyBase) {
+      // Passa attraverso nemici in materializzazione
+      if (other.isSpawnInvulnerable) return;
       other.takeDamage(damage);
       game.spawnExplosion(position, NeonColors.cyan, radius: 20, particleCount: 8);
       removeFromParent();

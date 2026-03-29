@@ -4,11 +4,15 @@ import 'package:flame/components.dart';
 import '../../../data/constants.dart';
 import '../../../data/wave_configs.dart';
 import 'enemy_base.dart';
+import 'proton_enemy.dart';
 import '../projectiles.dart';
 
 class BlackHoleEnemy extends EnemyBase {
   double _rotAngle = 0;
   double _spawnTimer = 5.0;
+  int _absorbedCount = 0; // Conta nemici assorbiti (per Proton explosion come GW)
+  bool _dead = false; // Guard per double-kill (proton explosion + takeDamage nello stesso frame)
+  static const int _protonThreshold = 5; // Dopo 5 nemici assorbiti → BOOM!
 
   BlackHoleEnemy()
       : super(
@@ -31,12 +35,17 @@ class BlackHoleEnemy extends EnemyBase {
       game.player.position += force;
     }
 
-    // Attract nearby enemies + curve player projectiles (singolo loop)
+    // Attract nearby enemies + curve player projectiles
+    // Prima fase: attrazione + colleziona nemici assorbiti (senza rimuoverli)
+    final toAbsorb = <EnemyBase>[];
     for (final child in game.world.children) {
       if (child is EnemyBase && child != this) {
         final toHole2 = position - child.position;
         if (toHole2.length > 0 && toHole2.length < 200) {
           child.position += toHole2.normalized() * 30 * dt;
+          if (toHole2.length < 15) {
+            toAbsorb.add(child);
+          }
         }
       } else if (child is PlayerBullet) {
         final toBH = position - child.position;
@@ -44,6 +53,16 @@ class BlackHoleEnemy extends EnemyBase {
           child.position += toBH.normalized() * 80 * dt;
         }
       }
+    }
+    // Seconda fase: rimuovi i nemici assorbiti (fuori dal loop)
+    for (final enemy in toAbsorb) {
+      enemy.removeFromParent();
+      _absorbedCount++;
+    }
+    // GW Proton mechanic: troppi assorbiti → ESPLODE in Proton!
+    if (_absorbedCount >= _protonThreshold) {
+      _explodeIntoProtons();
+      return;
     }
 
     // Spawn bonus enemies
@@ -60,12 +79,46 @@ class BlackHoleEnemy extends EnemyBase {
     }
   }
 
+  /// GW:RE2 Proton mechanic: il buco nero esplode in una pioggia di mini-nemici velocissimi.
+  /// Risk/reward: lasciar assorbire nemici al buco nero è pericoloso!
+  void _explodeIntoProtons() {
+    if (_dead) return;
+    _dead = true;
+    final protonCount = 6 + _absorbedCount; // Più ha assorbito, più Proton genera
+    for (int i = 0; i < protonCount; i++) {
+      final angle = i * math.pi * 2 / protonCount;
+      final dir = Vector2(math.cos(angle), math.sin(angle));
+      final proton = ProtonEnemy(direction: dir);
+      proton.position = position + dir * 20;
+      game.world.add(proton);
+    }
+
+    // Mega esplosione visiva
+    game.spawnExplosion(position, NeonColors.red, radius: 120, particleCount: 30);
+    game.triggerScreenShake(8, 0.4);
+    if (!game.isTunnelMode) {
+      game.grid.applyForce(position, 250, 2000);
+    }
+
+    // Il buco nero muore
+    game.onEnemyKilled(this);
+    removeFromParent();
+  }
+
   @override
   void takeDamage(double amount) {
+    if (_dead) return; // Già esploso in proton
     // Immune to normal bullets - only plasma, bomb, laser do damage
     // This is handled by checking weapon type in the bullet collision
     // For simplicity, all damage works but normal bullets do reduced
     super.takeDamage(amount * 0.3);
+  }
+
+  @override
+  void onDeath() {
+    if (_dead) return; // Evita double-kill se esplode in proton e viene ucciso nello stesso frame
+    _dead = true;
+    super.onDeath();
   }
 
   @override

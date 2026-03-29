@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../data/difficulty.dart';
 import '../../data/save_data.dart';
+import 'modifiers_screen.dart';
 
 /// Schermata di selezione modalità di gioco e difficoltà.
 /// Design neon con card selezionabili e descrizioni.
@@ -21,10 +22,18 @@ class ModeSelectScreen extends StatefulWidget {
 class _ModeSelectScreenState extends State<ModeSelectScreen> {
   GameMode _selectedMode = GameMode.classic;
   Difficulty _selectedDifficulty = Difficulty.normal;
+  List<String> _activeModifiers = [];
+  late SaveData _saveData;
+
+  @override
+  void initState() {
+    super.initState();
+    _saveData = SaveManager.load();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final saveData = SaveManager.load();
+    final saveData = _saveData;
     return Scaffold(
       backgroundColor: Colors.black,
       body: SafeArea(
@@ -85,10 +94,8 @@ class _ModeSelectScreenState extends State<ModeSelectScreen> {
                         scrollDirection: Axis.horizontal,
                         children: GameMode.values.map((mode) {
                           final config = gameModeConfigs[mode]!;
-                          // DEBUG: tutte le modalità sbloccate per test
                           final isUnlocked = config.unlockCost == 0 ||
-                              saveData.unlockedModes.contains(mode.name) ||
-                              true; // TODO: rimuovere 'true' in produzione
+                              saveData.unlockedModes.contains(mode.name);
                           final isSelected = _selectedMode == mode;
                           return _ModeCard(
                             config: config,
@@ -132,7 +139,66 @@ class _ModeSelectScreenState extends State<ModeSelectScreen> {
                       ),
                     ),
 
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 16),
+
+                    // === MODIFICATORI ===
+                    GestureDetector(
+                      onTap: () {
+                        showModalBottomSheet(
+                          context: context,
+                          backgroundColor: Colors.transparent,
+                          isScrollControlled: true,
+                          builder: (_) => ModifiersSheet(
+                            activeModifiers: _activeModifiers,
+                            onChanged: (mods) =>
+                                setState(() => _activeModifiers = mods),
+                          ),
+                        );
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 10),
+                        decoration: BoxDecoration(
+                          border: Border.all(
+                            color: _activeModifiers.isEmpty
+                                ? Colors.white24
+                                : Colors.cyanAccent.withValues(alpha: 0.5),
+                          ),
+                          borderRadius: BorderRadius.circular(8),
+                          color: _activeModifiers.isEmpty
+                              ? Colors.white.withValues(alpha: 0.02)
+                              : Colors.cyanAccent.withValues(alpha: 0.05),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.tune,
+                                color: Colors.white54, size: 18),
+                            const SizedBox(width: 10),
+                            Text(
+                              _activeModifiers.isEmpty
+                                  ? 'MODIFICATORI (opzionale)'
+                                  : 'MODIFICATORI (${_activeModifiers.length})',
+                              style: TextStyle(
+                                color: _activeModifiers.isEmpty
+                                    ? Colors.white54
+                                    : Colors.cyanAccent,
+                                fontSize: 12,
+                                fontFamily: 'monospace',
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const Spacer(),
+                            Icon(
+                              Icons.chevron_right,
+                              color: Colors.white.withValues(alpha: 0.3),
+                              size: 18,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 16),
 
                     // === RIEPILOGO SELEZIONE ===
                     _SelectionSummary(
@@ -148,7 +214,12 @@ class _ModeSelectScreenState extends State<ModeSelectScreen> {
             Padding(
               padding: const EdgeInsets.all(16),
               child: GestureDetector(
-                onTap: () => widget.onStart(_selectedMode, _selectedDifficulty),
+                onTap: () {
+                  // Save active modifiers for the game to load
+                  _saveData.activeModifiers = _activeModifiers;
+                  SaveManager.save(_saveData);
+                  widget.onStart(_selectedMode, _selectedDifficulty);
+                },
                 child: Container(
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(vertical: 16),

@@ -30,6 +30,9 @@ class ExplosionEffect extends PositionComponent {
   double _flashTimer = 0.1;
 
   static final _random = math.Random();
+  // Paint cache — riutilizzato per TUTTE le esplosioni, evita 40+ allocazioni/frame
+  static final _flashPaint = Paint();
+  static final _particlePaint = Paint();
 
   ExplosionEffect({
     required this.color,
@@ -75,25 +78,23 @@ class ExplosionEffect extends PositionComponent {
     final cx = size.x / 2;
     final cy = size.y / 2;
 
-    // Flash
+    // Flash (senza blur — troppo costoso con esplosioni multiple)
     if (_flashTimer > 0) {
-      final flashPaint = Paint()
-        ..color = const Color(0xFFFFFFFF).withValues(alpha: _flashTimer * 10)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 15);
-      canvas.drawCircle(Offset(cx, cy), radius * 0.5, flashPaint);
+      _flashPaint.color = const Color(0xFFFFFFFF).withValues(alpha: _flashTimer * 10);
+      _flashPaint.maskFilter = null;
+      canvas.drawCircle(Offset(cx, cy), radius * 0.5, _flashPaint);
     }
 
-    // Particles
+    // Particles (senza blur — risparmia 20+ blur pass per esplosione)
+    _particlePaint.maskFilter = null;
     for (final p in _particles) {
       if (p.lifetime <= 0) continue;
       final alpha = (p.lifetime / p.maxLifetime).clamp(0.0, 1.0);
-      final paint = Paint()
-        ..color = p.color.withValues(alpha: alpha)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
+      _particlePaint.color = p.color.withValues(alpha: alpha);
       canvas.drawCircle(
         Offset(cx + p.position.x, cy + p.position.y),
         p.size * alpha,
-        paint,
+        _particlePaint,
       );
     }
   }
@@ -104,6 +105,10 @@ class FloatingText extends PositionComponent {
   final Color color;
   double _lifetime = 1.0;
   double _velocity = -80;
+
+  // Cache TextPainter — creato una volta, non ogni frame
+  TextPainter? _cachedPainter;
+  double _lastAlpha = -1;
 
   FloatingText({required this.text, required this.color})
       : super(anchor: Anchor.center);
@@ -120,17 +125,22 @@ class FloatingText extends PositionComponent {
   @override
   void render(Canvas canvas) {
     final alpha = _lifetime.clamp(0.0, 1.0);
-    final textPainter = TextPainter(
-      text: TextSpan(
-        text: text,
-        style: TextStyle(
-          color: color.withValues(alpha: alpha),
-          fontSize: 16,
-          fontWeight: FontWeight.bold,
+    // Rigenera TextPainter solo se alpha è cambiato significativamente
+    final quantizedAlpha = (alpha * 10).roundToDouble() / 10;
+    if (_cachedPainter == null || quantizedAlpha != _lastAlpha) {
+      _lastAlpha = quantizedAlpha;
+      _cachedPainter = TextPainter(
+        text: TextSpan(
+          text: text,
+          style: TextStyle(
+            color: color.withValues(alpha: quantizedAlpha),
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
         ),
-      ),
-      textDirection: TextDirection.ltr,
-    )..layout();
-    textPainter.paint(canvas, Offset(-textPainter.width / 2, -textPainter.height / 2));
+        textDirection: TextDirection.ltr,
+      )..layout();
+    }
+    _cachedPainter!.paint(canvas, Offset(-_cachedPainter!.width / 2, -_cachedPainter!.height / 2));
   }
 }

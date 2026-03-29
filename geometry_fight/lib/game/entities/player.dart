@@ -576,6 +576,8 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
   void onCollisionStart(
       Set<Vector2> intersectionPoints, PositionComponent other) {
     if (other is EnemyBase) {
+      // GW:RE2: nemici in materializzazione sono incorporei — non danneggiano il player
+      if (other.isSpawnInvulnerable) return;
       takeDamage();
     }
     super.onCollisionStart(intersectionPoints, other);

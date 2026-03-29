@@ -25,6 +25,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   Future<void> _loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
     setState(() {
       _bgmVolume = prefs.getDouble('bgm_volume') ?? 0.7;
       _sfxVolume = prefs.getDouble('sfx_volume') ?? 0.8;
@@ -67,19 +68,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _SettingSlider(
             label: 'BGM VOLUME',
             value: _bgmVolume,
-            onChanged: (v) {
-              setState(() => _bgmVolume = v);
-              _saveSettings();
-            },
+            onChanged: (v) => setState(() => _bgmVolume = v),
+            onChangeEnd: (_) => _saveSettings(),
           ),
           const SizedBox(height: 24),
           _SettingSlider(
             label: 'SFX VOLUME',
             value: _sfxVolume,
-            onChanged: (v) {
-              setState(() => _sfxVolume = v);
-              _saveSettings();
-            },
+            onChanged: (v) => setState(() => _sfxVolume = v),
+            onChangeEnd: (_) => _saveSettings(),
           ),
           const SizedBox(height: 24),
           _SettingToggle(
@@ -129,7 +126,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 );
                 if (confirm == true) {
                   await SaveManager.clear();
-                  setState(() {});
+                  // Resetta anche le impostazioni in SharedPreferences
+                  final prefs = await SharedPreferences.getInstance();
+                  await prefs.remove('bgm_volume');
+                  await prefs.remove('sfx_volume');
+                  await prefs.remove('vibration');
+                  await prefs.remove('show_fps');
+                  await prefs.remove('tutorial_seen');
+                  if (!mounted) return;
+                  setState(() {
+                    _bgmVolume = 0.7;
+                    _sfxVolume = 0.8;
+                    _vibration = true;
+                    _showFps = false;
+                  });
                 }
               },
               child: Container(
@@ -160,11 +170,13 @@ class _SettingSlider extends StatelessWidget {
   final String label;
   final double value;
   final ValueChanged<double> onChanged;
+  final ValueChanged<double>? onChangeEnd;
 
   const _SettingSlider({
     required this.label,
     required this.value,
     required this.onChanged,
+    this.onChangeEnd,
   });
 
   @override
@@ -203,6 +215,7 @@ class _SettingSlider extends StatelessWidget {
           child: Slider(
             value: value,
             onChanged: onChanged,
+            onChangeEnd: onChangeEnd,
           ),
         ),
       ],
@@ -238,7 +251,7 @@ class _SettingToggle extends StatelessWidget {
           value: value,
           onChanged: onChanged,
           activeTrackColor: Colors.cyanAccent.withValues(alpha: 0.5),
-          thumbColor: WidgetStatePropertyAll(Colors.cyanAccent),
+          thumbColor: const WidgetStatePropertyAll(Colors.cyanAccent),
           inactiveTrackColor: Colors.white12,
         ),
       ],

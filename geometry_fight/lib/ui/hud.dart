@@ -76,6 +76,7 @@ class _GameHudState extends State<GameHud> {
                   child: _WaveIndicator(
                     wave: game.waveSystem.currentWave,
                     enemyCount: game.enemyCount,
+                    isBossWave: game.bossCount > 0,
                   ),
                 ),
               ),
@@ -292,9 +293,9 @@ class _ScorePanel extends StatelessWidget {
   }
 
   String _formatScore(int s) {
-    if (s >= 1000000000) return '${s ~/ 1000000}M';
-    if (s >= 1000000) return '${s ~/ 1000}K';
-    if (s >= 1000) return '${s ~/ 1000}K';
+    if (s >= 1000000000) return '${(s / 1000000000).toStringAsFixed(1)}B';
+    if (s >= 1000000) return '${(s / 1000000).toStringAsFixed(1)}M';
+    if (s >= 10000) return '${s ~/ 1000}K';
     return '$s';
   }
 }
@@ -455,12 +456,12 @@ class _StatusPanel extends StatelessWidget {
 class _WaveIndicator extends StatelessWidget {
   final int wave;
   final int enemyCount;
+  final bool isBossWave;
 
-  const _WaveIndicator({required this.wave, required this.enemyCount});
+  const _WaveIndicator({required this.wave, required this.enemyCount, required this.isBossWave});
 
   @override
   Widget build(BuildContext context) {
-    final isBossWave = wave % 10 == 0;
     final color = isBossWave ? const Color(0xFFFF2244) : const Color(0xFF4488FF);
 
     return Container(

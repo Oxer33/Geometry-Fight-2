@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'dart:ui';
 import 'package:flame/components.dart';
 import '../../../data/constants.dart';
+import '../projectiles.dart';
 import 'enemy_base.dart';
 
 /// WEAVER (Green Scare) - Quadrato verde che insegue il player.
@@ -9,7 +10,8 @@ import 'enemy_base.dart';
 /// Leggermente più veloce del player. 85% probabilità di schivare.
 class WeaverEnemy extends EnemyBase {
   double _dodgeCooldown = 0;
-  final double _waveOffset = math.Random().nextDouble() * math.pi * 2;
+  static final _rng = math.Random();
+  final double _waveOffset = _rng.nextDouble() * math.pi * 2;
 
   WeaverEnemy()
       : super(
@@ -30,15 +32,15 @@ class WeaverEnemy extends EnemyBase {
 
     // SCHIVA proiettili vicini (85% probabilità, come GW)
     if (_dodgeCooldown <= 0) {
-      for (final child in game.world.children) {
-        if (child is PositionComponent &&
-            child.runtimeType.toString().contains('PlayerBullet')) {
+      for (final child in game.world.children.toList()) {
+        if (child is PlayerBullet) {
           final dist = child.position.distanceTo(position);
           if (dist < 80) {
             // 85% probabilità di schivare
-            if (math.Random().nextDouble() < 0.85) {
+            if (_rng.nextDouble() < 0.85) {
               final bulletDir = (child.position - position).normalized();
-              final dodgeDir = Vector2(-bulletDir.y, bulletDir.x);
+              final sign = _rng.nextBool() ? 1.0 : -1.0;
+              final dodgeDir = Vector2(-bulletDir.y * sign, bulletDir.x * sign);
               position += dodgeDir * 150 * dt;
               _dodgeCooldown = 0.3;
             }

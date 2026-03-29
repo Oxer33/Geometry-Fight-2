@@ -7,6 +7,7 @@ import 'enemy_base.dart';
 class MineEnemy extends EnemyBase {
   double _detonateTimer = -1;
   bool _detonating = false;
+  bool _exploded = false;
 
   MineEnemy()
       : super(
@@ -29,7 +30,8 @@ class MineEnemy extends EnemyBase {
     if (_detonating) {
       _detonateTimer -= dt;
       if (_detonateTimer <= 0) {
-        _explode();
+        onDeath(); // onDeath chiama _explode + super.onDeath
+        return;
       }
     }
   }
@@ -52,8 +54,15 @@ class MineEnemy extends EnemyBase {
     if (!game.isTunnelMode) {
       game.grid.applyForce(position, 150, 800);
     }
-    removeFromParent();
-    game.onEnemyKilled(this);
+  }
+
+  @override
+  void onDeath() {
+    if (!_exploded) {
+      _exploded = true;
+      _explode();
+    }
+    super.onDeath();
   }
 
   @override

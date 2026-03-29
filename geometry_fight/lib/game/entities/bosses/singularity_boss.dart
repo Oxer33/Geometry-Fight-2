@@ -11,6 +11,7 @@ class SingularityBoss extends BossBase {
   double _pullTimer = 5;
   double _cloneTimer = 8;
   double _vortexTimer = 12;
+  double _blackRainTimer = 4.0;
   bool _pulling = false;
   double _pullDuration = 0;
   double _phase = 0;
@@ -90,8 +91,12 @@ class SingularityBoss extends BossBase {
     }
 
     // Black rain (phase 2, periodic)
-    if (currentPhase >= 2 && (_phase % 4).floor() == 0 && _phase % 4 < dt * 2) {
-      _blackRain();
+    if (currentPhase >= 2) {
+      _blackRainTimer -= dt;
+      if (_blackRainTimer <= 0) {
+        _blackRainTimer = 4.0;
+        _blackRain();
+      }
     }
   }
 
@@ -118,6 +123,8 @@ class SingularityBoss extends BossBase {
   }
 
   void _createVortex() {
+    // Cap: non creare vortici se troppi nemici
+    if (game.enemyCount >= 20) return;
     _vortexPositions.clear();
     for (int i = 0; i < 4; i++) {
       final angle = i * math.pi / 2;

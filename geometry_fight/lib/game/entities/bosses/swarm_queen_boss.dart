@@ -45,12 +45,14 @@ class SwarmQueenBoss extends BossBase {
     // Spawna sciami
     _spawnTimer -= dt;
     if (_spawnTimer <= 0) {
-      _spawnTimer = 2.5 - currentPhase * 0.5;
+      _spawnTimer = (2.5 - currentPhase * 0.5).clamp(1.0, 3.0);
       _spawnSwarm();
     }
   }
 
   void _spawnSwarm() {
+    // Cap: non spawnare se ci sono già troppi nemici
+    if (game.enemyCount >= 30) return;
     final count = 5 + currentPhase * 3;
     for (int i = 0; i < count; i++) {
       final angle = math.Random().nextDouble() * math.pi * 2;

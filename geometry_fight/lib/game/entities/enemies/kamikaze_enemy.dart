@@ -15,7 +15,7 @@ class KamikazeEnemy extends EnemyBase {
   KamikazeEnemy()
       : super(
           hp: 1,
-          speed: 800,
+          speed: 500,
           pointValue: 4,
           geomValue: 2,
           neonColor: NeonColors.red,
@@ -38,14 +38,21 @@ class KamikazeEnemy extends EnemyBase {
         _flashRate += dt * 15;
         if (_stateTimer <= 0) {
           _state = KamikazeState.rushing;
-          _rushDirection = (playerPosition - position).normalized();
-          _stateTimer = 1.0;
+          // Sceglie SOLO un asse cardinale: sx/dx o su/giù
+          _rushDirection = _pickCardinalDirection();
+          _stateTimer = 1.2;
         }
       case KamikazeState.rushing:
         position += _rushDirection! * speed * dt;
+        // Bounds check: se esce dall'arena, inverti direzione per tornare
+        if (position.x < -50 || position.x > arenaWidth + 50 ||
+            position.y < -50 || position.y > arenaHeight + 50) {
+          _state = KamikazeState.recovering;
+          _stateTimer = 0.8;
+        }
         if (_stateTimer <= 0) {
           _state = KamikazeState.recovering;
-          _stateTimer = 0.5;
+          _stateTimer = 0.8;
         }
       case KamikazeState.recovering:
         if (_stateTimer <= 0) {
@@ -53,6 +60,20 @@ class KamikazeEnemy extends EnemyBase {
           _stateTimer = 1.5;
           _flashRate = 2;
         }
+    }
+  }
+
+  /// Sceglie la direzione cardinale (su/giù/sx/dx) più vicina al player.
+  /// Il kamikaze si muove SOLO lungo un asse per essere più leggibile e schivabile.
+  Vector2 _pickCardinalDirection() {
+    final diff = playerPosition - position;
+    // Sceglie l'asse con la distanza maggiore
+    if (diff.x.abs() >= diff.y.abs()) {
+      // Asse orizzontale
+      return Vector2(diff.x > 0 ? 1 : -1, 0);
+    } else {
+      // Asse verticale
+      return Vector2(0, diff.y > 0 ? 1 : -1);
     }
   }
 

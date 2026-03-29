@@ -49,8 +49,11 @@ class GravitonBoss extends BossBase {
     final toPlayer = playerPosition - position;
     final dist = toPlayer.length;
     if (dist < _gravityRadius && dist > 10) {
-      final force = (_isPulling ? 1.0 : -1.0) * 120 * dt * (1 - dist / _gravityRadius);
-      game.player.position += toPlayer.normalized() * force * (_isPulling ? -1 : 1);
+      final strength = 120 * dt * (1 - dist / _gravityRadius);
+      // Pull: muove il player VERSO il boss (direzione opposta a toPlayer)
+      // Push: muove il player LONTANO dal boss (stessa direzione di toPlayer)
+      final dir = _isPulling ? -1.0 : 1.0;
+      game.player.position += toPlayer.normalized() * strength * dir;
     }
 
     // Distorci griglia
@@ -189,11 +192,14 @@ class _GravBullet extends PositionComponent with HasGameReference<GeometryFightG
     }
   }
 
+  static final _bulletPaint = Paint();
+  static final _bulletCorePaint = Paint();
+
   @override
   void render(Canvas canvas) {
-    canvas.drawCircle(
-      Offset(size.x / 2, size.y / 2), 3.5,
-      Paint()..color = color..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3),
-    );
+    _bulletPaint.color = color;
+    canvas.drawCircle(Offset(size.x / 2, size.y / 2), 3.5, _bulletPaint);
+    _bulletCorePaint.color = const Color(0xFFFFFFFF).withValues(alpha: 0.7);
+    canvas.drawCircle(Offset(size.x / 2, size.y / 2), 1.5, _bulletCorePaint);
   }
 }

@@ -138,9 +138,14 @@ class _MirrorBullet extends PositionComponent with HasGameReference<GeometryFigh
     }
   }
 
+  static final _bulletPaint = Paint();
+  static final _bulletCorePaint = Paint();
+
   @override
   void render(Canvas canvas) {
-    final p = Paint()..color = color..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
-    canvas.drawCircle(Offset(size.x / 2, size.y / 2), 3.5, p);
+    _bulletPaint.color = color;
+    canvas.drawCircle(Offset(size.x / 2, size.y / 2), 3.5, _bulletPaint);
+    _bulletCorePaint.color = const Color(0xFFFFFFFF).withValues(alpha: 0.7);
+    canvas.drawCircle(Offset(size.x / 2, size.y / 2), 1.5, _bulletCorePaint);
   }
 }

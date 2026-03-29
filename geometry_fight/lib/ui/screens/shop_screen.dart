@@ -35,6 +35,15 @@ class _ShopScreenState extends State<ShopScreen>
         onSuccess();
         SaveManager.save(_saveData);
       });
+    } else {
+      // Feedback visivo: gold insufficiente
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Gold insufficiente!', style: TextStyle(fontFamily: 'monospace')),
+          backgroundColor: Colors.redAccent,
+          duration: Duration(seconds: 1),
+        ),
+      );
     }
   }
 
@@ -112,7 +121,9 @@ class _ShopScreenState extends State<ShopScreen>
 
     return _buildItemGrid(skins, _saveData.unlockedSkins, (item) {
       _purchase(item.id, item.cost, () {
-        _saveData.unlockedSkins.add(item.id);
+        if (!_saveData.unlockedSkins.contains(item.id)) {
+          _saveData.unlockedSkins.add(item.id);
+        }
         _saveData.activeSkin = item.id;
       });
     }, (item) {
@@ -132,7 +143,9 @@ class _ShopScreenState extends State<ShopScreen>
 
     return _buildItemGrid(trails, _saveData.unlockedTrails, (item) {
       _purchase(item.id, item.cost, () {
-        _saveData.unlockedTrails.add(item.id);
+        if (!_saveData.unlockedTrails.contains(item.id)) {
+          _saveData.unlockedTrails.add(item.id);
+        }
         _saveData.activeTrail = item.id;
       });
     }, (item) {
@@ -283,11 +296,16 @@ class _ShopScreenState extends State<ShopScreen>
       _ShopItem('twin', 'Twin Shot', 800, 'Parallel double bullets'),
       _ShopItem('spread', 'Spread Shot', 1000, '5-bullet fan'),
       _ShopItem('ricochet', 'Ricochet', 1200, 'Bouncing bullets'),
+      _ShopItem('homing', 'Homing', 1500, 'Tracking missiles'),
+      _ShopItem('plasma', 'Plasma', 2000, 'Heavy 3x damage bolts'),
+      _ShopItem('laser', 'Laser', 2500, 'Continuous beam'),
     ];
 
     return _buildItemGrid(weapons, _saveData.unlockedWeapons, (item) {
       _purchase(item.id, item.cost, () {
-        _saveData.unlockedWeapons.add(item.id);
+        if (!_saveData.unlockedWeapons.contains(item.id)) {
+          _saveData.unlockedWeapons.add(item.id);
+        }
         _saveData.startingWeapon = item.id;
       });
     }, (item) {
@@ -298,15 +316,20 @@ class _ShopScreenState extends State<ShopScreen>
 
   Widget _buildModesTab() {
     final modes = [
-      _ShopItem('classic', 'Classic', 0, '40 waves + endless'),
-      _ShopItem('boss_rush', 'Boss Rush', 2000, 'Boss after boss'),
-      _ShopItem('survival', 'Survival', 2500, 'Infinite waves, no breaks'),
-      _ShopItem('challenge', 'Challenge', 3000, '10 unique challenges'),
+      _ShopItem('classic', 'Classic', 0, '100 wave con boss crescenti'),
+      _ShopItem('bossRush', 'Boss Rush', 2000, 'Solo boss in sequenza'),
+      _ShopItem('survival', 'Survival', 2500, 'Ondate infinite'),
+      _ShopItem('timeAttack', 'Time Attack', 1500, '3 minuti di fuoco'),
+      _ShopItem('zenMode', 'Zen Mode', 1000, 'Vite infinite, relax'),
+      _ShopItem('tunnel', 'Tunnel', 3000, 'Tunnel infinito side-scroll'),
+      _ShopItem('endlessBoss', 'Boss Infiniti', 3500, 'Boss dopo boss, sempre più forti'),
     ];
 
     return _buildItemGrid(modes, _saveData.unlockedModes, (item) {
       _purchase(item.id, item.cost, () {
-        _saveData.unlockedModes.add(item.id);
+        if (!_saveData.unlockedModes.contains(item.id)) {
+          _saveData.unlockedModes.add(item.id);
+        }
       });
     }, null);
   }

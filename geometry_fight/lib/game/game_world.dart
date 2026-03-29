@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart' show KeyEventResult;
 import '../data/constants.dart';
 import '../data/difficulty.dart';
+import '../data/modifiers.dart';
 import '../data/save_data.dart';
 import '../data/wave_configs.dart';
 import 'entities/player.dart';
@@ -38,6 +39,9 @@ import 'entities/enemies/swarm_drone_enemy.dart';
 import 'entities/enemies/laser_turret_enemy.dart';
 import 'entities/enemies/time_bomb_enemy.dart';
 import 'entities/enemies/decoy_enemy.dart';
+import 'entities/enemies/gate_enemy.dart';
+import 'entities/enemies/proton_enemy.dart';
+import 'entities/enemies/mutator_enemy.dart';
 import 'entities/bosses/boss_base.dart';
 import 'entities/bosses/the_grid_boss.dart';
 import 'entities/bosses/hydra_boss.dart';
@@ -82,6 +86,25 @@ class GeometryFightGame extends FlameGame
   GameState gameState = GameState.playing;
   double timeScale = 1.0;
   double _slowMoTimer = 0;
+
+  // Modificatori attivi
+  List<String> activeModifiers = [];
+
+  // Achievement tracking per sessione
+  int sessionBombs = 0;
+  int sessionBossKills = 0;
+  int sessionPowerUps = 0;
+  int consecutivePerfectWaves = 0;
+  int maxMultiplierReached = 0;
+
+  double _chaosTimer = 10.0;
+
+  // Bomb explosion timer (sostituisce Future.delayed per rispettare pause/dispose)
+  List<double>? _bombExplosionTimers;
+  Vector2? _bombExplosionPos;
+
+  // Shared Random instance (evita creazione ripetuta)
+  final math.Random _random = math.Random();
 
   // Difficoltà e modalità di gioco
   final Difficulty difficulty;
@@ -171,6 +194,9 @@ class GeometryFightGame extends FlameGame
     player.bombs = diffConfig.startingBombs;
     world.add(player);
 
+    // Applica modificatori
+    _applyModifiers();
+
     // Screen shake
     screenShake = ScreenShakeEffect();
     camera.viewfinder.add(screenShake);
@@ -225,6 +251,39 @@ class GeometryFightGame extends FlameGame
     }
     powerUpSystem.update(scaledDt);
 
+    // Chaos modifier: power-up random ogni 10 secondi
+    if (hasModifier('chaos')) {
+      _chaosTimer -= scaledDt;
+      if (_chaosTimer <= 0) {
+        _chaosTimer = 10.0;
+        powerUpSystem.spawnRandomPowerUp(player.position + Vector2(
+          (_random.nextDouble() - 0.5) * 200,
+          (_random.nextDouble() - 0.5) * 200,
+        ));
+      }
+    }
+
+    // Bomb explosion delayed waves (timer-based, rispetta pause)
+    if (_bombExplosionTimers != null && _bombExplosionPos != null) {
+      for (int i = _bombExplosionTimers!.length - 1; i >= 0; i--) {
+        _bombExplosionTimers![i] -= scaledDt;
+        if (_bombExplosionTimers![i] <= 0) {
+          if (i == 1) {
+            spawnExplosion(_bombExplosionPos!, NeonColors.cyan,
+                radius: 600, particleCount: 60);
+          } else if (i == 2) {
+            spawnExplosion(_bombExplosionPos!, NeonColors.spreadOrange,
+                radius: 400, particleCount: 40);
+          }
+          _bombExplosionTimers!.removeAt(i);
+        }
+      }
+      if (_bombExplosionTimers!.isEmpty) {
+        _bombExplosionTimers = null;
+        _bombExplosionPos = null;
+      }
+    }
+
     // Timer flash rosso
     if (hitFlashTimer > 0) hitFlashTimer -= dt;
     // Timer perfect wave
@@ -275,7 +334,7 @@ class GeometryFightGame extends FlameGame
           currentPos + (targetPos - currentPos) * cameraSmoothing;
     }
 
-    super.update(scaledDt);
+    super.update(dt);
   }
 
   // Flag per distinguere input touch da tastiera (pubblici per accesso da game_screen)
@@ -418,6 +477,16 @@ class GeometryFightGame extends FlameGame
         enemy = TimeBombEnemy();
       case EnemyType.decoy:
         enemy = DecoyEnemy();
+      case EnemyType.proton:
+        enemy = ProtonEnemy();
+      case EnemyType.mutator:
+        enemy = MutatorEnemy();
+      case EnemyType.gate:
+        // Gate non è un EnemyBase — spawn diretto come PositionComponent
+        final gate = GateEnemy();
+        gate.position = pos;
+        world.add(gate);
+        return;
     }
 
     // Applica moltiplicatori di difficoltà a HP e velocità
@@ -475,8 +544,8 @@ class GeometryFightGame extends FlameGame
         boss = EternityEngineBoss();
     }
 
-    // HP dimezzati per tutti i boss (bilanciamento)
-    boss.hp = (boss.hp * 0.5).roundToDouble();
+    // HP dimezzati per tutti i boss (bilanciamento), poi scalati per difficoltà
+    boss.hp = (boss.hp * 0.5 * diffConfig.enemyHpMultiplier).roundToDouble();
     boss.maxHp = boss.hp;
 
     boss.position = pos;
@@ -485,7 +554,7 @@ class GeometryFightGame extends FlameGame
   }
 
   Vector2 _randomSpawnPosition() {
-    final random = math.Random();
+    final random = _random;
     const viewWidth = 800.0;
     const viewHeight = 600.0;
     const padding = 200.0;
@@ -557,6 +626,10 @@ class GeometryFightGame extends FlameGame
     scoreSystem.addKill(enemy.pointValue, enemy.position);
     sessionKills++;
 
+    // Track max multiplier per achievement
+    final currentMult = scoreSystem.multiplierDisplay;
+    if (currentMult > maxMultiplierReached) maxMultiplierReached = currentMult;
+
     // Tunnel mode: traccia kill per boss spawn ogni 30
     if (isTunnelMode) {
       waveSystem.onTunnelKill();
@@ -565,21 +638,25 @@ class GeometryFightGame extends FlameGame
     // Drop geoms
     for (int i = 0; i < enemy.geomValue; i++) {
       final offset = Vector2(
-        (math.Random().nextDouble() - 0.5) * 30,
-        (math.Random().nextDouble() - 0.5) * 30,
+        (_random.nextDouble() - 0.5) * 30,
+        (_random.nextDouble() - 0.5) * 30,
       );
       spawnGeom(enemy.position + offset, 1);
     }
 
     // Chance to drop power-up (influenzata dalla difficoltà)
-    if (math.Random().nextDouble() < diffConfig.powerUpDropRate) {
+    if (_random.nextDouble() < diffConfig.powerUpDropRate) {
       spawnPowerUp(enemy.position);
     }
 
     // Notifica Necro nemici vicini della morte (per resurrezione)
-    for (final child in world.children) {
-      if (child is NecroEnemy) {
-        child.onNearbyEnemyDeath(_getEnemyType(enemy), enemy.position);
+    // Escludi il nemico stesso (se è un Necro che muore) e non resuscitare Necro
+    final enemyType = _getEnemyType(enemy);
+    if (enemyType != EnemyType.necro) {
+      for (final child in world.children) {
+        if (child is NecroEnemy && child != enemy) {
+          child.onNearbyEnemyDeath(enemyType, enemy.position);
+        }
       }
     }
   }
@@ -591,17 +668,42 @@ class GeometryFightGame extends FlameGame
     if (enemy is KamikazeEnemy) return EnemyType.kamikaze;
     if (enemy is WeaverEnemy) return EnemyType.weaver;
     if (enemy is BouncerEnemy) return EnemyType.bouncer;
-    return EnemyType.drone; // Default
+    if (enemy is MineEnemy) return EnemyType.mine;
+    if (enemy is SplitterEnemy) return EnemyType.splitter;
+    if (enemy is ShieldEnemy) return EnemyType.shieldEnemy;
+    if (enemy is BlackHoleEnemy) return EnemyType.blackHole;
+    if (enemy is TitanEnemy) return EnemyType.titan;
+    if (enemy is PulsarEnemy) return EnemyType.pulsar;
+    if (enemy is MirrorEnemy) return EnemyType.mirror;
+    if (enemy is PhantomEnemy) return EnemyType.phantom;
+    if (enemy is VortexEnemy) return EnemyType.vortex;
+    if (enemy is LeechEnemy) return EnemyType.leech;
+    if (enemy is GlitchEnemy) return EnemyType.glitch;
+    if (enemy is HealerEnemy) return EnemyType.healer;
+    if (enemy is OrbiterEnemy) return EnemyType.orbiter;
+    if (enemy is SirenEnemy) return EnemyType.siren;
+    if (enemy is NecroEnemy) return EnemyType.necro;
+    if (enemy is TeslaEnemy) return EnemyType.tesla;
+    if (enemy is GravityWellEnemy) return EnemyType.gravityWell;
+    if (enemy is LaserTurretEnemy) return EnemyType.laserTurret;
+    if (enemy is TimeBombEnemy) return EnemyType.timeBomb;
+    if (enemy is DecoyEnemy) return EnemyType.decoy;
+    if (enemy is SnakeEnemy) return EnemyType.snake;
+    if (enemy is SpawnerEnemy) return EnemyType.spawner;
+    if (enemy is ProtonEnemy) return EnemyType.proton;
+    if (enemy is MutatorEnemy) return EnemyType.mutator;
+    return EnemyType.drone;
   }
 
   void onBossKilled(BossBase boss) {
     scoreSystem.addKill(boss.pointValue * 10, boss.position);
+    sessionBossKills++;
 
     // Drop lots of geoms
     for (int i = 0; i < 50; i++) {
       final offset = Vector2(
-        (math.Random().nextDouble() - 0.5) * 100,
-        (math.Random().nextDouble() - 0.5) * 100,
+        (_random.nextDouble() - 0.5) * 100,
+        (_random.nextDouble() - 0.5) * 100,
       );
       spawnGeom(boss.position + offset, 5);
     }
@@ -625,6 +727,9 @@ class GeometryFightGame extends FlameGame
       _perfectWaveTimer = 2.5;
       // Bonus: +10 al moltiplicatore per perfect wave
       scoreSystem.addGeoms(10);
+      consecutivePerfectWaves++;
+    } else {
+      consecutivePerfectWaves = 0;
     }
     _hitThisWave = false; // Reset per la prossima wave
   }
@@ -657,6 +762,37 @@ class GeometryFightGame extends FlameGame
         (saveData.stats['totalKills'] ?? 0) + sessionKills;
     saveData.stats['gamesPlayed'] =
         (saveData.stats['gamesPlayed'] ?? 0) + 1;
+    saveData.stats['totalBosses'] =
+        (saveData.stats['totalBosses'] ?? 0) + sessionBossKills;
+    saveData.stats['totalBombs'] =
+        (saveData.stats['totalBombs'] ?? 0) + sessionBombs;
+    saveData.stats['totalPowerUps'] =
+        (saveData.stats['totalPowerUps'] ?? 0) + sessionPowerUps;
+    saveData.stats['totalGeoms'] =
+        (saveData.stats['totalGeoms'] ?? 0) + sessionGeoms;
+
+    // Record per sessione
+    final currentMaxKills = saveData.stats['maxSessionKills'] ?? 0;
+    if (sessionKills > currentMaxKills) {
+      saveData.stats['maxSessionKills'] = sessionKills;
+    }
+    final currentMaxWave = saveData.stats['maxWave'] ?? 0;
+    if (waveSystem.currentWave > currentMaxWave) {
+      saveData.stats['maxWave'] = waveSystem.currentWave;
+    }
+    final currentMaxMult = saveData.stats['maxMultiplier'] ?? 0;
+    if (maxMultiplierReached > currentMaxMult) {
+      saveData.stats['maxMultiplier'] = maxMultiplierReached;
+    }
+    final currentMaxPerfect = saveData.stats['maxPerfectStreak'] ?? 0;
+    if (consecutivePerfectWaves > currentMaxPerfect) {
+      saveData.stats['maxPerfectStreak'] = consecutivePerfectWaves;
+    }
+
+    // Track mode played
+    if (!saveData.playedModes.contains(gameMode.name)) {
+      saveData.playedModes.add(gameMode.name);
+    }
 
     SaveManager.save(saveData);
   }
@@ -681,9 +817,44 @@ class GeometryFightGame extends FlameGame
     sessionGeoms += value;
   }
 
+  void _applyModifiers() {
+    for (final modId in activeModifiers) {
+      switch (modId) {
+        case 'glass_cannon':
+          player.lives = 1;
+          // 3x danno applicato nel player shoot
+          break;
+        case 'speed_demon':
+          player.speed = playerSpeed * 1.5;
+          break;
+        case 'one_shot':
+          player.lives = 1;
+          break;
+        case 'infinite_bombs':
+          player.bombs = 999;
+          break;
+        case 'magnet_king':
+          // Handled in geom collection
+          break;
+        case 'tiny_arena':
+          // Arena 50% più piccola - handled via getter
+          break;
+        // Others handled in their respective systems
+      }
+    }
+  }
+
+  bool hasModifier(String id) => activeModifiers.contains(id);
+  double get modifierScoreMultiplier => combinedScoreMultiplier(activeModifiers);
+
+  // Arena effettiva (con modificatore tiny_arena)
+  double get effectiveArenaWidth => hasModifier('tiny_arena') ? arenaWidth * 0.5 : arenaWidth;
+  double get effectiveArenaHeight => hasModifier('tiny_arena') ? arenaHeight * 0.5 : arenaHeight;
+
   void useBomb() {
     if (player.bombs <= 0) return;
     player.bombs--;
+    sessionBombs++;
 
     // Slow-mo breve (0.3s, scala 0.5 — meno aggressivo)
     activateSlowMo(0.3, 0.5);
@@ -707,23 +878,11 @@ class GeometryFightGame extends FlameGame
       }
     }
 
-    // Esplosione DEVASTANTE: tripla esplosione concentrica
-    spawnExplosion(player.position, NeonColors.white,
+    // Esplosione DEVASTANTE: tripla esplosione concentrica (timer-based, rispetta pause/dispose)
+    _bombExplosionTimers = [0.0, 0.1, 0.2];
+    _bombExplosionPos = player.position.clone();
+    spawnExplosion(_bombExplosionPos!, NeonColors.white,
         radius: 800, particleCount: 80);
-    // Seconda onda con colore diverso
-    Future.delayed(const Duration(milliseconds: 100), () {
-      if (gameState == GameState.playing) {
-        spawnExplosion(player.position, NeonColors.cyan,
-            radius: 600, particleCount: 60);
-      }
-    });
-    // Terza onda
-    Future.delayed(const Duration(milliseconds: 200), () {
-      if (gameState == GameState.playing) {
-        spawnExplosion(player.position, NeonColors.spreadOrange,
-            radius: 400, particleCount: 40);
-      }
-    });
 
     // Screen shake intenso e prolungato
     triggerScreenShake(12, 0.6);
@@ -745,11 +904,19 @@ class GeometryFightGame extends FlameGame
   }
 
   void restartGame() {
+    // Rimuovi screenShake dal viewfinder prima di pulire il world
+    screenShake.removeFromParent();
+
     world.removeAll(world.children);
     gameState = GameState.playing;
     timeScale = 1.0;
     sessionGeoms = 0;
     sessionKills = 0;
+    sessionBombs = 0;
+    sessionBossKills = 0;
+    sessionPowerUps = 0;
+    consecutivePerfectWaves = 0;
+    maxMultiplierReached = 0;
     _hitThisWave = false;
     _sessionSaved = false;
     showPerfectWave = false;
@@ -758,6 +925,11 @@ class GeometryFightGame extends FlameGame
     tunnelHeight = 600;
     tunnelScrollSpeed = 100;
     _tunnelCameraX = 0;
+    _chaosTimer = 10.0;
+    _bombExplosionTimers = null;
+    _bombExplosionPos = null;
+    SwarmDroneEnemy.resetGlobalEnrage();
+    LeechEnemy.resetAttachedCount();
     scoreSystem.reset();
     scoreSystem.geomValueMultiplier = diffConfig.geomValueMultiplier;
     scoreSystem.scoreMultiplier = diffConfig.scoreMultiplier;
@@ -783,7 +955,15 @@ class GeometryFightGame extends FlameGame
     player.bombs = diffConfig.startingBombs;
     world.add(player);
 
+    // Re-apply modifiers (glass_cannon, speed_demon, etc.)
+    _applyModifiers();
+
+    // Ricrea screenShake sul viewfinder
+    screenShake = ScreenShakeEffect();
+    camera.viewfinder.add(screenShake);
+
     waveSystem = WaveSystem(this);
+    waveSystem.reset(); // Reset tunnel counters e stato wave
     waveSystem.startWave(1);
     resumeEngine();
   }

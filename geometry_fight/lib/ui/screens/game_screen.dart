@@ -2,9 +2,11 @@ import 'package:flame/components.dart';
 import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../data/achievements.dart';
 import '../../data/constants.dart';
 import '../../data/difficulty.dart';
 import '../../data/leaderboard.dart';
+import '../../data/save_data.dart';
 import '../../game/game_world.dart';
 import '../hud.dart';
 import '../widgets/animated_builder_widget.dart';
@@ -36,6 +38,7 @@ class _GameScreenState extends State<GameScreen> {
   bool _showGameOver = false;
   bool _showTutorial = false;
   bool _leaderboardSaved = false;
+  List<AchievementDef> _newAchievements = [];
   // Overlay nero per nascondere il flash bianco del GameWidget durante l'init
   double _fadeOverlayOpacity = 1.0;
 
@@ -46,6 +49,9 @@ class _GameScreenState extends State<GameScreen> {
       difficulty: widget.difficulty,
       gameMode: widget.gameMode,
     );
+    // Load active modifiers from save data
+    final saveData = SaveManager.load();
+    _game.activeModifiers = List.from(saveData.activeModifiers);
     _game.onGameOver = () {
       _saveLeaderboard();
       setState(() => _showGameOver = true);
@@ -72,6 +78,68 @@ class _GameScreenState extends State<GameScreen> {
       kills: _game.sessionKills,
       date: DateTime.now(),
     ));
+
+    // Check achievements
+    final saveData = _game.saveData;
+    final stats = saveData.stats;
+    _newAchievements = AchievementManager.checkAfterSession(
+      totalKills: stats['totalKills'] ?? 0,
+      sessionKills: _game.sessionKills,
+      totalBosses: stats['totalBosses'] ?? 0,
+      sessionScore: _game.scoreSystem.score,
+      maxMultiplier: _game.maxMultiplierReached,
+      totalGeoms: stats['totalGeoms'] ?? 0,
+      waveReached: _game.waveSystem.currentWave,
+      consecutivePerfectWaves: _game.consecutivePerfectWaves,
+      gamesPlayed: stats['gamesPlayed'] ?? 0,
+      totalGold: saveData.goldGeoms,
+      totalPowerUps: stats['totalPowerUps'] ?? 0,
+      totalBombs: stats['totalBombs'] ?? 0,
+      modesPlayed: saveData.playedModes.length,
+      allUpgradesBought: _checkAllUpgrades(saveData),
+      completedClassicNormal: _game.gameMode == GameMode.classic &&
+          _game.difficulty == Difficulty.normal &&
+          _game.waveSystem.currentWave >= 50,
+      completedClassicHard: _game.gameMode == GameMode.classic &&
+          _game.difficulty == Difficulty.hard &&
+          _game.waveSystem.currentWave >= 50,
+      completedClassicNightmare: _game.gameMode == GameMode.classic &&
+          _game.difficulty == Difficulty.nightmare &&
+          _game.waveSystem.currentWave >= 50,
+      bossRushWave: _game.gameMode == GameMode.bossRush
+          ? _game.waveSystem.currentWave
+          : 0,
+    );
+
+    // Calculate and grant performance bonus gold
+    int perfBonus = 0;
+    if (_game.sessionKills >= 200) perfBonus += 50;
+    if (_game.sessionKills >= 500) perfBonus += 100;
+    if (_game.waveSystem.currentWave >= 20) perfBonus += 50;
+    if (_game.waveSystem.currentWave >= 50) perfBonus += 150;
+    if (_game.sessionBossKills >= 3) perfBonus += 100;
+    if (_game.sessionBossKills >= 5) perfBonus += 200;
+    saveData.goldGeoms += perfBonus;
+
+    // Grant gold rewards for new achievements
+    for (final achievement in _newAchievements) {
+      saveData.goldGeoms += achievement.reward;
+    }
+    if (perfBonus > 0 || _newAchievements.isNotEmpty) {
+      SaveManager.save(saveData);
+    }
+  }
+
+  bool _checkAllUpgrades(SaveData data) {
+    const maxLevels = {
+      'firepower': 5, 'speed': 5, 'fire_rate': 5,
+      'shield_capacity': 3, 'starting_lives': 2, 'bomb_capacity': 2,
+      'magnet_range': 3, 'xp_boost': 3,
+    };
+    for (final entry in maxLevels.entries) {
+      if (data.getUpgradeLevel(entry.key) < entry.value) return false;
+    }
+    return true;
   }
 
   Future<void> _checkTutorial() async {
@@ -86,6 +154,7 @@ class _GameScreenState extends State<GameScreen> {
   Future<void> _dismissTutorial() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool('tutorial_seen', true);
+    if (!mounted) return;
     setState(() => _showTutorial = false);
     _game.togglePause(); // Riprendi il gioco
   }
@@ -120,8 +189,10 @@ class _GameScreenState extends State<GameScreen> {
             bottom: 165,
             right: 24,
             child: _PauseButton(onPressed: () {
-              _game.togglePause();
-              setState(() => _showPause = true);
+              if (!_showPause && !_showGameOver) {
+                _game.togglePause();
+                setState(() => _showPause = true);
+              }
             }),
           ),
 
@@ -150,10 +221,14 @@ class _GameScreenState extends State<GameScreen> {
               wave: _game.waveSystem.currentWave,
               geoms: _game.sessionGeoms,
               goldEarned: (_game.sessionGeoms / geomToGoldRatio).round(),
+              kills: _game.sessionKills,
+              bossKills: _game.sessionBossKills,
+              newAchievements: _newAchievements,
               onRetry: () {
                 setState(() {
                   _showGameOver = false;
                   _leaderboardSaved = false;
+                  _newAchievements = [];
                 });
                 _game.restartGame();
               },
