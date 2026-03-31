@@ -208,7 +208,7 @@ class _SettingsScreenState extends State<SettingsScreen>
 
   Widget _buildSectionHeader(
       String title, IconData icon, Color color, double entrance, double delay) {
-    final e = ((entrance - delay) / (1.0 - delay)).clamp(0.0, 1.0);
+    final e = (delay >= 1.0 ? 1.0 : ((entrance - delay) / (1.0 - delay)).clamp(0.0, 1.0));
     return Opacity(
       opacity: e,
       child: Transform.translate(
@@ -270,7 +270,7 @@ class _SettingsScreenState extends State<SettingsScreen>
     required double delay,
     required double glow,
   }) {
-    final e = ((entrance - delay) / (1.0 - delay)).clamp(0.0, 1.0);
+    final e = (delay >= 1.0 ? 1.0 : ((entrance - delay) / (1.0 - delay)).clamp(0.0, 1.0));
     final pct = (value * 100).round();
 
     return Opacity(
@@ -364,7 +364,7 @@ class _SettingsScreenState extends State<SettingsScreen>
     required double delay,
     required double glow,
   }) {
-    final e = ((entrance - delay) / (1.0 - delay)).clamp(0.0, 1.0);
+    final e = (delay >= 1.0 ? 1.0 : ((entrance - delay) / (1.0 - delay)).clamp(0.0, 1.0));
 
     return Opacity(
       opacity: e,

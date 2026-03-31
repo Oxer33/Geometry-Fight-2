@@ -38,6 +38,11 @@ class _GameOverScreenState extends State<GameOverScreen>
   late AnimationController _counterController;
   late AnimationController _particleController;
 
+  // Cached computed values (constant for widget lifetime)
+  late final int _perfBonus;
+  late final int _achievementGold;
+  late final int _totalGold;
+
   // Staggered entrance animations
   late Animation<double> _bgFade;
   late Animation<double> _titleScale;
@@ -64,6 +69,10 @@ class _GameOverScreenState extends State<GameOverScreen>
   @override
   void initState() {
     super.initState();
+
+    _perfBonus = _calcPerformanceBonus();
+    _achievementGold = widget.newAchievements.fold(0, (sum, a) => sum + a.reward);
+    _totalGold = widget.goldEarned + _perfBonus + _achievementGold;
 
     _entranceController = AnimationController(
       duration: const Duration(milliseconds: 1400),
@@ -145,11 +154,6 @@ class _GameOverScreenState extends State<GameOverScreen>
 
   @override
   Widget build(BuildContext context) {
-    final perfBonus = _calcPerformanceBonus();
-    final achievementGold =
-        widget.newAchievements.fold(0, (sum, a) => sum + a.reward);
-    final totalGold = widget.goldEarned + perfBonus + achievementGold;
-
     return AnimatedBuilder(
       animation: Listenable.merge([
         _entranceController,
@@ -255,13 +259,13 @@ class _GameOverScreenState extends State<GameOverScreen>
                       offset: Offset(0, _goldSlide.value),
                       child: Opacity(
                         opacity: _goldFade.value,
-                        child: _buildGoldPanel(totalGold, perfBonus,
-                            achievementGold),
+                        child: _buildGoldPanel(_totalGold, _perfBonus,
+                            _achievementGold),
                       ),
                     ),
 
                     // Performance badges
-                    if (perfBonus > 0) ...[
+                    if (_perfBonus > 0) ...[
                       const SizedBox(height: 8),
                       Opacity(
                         opacity: _badgesFade.value,

@@ -17,9 +17,16 @@ class _StatsScreenState extends State<StatsScreen>
   late AnimationController _counterController;
   late AnimationController _glowController;
 
+  // Cache save data once — avoid 60x/sec deserialization
+  late final SaveData _saveData;
+  late final Map<String, dynamic> _stats;
+
   @override
   void initState() {
     super.initState();
+
+    _saveData = SaveManager.load();
+    _stats = _saveData.stats;
 
     _entranceController = AnimationController(
       duration: const Duration(milliseconds: 800),
@@ -51,8 +58,8 @@ class _StatsScreenState extends State<StatsScreen>
 
   @override
   Widget build(BuildContext context) {
-    final saveData = SaveManager.load();
-    final stats = saveData.stats;
+    final saveData = _saveData;
+    final stats = _stats;
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -170,7 +177,9 @@ class _StatsScreenState extends State<StatsScreen>
 
   Widget _buildSection(String title, Color color, double entrance, double delay,
       List<_StatData> stats, double glow) {
-    final sectionEntrance = ((entrance - delay) / (1.0 - delay)).clamp(0.0, 1.0);
+    final sectionEntrance = delay >= 1.0
+        ? 1.0
+        : ((entrance - delay) / (1.0 - delay)).clamp(0.0, 1.0);
 
     return Opacity(
       opacity: sectionEntrance,

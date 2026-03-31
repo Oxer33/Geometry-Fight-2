@@ -89,10 +89,9 @@ class _NavigationWrapperState extends State<NavigationWrapper> {
         switchInCurve: Curves.easeOut,
         switchOutCurve: Curves.easeIn,
         transitionBuilder: (child, animation) {
-          // No transition for splash → menu (splash has its own)
-          // and no transition for game screen (has its own fade overlay)
-          if (_currentScreen == AppScreen.splash ||
-              _currentScreen == AppScreen.game) {
+          // No transition for splash/game (they have their own animations)
+          final key = (child.key as ValueKey?)?.value;
+          if (key == 'splash' || key == 'game') {
             return child;
           }
           return FadeTransition(

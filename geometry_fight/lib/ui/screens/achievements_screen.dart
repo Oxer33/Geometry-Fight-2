@@ -33,9 +33,32 @@ class _AchievementsScreenState extends State<AchievementsScreen>
     'special': Icons.star_rounded,
   };
 
+  static const _categories = ['combat', 'score', 'progress', 'mastery', 'special'];
+  static const _categoryNames = {
+    'combat': 'COMBATTIMENTO',
+    'score': 'PUNTEGGIO',
+    'progress': 'PROGRESSO',
+    'mastery': 'MAESTRIA',
+    'special': 'SPECIALI',
+  };
+
+  // Cached per-category lists (avoid rebuilding every frame)
+  late final Map<String, List<AchievementDef>> _achievementsByCategory;
+  late final int _unlockedCount;
+  late final int _totalCount;
+  late final double _completionPct;
+
   @override
   void initState() {
     super.initState();
+
+    _achievementsByCategory = {
+      for (final cat in _categories)
+        cat: allAchievements.where((a) => a.category == cat).toList(),
+    };
+    _unlockedCount = AchievementManager.unlockedCount();
+    _totalCount = AchievementManager.totalCount();
+    _completionPct = _totalCount > 0 ? _unlockedCount / _totalCount : 0.0;
     _entranceController = AnimationController(
       duration: const Duration(milliseconds: 800),
       vsync: this,
@@ -62,19 +85,6 @@ class _AchievementsScreenState extends State<AchievementsScreen>
 
   @override
   Widget build(BuildContext context) {
-    final categories = ['combat', 'score', 'progress', 'mastery', 'special'];
-    final categoryNames = {
-      'combat': 'COMBATTIMENTO',
-      'score': 'PUNTEGGIO',
-      'progress': 'PROGRESSO',
-      'mastery': 'MAESTRIA',
-      'special': 'SPECIALI',
-    };
-
-    final unlockedCount = AchievementManager.unlockedCount();
-    final totalCount = AchievementManager.totalCount();
-    final completionPct = totalCount > 0 ? unlockedCount / totalCount : 0.0;
-
     return Scaffold(
       backgroundColor: Colors.black,
       body: SafeArea(
@@ -91,30 +101,28 @@ class _AchievementsScreenState extends State<AchievementsScreen>
             return Column(
               children: [
                 // Header
-                _buildHeader(entrance, unlockedCount, totalCount, completionPct, glow),
+                _buildHeader(entrance, _unlockedCount, _totalCount, _completionPct, glow),
 
                 // Achievement list
                 Expanded(
                   child: ListView(
                     padding: const EdgeInsets.all(16),
                     children: [
-                      for (int ci = 0; ci < categories.length; ci++) ...[
+                      for (int ci = 0; ci < _categories.length; ci++) ...[
                         _buildCategoryHeader(
-                          categoryNames[categories[ci]]!,
-                          _categoryColors[categories[ci]]!,
-                          _categoryIcons[categories[ci]]!,
+                          _categoryNames[_categories[ci]]!,
+                          _categoryColors[_categories[ci]]!,
+                          _categoryIcons[_categories[ci]]!,
                           entrance,
                           ci * 0.08,
-                          categories[ci],
+                          _categories[ci],
                         ),
-                        ...allAchievements
-                            .where((a) => a.category == categories[ci])
-                            .toList()
+                        ..._achievementsByCategory[_categories[ci]]!
                             .asMap()
                             .entries
                             .map((entry) => _buildAchievementTile(
                                   entry.value,
-                                  _categoryColors[categories[ci]]!,
+                                  _categoryColors[_categories[ci]]!,
                                   entrance,
                                   ci * 0.08 + entry.key * 0.02,
                                   glow,
@@ -216,7 +224,7 @@ class _AchievementsScreenState extends State<AchievementsScreen>
 
   Widget _buildCategoryHeader(String title, Color color, IconData icon,
       double entrance, double delay, String category) {
-    final catEntrance = ((entrance - delay) / (1.0 - delay)).clamp(0.0, 1.0);
+    final catEntrance = (delay >= 1.0 ? 1.0 : ((entrance - delay) / (1.0 - delay)).clamp(0.0, 1.0));
     final catAchievements =
         allAchievements.where((a) => a.category == category);
     final catUnlocked =
@@ -308,10 +316,12 @@ class _AchievementsScreenState extends State<AchievementsScreen>
   Widget _buildAchievementTile(
       AchievementDef achievement, Color categoryColor, double entrance,
       double delay, double glow) {
-    final tileEntrance = ((entrance - delay) / (1.0 - delay)).clamp(0.0, 1.0);
+    final tileEntrance = (delay >= 1.0 ? 1.0 : ((entrance - delay) / (1.0 - delay)).clamp(0.0, 1.0));
     final unlocked = AchievementManager.isUnlocked(achievement.id);
     final progress = AchievementManager.getProgress(achievement.id);
-    final progressPct = (progress / achievement.target).clamp(0.0, 1.0);
+    final progressPct = achievement.target > 0
+        ? (progress / achievement.target).clamp(0.0, 1.0)
+        : 0.0;
 
     final accentColor = unlocked ? Colors.greenAccent : categoryColor;
 
