@@ -84,7 +84,30 @@ class _NavigationWrapperState extends State<NavigationWrapper> {
     // Container nero costante per evitare flash bianchi durante le transizioni
     return Container(
       color: Colors.black,
-      child: _buildScreen(),
+      child: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 350),
+        switchInCurve: Curves.easeOut,
+        switchOutCurve: Curves.easeIn,
+        transitionBuilder: (child, animation) {
+          // No transition for splash → menu (splash has its own)
+          // and no transition for game screen (has its own fade overlay)
+          if (_currentScreen == AppScreen.splash ||
+              _currentScreen == AppScreen.game) {
+            return child;
+          }
+          return FadeTransition(
+            opacity: animation,
+            child: SlideTransition(
+              position: Tween<Offset>(
+                begin: const Offset(0.0, 0.03),
+                end: Offset.zero,
+              ).animate(animation),
+              child: child,
+            ),
+          );
+        },
+        child: _buildScreen(),
+      ),
     );
   }
 
@@ -92,10 +115,12 @@ class _NavigationWrapperState extends State<NavigationWrapper> {
     switch (_currentScreen) {
       case AppScreen.splash:
         return SplashScreen(
+          key: const ValueKey('splash'),
           onComplete: () => _navigateTo(AppScreen.mainMenu),
         );
       case AppScreen.mainMenu:
         return MainMenuScreen(
+          key: const ValueKey('mainMenu'),
           onPlay: () => _navigateTo(AppScreen.modeSelect),
           onShop: () => _navigateTo(AppScreen.shop),
           onSettings: () => _navigateTo(AppScreen.settings),
@@ -105,6 +130,7 @@ class _NavigationWrapperState extends State<NavigationWrapper> {
         );
       case AppScreen.modeSelect:
         return ModeSelectScreen(
+          key: const ValueKey('modeSelect'),
           onBack: () => _navigateTo(AppScreen.mainMenu),
           onStart: (mode, difficulty) {
             _selectedMode = mode;
@@ -114,28 +140,34 @@ class _NavigationWrapperState extends State<NavigationWrapper> {
         );
       case AppScreen.game:
         return GameScreen(
+          key: const ValueKey('game'),
           onQuit: () => _navigateTo(AppScreen.mainMenu),
           difficulty: _selectedDifficulty,
           gameMode: _selectedMode,
         );
       case AppScreen.shop:
         return ShopScreen(
+          key: const ValueKey('shop'),
           onBack: () => _navigateTo(AppScreen.mainMenu),
         );
       case AppScreen.settings:
         return SettingsScreen(
+          key: const ValueKey('settings'),
           onBack: () => _navigateTo(AppScreen.mainMenu),
         );
       case AppScreen.leaderboard:
         return LeaderboardScreen(
+          key: const ValueKey('leaderboard'),
           onBack: () => _navigateTo(AppScreen.mainMenu),
         );
       case AppScreen.stats:
         return StatsScreen(
+          key: const ValueKey('stats'),
           onBack: () => _navigateTo(AppScreen.mainMenu),
         );
       case AppScreen.achievements:
         return AchievementsScreen(
+          key: const ValueKey('achievements'),
           onBack: () => _navigateTo(AppScreen.mainMenu),
         );
     }

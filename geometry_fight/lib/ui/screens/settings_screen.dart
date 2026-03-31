@@ -11,16 +11,37 @@ class SettingsScreen extends StatefulWidget {
   State<SettingsScreen> createState() => _SettingsScreenState();
 }
 
-class _SettingsScreenState extends State<SettingsScreen> {
+class _SettingsScreenState extends State<SettingsScreen>
+    with TickerProviderStateMixin {
   double _bgmVolume = 0.7;
   double _sfxVolume = 0.8;
   bool _vibration = true;
   bool _showFps = false;
 
+  late AnimationController _entranceController;
+  late AnimationController _glowController;
+
   @override
   void initState() {
     super.initState();
     _loadSettings();
+
+    _entranceController = AnimationController(
+      duration: const Duration(milliseconds: 800),
+      vsync: this,
+    )..forward();
+
+    _glowController = AnimationController(
+      duration: const Duration(milliseconds: 3000),
+      vsync: this,
+    )..repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _entranceController.dispose();
+    _glowController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadSettings() async {
@@ -46,215 +67,504 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
-      appBar: AppBar(
-        backgroundColor: Colors.black,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.cyanAccent),
-          onPressed: widget.onBack,
-        ),
-        title: const Text(
-          'SETTINGS',
-          style: TextStyle(
-            color: Colors.cyanAccent,
-            fontFamily: 'monospace',
-            fontWeight: FontWeight.bold,
-            letterSpacing: 4,
-          ),
-        ),
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(24),
-        children: [
-          _SettingSlider(
-            label: 'BGM VOLUME',
-            value: _bgmVolume,
-            onChanged: (v) => setState(() => _bgmVolume = v),
-            onChangeEnd: (_) => _saveSettings(),
-          ),
-          const SizedBox(height: 24),
-          _SettingSlider(
-            label: 'SFX VOLUME',
-            value: _sfxVolume,
-            onChanged: (v) => setState(() => _sfxVolume = v),
-            onChangeEnd: (_) => _saveSettings(),
-          ),
-          const SizedBox(height: 24),
-          _SettingToggle(
-            label: 'VIBRATION',
-            value: _vibration,
-            onChanged: (v) {
-              setState(() => _vibration = v);
-              _saveSettings();
-            },
-          ),
-          const SizedBox(height: 24),
-          _SettingToggle(
-            label: 'SHOW FPS',
-            value: _showFps,
-            onChanged: (v) {
-              setState(() => _showFps = v);
-              _saveSettings();
-            },
-          ),
-          const SizedBox(height: 48),
-          Center(
-            child: GestureDetector(
-              onTap: () async {
-                final confirm = await showDialog<bool>(
-                  context: context,
-                  builder: (context) => AlertDialog(
-                    backgroundColor: const Color(0xFF111111),
-                    title: const Text('RESET DATA',
-                        style: TextStyle(color: Colors.redAccent, fontFamily: 'monospace')),
-                    content: const Text(
-                      'This will erase all progress, upgrades, and purchases.',
-                      style: TextStyle(color: Colors.white70, fontFamily: 'monospace'),
-                    ),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(context, false),
-                        child: const Text('CANCEL',
-                            style: TextStyle(color: Colors.white54)),
+      body: SafeArea(
+        child: AnimatedBuilder(
+          animation: Listenable.merge([_entranceController, _glowController]),
+          builder: (context, _) {
+            final entrance = _entranceController.value;
+            final glow = _glowController.value;
+
+            return Column(
+              children: [
+                // Header
+                _buildHeader(entrance),
+
+                // Settings
+                Expanded(
+                  child: ListView(
+                    padding: const EdgeInsets.all(20),
+                    children: [
+                      // Audio section
+                      _buildSectionHeader('AUDIO', Icons.volume_up_rounded,
+                          Colors.cyanAccent, entrance, 0.0),
+                      const SizedBox(height: 12),
+                      _buildSlider(
+                        label: 'MUSICA',
+                        value: _bgmVolume,
+                        icon: Icons.music_note_rounded,
+                        color: Colors.cyanAccent,
+                        onChanged: (v) => setState(() => _bgmVolume = v),
+                        onChangeEnd: (_) => _saveSettings(),
+                        entrance: entrance,
+                        delay: 0.05,
+                        glow: glow,
                       ),
-                      TextButton(
-                        onPressed: () => Navigator.pop(context, true),
-                        child: const Text('RESET',
-                            style: TextStyle(color: Colors.redAccent)),
+                      const SizedBox(height: 16),
+                      _buildSlider(
+                        label: 'EFFETTI SONORI',
+                        value: _sfxVolume,
+                        icon: Icons.surround_sound_rounded,
+                        color: const Color(0xFFFF4466),
+                        onChanged: (v) => setState(() => _sfxVolume = v),
+                        onChangeEnd: (_) => _saveSettings(),
+                        entrance: entrance,
+                        delay: 0.1,
+                        glow: glow,
                       ),
+
+                      const SizedBox(height: 24),
+
+                      // Gameplay section
+                      _buildSectionHeader('GAMEPLAY', Icons.tune_rounded,
+                          const Color(0xFFCC00FF), entrance, 0.15),
+                      const SizedBox(height: 12),
+                      _buildToggle(
+                        label: 'VIBRAZIONE',
+                        value: _vibration,
+                        icon: Icons.vibration_rounded,
+                        color: const Color(0xFFCC00FF),
+                        onChanged: (v) {
+                          setState(() => _vibration = v);
+                          _saveSettings();
+                        },
+                        entrance: entrance,
+                        delay: 0.2,
+                        glow: glow,
+                      ),
+                      const SizedBox(height: 12),
+                      _buildToggle(
+                        label: 'MOSTRA FPS',
+                        value: _showFps,
+                        icon: Icons.speed_rounded,
+                        color: Colors.greenAccent,
+                        onChanged: (v) {
+                          setState(() => _showFps = v);
+                          _saveSettings();
+                        },
+                        entrance: entrance,
+                        delay: 0.25,
+                        glow: glow,
+                      ),
+
+                      const SizedBox(height: 32),
+
+                      // Danger zone
+                      _buildSectionHeader('ZONA PERICOLOSA',
+                          Icons.warning_rounded, Colors.redAccent, entrance, 0.3),
+                      const SizedBox(height: 12),
+                      _buildResetButton(entrance, glow),
                     ],
                   ),
-                );
-                if (confirm == true) {
-                  await SaveManager.clear();
-                  // Resetta anche le impostazioni in SharedPreferences
-                  final prefs = await SharedPreferences.getInstance();
-                  await prefs.remove('bgm_volume');
-                  await prefs.remove('sfx_volume');
-                  await prefs.remove('vibration');
-                  await prefs.remove('show_fps');
-                  await prefs.remove('tutorial_seen');
-                  if (!mounted) return;
-                  setState(() {
-                    _bgmVolume = 0.7;
-                    _sfxVolume = 0.8;
-                    _vibration = true;
-                    _showFps = false;
-                  });
-                }
-              },
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.redAccent.withValues(alpha: 0.5)),
-                  borderRadius: BorderRadius.circular(4),
                 ),
-                child: const Text(
-                  'RESET ALL DATA',
-                  style: TextStyle(
-                    color: Colors.redAccent,
-                    fontFamily: 'monospace',
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
+              ],
+            );
+          },
+        ),
       ),
     );
   }
-}
 
-class _SettingSlider extends StatelessWidget {
-  final String label;
-  final double value;
-  final ValueChanged<double> onChanged;
-  final ValueChanged<double>? onChangeEnd;
+  Widget _buildHeader(double entrance) {
+    return Opacity(
+      opacity: entrance,
+      child: Transform.translate(
+        offset: Offset(0, -20 * (1 - entrance)),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Row(
+            children: [
+              GestureDetector(
+                onTap: widget.onBack,
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                        color: Colors.cyanAccent.withValues(alpha: 0.3)),
+                    color: Colors.cyanAccent.withValues(alpha: 0.05),
+                  ),
+                  child: const Icon(Icons.arrow_back,
+                      color: Colors.cyanAccent, size: 20),
+                ),
+              ),
+              const SizedBox(width: 16),
+              const Text(
+                'SETTINGS',
+                style: TextStyle(
+                  color: Colors.cyanAccent,
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  fontFamily: 'monospace',
+                  letterSpacing: 4,
+                  shadows: [Shadow(color: Colors.cyanAccent, blurRadius: 8)],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
-  const _SettingSlider({
-    required this.label,
-    required this.value,
-    required this.onChanged,
-    this.onChangeEnd,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  Widget _buildSectionHeader(
+      String title, IconData icon, Color color, double entrance, double delay) {
+    final e = ((entrance - delay) / (1.0 - delay)).clamp(0.0, 1.0);
+    return Opacity(
+      opacity: e,
+      child: Transform.translate(
+        offset: Offset(-15 * (1 - e), 0),
+        child: Row(
           children: [
+            Container(
+              width: 24,
+              height: 24,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: color.withValues(alpha: 0.15),
+                border: Border.all(color: color.withValues(alpha: 0.4)),
+              ),
+              child: Icon(icon, color: color, size: 12),
+            ),
+            const SizedBox(width: 8),
             Text(
-              label,
-              style: const TextStyle(
-                color: Colors.white70,
+              title,
+              style: TextStyle(
+                color: color.withValues(alpha: 0.9),
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
                 fontFamily: 'monospace',
-                fontSize: 14,
+                letterSpacing: 4,
+                shadows: [
+                  Shadow(color: color.withValues(alpha: 0.3), blurRadius: 4)
+                ],
               ),
             ),
-            Text(
-              '${(value * 100).round()}%',
-              style: const TextStyle(
-                color: Colors.cyanAccent,
-                fontFamily: 'monospace',
-                fontSize: 14,
+            const SizedBox(width: 8),
+            Expanded(
+              child: Container(
+                height: 1,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      color.withValues(alpha: 0.3),
+                      Colors.transparent,
+                    ],
+                  ),
+                ),
               ),
             ),
           ],
         ),
-        SliderTheme(
-          data: SliderThemeData(
-            activeTrackColor: Colors.cyanAccent,
-            inactiveTrackColor: Colors.white12,
-            thumbColor: Colors.cyanAccent,
-            overlayColor: Colors.cyanAccent.withValues(alpha: 0.2),
-          ),
-          child: Slider(
-            value: value,
-            onChanged: onChanged,
-            onChangeEnd: onChangeEnd,
-          ),
-        ),
-      ],
+      ),
     );
   }
-}
 
-class _SettingToggle extends StatelessWidget {
-  final String label;
-  final bool value;
-  final ValueChanged<bool> onChanged;
+  Widget _buildSlider({
+    required String label,
+    required double value,
+    required IconData icon,
+    required Color color,
+    required ValueChanged<double> onChanged,
+    required ValueChanged<double> onChangeEnd,
+    required double entrance,
+    required double delay,
+    required double glow,
+  }) {
+    final e = ((entrance - delay) / (1.0 - delay)).clamp(0.0, 1.0);
+    final pct = (value * 100).round();
 
-  const _SettingToggle({
-    required this.label,
-    required this.value,
-    required this.onChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          label,
-          style: const TextStyle(
-            color: Colors.white70,
-            fontFamily: 'monospace',
-            fontSize: 14,
+    return Opacity(
+      opacity: e,
+      child: Transform.translate(
+        offset: Offset(0, 15 * (1 - e)),
+        child: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+            gradient: LinearGradient(
+              begin: Alignment.centerLeft,
+              end: Alignment.centerRight,
+              colors: [
+                color.withValues(alpha: 0.04 + glow * 0.02),
+                Colors.transparent,
+              ],
+            ),
+          ),
+          child: Column(
+            children: [
+              Row(
+                children: [
+                  Icon(icon, color: color, size: 16),
+                  const SizedBox(width: 8),
+                  Text(
+                    label,
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.7),
+                      fontFamily: 'monospace',
+                      fontSize: 12,
+                    ),
+                  ),
+                  const Spacer(),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(6),
+                      color: color.withValues(alpha: 0.1),
+                      border:
+                          Border.all(color: color.withValues(alpha: 0.3)),
+                    ),
+                    child: Text(
+                      '$pct%',
+                      style: TextStyle(
+                        color: color,
+                        fontFamily: 'monospace',
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              // Custom slider track
+              SliderTheme(
+                data: SliderThemeData(
+                  activeTrackColor: color,
+                  inactiveTrackColor: Colors.white.withValues(alpha: 0.06),
+                  thumbColor: color,
+                  overlayColor: color.withValues(alpha: 0.15),
+                  trackHeight: 4,
+                  thumbShape:
+                      const RoundSliderThumbShape(enabledThumbRadius: 7),
+                  overlayShape:
+                      const RoundSliderOverlayShape(overlayRadius: 16),
+                ),
+                child: Slider(
+                  value: value,
+                  onChanged: onChanged,
+                  onChangeEnd: onChangeEnd,
+                ),
+              ),
+            ],
           ),
         ),
-        Switch(
-          value: value,
-          onChanged: onChanged,
-          activeTrackColor: Colors.cyanAccent.withValues(alpha: 0.5),
-          thumbColor: const WidgetStatePropertyAll(Colors.cyanAccent),
-          inactiveTrackColor: Colors.white12,
+      ),
+    );
+  }
+
+  Widget _buildToggle({
+    required String label,
+    required bool value,
+    required IconData icon,
+    required Color color,
+    required ValueChanged<bool> onChanged,
+    required double entrance,
+    required double delay,
+    required double glow,
+  }) {
+    final e = ((entrance - delay) / (1.0 - delay)).clamp(0.0, 1.0);
+
+    return Opacity(
+      opacity: e,
+      child: Transform.translate(
+        offset: Offset(0, 15 * (1 - e)),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+            gradient: LinearGradient(
+              begin: Alignment.centerLeft,
+              end: Alignment.centerRight,
+              colors: [
+                (value ? color : Colors.white)
+                    .withValues(alpha: 0.04 + (value ? glow * 0.02 : 0)),
+                Colors.transparent,
+              ],
+            ),
+          ),
+          child: Row(
+            children: [
+              Icon(icon, color: value ? color : Colors.white38, size: 16),
+              const SizedBox(width: 10),
+              Text(
+                label,
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.7),
+                  fontFamily: 'monospace',
+                  fontSize: 12,
+                ),
+              ),
+              const Spacer(),
+              // Custom neon toggle
+              GestureDetector(
+                onTap: () => onChanged(!value),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 250),
+                  width: 48,
+                  height: 26,
+                  padding: const EdgeInsets.all(2),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(13),
+                    border: Border.all(
+                      color: value
+                          ? color.withValues(alpha: 0.6)
+                          : Colors.white.withValues(alpha: 0.15),
+                      width: 1.5,
+                    ),
+                    color: value
+                        ? color.withValues(alpha: 0.15)
+                        : Colors.white.withValues(alpha: 0.03),
+                    boxShadow: value
+                        ? [
+                            BoxShadow(
+                              color: color.withValues(alpha: 0.2),
+                              blurRadius: 8,
+                            ),
+                          ]
+                        : null,
+                  ),
+                  child: AnimatedAlign(
+                    duration: const Duration(milliseconds: 250),
+                    curve: Curves.easeOutCubic,
+                    alignment:
+                        value ? Alignment.centerRight : Alignment.centerLeft,
+                    child: Container(
+                      width: 20,
+                      height: 20,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: value ? color : Colors.white38,
+                        boxShadow: value
+                            ? [
+                                BoxShadow(
+                                  color: color.withValues(alpha: 0.4),
+                                  blurRadius: 6,
+                                ),
+                              ]
+                            : null,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
-      ],
+      ),
+    );
+  }
+
+  Widget _buildResetButton(double entrance, double glow) {
+    final e = ((entrance - 0.35) / 0.65).clamp(0.0, 1.0);
+
+    return Opacity(
+      opacity: e,
+      child: Transform.translate(
+        offset: Offset(0, 15 * (1 - e)),
+        child: Center(
+          child: GestureDetector(
+            onTap: () async {
+              final confirm = await showDialog<bool>(
+                context: context,
+                builder: (context) => AlertDialog(
+                  backgroundColor: const Color(0xFF0A0A0A),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    side: BorderSide(
+                        color: Colors.redAccent.withValues(alpha: 0.3)),
+                  ),
+                  title: Row(
+                    children: [
+                      Icon(Icons.warning_rounded,
+                          color: Colors.redAccent, size: 20),
+                      const SizedBox(width: 8),
+                      const Text('RESET DATA',
+                          style: TextStyle(
+                            color: Colors.redAccent,
+                            fontFamily: 'monospace',
+                            fontSize: 16,
+                          )),
+                    ],
+                  ),
+                  content: const Text(
+                    'Tutti i progressi, upgrade e acquisti verranno cancellati.',
+                    style: TextStyle(
+                        color: Colors.white70,
+                        fontFamily: 'monospace',
+                        fontSize: 12),
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context, false),
+                      child: const Text('ANNULLA',
+                          style: TextStyle(
+                              color: Colors.white54, fontFamily: 'monospace')),
+                    ),
+                    TextButton(
+                      onPressed: () => Navigator.pop(context, true),
+                      child: const Text('RESET',
+                          style: TextStyle(
+                              color: Colors.redAccent,
+                              fontFamily: 'monospace',
+                              fontWeight: FontWeight.bold)),
+                    ),
+                  ],
+                ),
+              );
+              if (confirm == true) {
+                await SaveManager.clear();
+                final prefs = await SharedPreferences.getInstance();
+                await prefs.remove('bgm_volume');
+                await prefs.remove('sfx_volume');
+                await prefs.remove('vibration');
+                await prefs.remove('show_fps');
+                await prefs.remove('tutorial_seen');
+                if (!mounted) return;
+                setState(() {
+                  _bgmVolume = 0.7;
+                  _sfxVolume = 0.8;
+                  _vibration = true;
+                  _showFps = false;
+                });
+              }
+            },
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                    color: Colors.redAccent.withValues(alpha: 0.4)),
+                gradient: LinearGradient(
+                  colors: [
+                    Colors.redAccent.withValues(alpha: 0.08),
+                    Colors.redAccent.withValues(alpha: 0.02),
+                  ],
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.delete_forever_rounded,
+                      color: Colors.redAccent, size: 18),
+                  const SizedBox(width: 8),
+                  const Text(
+                    'RESET ALL DATA',
+                    style: TextStyle(
+                      color: Colors.redAccent,
+                      fontFamily: 'monospace',
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 2,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
