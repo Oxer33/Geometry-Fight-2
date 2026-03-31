@@ -2,6 +2,7 @@ import 'dart:math';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../../data/achievements.dart';
+import '../widgets/shared_painters.dart';
 
 class GameOverScreen extends StatefulWidget {
   final int score;
@@ -191,7 +192,7 @@ class _GameOverScreenState extends State<GameOverScreen>
               child: Opacity(
                 opacity: 0.025 * _bgFade.value,
                 child: CustomPaint(
-                  painter: _ScanlinePainter(),
+                  painter: ScanlinePainter(),
                   size: Size.infinite,
                 ),
               ),
@@ -896,15 +897,3 @@ class _GameOverParticlesPainter extends CustomPainter {
   bool shouldRepaint(covariant _GameOverParticlesPainter old) => true;
 }
 
-class _ScanlinePainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()..color = Colors.white.withValues(alpha: 0.15);
-    for (double y = 0; y < size.height; y += 3) {
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}

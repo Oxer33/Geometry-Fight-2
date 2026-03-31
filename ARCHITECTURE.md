@@ -670,6 +670,81 @@ SplashScreen → MainMenu
                   └── SettingsScreen
 ```
 
+### Transizioni tra Schermate
+
+`AnimatedSwitcher` con fade + slide (350ms) su tutte le transizioni. Skip per splash e game (animazioni proprie). Ogni screen ha `ValueKey` per matching corretto.
+
+### MainMenuScreen (`main_menu.dart` — 1310 righe)
+
+Home screen cinematografica con 7 AnimationController:
+- Deep space background con 3 nebulae animate, griglia distorta, forme geometriche
+- 30 particelle neon floating con glow halos e scie
+- CRT scanline overlay con scan beam scrolling
+- Titolo con effetto glitch RGB split, "2" con HSV hue cycling ShaderMask
+- Typing effect subtitle con cursore lampeggiante
+- Pulsante GIOCA con bordo SweepGradient rotante
+- Griglia 2×2 bottoni con glow animato su tap
+- Stats bar (gold, best score, kills, playtime)
+- Entrata staggered su 5 livelli
+
+### ShopScreen (`shop_screen.dart` — 1500 righe)
+
+Sistema di preview live con 3 CustomPainter:
+- **_SkinPreviewPainter**: 5 ship design (Classic, Stealth, Crystal, Ghost, Omega) con rotazione, thruster, particelle orbitanti
+- **_TrailPreviewPainter**: Ship su percorso figura-8 con 5 stili trail (Normal, Fire, Ice, Plasma, Rainbow)
+- **_WeaponPreviewPainter**: 7 simulazioni di firing pattern (Parallel, Twin, Fan, Bounce physics, Homing bezier, Plasma, Laser beam)
+- Tab system per Skins, Trails, Weapons, Upgrades, Modes
+- Split layout: lista item (sinistra) + canvas preview (destra)
+
+### PauseScreen (`pause_screen.dart`)
+
+Overlay glassmorphism con:
+- `BackdropFilter` blur del gameplay sottostante
+- Titolo "PAUSED" con glitch effect RGB e pulsazione neon
+- 20 particelle floating cyan/pink con glow halos
+- CRT scanlines + vignette
+- Bottoni neon con press animation (scale)
+- Entrata staggered: bg → titolo → bottoni
+
+### GameOverScreen (`game_over_screen.dart`)
+
+Schermata risultati con:
+- Background blur + particelle (confetti colorati se nuovi achievement)
+- Titolo con glitch effect rosso/arancione
+- Stats panel glassmorphism con contatori animati (counting up da 0)
+- Gold panel con gradiente dorato e glow
+- Badge performance con neon glow e shadow
+- Achievement notification panel
+- Bottoni neon con press animation
+- Entrata staggered su 5 livelli
+
+### StatsScreen (`stats_screen.dart`)
+
+Statistiche con:
+- Contatori counting-up all'entrata
+- Icone colorate in cerchi per ogni stat
+- Section headers con barra verticale colorata + linea gradiente
+- Progress bar animata per completamento achievement
+- Entrata staggered per sezione
+
+### AchievementsScreen (`achievements_screen.dart`)
+
+Lista achievement con:
+- Progress ring animato nell'header
+- Category headers con icona, barra progresso, contatore
+- Card con glow neon per achievement sbloccati
+- Progress bar animate con gradiente
+- Entrata staggered per categoria e tile
+
+### SettingsScreen (`settings_screen.dart`)
+
+Impostazioni con:
+- Section headers con icona circolare + linea gradiente
+- Slider custom in pannelli con icona + badge percentuale
+- Toggle neon custom con animazione slide del thumb + glow
+- Dialog reset stilizzato
+- Entrata staggered per ogni elemento
+
 ### GameScreen (`game_screen.dart`)
 
 Integrazione Flutter + Flame:
@@ -694,6 +769,14 @@ Display in-game:
 - Geom count
 - Power-up attivi con timer
 - Boss HP bar (durante boss fight)
+
+### Widget Condivisi (`ui/widgets/`)
+
+- `shared_painters.dart` — `ScanlinePainter` (CRT scanlines overlay, usato in 3+ schermate)
+- `neon_back_button.dart` — `NeonBackButton` (pulsante indietro stilizzato neon)
+- `virtual_joystick.dart` — Joystick visuale dual-stick
+- `tutorial_overlay.dart` — Tutorial primo avvio
+- `animated_builder_widget.dart` — NeonAnimatedBuilder wrapper
 
 ---
 

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../data/save_data.dart';
 import '../../data/achievements.dart';
+import '../widgets/neon_back_button.dart';
 
 class StatsScreen extends StatefulWidget {
   final VoidCallback onBack;
@@ -155,7 +156,7 @@ class _StatsScreenState extends State<StatsScreen>
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: Row(
             children: [
-              _NeonBackButton(onTap: widget.onBack),
+              NeonBackButton(onTap: widget.onBack),
               const SizedBox(width: 16),
               const Text(
                 'STATISTICHE',
@@ -386,24 +387,3 @@ class _StatData {
   _StatData(this.label, this.value, this.icon, this.color, {this.progress});
 }
 
-// ==================== NEON BACK BUTTON ====================
-class _NeonBackButton extends StatelessWidget {
-  final VoidCallback onTap;
-  const _NeonBackButton({required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: Colors.cyanAccent.withValues(alpha: 0.3)),
-          color: Colors.cyanAccent.withValues(alpha: 0.05),
-        ),
-        child: const Icon(Icons.arrow_back, color: Colors.cyanAccent, size: 20),
-      ),
-    );
-  }
-}

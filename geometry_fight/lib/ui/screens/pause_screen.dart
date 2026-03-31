@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import '../widgets/shared_painters.dart';
 
 class PauseScreen extends StatefulWidget {
   final VoidCallback onResume;
@@ -120,7 +121,7 @@ class _PauseScreenState extends State<PauseScreen>
             Opacity(
               opacity: 0.03 * _bgFade.value,
               child: CustomPaint(
-                painter: _ScanlinePainter(),
+                painter: ScanlinePainter(),
                 size: Size.infinite,
               ),
             ),
@@ -439,15 +440,3 @@ class _PauseParticlesPainter extends CustomPainter {
   bool shouldRepaint(covariant _PauseParticlesPainter old) => true;
 }
 
-class _ScanlinePainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()..color = Colors.white.withValues(alpha: 0.15);
-    for (double y = 0; y < size.height; y += 3) {
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
