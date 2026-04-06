@@ -74,7 +74,7 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
     // Movement (usa realDt per non essere rallentato dallo slow-mo)
     final moveDir = game.moveInput;
     if (moveDir.length > 0) {
-      final actualSpeed = speed * (hasOverdrive ? 1.5 : 1.0) *
+      final actualSpeed = speed * (hasOverdrive ? 1.25 : 1.0) *
           game.saveData.speedMultiplier;
       position += moveDir * actualSpeed * realDt;
     }

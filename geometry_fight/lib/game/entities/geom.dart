@@ -82,8 +82,7 @@ class Geom extends PositionComponent
     }
   }
 
-  // Paint cache — con 100 geomi sullo schermo, risparmia 200 allocazioni/frame
-  static final _geomGlowPaint = Paint();
+  // Paint cache — con 100 geomi sullo schermo, risparmia allocazioni/frame
   static final _geomBodyPaint = Paint();
 
   @override
@@ -97,11 +96,6 @@ class Geom extends PositionComponent
 
     final cx = size.x / 2;
     final cy = size.y / 2;
-
-    // Glow (senza blur — con 100 geomi = 100 blur in meno)
-    _geomGlowPaint.color = _color.withValues(alpha: alpha * 0.3);
-    _geomGlowPaint.maskFilter = null;
-    canvas.drawCircle(Offset(cx, cy), gemSize * 1.5, _geomGlowPaint);
 
     // Diamond shape
     _geomBodyPaint.color = _color.withValues(alpha: alpha);
