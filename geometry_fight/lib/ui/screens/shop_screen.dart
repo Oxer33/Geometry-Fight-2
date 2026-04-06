@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../../data/save_data.dart';
 import '../../data/constants.dart';
+import '../widgets/neon_back_button.dart';
 
 class ShopScreen extends StatefulWidget {
   final VoidCallback onBack;
@@ -64,61 +65,102 @@ class _ShopScreenState extends State<ShopScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
-      appBar: AppBar(
-        backgroundColor: Colors.black,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.cyanAccent),
-          onPressed: widget.onBack,
-        ),
-        title: Row(
+      body: SafeArea(
+        child: Column(
           children: [
-            const Text(
-              'SHOP',
-              style: TextStyle(
-                color: Colors.cyanAccent,
+            // Neon header
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Row(
+                children: [
+                  NeonBackButton(onTap: widget.onBack),
+                  const SizedBox(width: 16),
+                  const Text(
+                    'SHOP',
+                    style: TextStyle(
+                      color: Colors.cyanAccent,
+                      fontSize: 18,
+                      fontFamily: 'monospace',
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 4,
+                      shadows: [Shadow(color: Colors.cyanAccent, blurRadius: 8)],
+                    ),
+                  ),
+                  const Spacer(),
+                  // Gold display
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: const Color(0xFFFFD700).withValues(alpha: 0.3),
+                      ),
+                      gradient: LinearGradient(
+                        colors: [
+                          const Color(0xFFFFD700).withValues(alpha: 0.08),
+                          const Color(0xFFFFD700).withValues(alpha: 0.02),
+                        ],
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.diamond, color: Color(0xFFFFD700), size: 16),
+                        const SizedBox(width: 6),
+                        Text(
+                          '${_saveData.goldGeoms}',
+                          style: const TextStyle(
+                            color: Color(0xFFFFD700),
+                            fontFamily: 'monospace',
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            shadows: [Shadow(color: Color(0xFFFFD700), blurRadius: 4)],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // Neon tab bar
+            TabBar(
+              controller: _tabController,
+              isScrollable: true,
+              labelColor: Colors.cyanAccent,
+              unselectedLabelColor: Colors.white30,
+              indicatorColor: Colors.cyanAccent,
+              indicatorWeight: 2,
+              dividerColor: Colors.white.withValues(alpha: 0.05),
+              labelStyle: const TextStyle(
                 fontFamily: 'monospace',
+                fontSize: 11,
                 fontWeight: FontWeight.bold,
-                letterSpacing: 4,
+                letterSpacing: 1,
               ),
+              tabs: const [
+                Tab(text: 'SKINS'),
+                Tab(text: 'TRAILS'),
+                Tab(text: 'UPGRADES'),
+                Tab(text: 'WEAPONS'),
+                Tab(text: 'MODES'),
+              ],
             ),
-            const Spacer(),
-            const Icon(Icons.diamond, color: Color(0xFFFFD700), size: 18),
-            const SizedBox(width: 6),
-            Text(
-              '${_saveData.goldGeoms}',
-              style: const TextStyle(
-                color: Color(0xFFFFD700),
-                fontFamily: 'monospace',
-                fontSize: 18,
+            // Tab content
+            Expanded(
+              child: TabBarView(
+                controller: _tabController,
+                children: [
+                  _buildSkinsTab(),
+                  _buildTrailsTab(),
+                  _buildUpgradesTab(),
+                  _buildWeaponsTab(),
+                  _buildModesTab(),
+                ],
               ),
             ),
           ],
         ),
-        bottom: TabBar(
-          controller: _tabController,
-          isScrollable: true,
-          labelColor: Colors.cyanAccent,
-          unselectedLabelColor: Colors.white38,
-          indicatorColor: Colors.cyanAccent,
-          labelStyle: const TextStyle(fontFamily: 'monospace', fontSize: 11),
-          tabs: const [
-            Tab(text: 'SKINS'),
-            Tab(text: 'TRAILS'),
-            Tab(text: 'UPGRADES'),
-            Tab(text: 'WEAPONS'),
-            Tab(text: 'MODES'),
-          ],
-        ),
-      ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          _buildSkinsTab(),
-          _buildTrailsTab(),
-          _buildUpgradesTab(),
-          _buildWeaponsTab(),
-          _buildModesTab(),
-        ],
       ),
     );
   }

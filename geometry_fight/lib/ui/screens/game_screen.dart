@@ -366,27 +366,74 @@ class _BombButtonState extends State<_BombButton>
   }
 }
 
-/// Pulsante pausa stilizzato
-class _PauseButton extends StatelessWidget {
+/// Pulsante pausa stilizzato con glow neon
+class _PauseButton extends StatefulWidget {
   final VoidCallback onPressed;
   const _PauseButton({required this.onPressed});
 
   @override
+  State<_PauseButton> createState() => _PauseButtonState();
+}
+
+class _PauseButtonState extends State<_PauseButton>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _glowController;
+
+  @override
+  void initState() {
+    super.initState();
+    _glowController = AnimationController(
+      duration: const Duration(milliseconds: 2000),
+      vsync: this,
+    )..repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _glowController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onPressed,
-      child: Container(
-        width: 36,
-        height: 36,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          border: Border.all(color: Colors.white24, width: 1),
-          color: Colors.white.withValues(alpha: 0.05),
-        ),
-        child: const Center(
-          child: Icon(Icons.pause, color: Colors.white38, size: 20),
-        ),
-      ),
+    return AnimatedBuilder(
+      animation: _glowController,
+      builder: (context, _) {
+        final glow = _glowController.value;
+        return GestureDetector(
+          onTap: widget.onPressed,
+          child: Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: Colors.cyanAccent.withValues(alpha: 0.3 + glow * 0.15),
+                width: 1.5,
+              ),
+              gradient: RadialGradient(
+                colors: [
+                  Colors.cyanAccent.withValues(alpha: 0.08 + glow * 0.04),
+                  Colors.cyanAccent.withValues(alpha: 0.02),
+                ],
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.cyanAccent.withValues(alpha: 0.1 + glow * 0.05),
+                  blurRadius: 8,
+                ),
+              ],
+            ),
+            child: Center(
+              child: Icon(
+                Icons.pause_rounded,
+                color: Colors.cyanAccent.withValues(alpha: 0.6 + glow * 0.2),
+                size: 20,
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }
