@@ -91,39 +91,82 @@ class LeechEnemy extends EnemyBase {
     final cy = size.y / 2;
     final r = size.x / 2 * scale;
 
-    // Corpo centrale (cerchio)
-    canvas.drawCircle(Offset(cx, cy), r * 0.6, paint);
-
-    // Tentacoli ondulanti (4 tentacoli)
+    // 6 tentacoli ondulanti con punte luminose
     final tentaclePaint = Paint()
       ..color = paint.color
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.5 * scale;
+      ..strokeWidth = 1.2 * scale;
 
-    for (int i = 0; i < 4; i++) {
-      final baseAngle = i * math.pi / 2 + _tentaclePhase * 0.5;
+    for (int i = 0; i < 6; i++) {
+      final baseAngle = i * math.pi / 3 + _tentaclePhase * 0.5;
+      final wobble1 = math.sin(_tentaclePhase * 1.5 + i * 1.1) * 4;
+      final wobble2 = math.cos(_tentaclePhase * 1.2 + i * 0.8) * 3;
       final path = Path();
       path.moveTo(cx, cy);
 
-      // Curve sinuose per i tentacoli
-      final endX = cx + math.cos(baseAngle) * r * 1.2 +
-          math.sin(_tentaclePhase + i) * 3;
-      final endY = cy + math.sin(baseAngle) * r * 1.2 +
-          math.cos(_tentaclePhase + i) * 3;
-      final ctrlX = cx + math.cos(baseAngle + 0.3) * r * 0.8;
-      final ctrlY = cy + math.sin(baseAngle + 0.3) * r * 0.8;
+      final midX = cx + math.cos(baseAngle + 0.2) * r * 0.7 + wobble1;
+      final midY = cy + math.sin(baseAngle + 0.2) * r * 0.7 + wobble2;
+      final endX = cx + math.cos(baseAngle) * r * 1.3 + wobble2;
+      final endY = cy + math.sin(baseAngle) * r * 1.3 + wobble1;
 
-      path.quadraticBezierTo(ctrlX, ctrlY, endX, endY);
+      path.quadraticBezierTo(midX, midY, endX, endY);
       canvas.drawPath(path, tentaclePaint);
+
+      // Punte luminose sui tentacoli
+      if (scale <= 1.01) {
+        final tipPulse = 0.3 + math.sin(_tentaclePhase * 3 + i * 1.0) * 0.3;
+        EnemyBase.detailPaint.color = paint.color.withValues(alpha: tipPulse);
+        canvas.drawCircle(Offset(endX, endY), 1.0, EnemyBase.detailPaint);
+      }
     }
 
-    // Se agganciato, mostra indicatore rosso pulsante
-    if (_attached) {
+    // Corpo centrale (cerchio)
+    canvas.drawCircle(Offset(cx, cy), r * 0.55, paint);
+
+    if (scale <= 1.01) {
+      // Anello interno (membrana)
+      final ringPaint = Paint()
+        ..color = paint.color.withValues(alpha: 0.3)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 0.6;
+      canvas.drawCircle(Offset(cx, cy), r * 0.35, ringPaint);
+
+      // 3 sacche bio-luminose rotanti attorno al corpo
+      for (int i = 0; i < 3; i++) {
+        final sacAngle = _tentaclePhase * 2 + i * math.pi * 2 / 3;
+        final sx = cx + math.cos(sacAngle) * r * 0.3;
+        final sy = cy + math.sin(sacAngle) * r * 0.3;
+        final sacPulse = 0.25 + math.sin(_tentaclePhase * 4 + i * 2) * 0.2;
+        EnemyBase.detailPaint.color = const Color(0xFFCCFF00).withValues(alpha: sacPulse);
+        canvas.drawCircle(Offset(sx, sy), 1.0, EnemyBase.detailPaint);
+      }
+
+      // Nucleo pulsante
+      final corePulse = 0.4 + math.sin(_tentaclePhase * 3) * 0.3;
+      EnemyBase.detailPaint.color = const Color(0xFFFFFFFF).withValues(alpha: corePulse);
+      canvas.drawCircle(Offset(cx, cy), r * 0.15, EnemyBase.detailPaint);
+    }
+
+    // Se agganciato: indicatore rosso + vene di assorbimento
+    if (_attached && scale <= 1.01) {
       final pulseAlpha = 0.5 + math.sin(_tentaclePhase * 4) * 0.3;
       final attachPaint = Paint()
-        ..color = const Color(0xFFFF0000).withValues(alpha: pulseAlpha)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6);
+        ..color = const Color(0xFFFF0000).withValues(alpha: pulseAlpha);
       canvas.drawCircle(Offset(cx, cy), r * 0.4, attachPaint);
+
+      // Vene rosse pulsanti verso l'esterno
+      final veinPaint = Paint()
+        ..color = const Color(0xFFFF0000).withValues(alpha: 0.3)
+        ..strokeWidth = 0.8
+        ..style = PaintingStyle.stroke;
+      for (int i = 0; i < 4; i++) {
+        final vAngle = i * math.pi / 2 + _tentaclePhase;
+        canvas.drawLine(
+          Offset(cx, cy),
+          Offset(cx + math.cos(vAngle) * r * 0.5, cy + math.sin(vAngle) * r * 0.5),
+          veinPaint,
+        );
+      }
     }
   }
 }

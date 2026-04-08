@@ -79,22 +79,56 @@ class SirenEnemy extends EnemyBase {
     path.close();
     canvas.drawPath(path, paint);
 
-    // Dettagli interni
     if (scale <= 1.01) {
-      // Anelli interni
-      final innerPaint = Paint()
-        ..color = paint.color.withValues(alpha: 0.3)
+      // Pentagono interno contro-rotante
+      final innerPentPath = Path();
+      for (int i = 0; i < 5; i++) {
+        final angle = i * math.pi * 2 / 5 - math.pi / 2 + math.pi / 5;
+        final x = r * 0.55 * math.cos(angle);
+        final y = r * 0.55 * math.sin(angle);
+        if (i == 0) innerPentPath.moveTo(x, y); else innerPentPath.lineTo(x, y);
+      }
+      innerPentPath.close();
+      final innerPentPaint = Paint()
+        ..color = paint.color.withValues(alpha: 0.25)
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 0.5;
-      canvas.drawCircle(Offset.zero, r * 0.5, innerPaint);
-      canvas.drawCircle(Offset.zero, r * 0.3, innerPaint);
+        ..strokeWidth = 0.6;
+      canvas.drawPath(innerPentPath, innerPentPaint);
 
-      // Nucleo pulsante
+      // Linee di risonanza (connessioni vertice → centro)
+      final resPaint = Paint()
+        ..color = paint.color.withValues(alpha: 0.15)
+        ..strokeWidth = 0.5;
+      for (int i = 0; i < 5; i++) {
+        final angle = i * math.pi * 2 / 5 - math.pi / 2;
+        final x = r * 0.85 * math.cos(angle);
+        final y = r * 0.85 * math.sin(angle);
+        canvas.drawLine(Offset.zero, Offset(x, y), resPaint);
+      }
+
+      // Archi armonici rotanti (2 archi sfasati)
+      final arcPaint = Paint()
+        ..color = paint.color.withValues(alpha: 0.2)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 0.7;
+      final arcRect = Rect.fromCircle(center: Offset.zero, radius: r * 0.7);
+      canvas.drawArc(arcRect, _wavePhase, math.pi * 0.6, false, arcPaint);
+      canvas.drawArc(arcRect, _wavePhase + math.pi, math.pi * 0.6, false, arcPaint);
+
+      // 5 nodi frequenza sui vertici (pulsano con la wave)
+      for (int i = 0; i < 5; i++) {
+        final angle = i * math.pi * 2 / 5 - math.pi / 2;
+        final nx = r * 0.85 * math.cos(angle);
+        final ny = r * 0.85 * math.sin(angle);
+        final nodePulse = 0.3 + math.sin(_wavePhase * 3 + i * 1.2) * 0.3;
+        EnemyBase.detailPaint.color = paint.color.withValues(alpha: nodePulse);
+        canvas.drawCircle(Offset(nx, ny), 1.0, EnemyBase.detailPaint);
+      }
+
+      // Nucleo pulsante con anello
       final pulse = 0.5 + math.sin(_wavePhase * 2) * 0.3;
-      final corePaint = Paint()
-        ..color = const Color(0xFFFFFFFF).withValues(alpha: pulse)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
-      canvas.drawCircle(Offset.zero, r * 0.2, corePaint);
+      EnemyBase.detailPaint.color = const Color(0xFFFFFFFF).withValues(alpha: pulse);
+      canvas.drawCircle(Offset.zero, r * 0.15, EnemyBase.detailPaint);
     }
     canvas.restore();
   }

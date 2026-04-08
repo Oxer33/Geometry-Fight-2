@@ -80,28 +80,56 @@ class ProtonEnemy extends EnemyBase {
     final cy = size.y / 2;
     final r = size.x / 2 * scale;
 
-    // Scia (3 cerchietti dietro) - solo layer principale
     if (scale <= 1.01) {
-      for (int i = 1; i <= 3; i++) {
-        final trailAlpha = 0.3 - i * 0.08;
-        final trailR = r * (1.0 - i * 0.2);
+      // Scia cometa allungata (5 segmenti sfumati)
+      for (int i = 1; i <= 5; i++) {
+        final trailAlpha = 0.25 - i * 0.04;
+        final trailR = r * (1.0 - i * 0.15);
         if (trailAlpha > 0 && trailR > 0) {
           EnemyBase.detailPaint.color = neonColor.withValues(alpha: trailAlpha);
           canvas.drawCircle(
-            Offset(cx - _moveDir.x * i * 4, cy - _moveDir.y * i * 4),
+            Offset(cx - _moveDir.x * i * 3.5, cy - _moveDir.y * i * 3.5),
             trailR, EnemyBase.detailPaint,
           );
         }
+      }
+
+      // Linee di velocità laterali
+      final streakPaint = Paint()
+        ..color = neonColor.withValues(alpha: 0.15)
+        ..strokeWidth = 0.5;
+      final perpX = -_moveDir.y;
+      final perpY = _moveDir.x;
+      for (int side = -1; side <= 1; side += 2) {
+        final sx = cx + perpX * r * 0.6 * side;
+        final sy = cy + perpY * r * 0.6 * side;
+        canvas.drawLine(
+          Offset(sx, sy),
+          Offset(sx - _moveDir.x * 8, sy - _moveDir.y * 8),
+          streakPaint,
+        );
       }
     }
 
     // Corpo principale
     canvas.drawCircle(Offset(cx, cy), r, paint);
 
-    // Nucleo bianco
     if (scale <= 1.01) {
-      EnemyBase.detailPaint.color = const Color(0xFFFFFFFF).withValues(alpha: 0.6);
-      canvas.drawCircle(Offset(cx, cy), r * 0.4, EnemyBase.detailPaint);
+      // Anello orbitale rotante
+      final ringPaint = Paint()
+        ..color = paint.color.withValues(alpha: 0.3)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 0.5;
+      canvas.save();
+      canvas.translate(cx, cy);
+      canvas.rotate(idlePhase * 8);
+      canvas.drawOval(Rect.fromCenter(center: Offset.zero, width: r * 2.2, height: r * 1.0), ringPaint);
+      canvas.restore();
+
+      // Nucleo bianco brillante
+      final pulse = 0.5 + math.sin(idlePhase * 8) * 0.3;
+      EnemyBase.detailPaint.color = const Color(0xFFFFFFFF).withValues(alpha: pulse);
+      canvas.drawCircle(Offset(cx, cy), r * 0.35, EnemyBase.detailPaint);
     }
   }
 }

@@ -69,33 +69,53 @@ class WeaverEnemy extends EnemyBase {
       ..close();
     canvas.drawPath(path, paint);
 
-    // Dettagli interni solo sul layer principale
     if (scale <= 1.01) {
-      // Linea centrale verticale
-      final linePaint = Paint()
+      // Rombo interno (scafo)
+      final innerPath = Path()
+        ..moveTo(cx, cy - h * 0.55)
+        ..lineTo(cx + w * 0.55, cy)
+        ..lineTo(cx, cy + h * 0.55)
+        ..lineTo(cx - w * 0.55, cy)
+        ..close();
+      final innerPaint = Paint()
         ..color = paint.color.withValues(alpha: 0.3)
-        ..strokeWidth = 0.5;
-      canvas.drawLine(Offset(cx, cy - h * 0.6), Offset(cx, cy + h * 0.6), linePaint);
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 0.6;
+      canvas.drawPath(innerPath, innerPaint);
 
-      // Linee diagonali (struttura ala)
-      linePaint.color = paint.color.withValues(alpha: 0.2);
-      canvas.drawLine(Offset(cx, cy - h * 0.3), Offset(cx + w * 0.7, cy), linePaint);
-      canvas.drawLine(Offset(cx, cy - h * 0.3), Offset(cx - w * 0.7, cy), linePaint);
+      // Pannelli ala (linee diagonali strutturali)
+      final linePaint = Paint()
+        ..color = paint.color.withValues(alpha: 0.2)
+        ..strokeWidth = 0.5;
+      // Ala superiore dx/sx
+      canvas.drawLine(Offset(cx + w * 0.2, cy - h * 0.4), Offset(cx + w * 0.8, cy - h * 0.05), linePaint);
+      canvas.drawLine(Offset(cx - w * 0.2, cy - h * 0.4), Offset(cx - w * 0.8, cy - h * 0.05), linePaint);
+      // Ala inferiore dx/sx
+      canvas.drawLine(Offset(cx + w * 0.2, cy + h * 0.4), Offset(cx + w * 0.8, cy + h * 0.05), linePaint);
+      canvas.drawLine(Offset(cx - w * 0.2, cy + h * 0.4), Offset(cx - w * 0.8, cy + h * 0.05), linePaint);
+
+      // Flusso energetico: linea centrale pulsante
+      final flowProgress = (idlePhase * 2 + _waveOffset) % 1.0;
+      final flowY = cy - h * 0.6 + flowProgress * h * 1.2;
+      final flowAlpha = 0.4 * (1 - (flowProgress - 0.5).abs() * 2);
+      if (flowAlpha > 0) {
+        EnemyBase.detailPaint.color = const Color(0xFFFFFFFF).withValues(alpha: flowAlpha);
+        canvas.drawCircle(Offset(cx, flowY), 1.0, EnemyBase.detailPaint);
+      }
+
+      // Nodi energetici sulle 4 punte
+      for (int i = 0; i < 4; i++) {
+        final dotAlpha = 0.3 + math.sin(idlePhase * 4 + i * 1.5) * 0.3;
+        EnemyBase.detailPaint.color = paint.color.withValues(alpha: dotAlpha);
+        final dx = [0.0, w * 0.85, 0.0, -w * 0.85][i];
+        final dy = [-h * 0.85, 0.0, h * 0.85, 0.0][i];
+        canvas.drawCircle(Offset(cx + dx, cy + dy), 1.0, EnemyBase.detailPaint);
+      }
 
       // Nucleo pulsante al centro
-      final pulse = 0.4 + math.sin(idlePhase * 5 + _waveOffset) * 0.3;
-      final corePaint = Paint()
-        ..color = const Color(0xFFFFFFFF).withValues(alpha: pulse)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2);
-      canvas.drawCircle(Offset(cx, cy), w * 0.25, corePaint);
-
-      // Punti energetici sulle punte superiore e inferiore
-      final dotAlpha = 0.3 + math.sin(idlePhase * 4) * 0.3;
-      final dotPaint = Paint()
-        ..color = paint.color.withValues(alpha: dotAlpha)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 1.5);
-      canvas.drawCircle(Offset(cx, cy - h * 0.7), 1.0, dotPaint);
-      canvas.drawCircle(Offset(cx, cy + h * 0.7), 1.0, dotPaint);
+      final pulse = 0.5 + math.sin(idlePhase * 5 + _waveOffset) * 0.3;
+      EnemyBase.detailPaint.color = const Color(0xFFFFFFFF).withValues(alpha: pulse);
+      canvas.drawCircle(Offset(cx, cy), w * 0.2, EnemyBase.detailPaint);
     }
   }
 }

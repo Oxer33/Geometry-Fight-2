@@ -82,7 +82,6 @@ class SwarmDroneEnemy extends EnemyBase {
     final cy = size.y / 2;
     final s = size.x / 2 * scale;
 
-    // Triangolino piccolo
     canvas.save();
     canvas.translate(cx, cy);
     final angle = math.atan2(_moveDir.y, _moveDir.x) + math.pi / 2;
@@ -93,6 +92,22 @@ class SwarmDroneEnemy extends EnemyBase {
         : paint.color;
     final p = Paint()..color = color;
 
+    // Scia motore (2 trail sfumati dietro)
+    if (scale <= 1.01) {
+      for (int i = 1; i <= 2; i++) {
+        final trailAlpha = isGloballyEnraged ? 0.3 - i * 0.1 : 0.15 - i * 0.05;
+        if (trailAlpha > 0) {
+          final trailPaint = Paint()..color = color.withValues(alpha: trailAlpha);
+          final trailPath = Path()
+            ..moveTo(s * 0.3, s * 0.5 + i * 4)
+            ..lineTo(0, s * 0.5 + i * 6)
+            ..lineTo(-s * 0.3, s * 0.5 + i * 4);
+          canvas.drawPath(trailPath, trailPaint);
+        }
+      }
+    }
+
+    // Corpo triangolare
     final path = Path()
       ..moveTo(0, -s)
       ..lineTo(s * 0.7, s * 0.5)
@@ -100,11 +115,31 @@ class SwarmDroneEnemy extends EnemyBase {
       ..close();
     canvas.drawPath(path, p);
 
-    // Nucleo quando enraged (senza blur per performance)
-    if (isGloballyEnraged && scale <= 1.01) {
-      final ragePaint = Paint()
-        ..color = const Color(0xFFFF4400).withValues(alpha: 0.6);
-      canvas.drawCircle(Offset.zero, s * 0.4, ragePaint);
+    if (scale <= 1.01) {
+      // Linee ala interne (struttura)
+      final linePaint = Paint()
+        ..color = color.withValues(alpha: 0.3)
+        ..strokeWidth = 0.5;
+      canvas.drawLine(Offset(0, -s * 0.5), Offset(s * 0.4, s * 0.3), linePaint);
+      canvas.drawLine(Offset(0, -s * 0.5), Offset(-s * 0.4, s * 0.3), linePaint);
+
+      // Nucleo centrale
+      final pulse = isGloballyEnraged
+          ? 0.7 + math.sin(idlePhase * 10) * 0.3
+          : 0.3 + math.sin(idlePhase * 5) * 0.2;
+      final coreColor = isGloballyEnraged
+          ? const Color(0xFFFF4400)
+          : const Color(0xFFFFFFFF);
+      final corePaint = Paint()..color = coreColor.withValues(alpha: pulse);
+      canvas.drawCircle(Offset(0, s * 0.05), s * 0.15, corePaint);
+
+      // Punti propulsore alla base
+      if (isGloballyEnraged) {
+        final thrustPaint = Paint()
+          ..color = const Color(0xFFFF6600).withValues(alpha: 0.5);
+        canvas.drawCircle(Offset(s * 0.25, s * 0.4), 1.0, thrustPaint);
+        canvas.drawCircle(Offset(-s * 0.25, s * 0.4), 1.0, thrustPaint);
+      }
     }
 
     canvas.restore();

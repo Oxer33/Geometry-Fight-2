@@ -103,6 +103,10 @@ class GeometryFightGame extends FlameGame
   List<double>? _bombExplosionTimers;
   Vector2? _bombExplosionPos;
 
+  // Death explosion timer (mega shockwave quando il player muore)
+  List<double>? _deathExplosionTimers;
+  Vector2? _deathExplosionPos;
+
   // Shared Random instance (evita creazione ripetuta)
   final math.Random _random = math.Random();
 
@@ -281,6 +285,27 @@ class GeometryFightGame extends FlameGame
       if (_bombExplosionTimers!.isEmpty) {
         _bombExplosionTimers = null;
         _bombExplosionPos = null;
+      }
+    }
+
+    // Death explosion delayed waves (timer-based, rispetta pause)
+    if (_deathExplosionTimers != null && _deathExplosionPos != null) {
+      for (int i = _deathExplosionTimers!.length - 1; i >= 0; i--) {
+        _deathExplosionTimers![i] -= scaledDt;
+        if (_deathExplosionTimers![i] <= 0) {
+          if (i == 1) {
+            spawnExplosion(_deathExplosionPos!, const Color(0xFFFF6600),
+                radius: 450, particleCount: 50);
+          } else if (i == 2) {
+            spawnExplosion(_deathExplosionPos!, const Color(0xFFFFFFFF),
+                radius: 300, particleCount: 35);
+          }
+          _deathExplosionTimers!.removeAt(i);
+        }
+      }
+      if (_deathExplosionTimers!.isEmpty) {
+        _deathExplosionTimers = null;
+        _deathExplosionPos = null;
       }
     }
 
@@ -714,9 +739,23 @@ class GeometryFightGame extends FlameGame
   void onPlayerHit() {
     AudioSystem.playPlayerHit();
     scoreSystem.resetMultiplier();
-    triggerScreenShake(6, 0.3);
-    hitFlashTimer = 0.3; // Flash rosso sullo schermo per 0.3s
     _hitThisWave = true; // Questa wave non è più "perfect"
+
+    // MEGA SHOCKWAVE — onda d'urto devastante come la bomba
+    activateSlowMo(0.4, 0.3); // Slow-mo drammatico
+    triggerScreenShake(15, 0.8); // Shake più intenso della bomba
+    hitFlashTimer = 0.5; // Flash rosso prolungato
+
+    // Tripla esplosione concentrica (rosso → arancione → bianco)
+    _deathExplosionTimers = [0.0, 0.12, 0.25];
+    _deathExplosionPos = player.position.clone();
+    spawnExplosion(_deathExplosionPos!, const Color(0xFFFF2200),
+        radius: 600, particleCount: 70);
+
+    // Distorsione griglia massima
+    if (!isTunnelMode) {
+      grid.applyForce(player.position, 600, 2500);
+    }
   }
 
   /// Chiamato quando una wave viene completata (dal WaveSystem)
@@ -928,6 +967,8 @@ class GeometryFightGame extends FlameGame
     _chaosTimer = 10.0;
     _bombExplosionTimers = null;
     _bombExplosionPos = null;
+    _deathExplosionTimers = null;
+    _deathExplosionPos = null;
     SwarmDroneEnemy.resetGlobalEnrage();
     LeechEnemy.resetAttachedCount();
     scoreSystem.reset();

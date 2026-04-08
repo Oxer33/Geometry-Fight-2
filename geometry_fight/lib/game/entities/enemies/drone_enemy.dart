@@ -1,7 +1,6 @@
 import 'dart:math' as math;
 import 'dart:ui';
 import 'package:flame/components.dart';
-import '../../../data/constants.dart';
 import 'enemy_base.dart';
 
 /// DRONE (Grunt) - Rombo blu che insegue il player.
@@ -48,21 +47,46 @@ class DroneEnemy extends EnemyBase {
       ..close();
     canvas.drawPath(path, paint);
 
-    // Solo per il layer principale (non glow) — NO blur per performance con 100+ nemici
     if (scale <= 1.01) {
-      // Croce interna luminosa
-      final crossPaint = Paint()
-        ..color = paint.color.withValues(alpha: 0.4)
-        ..strokeWidth = 0.8
-        ..style = PaintingStyle.stroke;
-      canvas.drawLine(Offset(0, -s * 0.5), Offset(0, s * 0.5), crossPaint);
-      canvas.drawLine(Offset(-s * 0.5, 0), Offset(s * 0.5, 0), crossPaint);
+      // Rombo interno contro-rotante (effetto tech)
+      final innerS = s * 0.5;
+      final innerPath = Path()
+        ..moveTo(0, -innerS)
+        ..lineTo(innerS, 0)
+        ..lineTo(0, innerS)
+        ..lineTo(-innerS, 0)
+        ..close();
+      final innerPaint = Paint()
+        ..color = paint.color.withValues(alpha: 0.35)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 0.8;
+      canvas.drawPath(innerPath, innerPaint);
 
-      // Nucleo pulsante al centro (senza blur)
+      // Circuiti: linee dai vertici interni a quelli esterni
+      final circuitPaint = Paint()
+        ..color = paint.color.withValues(alpha: 0.25)
+        ..strokeWidth = 0.5;
+      canvas.drawLine(Offset(0, -innerS), Offset(innerS * 0.7, -innerS * 0.7), circuitPaint);
+      canvas.drawLine(Offset(innerS, 0), Offset(innerS * 0.7, innerS * 0.7), circuitPaint);
+      canvas.drawLine(Offset(0, innerS), Offset(-innerS * 0.7, innerS * 0.7), circuitPaint);
+      canvas.drawLine(Offset(-innerS, 0), Offset(-innerS * 0.7, -innerS * 0.7), circuitPaint);
+
+      // 4 nodi energetici sui vertici (pulsanti sfasati)
+      for (int i = 0; i < 4; i++) {
+        final angle = i * math.pi / 2;
+        final nx = s * 0.75 * math.cos(angle - math.pi / 4);
+        final ny = s * 0.75 * math.sin(angle - math.pi / 4);
+        final nodePulse = 0.3 + math.sin(idlePhase * 5 + i * 1.5) * 0.3;
+        final nodePaint = Paint()
+          ..color = paint.color.withValues(alpha: nodePulse);
+        canvas.drawCircle(Offset(nx, ny), 1.2, nodePaint);
+      }
+
+      // Nucleo pulsante al centro
       final pulse = 0.5 + math.sin(idlePhase * 6) * 0.3;
       final corePaint = Paint()
         ..color = const Color(0xFFFFFFFF).withValues(alpha: pulse);
-      canvas.drawCircle(Offset.zero, s * 0.2, corePaint);
+      canvas.drawCircle(Offset.zero, s * 0.15, corePaint);
     }
 
     canvas.restore();

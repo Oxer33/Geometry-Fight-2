@@ -117,13 +117,18 @@ class MutatorEnemy extends EnemyBase {
     final cy = size.y / 2;
     final r = size.x / 2 * scale;
 
-    // Aura pulsante (raggio di ricerca)
+    // Aura pulsante con archi rotanti (raggio di ricerca)
     if (scale <= 1.01) {
       final auraPulse = 0.05 + math.sin(_pulsePhase) * 0.03;
       EnemyBase.detailPaint.color = neonColor.withValues(alpha: auraPulse);
       EnemyBase.detailPaint.style = PaintingStyle.stroke;
-      EnemyBase.detailPaint.strokeWidth = 1;
-      canvas.drawCircle(Offset(cx, cy), r * 3, EnemyBase.detailPaint);
+      EnemyBase.detailPaint.strokeWidth = 0.8;
+      // 3 archi rotanti invece di cerchio pieno
+      final auraRect = Rect.fromCircle(center: Offset(cx, cy), radius: r * 2.5);
+      for (int i = 0; i < 3; i++) {
+        final arcStart = _pulsePhase * 0.8 + i * math.pi * 2 / 3;
+        canvas.drawArc(auraRect, arcStart, math.pi * 0.5, false, EnemyBase.detailPaint);
+      }
       EnemyBase.detailPaint.style = PaintingStyle.fill;
     }
 
@@ -142,32 +147,60 @@ class MutatorEnemy extends EnemyBase {
     path.close();
     canvas.drawPath(path, paint);
 
-    // Dettagli interni
     if (scale <= 1.01) {
-      // Stella interna (linee dal centro ai vertici)
+      // Pentagramma interno (stella a 5 punte connettendo vertici non adiacenti)
       final starPaint = Paint()
-        ..color = paint.color.withValues(alpha: 0.3)
-        ..strokeWidth = 0.8
+        ..color = paint.color.withValues(alpha: 0.25)
+        ..strokeWidth = 0.7
         ..style = PaintingStyle.stroke;
       for (int i = 0; i < 5; i++) {
-        final angle = i * math.pi * 2 / 5 - math.pi / 2;
-        final x = r * 0.85 * math.cos(angle);
-        final y = r * 0.85 * math.sin(angle);
-        canvas.drawLine(Offset.zero, Offset(x, y), starPaint);
+        final angle1 = i * math.pi * 2 / 5 - math.pi / 2;
+        final angle2 = ((i + 2) % 5) * math.pi * 2 / 5 - math.pi / 2;
+        final x1 = r * 0.75 * math.cos(angle1);
+        final y1 = r * 0.75 * math.sin(angle1);
+        final x2 = r * 0.75 * math.cos(angle2);
+        final y2 = r * 0.75 * math.sin(angle2);
+        canvas.drawLine(Offset(x1, y1), Offset(x2, y2), starPaint);
       }
+
+      // Pentagono interno piccolo (formato dall'intersezione del pentagramma)
+      final innerPentPath = Path();
+      for (int i = 0; i < 5; i++) {
+        final angle = i * math.pi * 2 / 5 - math.pi / 2 + math.pi / 5;
+        final x = r * 0.33 * math.cos(angle);
+        final y = r * 0.33 * math.sin(angle);
+        if (i == 0) innerPentPath.moveTo(x, y); else innerPentPath.lineTo(x, y);
+      }
+      innerPentPath.close();
+      final innerPentPaint = Paint()
+        ..color = paint.color.withValues(alpha: 0.2)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 0.5;
+      canvas.drawPath(innerPentPath, innerPentPaint);
 
       // Nucleo pulsante
       final corePulse = 0.5 + math.sin(_pulsePhase * 2) * 0.3;
       EnemyBase.detailPaint.color = const Color(0xFFFFFFFF).withValues(alpha: corePulse);
-      canvas.drawCircle(Offset.zero, r * 0.25, EnemyBase.detailPaint);
+      canvas.drawCircle(Offset.zero, r * 0.18, EnemyBase.detailPaint);
 
-      // Counter mutazioni (puntini attorno al nucleo)
+      // Counter mutazioni (puntini orbitanti con glow progressivo)
       for (int i = 0; i < _mutationsCount; i++) {
-        final dotAngle = i * math.pi * 2 / _maxMutations;
-        final dx = r * 0.45 * math.cos(dotAngle);
-        final dy = r * 0.45 * math.sin(dotAngle);
-        EnemyBase.detailPaint.color = const Color(0xFFFFDD44).withValues(alpha: 0.7);
+        final dotAngle = i * math.pi * 2 / _maxMutations + _pulsePhase * 0.3;
+        final dx = r * 0.5 * math.cos(dotAngle);
+        final dy = r * 0.5 * math.sin(dotAngle);
+        final dotPulse = 0.5 + math.sin(_pulsePhase * 3 + i) * 0.3;
+        EnemyBase.detailPaint.color = const Color(0xFFFFDD44).withValues(alpha: dotPulse);
         canvas.drawCircle(Offset(dx, dy), 1.5, EnemyBase.detailPaint);
+      }
+
+      // 5 nodi energetici sui vertici
+      for (int i = 0; i < 5; i++) {
+        final angle = i * math.pi * 2 / 5 - math.pi / 2;
+        final nx = r * 0.75 * math.cos(angle);
+        final ny = r * 0.75 * math.sin(angle);
+        final nodePulse = 0.2 + math.sin(_pulsePhase * 4 + i * 1.2) * 0.2;
+        EnemyBase.detailPaint.color = paint.color.withValues(alpha: nodePulse);
+        canvas.drawCircle(Offset(nx, ny), 1.0, EnemyBase.detailPaint);
       }
     }
 

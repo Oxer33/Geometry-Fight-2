@@ -150,20 +150,43 @@ class SplitterEnemy extends EnemyBase {
       ..close();
     canvas.drawPath(path, paint);
 
-    // Dettagli solo sul layer principale
     if (scale <= 1.01) {
-      // Linee di frattura (dove si dividerà)
+      // Triangolo interno contro-rotante
+      final innerR = r * 0.5;
+      final innerPath = Path()
+        ..moveTo(0, innerR * 0.7) // Invertito rispetto all'esterno
+        ..lineTo(innerR * 0.6, -innerR * 0.35)
+        ..lineTo(-innerR * 0.6, -innerR * 0.35)
+        ..close();
+      final innerPaint = Paint()
+        ..color = paint.color.withValues(alpha: 0.3)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 0.7;
+      canvas.drawPath(innerPath, innerPaint);
+
+      // Linee di frattura luminose (dove si dividerà)
       if (splitterSize != SplitterSize.small) {
+        final fractureAlpha = 0.15 + math.sin(idlePhase * 4) * 0.1;
         final fracturePaint = Paint()
-          ..color = paint.color.withValues(alpha: 0.25)
-          ..strokeWidth = 0.5
+          ..color = paint.color.withValues(alpha: fractureAlpha)
+          ..strokeWidth = 0.8
           ..style = PaintingStyle.stroke;
-        // 3 linee dal centro ai vertici
-        canvas.drawLine(Offset.zero, Offset(0, -r * 0.7), fracturePaint);
-        canvas.drawLine(
-            Offset.zero, Offset(r * 0.6, r * 0.35), fracturePaint);
-        canvas.drawLine(
-            Offset.zero, Offset(-r * 0.6, r * 0.35), fracturePaint);
+        // 3 linee dal centro ai punti medi dei lati
+        canvas.drawLine(Offset.zero, Offset(0, -r * 0.8), fracturePaint);
+        canvas.drawLine(Offset.zero, Offset(r * 0.7, r * 0.4), fracturePaint);
+        canvas.drawLine(Offset.zero, Offset(-r * 0.7, r * 0.4), fracturePaint);
+
+        // Nodi sui punti medi dei lati (dove si staccheranno i pezzi)
+        final vertices = [
+          Offset(r * 0.43, -r * 0.25), // Punto medio lato dx
+          Offset(0, r * 0.5),           // Punto medio lato basso
+          Offset(-r * 0.43, -r * 0.25), // Punto medio lato sx
+        ];
+        for (int i = 0; i < vertices.length; i++) {
+          final nodePulse = 0.3 + math.sin(idlePhase * 5 + i * 2.0) * 0.3;
+          EnemyBase.detailPaint.color = paint.color.withValues(alpha: nodePulse);
+          canvas.drawCircle(vertices[i], 1.2, EnemyBase.detailPaint);
+        }
       }
 
       // Nucleo pulsante (colore diverso per dimensione)
@@ -172,28 +195,22 @@ class SplitterEnemy extends EnemyBase {
           : splitterSize == SplitterSize.medium
               ? const Color(0xFFDDDDFF)
               : const Color(0xFFAAAAFF);
-      final pulse = 0.4 + math.sin(idlePhase * 5) * 0.3;
-      final corePaint = Paint()
-        ..color = coreColor.withValues(alpha: pulse)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2);
-      canvas.drawCircle(Offset.zero, r * 0.2, corePaint);
+      final pulse = 0.5 + math.sin(idlePhase * 5) * 0.3;
+      EnemyBase.detailPaint.color = coreColor.withValues(alpha: pulse);
+      canvas.drawCircle(Offset.zero, r * 0.18, EnemyBase.detailPaint);
 
-      // Indicatore livello (puntini per quante volte può ancora dividersi)
+      // Indicatore livello (puntini orbitanti)
       final dotsCount = splitterSize == SplitterSize.large
           ? 3
           : splitterSize == SplitterSize.medium
               ? 2
               : 0;
       for (int i = 0; i < dotsCount; i++) {
-        final dotAngle = i * math.pi * 2 / 3 - math.pi / 2;
-        final dotPaint = Paint()
-          ..color = paint.color.withValues(alpha: 0.5)
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 1);
+        final dotAngle = i * math.pi * 2 / 3 - math.pi / 2 + idlePhase * 3;
+        EnemyBase.detailPaint.color = paint.color.withValues(alpha: 0.5);
         canvas.drawCircle(
-          Offset(
-              r * 0.4 * math.cos(dotAngle), r * 0.4 * math.sin(dotAngle)),
-          1.0,
-          dotPaint,
+          Offset(r * 0.35 * math.cos(dotAngle), r * 0.35 * math.sin(dotAngle)),
+          1.0, EnemyBase.detailPaint,
         );
       }
     }
