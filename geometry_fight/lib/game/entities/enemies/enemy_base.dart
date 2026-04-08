@@ -111,6 +111,13 @@ abstract class EnemyBase extends PositionComponent
     removeFromParent();
   }
 
+  /// Kill silenzioso: rimuove il nemico con esplosione visiva ma SENZA
+  /// dare punti, geom, kill count o drop. Usato per la shockwave alla morte.
+  void killSilently() {
+    game.spawnExplosion(position, neonColor, radius: size.x * 0.5, particleCount: 3);
+    removeFromParent();
+  }
+
   Vector2 get playerPosition => game.player.position;
 
   Vector2 seekPlayer(double maxSpeed) {

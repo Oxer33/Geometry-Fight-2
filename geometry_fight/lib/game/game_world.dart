@@ -746,6 +746,16 @@ class GeometryFightGame extends FlameGame
     triggerScreenShake(15, 0.8); // Shake più intenso della bomba
     hitFlashTimer = 0.5; // Flash rosso prolungato
 
+    // Uccidi tutti i nemici nel raggio SENZA dare punti/geom/kill
+    const deathRadius = 600.0;
+    final enemies = world.children.whereType<EnemyBase>().toList();
+    for (final enemy in enemies) {
+      final dist = enemy.position.distanceTo(player.position);
+      if (dist < deathRadius) {
+        enemy.killSilently();
+      }
+    }
+
     // Tripla esplosione concentrica (rosso → arancione → bianco)
     _deathExplosionTimers = [0.0, 0.12, 0.25];
     _deathExplosionPos = player.position.clone();
