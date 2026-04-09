@@ -169,11 +169,11 @@ class _ShopScreenState extends State<ShopScreen>
 
   Widget _buildSkinsTab() {
     final skins = [
-      _SkinDef('classic', 'Classic', 0, 'Default ship', NeonColors.cyan),
-      _SkinDef('stealth', 'Stealth', 500, 'Black with red edges', const Color(0xFFFF2244)),
-      _SkinDef('crystal', 'Crystal', 1000, 'Diamond with prismatic effects', const Color(0xFFAADDFF)),
-      _SkinDef('ghost', 'Ghost', 1500, 'Semi-transparent with particles', const Color(0xFF8888CC)),
-      _SkinDef('omega', 'Omega', 3000, '4-point star with rotation', const Color(0xFFFFD700)),
+      _SkinDef('classic', 'Classic', 0, 'La navicella originale cyan', NeonColors.cyan),
+      _SkinDef('stealth', 'Stealth', 500, 'Nera con bordi rossi — stile furtivo', const Color(0xFFFF2244)),
+      _SkinDef('crystal', 'Crystal', 1000, 'Diamante prismatico — riflessi arcobaleno', const Color(0xFFAADDFF)),
+      _SkinDef('ghost', 'Ghost', 1500, 'Semi-trasparente con scia di particelle', const Color(0xFF8888CC)),
+      _SkinDef('omega', 'Omega', 3000, 'Stella a 4 punte dorata — forma unica', const Color(0xFFFFD700)),
     ];
 
     return _buildPreviewGrid(
@@ -204,11 +204,11 @@ class _ShopScreenState extends State<ShopScreen>
 
   Widget _buildTrailsTab() {
     final trails = [
-      _TrailDef('normal', 'Normal', 0, 'Default trail', NeonColors.cyan),
-      _TrailDef('fire', 'Fire', 200, 'Flame particles', const Color(0xFFFF6600)),
-      _TrailDef('ice', 'Ice', 200, 'Frost crystals', const Color(0xFF88DDFF)),
-      _TrailDef('plasma', 'Plasma', 200, 'Energy plasma', const Color(0xFFCC00FF)),
-      _TrailDef('rainbow', 'Rainbow', 200, 'Color shifting', NeonColors.cyan),
+      _TrailDef('normal', 'Normal', 0, 'Scia cyan standard', NeonColors.cyan),
+      _TrailDef('fire', 'Fire', 200, 'Particelle di fuoco dietro la nave', const Color(0xFFFF6600)),
+      _TrailDef('ice', 'Ice', 200, 'Cristalli di ghiaccio scintillanti', const Color(0xFF88DDFF)),
+      _TrailDef('plasma', 'Plasma', 200, 'Energia plasma viola pulsante', const Color(0xFFCC00FF)),
+      _TrailDef('rainbow', 'Rainbow', 200, 'Colori che cambiano continuamente', NeonColors.cyan),
     ];
 
     return _buildPreviewGrid(
@@ -239,13 +239,13 @@ class _ShopScreenState extends State<ShopScreen>
 
   Widget _buildWeaponsTab() {
     final weapons = [
-      _WeaponDef('basic', 'Basic Gun', 0, 'Default weapon', NeonColors.bulletYellow, 'parallel'),
-      _WeaponDef('twin', 'Twin Shot', 800, 'Parallel double bullets', NeonColors.white, 'twin'),
-      _WeaponDef('spread', 'Spread Shot', 1000, '5-bullet fan', NeonColors.spreadOrange, 'fan'),
-      _WeaponDef('ricochet', 'Ricochet', 1200, 'Bouncing bullets', NeonColors.ricochetGreen, 'bounce'),
-      _WeaponDef('homing', 'Homing', 1500, 'Tracking missiles', NeonColors.pink, 'homing'),
-      _WeaponDef('plasma', 'Plasma', 2000, 'Heavy 3x damage bolts', NeonColors.plasmaViolet, 'plasma'),
-      _WeaponDef('laser', 'Laser', 2500, 'Continuous beam', NeonColors.laserRed, 'beam'),
+      _WeaponDef('basic', 'Basic Gun', 0, 'Proiettile singolo — affidabile e preciso', NeonColors.bulletYellow, 'parallel'),
+      _WeaponDef('twin', 'Twin Shot', 800, '2 proiettili paralleli — doppia copertura', NeonColors.white, 'twin'),
+      _WeaponDef('spread', 'Spread Shot', 1000, '5 proiettili a ventaglio — ottimo vs gruppi', NeonColors.spreadOrange, 'fan'),
+      _WeaponDef('ricochet', 'Ricochet', 1200, 'Rimbalza sui muri — colpisce da dietro', NeonColors.ricochetGreen, 'bounce'),
+      _WeaponDef('homing', 'Homing', 1500, 'Insegue i nemici — non manca mai', NeonColors.pink, 'homing'),
+      _WeaponDef('plasma', 'Plasma', 2000, 'Colpo lento ma 3x danni — devasta i boss', NeonColors.plasmaViolet, 'plasma'),
+      _WeaponDef('laser', 'Laser', 2500, 'Raggio continuo — taglia tutto ciò che tocca', NeonColors.laserRed, 'beam'),
     ];
 
     return _buildPreviewGrid(
@@ -277,21 +277,21 @@ class _ShopScreenState extends State<ShopScreen>
   Widget _buildUpgradesTab() {
     final upgrades = [
       _UpgradeItem('firepower', 'FIREPOWER', [100, 200, 400, 800, 1500], 5,
-          '+15-30% damage per level', Icons.local_fire_department, const Color(0xFFFF4400)),
+          'Danno proiettili: +15% → +30% → +50% → +70% → +100%', Icons.local_fire_department, const Color(0xFFFF4400)),
       _UpgradeItem('speed', 'SPEED', [100, 200, 400, 800, 1500], 5,
-          '+10% speed per level', Icons.speed, NeonColors.cyan),
+          'Velocità navicella: +10% per livello (max +50%)', Icons.speed, NeonColors.cyan),
       _UpgradeItem('fire_rate', 'FIRE RATE', [100, 200, 400, 800, 1500], 5,
-          '+8% fire rate per level', Icons.bolt, NeonColors.bulletYellow),
+          'Cadenza di fuoco: +8% per livello (max +40%)', Icons.bolt, NeonColors.bulletYellow),
       _UpgradeItem('shield_capacity', 'SHIELD', [300, 700, 1500], 3,
-          'Shield absorbs more hits', Icons.shield_outlined, const Color(0xFF00AAFF)),
+          'Colpi assorbiti dallo scudo: 2 → 3 → 4 (Lv3: rigenera!)', Icons.shield_outlined, const Color(0xFF00AAFF)),
       _UpgradeItem('starting_lives', 'LIVES', [500, 1200], 2,
-          'Start with more lives', Icons.favorite, const Color(0xFFFF4466)),
+          'Vite iniziali: 3 → 4 → 5', Icons.favorite, const Color(0xFFFF4466)),
       _UpgradeItem('bomb_capacity', 'BOMBS', [400, 900], 2,
-          'Carry more bombs', Icons.blur_circular, NeonColors.orange),
+          'Bombe disponibili: 3 → 4 → 5', Icons.blur_circular, NeonColors.orange),
       _UpgradeItem('magnet_range', 'MAGNET', [250, 600, 1200], 3,
-          'Auto-collect range', Icons.radar, NeonColors.purple),
+          'Raggio raccolta geom: +50px → +150px → +350px', Icons.radar, NeonColors.purple),
       _UpgradeItem('xp_boost', 'XP BOOST', [300, 700, 1500], 3,
-          'More GoldGeoms per game', Icons.auto_awesome, const Color(0xFFFFD700)),
+          'Moltiplicatore GoldGeom: x1.2 → x1.4 → x1.7', Icons.auto_awesome, const Color(0xFFFFD700)),
     ];
 
     return ListView.builder(
@@ -403,13 +403,13 @@ class _ShopScreenState extends State<ShopScreen>
 
   Widget _buildModesTab() {
     final modes = [
-      _ModeDef('classic', 'Classic', 0, '100 wave con boss crescenti', Icons.games, NeonColors.cyan),
-      _ModeDef('bossRush', 'Boss Rush', 2000, 'Solo boss in sequenza', Icons.whatshot, const Color(0xFFFF4400)),
-      _ModeDef('survival', 'Survival', 2500, 'Ondate infinite', Icons.all_inclusive, const Color(0xFF00FF88)),
-      _ModeDef('timeAttack', 'Time Attack', 1500, '3 minuti di fuoco', Icons.timer, NeonColors.orange),
-      _ModeDef('zenMode', 'Zen Mode', 1000, 'Vite infinite, relax', Icons.spa, const Color(0xFF88CCFF)),
-      _ModeDef('tunnel', 'Tunnel', 3000, 'Tunnel infinito side-scroll', Icons.straighten, NeonColors.purple),
-      _ModeDef('endlessBoss', 'Boss Infiniti', 3500, 'Boss dopo boss', Icons.repeat, const Color(0xFFFF00AA)),
+      _ModeDef('classic', 'Classic', 0, '100 wave con boss ogni 10 — il modo standard', Icons.games, NeonColors.cyan),
+      _ModeDef('bossRush', 'Boss Rush', 2000, 'Solo boss, uno dopo l\'altro — niente mob', Icons.whatshot, const Color(0xFFFF4400)),
+      _ModeDef('survival', 'Survival', 2500, 'Wave infinite sempre più difficili — quanto resisti?', Icons.all_inclusive, const Color(0xFF00FF88)),
+      _ModeDef('timeAttack', 'Time Attack', 1500, '3 minuti: fai più punti possibile prima che scada', Icons.timer, NeonColors.orange),
+      _ModeDef('zenMode', 'Zen Mode', 1000, 'Vite infinite — gioca senza stress, esplora tutto', Icons.spa, const Color(0xFF88CCFF)),
+      _ModeDef('tunnel', 'Tunnel', 3000, 'Scorrimento laterale in un tunnel infinito', Icons.straighten, NeonColors.purple),
+      _ModeDef('endlessBoss', 'Boss Infiniti', 3500, 'Boss dopo boss senza fine — solo per esperti', Icons.repeat, const Color(0xFFFF00AA)),
     ];
 
     return GridView.builder(
