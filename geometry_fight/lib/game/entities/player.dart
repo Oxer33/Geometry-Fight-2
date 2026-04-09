@@ -187,7 +187,8 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
         _spawnBullet(dir, damageMultiplier, NeonColors.bulletYellow, offset: perp, pierce: pierce);
         _spawnBullet(dir, damageMultiplier, NeonColors.bulletYellow, offset: -perp, pierce: pierce);
       case WeaponType.spread:
-        for (final angle in [-0.52, -0.26, 0.0, 0.26, 0.52]) {
+        // 5 proiettili con angolo totale 20° (±10°) — 0.175 rad = 10°
+        for (final angle in [-0.175, -0.0875, 0.0, 0.0875, 0.175]) {
           final rotDir = _rotateVector(dir, angle);
           _spawnBullet(rotDir, damageMultiplier * 0.7, NeonColors.spreadOrange,
               speed: bulletSpeed * 1.2, pierce: pierce);
@@ -207,11 +208,11 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
         }
         _fireTimer = 0.5;
       case WeaponType.twin:
-        final perpendicular = Vector2(-dir.y, dir.x) * 12;
-        _spawnBullet(dir, damageMultiplier, NeonColors.white,
-            offset: perpendicular, pierce: pierce);
-        _spawnBullet(dir, damageMultiplier, NeonColors.white,
-            offset: -perpendicular, pierce: pierce);
+        // Sparo triplo con angolo ristretto (~12° totali)
+        for (final angle in [-0.105, 0.0, 0.105]) {
+          final rotDir = _rotateVector(dir, angle);
+          _spawnBullet(rotDir, damageMultiplier, NeonColors.white, pierce: pierce);
+        }
         _fireTimer = fireInterval * 0.5;
       case WeaponType.overdrive:
         _spawnOverdriveBeam(dir);

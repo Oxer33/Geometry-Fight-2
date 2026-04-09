@@ -286,8 +286,8 @@ class _GameScreenState extends State<GameScreen> {
               _game.aimInput.y = direction.dy;
             },
             onRelease: () {
-              // NON azzerare aimInput e NON smettere di sparare
-              // Il player continua a sparare nell'ultima direzione di mira
+              _game.isShooting = false;
+              _game.aimInput = Vector2.zero();
               _game.usingTouchAim = false;
             },
           ),

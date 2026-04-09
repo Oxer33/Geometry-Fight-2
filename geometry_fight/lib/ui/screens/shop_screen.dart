@@ -139,11 +139,11 @@ class _ShopScreenState extends State<ShopScreen>
                 letterSpacing: 1,
               ),
               tabs: const [
-                Tab(text: 'SKINS'),
-                Tab(text: 'TRAILS'),
                 Tab(text: 'UPGRADES'),
                 Tab(text: 'WEAPONS'),
                 Tab(text: 'MODES'),
+                Tab(text: 'SKINS'),
+                Tab(text: 'TRAILS'),
               ],
             ),
             // Tab content
@@ -151,11 +151,11 @@ class _ShopScreenState extends State<ShopScreen>
               child: TabBarView(
                 controller: _tabController,
                 children: [
-                  _buildSkinsTab(),
-                  _buildTrailsTab(),
                   _buildUpgradesTab(),
                   _buildWeaponsTab(),
                   _buildModesTab(),
+                  _buildSkinsTab(),
+                  _buildTrailsTab(),
                 ],
               ),
             ),
@@ -240,7 +240,7 @@ class _ShopScreenState extends State<ShopScreen>
   Widget _buildWeaponsTab() {
     final weapons = [
       _WeaponDef('basic', 'Basic Gun', 0, 'Proiettile singolo — affidabile e preciso', NeonColors.bulletYellow, 'parallel'),
-      _WeaponDef('twin', 'Twin Shot', 800, '2 proiettili paralleli — doppia copertura', NeonColors.white, 'twin'),
+      _WeaponDef('twin', 'Triple Shot', 800, '3 proiettili ravvicinati — fuoco concentrato', NeonColors.white, 'twin'),
       _WeaponDef('spread', 'Spread Shot', 1000, '5 proiettili a ventaglio — ottimo vs gruppi', NeonColors.spreadOrange, 'fan'),
       _WeaponDef('ricochet', 'Ricochet', 1200, 'Rimbalza sui muri — colpisce da dietro', NeonColors.ricochetGreen, 'bounce'),
       _WeaponDef('homing', 'Homing', 1500, 'Insegue i nemici — non manca mai', NeonColors.pink, 'homing'),
@@ -416,85 +416,69 @@ class _ShopScreenState extends State<ShopScreen>
       padding: const EdgeInsets.all(16),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
-        childAspectRatio: 1.8,
-        mainAxisSpacing: 10,
-        crossAxisSpacing: 10,
+        childAspectRatio: 2.8,
+        mainAxisSpacing: 8,
+        crossAxisSpacing: 8,
       ),
       itemCount: modes.length,
       itemBuilder: (context, index) {
         final item = modes[index];
         final owned = _saveData.unlockedModes.contains(item.id);
 
-        return GestureDetector(
-          onTap: () {
-            if (!owned) {
-              _purchase(item.id, item.cost, () {
-                if (!_saveData.unlockedModes.contains(item.id)) {
-                  _saveData.unlockedModes.add(item.id);
-                }
-              });
-            }
-          },
-          child: Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(
-                color: owned
-                    ? item.color.withValues(alpha: 0.4)
-                    : Colors.white.withValues(alpha: 0.1),
-              ),
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  item.color.withValues(alpha: owned ? 0.08 : 0.02),
-                  Colors.transparent,
-                ],
-              ),
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(
+              color: owned
+                  ? item.color.withValues(alpha: 0.4)
+                  : Colors.white.withValues(alpha: 0.1),
             ),
-            child: Row(
-              children: [
-                Icon(item.icon, color: item.color.withValues(alpha: owned ? 0.8 : 0.3), size: 28),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(item.name, style: TextStyle(
-                        color: owned ? item.color : Colors.white54,
-                        fontSize: 13, fontWeight: FontWeight.bold, fontFamily: 'monospace',
-                      )),
-                      const SizedBox(height: 3),
-                      Text(item.description, style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.3),
-                        fontSize: 9, fontFamily: 'monospace',
-                      )),
-                      const SizedBox(height: 4),
-                      if (owned)
-                        Text('UNLOCKED', style: TextStyle(
-                          color: Colors.greenAccent.withValues(alpha: 0.6),
-                          fontSize: 8, fontFamily: 'monospace',
-                        ))
-                      else
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(Icons.diamond, color: Color(0xFFFFD700), size: 10),
-                            const SizedBox(width: 3),
-                            Text('${item.cost}', style: TextStyle(
-                              color: _saveData.goldGeoms >= item.cost
-                                  ? const Color(0xFFFFD700) : Colors.white24,
-                              fontSize: 11, fontFamily: 'monospace', fontWeight: FontWeight.bold,
-                            )),
-                          ],
-                        ),
-                    ],
-                  ),
-                ),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                item.color.withValues(alpha: owned ? 0.08 : 0.02),
+                Colors.transparent,
               ],
             ),
+          ),
+          child: Row(
+            children: [
+              Icon(item.icon, color: item.color.withValues(alpha: owned ? 0.8 : 0.3), size: 22),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(item.name, style: TextStyle(
+                      color: owned ? item.color : Colors.white54,
+                      fontSize: 11, fontWeight: FontWeight.bold, fontFamily: 'monospace',
+                    )),
+                    const SizedBox(height: 2),
+                    if (owned)
+                      Text('UNLOCKED', style: TextStyle(
+                        color: Colors.greenAccent.withValues(alpha: 0.6),
+                        fontSize: 8, fontFamily: 'monospace',
+                      ))
+                    else
+                      _PurchaseButton(
+                        cost: item.cost,
+                        canAfford: _saveData.goldGeoms >= item.cost,
+                        color: item.color,
+                        onTap: () {
+                          _purchase(item.id, item.cost, () {
+                            if (!_saveData.unlockedModes.contains(item.id)) {
+                              _saveData.unlockedModes.add(item.id);
+                            }
+                          });
+                        },
+                      ),
+                  ],
+                ),
+              ),
+            ],
           ),
         );
       },
@@ -533,9 +517,8 @@ class _ShopScreenState extends State<ShopScreen>
                       setState(() => _selectedPreviewIndex = index);
                       if (owned) {
                         onSelect(item);
-                      } else {
-                        onPurchase(item);
                       }
+                      // Non-owned: solo seleziona la preview, l'acquisto avviene dal bottone nel pannello preview
                     },
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 200),
@@ -822,23 +805,38 @@ class _SkinPreviewPainter extends CustomPainter {
     final cx = size.width / 2;
     final cy = size.height / 2;
 
-    // Rotazione lenta
+    // Griglia esagonale di sfondo
+    _drawHexGrid(canvas, size);
+
     final rotation = time * 0.4;
 
-    // Glow di sfondo
-    final glowPaint = Paint()
-      ..color = color.withValues(alpha: 0.08 + math.sin(time * 1.5) * 0.03);
-    canvas.drawCircle(Offset(cx, cy), 50, glowPaint);
+    // Campo energetico pulsante (archi rotanti)
+    final arcPaint = Paint()
+      ..color = color.withValues(alpha: 0.08 + math.sin(time * 1.5) * 0.04)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1;
+    final arcRect = Rect.fromCircle(center: Offset(cx, cy), radius: 70);
+    canvas.drawArc(arcRect, time * 0.3, math.pi * 0.7, false, arcPaint);
+    canvas.drawArc(arcRect, time * 0.3 + math.pi, math.pi * 0.7, false, arcPaint);
 
-    // Secondo alone pulsante
-    glowPaint.color = color.withValues(alpha: 0.04);
-    canvas.drawCircle(Offset(cx, cy), 65 + math.sin(time * 2) * 5, glowPaint);
+    // Anello interno pulsante
+    final ringPulse = 55 + math.sin(time * 2) * 4;
+    final ringPaint = Paint()
+      ..color = color.withValues(alpha: 0.06)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 0.5;
+    canvas.drawCircle(Offset(cx, cy), ringPulse, ringPaint);
+
+    // Glow radiale
+    final glowPaint = Paint()
+      ..color = color.withValues(alpha: 0.06 + math.sin(time * 1.5) * 0.02);
+    canvas.drawCircle(Offset(cx, cy), 45, glowPaint);
 
     canvas.save();
     canvas.translate(cx, cy);
     canvas.rotate(rotation);
 
-    final scale = 2.5; // Ingrandito per la preview
+    const scale = 2.5;
 
     switch (skinId) {
       case 'stealth':
@@ -859,39 +857,68 @@ class _SkinPreviewPainter extends CustomPainter {
 
     canvas.restore();
 
-    // Thruster simulato
     _drawPreviewThrusters(canvas, cx, cy, rotation, scale);
-
-    // Particelle decorative
     _drawOrbitingParticles(canvas, cx, cy, time, color);
   }
 
+  void _drawHexGrid(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.white.withValues(alpha: 0.02)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 0.5;
+    const spacing = 28.0;
+    for (double y = -spacing; y < size.height + spacing; y += spacing * 0.87) {
+      final row = (y / (spacing * 0.87)).round();
+      final xOff = (row % 2 == 0) ? 0.0 : spacing * 0.5;
+      for (double x = -spacing + xOff; x < size.width + spacing; x += spacing) {
+        final path = Path();
+        for (int i = 0; i < 6; i++) {
+          final a = i * math.pi / 3 + math.pi / 6;
+          final hx = x + math.cos(a) * spacing * 0.35;
+          final hy = y + math.sin(a) * spacing * 0.35;
+          if (i == 0) path.moveTo(hx, hy); else path.lineTo(hx, hy);
+        }
+        path.close();
+        canvas.drawPath(path, paint);
+      }
+    }
+  }
+
   void _drawClassicShip(Canvas canvas, double s, Color c) {
-    // Glow
     final glowPaint = Paint()
       ..color = c.withValues(alpha: 0.3)
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 12);
     _drawShipPath(canvas, s, glowPaint);
 
-    // Body
     final bodyPaint = Paint()..color = c;
     _drawShipPath(canvas, s, bodyPaint);
 
-    // Cockpit
-    final cockpitPaint = Paint()..color = Colors.white.withValues(alpha: 0.8);
-    canvas.drawCircle(Offset(0, -4 * s), 2.5 * s, cockpitPaint);
+    // Bordo luminoso
+    final edgePaint = Paint()
+      ..color = Colors.white.withValues(alpha: 0.25)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 0.8;
+    _drawShipPath(canvas, s, edgePaint);
 
-    // Wing lines
+    // Cockpit
+    canvas.drawCircle(Offset(0, -4 * s), 2.5 * s, Paint()..color = Colors.white.withValues(alpha: 0.8));
+
+    // Wing lines + nodi
     final linePaint = Paint()
       ..color = c.withValues(alpha: 0.4)
       ..strokeWidth = 0.8
       ..style = PaintingStyle.stroke;
     canvas.drawLine(Offset(-2 * s, 0), Offset(-10 * s, 10 * s), linePaint);
     canvas.drawLine(Offset(2 * s, 0), Offset(10 * s, 10 * s), linePaint);
+
+    // Nodi energetici sulle punte delle ali
+    final nodePulse = 0.3 + math.sin(time * 4) * 0.2;
+    final nodePaint = Paint()..color = c.withValues(alpha: nodePulse);
+    canvas.drawCircle(Offset(-13 * s, 10 * s), 1.5, nodePaint);
+    canvas.drawCircle(Offset(13 * s, 10 * s), 1.5, nodePaint);
   }
 
   void _drawStealthShip(Canvas canvas, double s, Color c) {
-    // Forma angolare stealth
     final path = Path()
       ..moveTo(0, -16 * s)
       ..lineTo(6 * s, -4 * s)
@@ -904,26 +931,43 @@ class _SkinPreviewPainter extends CustomPainter {
       ..close();
 
     final glowPaint = Paint()
-      ..color = c.withValues(alpha: 0.25)
+      ..color = c.withValues(alpha: 0.2)
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10);
     canvas.drawPath(path, glowPaint);
 
-    final bodyPaint = Paint()..color = const Color(0xFF222233);
+    final bodyPaint = Paint()..color = const Color(0xFF151520);
     canvas.drawPath(path, bodyPaint);
 
-    // Edge lines
+    // Pannelli interni
+    final panelPaint = Paint()
+      ..color = c.withValues(alpha: 0.08)
+      ..style = PaintingStyle.fill;
+    final panelL = Path()
+      ..moveTo(-6 * s, -4 * s)..lineTo(0, -10 * s)..lineTo(0, 6 * s)..lineTo(-12 * s, 8 * s)..close();
+    canvas.drawPath(panelL, panelPaint);
+
     final edgePaint = Paint()
       ..color = c
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.2;
     canvas.drawPath(path, edgePaint);
 
-    // Red eye
-    canvas.drawCircle(Offset(0, -6 * s), 2 * s, Paint()..color = c.withValues(alpha: 0.9));
+    // Linee circuito
+    final circuitPaint = Paint()
+      ..color = c.withValues(alpha: 0.2)
+      ..strokeWidth = 0.5;
+    canvas.drawLine(Offset(0, -10 * s), Offset(0, 8 * s), circuitPaint);
+    canvas.drawLine(Offset(-6 * s, -4 * s), Offset(6 * s, -4 * s), circuitPaint);
+
+    // Occhio rosso pulsante
+    final eyePulse = 0.6 + math.sin(time * 3) * 0.3;
+    canvas.drawCircle(Offset(0, -6 * s), 2.5 * s, Paint()
+      ..color = c.withValues(alpha: eyePulse)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3));
+    canvas.drawCircle(Offset(0, -6 * s), 1.5 * s, Paint()..color = c);
   }
 
   void _drawCrystalShip(Canvas canvas, double s, Color c) {
-    // Forma a diamante con sfaccettature
     final path = Path()
       ..moveTo(0, -18 * s)
       ..lineTo(8 * s, -2 * s)
@@ -933,35 +977,57 @@ class _SkinPreviewPainter extends CustomPainter {
       ..lineTo(-8 * s, -2 * s)
       ..close();
 
-    final bodyPaint = Paint()..color = c.withValues(alpha: 0.3);
+    final bodyPaint = Paint()..color = c.withValues(alpha: 0.25);
     canvas.drawPath(path, bodyPaint);
 
-    // Facets
+    // Sfaccettature con riempimento graduale
     final facetPaint = Paint()
-      ..color = c.withValues(alpha: 0.5)
+      ..color = c.withValues(alpha: 0.4)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 0.8;
     canvas.drawLine(Offset(0, -18 * s), Offset(0, 14 * s), facetPaint);
     canvas.drawLine(Offset(-8 * s, -2 * s), Offset(12 * s, 8 * s), facetPaint);
     canvas.drawLine(Offset(8 * s, -2 * s), Offset(-12 * s, 8 * s), facetPaint);
+    // Facets extra
+    canvas.drawLine(Offset(0, -18 * s), Offset(12 * s, 8 * s), facetPaint..color = c.withValues(alpha: 0.2));
+    canvas.drawLine(Offset(0, -18 * s), Offset(-12 * s, 8 * s), facetPaint);
 
-    // Prismatic glow
+    // Riflesso prismatico che ruota
+    final hue = (time * 50) % 360;
     final prismPaint = Paint()
-      ..color = HSVColor.fromAHSV(0.3, (time * 40) % 360, 0.8, 1).toColor()
+      ..color = HSVColor.fromAHSV(0.25, hue, 0.8, 1).toColor()
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8);
     canvas.drawCircle(Offset(0, -2 * s), 6 * s, prismPaint);
+    // Secondo riflesso sfasato
+    final prismPaint2 = Paint()
+      ..color = HSVColor.fromAHSV(0.12, (hue + 120) % 360, 0.8, 1).toColor()
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5);
+    canvas.drawCircle(Offset(3 * s, -6 * s), 4 * s, prismPaint2);
 
-    // Border glow
+    // Bordo glow
     final borderPaint = Paint()
       ..color = c.withValues(alpha: 0.6)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.5;
     canvas.drawPath(path, borderPaint);
+
+    // Punti luminosi sui vertici
+    final verts = [Offset(0, -18 * s), Offset(8 * s, -2 * s), Offset(12 * s, 8 * s),
+                   Offset(0, 14 * s), Offset(-12 * s, 8 * s), Offset(-8 * s, -2 * s)];
+    for (int i = 0; i < verts.length; i++) {
+      final vPulse = 0.3 + math.sin(time * 3 + i * 1.0) * 0.3;
+      canvas.drawCircle(verts[i], 1.5, Paint()..color = Colors.white.withValues(alpha: vPulse));
+    }
   }
 
   void _drawGhostShip(Canvas canvas, double s, Color c) {
-    // Semi-transparent ship
     final alpha = 0.3 + math.sin(time * 2) * 0.15;
+
+    // Afterimage (ombra sfasata)
+    canvas.save();
+    canvas.translate(math.sin(time * 1.5) * 3, math.cos(time * 1.2) * 3);
+    _drawShipPath(canvas, s, Paint()..color = c.withValues(alpha: alpha * 0.2));
+    canvas.restore();
 
     final glowPaint = Paint()
       ..color = c.withValues(alpha: alpha * 0.4)
@@ -971,22 +1037,23 @@ class _SkinPreviewPainter extends CustomPainter {
     final bodyPaint = Paint()..color = c.withValues(alpha: alpha);
     _drawShipPath(canvas, s, bodyPaint);
 
-    // Ghost particles
+    // Ghost particles che salgono
     final random = math.Random(42);
     final particlePaint = Paint();
-    for (int i = 0; i < 8; i++) {
-      final angle = time * 0.8 + i * math.pi / 4;
-      final dist = 15 + random.nextDouble() * 15;
-      final px = math.cos(angle) * dist * s * 0.5;
-      final py = math.sin(angle) * dist * s * 0.5;
-      final pAlpha = (0.3 + math.sin(time * 3 + i) * 0.2).clamp(0.05, 0.5);
+    for (int i = 0; i < 12; i++) {
+      final baseAngle = i * math.pi / 6;
+      final dist = 12 + random.nextDouble() * 18;
+      final drift = math.sin(time * 1.5 + i * 0.7) * 5;
+      final px = math.cos(baseAngle) * dist * s * 0.4 + drift;
+      final py = math.sin(baseAngle) * dist * s * 0.4 - (math.sin(time * 2 + i)).abs() * 8;
+      final pAlpha = (0.2 + math.sin(time * 3 + i) * 0.15).clamp(0.03, 0.4);
+      final pSize = (1.0 + math.sin(time * 4 + i * 2) * 0.5) * s;
       particlePaint.color = c.withValues(alpha: pAlpha);
-      canvas.drawCircle(Offset(px, py), 1.5 * s, particlePaint);
+      canvas.drawCircle(Offset(px, py), pSize, particlePaint);
     }
   }
 
   void _drawOmegaShip(Canvas canvas, double s, Color c) {
-    // 4-point star that rotates
     final starRotation = time * 0.8;
 
     canvas.save();
@@ -1000,12 +1067,7 @@ class _SkinPreviewPainter extends CustomPainter {
       final innerAngle = angle + math.pi / 4;
       final innerX = math.cos(innerAngle) * 6 * s;
       final innerY = math.sin(innerAngle) * 6 * s;
-
-      if (i == 0) {
-        path.moveTo(outerX, outerY);
-      } else {
-        path.lineTo(outerX, outerY);
-      }
+      if (i == 0) path.moveTo(outerX, outerY); else path.lineTo(outerX, outerY);
       path.lineTo(innerX, innerY);
     }
     path.close();
@@ -1018,11 +1080,47 @@ class _SkinPreviewPainter extends CustomPainter {
     final bodyPaint = Paint()..color = c;
     canvas.drawPath(path, bodyPaint);
 
-    // Center orb
-    canvas.drawCircle(Offset.zero, 4 * s, Paint()..color = Colors.white.withValues(alpha: 0.8));
+    // Bordo bianco
+    canvas.drawPath(path, Paint()
+      ..color = Colors.white.withValues(alpha: 0.2)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 0.8);
+
+    // Stella interna contro-rotante
+    canvas.save();
+    canvas.rotate(-starRotation * 2);
+    final innerPath = Path();
+    for (int i = 0; i < 4; i++) {
+      final angle = i * math.pi / 2 + math.pi / 4;
+      final outerX = math.cos(angle) * 8 * s;
+      final outerY = math.sin(angle) * 8 * s;
+      final innerAngle = angle + math.pi / 4;
+      final innerX = math.cos(innerAngle) * 3 * s;
+      final innerY = math.sin(innerAngle) * 3 * s;
+      if (i == 0) innerPath.moveTo(outerX, outerY); else innerPath.lineTo(outerX, outerY);
+      innerPath.lineTo(innerX, innerY);
+    }
+    innerPath.close();
+    canvas.drawPath(innerPath, Paint()
+      ..color = c.withValues(alpha: 0.25)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 0.7);
+    canvas.restore();
+
+    // Centro orb + glow
     canvas.drawCircle(Offset.zero, 6 * s, Paint()
-      ..color = c.withValues(alpha: 0.3)
+      ..color = c.withValues(alpha: 0.25)
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6));
+    canvas.drawCircle(Offset.zero, 3.5 * s, Paint()..color = Colors.white.withValues(alpha: 0.8));
+
+    // Nodi pulsanti sulle punte
+    for (int i = 0; i < 4; i++) {
+      final angle = i * math.pi / 2;
+      final nx = math.cos(angle) * 15 * s;
+      final ny = math.sin(angle) * 15 * s;
+      final np = 0.3 + math.sin(time * 4 + i * 1.5) * 0.3;
+      canvas.drawCircle(Offset(nx, ny), 1.5, Paint()..color = c.withValues(alpha: np));
+    }
 
     canvas.restore();
   }
@@ -1051,22 +1149,18 @@ class _SkinPreviewPainter extends CustomPainter {
     final flameLen = 8 + math.sin(time * 8) * 3;
 
     for (final xOff in [-5.0 * s, 5.0 * s]) {
-      // Core
-      final corePaint = Paint()
-        ..color = Colors.white.withValues(alpha: 0.7)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2);
-      canvas.drawOval(
-        Rect.fromCenter(center: Offset(xOff, 13 * s + flameLen * 0.3), width: 3 * s, height: flameLen * s * 0.3),
-        corePaint,
-      );
-
-      // Outer flame
+      // Fiamma esterna
       final flamePaint = Paint()
-        ..color = const Color(0xFFFF6600).withValues(alpha: 0.4)
+        ..color = const Color(0xFFFF6600).withValues(alpha: 0.35)
         ..maskFilter = MaskFilter.blur(BlurStyle.normal, 3 * s);
       canvas.drawOval(
         Rect.fromCenter(center: Offset(xOff, 13 * s + flameLen * 0.5), width: 5 * s, height: flameLen * s * 0.5),
         flamePaint,
+      );
+      // Nucleo bianco
+      canvas.drawOval(
+        Rect.fromCenter(center: Offset(xOff, 13 * s + flameLen * 0.3), width: 2.5 * s, height: flameLen * s * 0.25),
+        Paint()..color = Colors.white.withValues(alpha: 0.6)..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2),
       );
     }
 
@@ -1075,14 +1169,24 @@ class _SkinPreviewPainter extends CustomPainter {
 
   void _drawOrbitingParticles(Canvas canvas, double cx, double cy, double t, Color c) {
     final paint = Paint();
-    for (int i = 0; i < 6; i++) {
-      final angle = t * 0.5 + i * math.pi / 3;
-      final dist = 80 + math.sin(t * 0.7 + i * 2) * 10;
+    for (int i = 0; i < 8; i++) {
+      final angle = t * 0.5 + i * math.pi / 4;
+      final dist = 78 + math.sin(t * 0.7 + i * 2) * 8;
       final x = cx + math.cos(angle) * dist;
       final y = cy + math.sin(angle) * dist;
-      final alpha = 0.15 + math.sin(t * 2 + i) * 0.1;
-      paint.color = c.withValues(alpha: alpha.clamp(0.05, 0.3));
-      canvas.drawCircle(Offset(x, y), 1.5, paint);
+      final alpha = 0.1 + math.sin(t * 2 + i) * 0.08;
+      paint.color = c.withValues(alpha: alpha.clamp(0.03, 0.25));
+      canvas.drawCircle(Offset(x, y), 1.2, paint);
+      // Connessione al successivo
+      if (i < 7) {
+        final nextAngle = t * 0.5 + (i + 1) * math.pi / 4;
+        final nextDist = 78 + math.sin(t * 0.7 + (i + 1) * 2) * 8;
+        final nx = cx + math.cos(nextAngle) * nextDist;
+        final ny = cy + math.sin(nextAngle) * nextDist;
+        canvas.drawLine(Offset(x, y), Offset(nx, ny), Paint()
+          ..color = c.withValues(alpha: 0.03)
+          ..strokeWidth = 0.5);
+      }
     }
   }
 
@@ -1234,63 +1338,93 @@ class _WeaponPreviewPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final cx = size.width / 2;
     final cy = size.height / 2;
+    final shipY = cy + 35;
 
-    // Nave al centro-basso
-    final shipY = cy + 30;
+    // Griglia sfondo
+    final gridPaint = Paint()
+      ..color = Colors.white.withValues(alpha: 0.015)
+      ..strokeWidth = 0.5;
+    for (double y = 0; y < size.height; y += 20) {
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), gridPaint);
+    }
+    for (double x = 0; x < size.width; x += 20) {
+      canvas.drawLine(Offset(x, 0), Offset(x, size.height), gridPaint);
+    }
 
-    // Disegna la nave
+    // Nemici bersaglio (rombi rosa che si muovono)
+    if (pattern != 'beam') {
+      _drawTargetEnemies(canvas, cx, size);
+    } else {
+      // Per il laser: nemico fisso in alto
+      _drawTargetEnemy(canvas, cx, 25, 0.8 + math.sin(time * 6) * 0.2);
+    }
+
+    // Nave
     canvas.save();
     canvas.translate(cx, shipY);
-
-    final shipPaint = Paint()..color = NeonColors.cyan;
-    final glowPaint = Paint()
-      ..color = NeonColors.cyan.withValues(alpha: 0.25)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8);
-    final s = 1.5;
+    const s = 1.5;
     final shipPath = Path()
-      ..moveTo(0, -14 * s)
-      ..lineTo(4 * s, -6 * s)
-      ..lineTo(13 * s, 10 * s)
-      ..lineTo(8 * s, 8 * s)
-      ..lineTo(5 * s, 14 * s)
-      ..lineTo(0, 10 * s)
-      ..lineTo(-5 * s, 14 * s)
-      ..lineTo(-8 * s, 8 * s)
-      ..lineTo(-13 * s, 10 * s)
-      ..lineTo(-4 * s, -6 * s)
-      ..close();
-    canvas.drawPath(shipPath, glowPaint);
-    canvas.drawPath(shipPath, shipPaint);
-
+      ..moveTo(0, -14 * s)..lineTo(4 * s, -6 * s)..lineTo(13 * s, 10 * s)
+      ..lineTo(8 * s, 8 * s)..lineTo(5 * s, 14 * s)..lineTo(0, 10 * s)
+      ..lineTo(-5 * s, 14 * s)..lineTo(-8 * s, 8 * s)..lineTo(-13 * s, 10 * s)
+      ..lineTo(-4 * s, -6 * s)..close();
+    canvas.drawPath(shipPath, Paint()
+      ..color = NeonColors.cyan.withValues(alpha: 0.25)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8));
+    canvas.drawPath(shipPath, Paint()..color = NeonColors.cyan);
+    // Cockpit
+    canvas.drawCircle(Offset(0, -5 * s), 2 * s, Paint()..color = Colors.white.withValues(alpha: 0.7));
     canvas.restore();
 
-    // Simula proiettili che sparano ciclicamente
+    // Muzzle flash pulsante
+    final muzzlePhase = (time * 8) % 1.0;
+    if (muzzlePhase < 0.3) {
+      final mAlpha = (1 - muzzlePhase / 0.3) * 0.3;
+      canvas.drawCircle(Offset(cx, shipY - 22), 4 + muzzlePhase * 6, Paint()
+        ..color = color.withValues(alpha: mAlpha)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4));
+    }
+
     final fireRate = _getFireRate();
-    final bulletSpeed = 120.0; // px/s in preview
+    final bulletSpeed = 130.0;
 
     switch (pattern) {
-      case 'parallel':
-        _drawParallelBullets(canvas, cx, shipY, fireRate, bulletSpeed);
-        break;
-      case 'twin':
-        _drawTwinBullets(canvas, cx, shipY, fireRate, bulletSpeed);
-        break;
-      case 'fan':
-        _drawFanBullets(canvas, cx, shipY, fireRate, bulletSpeed);
-        break;
-      case 'bounce':
-        _drawBounceBullets(canvas, cx, shipY, size);
-        break;
-      case 'homing':
-        _drawHomingMissiles(canvas, cx, shipY, size);
-        break;
-      case 'plasma':
-        _drawPlasmaBolts(canvas, cx, shipY, fireRate);
-        break;
-      case 'beam':
-        _drawLaserBeam(canvas, cx, shipY);
-        break;
+      case 'parallel': _drawParallelBullets(canvas, cx, shipY, fireRate, bulletSpeed); break;
+      case 'twin': _drawTwinBullets(canvas, cx, shipY, fireRate, bulletSpeed); break;
+      case 'fan': _drawFanBullets(canvas, cx, shipY, fireRate, bulletSpeed); break;
+      case 'bounce': _drawBounceBullets(canvas, cx, shipY, size); break;
+      case 'homing': _drawHomingMissiles(canvas, cx, shipY, size); break;
+      case 'plasma': _drawPlasmaBolts(canvas, cx, shipY, fireRate); break;
+      case 'beam': _drawLaserBeam(canvas, cx, shipY); break;
     }
+  }
+
+  void _drawTargetEnemies(Canvas canvas, double cx, Size size) {
+    final random = math.Random(33);
+    for (int i = 0; i < 3; i++) {
+      final baseX = cx + (i - 1) * 50.0;
+      final x = baseX + math.sin(time * 0.7 + i * 2) * 15;
+      final y = 25 + random.nextDouble() * 30 + math.cos(time * 0.5 + i) * 10;
+      _drawTargetEnemy(canvas, x, y, 1.0);
+    }
+  }
+
+  void _drawTargetEnemy(Canvas canvas, double x, double y, double alpha) {
+    final r = 8.0;
+    final rot = time * 3;
+    canvas.save();
+    canvas.translate(x, y);
+    canvas.rotate(rot);
+    final path = Path()
+      ..moveTo(0, -r)..lineTo(r, 0)..lineTo(0, r)..lineTo(-r, 0)..close();
+    canvas.drawPath(path, Paint()
+      ..color = Color.fromRGBO(255, 50, 100, 0.15 * alpha)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6));
+    canvas.drawPath(path, Paint()
+      ..color = Color.fromRGBO(255, 50, 100, 0.4 * alpha)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.2);
+    canvas.restore();
   }
 
   double _getFireRate() {
@@ -1310,9 +1444,9 @@ class _WeaponPreviewPainter extends CustomPainter {
 
     for (int i = 0; i < 12; i++) {
       final spawnTime = (time / rate + i * 0.5) % 8;
-      final y = shipY - 20 - spawnTime * speed * 0.3;
+      final y = shipY - 22 - spawnTime * speed * 0.3;
       if (y < 10 || y > shipY - 10) continue;
-      final alpha = ((shipY - 20 - y) / (shipY - 30)).clamp(0.0, 1.0);
+      final alpha = ((shipY - 22 - y) / (shipY - 32)).clamp(0.0, 1.0);
 
       for (final xOff in [-6.0, 6.0]) {
         bulletPaint.color = color.withValues(alpha: alpha);
@@ -1329,17 +1463,22 @@ class _WeaponPreviewPainter extends CustomPainter {
       ..color = color.withValues(alpha: 0.3)
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
 
+    // Triplo sparo con angolo ristretto (~12° totali)
+    const angles = [-0.105, 0.0, 0.105];
     for (int i = 0; i < 15; i++) {
       final spawnTime = (time / rate + i * 0.3) % 6;
-      final y = shipY - 20 - spawnTime * speed * 0.4;
-      if (y < 10 || y > shipY - 10) continue;
-      final alpha = ((shipY - 20 - y) / (shipY - 30)).clamp(0.0, 1.0);
+      final dist = spawnTime * speed * 0.4;
+      if (dist < 0 || shipY - 22 - dist < 10) continue;
+      final alpha = (dist / (shipY - 32)).clamp(0.0, 1.0);
 
-      for (final xOff in [-12.0, 12.0]) {
+      for (final angle in angles) {
+        final bx = cx + math.sin(angle) * dist;
+        final by = shipY - 22 - math.cos(angle) * dist;
+        if (by < 10 || by > shipY - 10) continue;
         bulletPaint.color = color.withValues(alpha: alpha);
         glowPaint.color = color.withValues(alpha: alpha * 0.3);
-        canvas.drawCircle(Offset(cx + xOff, y), 3, glowPaint);
-        canvas.drawCircle(Offset(cx + xOff, y), 1.5, bulletPaint);
+        canvas.drawCircle(Offset(bx, by), 3, glowPaint);
+        canvas.drawCircle(Offset(bx, by), 1.5, bulletPaint);
       }
     }
   }
@@ -1350,7 +1489,7 @@ class _WeaponPreviewPainter extends CustomPainter {
       ..color = color.withValues(alpha: 0.3)
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
 
-    final angles = [-0.52, -0.26, 0.0, 0.26, 0.52];
+    final angles = [-0.175, -0.0875, 0.0, 0.0875, 0.175];
     for (int wave = 0; wave < 5; wave++) {
       final waveTime = (time / rate + wave * 1.2) % 8;
       if (waveTime > 3) continue;
@@ -1358,7 +1497,7 @@ class _WeaponPreviewPainter extends CustomPainter {
       for (final angle in angles) {
         final dist = waveTime * speed * 0.4;
         final bx = cx + math.sin(angle) * dist;
-        final by = shipY - 20 - math.cos(angle) * dist;
+        final by = shipY - 22 - math.cos(angle) * dist;
         if (by < 5 || by > shipY - 10) continue;
         final alpha = (1.0 - waveTime / 3).clamp(0.0, 1.0);
 
@@ -1375,48 +1514,51 @@ class _WeaponPreviewPainter extends CustomPainter {
     final glowPaint = Paint()
       ..color = color.withValues(alpha: 0.3)
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
-    final trailPaint = Paint()
-      ..color = color.withValues(alpha: 0.15)
-      ..strokeWidth = 1
-      ..style = PaintingStyle.stroke;
+    final trailPaint = Paint()..strokeWidth = 1..style = PaintingStyle.stroke;
 
-    // Simula 2 proiettili che rimbalzano
+    // Bordi visibili dell'arena
+    final edgePaint = Paint()
+      ..color = color.withValues(alpha: 0.06)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 0.5;
+    canvas.drawRect(Rect.fromLTRB(12, 12, size.width - 12, shipY - 12), edgePaint);
+
     for (int b = 0; b < 2; b++) {
       final phase = time * 0.8 + b * 2.5;
       final points = <Offset>[];
       var x = cx;
-      var y = shipY - 20.0;
+      var y = shipY - 22.0;
       var dx = (b == 0 ? 1.0 : -1.0) * 40;
       var dy = -80.0;
 
-      // Traccia il percorso con rimbalzi
       for (int step = 0; step < 100; step++) {
         points.add(Offset(x, y));
         x += dx * 0.02;
         y += dy * 0.02;
-
-        // Rimbalzo sui bordi
-        if (x < 15 || x > size.width - 15) {
-          dx = -dx;
-          x = x.clamp(15, size.width - 15);
-        }
-        if (y < 15 || y > shipY - 15) {
-          dy = -dy;
-          y = y.clamp(15, shipY - 15);
-        }
+        if (x < 15 || x > size.width - 15) { dx = -dx; x = x.clamp(15, size.width - 15); }
+        if (y < 15 || y > shipY - 15) { dy = -dy; y = y.clamp(15, shipY - 15); }
       }
 
-      // Posizione corrente sul percorso
       final idx = ((phase * 30) % points.length).toInt();
 
-      // Trail
-      for (int i = idx; i > idx - 15 && i > 0; i--) {
-        final alpha = (1.0 - (idx - i) / 15) * 0.3;
+      // Trail con sfumatura
+      for (int i = idx; i > idx - 20 && i > 0; i--) {
+        final alpha = (1.0 - (idx - i) / 20) * 0.25;
         trailPaint.color = color.withValues(alpha: alpha);
         canvas.drawLine(points[i], points[i - 1], trailPaint);
       }
 
-      // Bullet
+      // Flash sui punti di rimbalzo
+      if (idx > 2 && idx < points.length - 1) {
+        final prev = points[idx - 1];
+        final curr = points[idx];
+        if ((curr.dx < 18 || curr.dx > size.width - 18) || (curr.dy < 18 || curr.dy > shipY - 18)) {
+          canvas.drawCircle(curr, 5, Paint()
+            ..color = color.withValues(alpha: 0.2)
+            ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4));
+        }
+      }
+
       if (idx < points.length) {
         canvas.drawCircle(points[idx], 4, glowPaint);
         canvas.drawCircle(points[idx], 2, bulletPaint);
@@ -1425,52 +1567,60 @@ class _WeaponPreviewPainter extends CustomPainter {
   }
 
   void _drawHomingMissiles(Canvas canvas, double cx, double shipY, Size size) {
-    // Target (nemico fittizio)
-    final targetX = cx + math.cos(time * 0.5) * 40;
-    final targetY = 40 + math.sin(time * 0.7) * 20;
+    // Target che si muove
+    final targetX = cx + math.cos(time * 0.5) * 45;
+    final targetY = 35 + math.sin(time * 0.7) * 20;
 
-    // Target glow
-    final targetPaint = Paint()
-      ..color = const Color(0xFFFF4444).withValues(alpha: 0.3)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6);
-    canvas.drawCircle(Offset(targetX, targetY), 8, targetPaint);
-    canvas.drawCircle(Offset(targetX, targetY), 5,
-        Paint()..color = const Color(0xFFFF4444).withValues(alpha: 0.5));
+    // Cerchio target con mirino
+    final targetGlow = Paint()
+      ..color = const Color(0xFFFF4444).withValues(alpha: 0.15)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8);
+    canvas.drawCircle(Offset(targetX, targetY), 12, targetGlow);
+    _drawTargetEnemy(canvas, targetX, targetY, 0.7);
 
-    // 3 missili con curva
+    // Mirino
+    final crossPaint = Paint()
+      ..color = const Color(0xFFFF4444).withValues(alpha: 0.15)
+      ..strokeWidth = 0.5;
+    canvas.drawLine(Offset(targetX - 18, targetY), Offset(targetX + 18, targetY), crossPaint);
+    canvas.drawLine(Offset(targetX, targetY - 18), Offset(targetX, targetY + 18), crossPaint);
+
+    // 3 missili
     for (int i = 0; i < 3; i++) {
       final phase = (time * 1.2 + i * 0.8) % 3;
       if (phase > 2.5) continue;
 
       final t = (phase / 2.5).clamp(0.0, 1.0);
       final startX = cx + (i - 1) * 8.0;
-      final startY = shipY - 20;
-
-      // Curva bezier verso il target
-      final midX = startX + (targetX - startX) * 0.3 + (i - 1) * 20;
-      final midY = startY + (targetY - startY) * 0.3 - 30;
-
+      final startY = shipY - 22;
+      final midX = startX + (targetX - startX) * 0.3 + (i - 1) * 25;
+      final midY = startY + (targetY - startY) * 0.3 - 35;
       final bx = _bezier(startX, midX, targetX, t);
       final by = _bezier(startY, midY, targetY, t);
+      final alpha = (1.0 - t * 0.4).clamp(0.0, 1.0);
 
-      final alpha = (1.0 - t * 0.5).clamp(0.0, 1.0);
-
-      // Trail
-      for (int j = 1; j <= 8; j++) {
-        final tt = (t - j * 0.03).clamp(0.0, 1.0);
+      // Trail con sfumatura
+      for (int j = 1; j <= 10; j++) {
+        final tt = (t - j * 0.025).clamp(0.0, 1.0);
         final tx = _bezier(startX, midX, targetX, tt);
         final ty = _bezier(startY, midY, targetY, tt);
-        final ta = alpha * (1.0 - j / 8) * 0.3;
-        canvas.drawCircle(Offset(tx, ty), 1.5,
-            Paint()..color = color.withValues(alpha: ta));
+        final ta = alpha * (1.0 - j / 10) * 0.3;
+        canvas.drawCircle(Offset(tx, ty), 1.2, Paint()..color = color.withValues(alpha: ta));
       }
 
-      // Missile
-      canvas.drawCircle(Offset(bx, by), 4,
-          Paint()..color = color.withValues(alpha: alpha * 0.3)
-            ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4));
-      canvas.drawCircle(Offset(bx, by), 2,
-          Paint()..color = color.withValues(alpha: alpha));
+      // Missile con forma a freccia
+      canvas.drawCircle(Offset(bx, by), 5, Paint()
+        ..color = color.withValues(alpha: alpha * 0.25)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5));
+      canvas.drawCircle(Offset(bx, by), 2.5, Paint()..color = color.withValues(alpha: alpha));
+
+      // Impatto
+      if (t > 0.9) {
+        final impactAlpha = (t - 0.9) / 0.1 * 0.4;
+        canvas.drawCircle(Offset(bx, by), 8 * (t - 0.9) / 0.1, Paint()
+          ..color = Colors.white.withValues(alpha: impactAlpha)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4));
+      }
     }
   }
 
@@ -1481,61 +1631,73 @@ class _WeaponPreviewPainter extends CustomPainter {
   void _drawPlasmaBolts(Canvas canvas, double cx, double shipY, double rate) {
     for (int i = 0; i < 4; i++) {
       final phase = (time / rate + i * 2.5) % 10;
-      final y = shipY - 25 - phase * 30;
-      if (y < 10 || y > shipY - 15) continue;
+      final y = shipY - 27 - phase * 32;
+      if (y < 8 || y > shipY - 15) continue;
       final alpha = (1.0 - phase / 10).clamp(0.0, 1.0);
 
-      // Big plasma ball
-      final outerPaint = Paint()
-        ..color = color.withValues(alpha: alpha * 0.2)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10);
-      canvas.drawCircle(Offset(cx, y), 10, outerPaint);
+      // Archi elettrici attorno al plasma
+      final arcPaint = Paint()
+        ..color = color.withValues(alpha: alpha * 0.15)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 0.5;
+      final arcR = 8 + math.sin(time * 12 + i * 3) * 2;
+      canvas.drawArc(
+        Rect.fromCircle(center: Offset(cx, y), radius: arcR),
+        time * 5 + i, math.pi * 0.8, false, arcPaint,
+      );
+      canvas.drawArc(
+        Rect.fromCircle(center: Offset(cx, y), radius: arcR),
+        time * 5 + i + math.pi, math.pi * 0.8, false, arcPaint,
+      );
 
-      final midPaint = Paint()
-        ..color = color.withValues(alpha: alpha * 0.5);
-      canvas.drawCircle(Offset(cx, y), 5, midPaint);
-
-      final corePaint = Paint()
-        ..color = Colors.white.withValues(alpha: alpha * 0.7);
-      canvas.drawCircle(Offset(cx, y), 2.5, corePaint);
+      // Plasma ball
+      canvas.drawCircle(Offset(cx, y), 10, Paint()
+        ..color = color.withValues(alpha: alpha * 0.15)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10));
+      canvas.drawCircle(Offset(cx, y), 5, Paint()..color = color.withValues(alpha: alpha * 0.5));
+      canvas.drawCircle(Offset(cx, y), 2.5, Paint()..color = Colors.white.withValues(alpha: alpha * 0.7));
     }
   }
 
   void _drawLaserBeam(Canvas canvas, double cx, double shipY) {
-    // Continuous beam
     final pulse = 0.7 + math.sin(time * 8) * 0.3;
+    final beamTop = 20.0;
+    final beamH = shipY - 22 - beamTop;
 
-    // Outer glow
-    final outerPaint = Paint()
-      ..color = color.withValues(alpha: 0.1 * pulse)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10);
-    canvas.drawRect(Rect.fromCenter(
-      center: Offset(cx, (shipY - 20 + 10) / 2),
-      width: 16, height: shipY - 30,
-    ), outerPaint);
+    // Scanning effect (il raggio oscilla leggermente)
+    final scanX = cx + math.sin(time * 1.5) * 8;
 
-    // Mid beam
-    final midPaint = Paint()
+    // Glow esterno
+    canvas.drawRect(
+      Rect.fromCenter(center: Offset(scanX, beamTop + beamH / 2), width: 18 * pulse, height: beamH),
+      Paint()..color = color.withValues(alpha: 0.08 * pulse)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10));
+
+    // Raggio medio
+    canvas.drawRect(
+      Rect.fromCenter(center: Offset(scanX, beamTop + beamH / 2), width: 6, height: beamH),
+      Paint()..color = color.withValues(alpha: 0.3 * pulse)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3));
+
+    // Nucleo
+    canvas.drawRect(
+      Rect.fromCenter(center: Offset(scanX, beamTop + beamH / 2), width: 2, height: beamH),
+      Paint()..color = Colors.white.withValues(alpha: 0.6 * pulse));
+
+    // Impatto in cima con particelle
+    canvas.drawCircle(Offset(scanX, beamTop), 10 * pulse, Paint()
       ..color = color.withValues(alpha: 0.3 * pulse)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
-    canvas.drawRect(Rect.fromCenter(
-      center: Offset(cx, (shipY - 20 + 10) / 2),
-      width: 6, height: shipY - 30,
-    ), midPaint);
-
-    // Core beam
-    final corePaint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.6 * pulse);
-    canvas.drawRect(Rect.fromCenter(
-      center: Offset(cx, (shipY - 20 + 10) / 2),
-      width: 2, height: shipY - 30,
-    ), corePaint);
-
-    // Impact point
-    final impactPaint = Paint()
-      ..color = color.withValues(alpha: 0.4 * pulse)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8);
-    canvas.drawCircle(Offset(cx, 10), 8 * pulse, impactPaint);
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8));
+    // Scintille dall'impatto
+    final random = math.Random(12);
+    for (int i = 0; i < 4; i++) {
+      final sparkAngle = time * 5 + i * math.pi / 2;
+      final sparkDist = 5 + random.nextDouble() * 8;
+      final sx = scanX + math.cos(sparkAngle) * sparkDist;
+      final sy = beamTop + math.sin(sparkAngle).abs() * sparkDist;
+      canvas.drawCircle(Offset(sx, sy), 1, Paint()
+        ..color = Colors.white.withValues(alpha: 0.3 * pulse));
+    }
   }
 
   @override

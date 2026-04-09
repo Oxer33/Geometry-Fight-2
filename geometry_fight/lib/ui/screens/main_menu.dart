@@ -388,9 +388,6 @@ class _MainMenuScreenState extends State<MainMenuScreen>
               ),
 
               const SizedBox(height: 10),
-
-              // === SOTTOTITOLO con typing effect ===
-              _buildSubtitle(),
             ],
           ),
         );
@@ -448,45 +445,6 @@ class _MainMenuScreenState extends State<MainMenuScreen>
         // Main
         Text(text, textAlign: TextAlign.center, style: baseStyle),
       ],
-    );
-  }
-
-  Widget _buildSubtitle() {
-    return NeonAnimatedBuilder(
-      animation: _entranceController,
-      builder: (context, _) {
-        const fullText = 'TWIN-STICK NEON SHOOTER';
-        // Typing reveal durante entrance
-        final progress = _entranceController.value;
-        final charCount = progress < 0.5
-            ? 0
-            : ((progress - 0.5) * 2 * fullText.length).clamp(0, fullText.length).toInt();
-
-        final visibleText = fullText.substring(0, charCount);
-        // Cursor lampeggiante
-        final showCursor = charCount < fullText.length &&
-            (_glitchController.value * 6).toInt() % 2 == 0;
-
-        return Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              visibleText,
-              style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.35),
-                fontSize: 10,
-                fontFamily: 'monospace',
-                letterSpacing: 4,
-              ),
-            ),
-            if (showCursor)
-              Container(
-                width: 6, height: 12,
-                color: Colors.cyanAccent.withValues(alpha: 0.5),
-              ),
-          ],
-        );
-      },
     );
   }
 
@@ -581,7 +539,7 @@ class _MainMenuScreenState extends State<MainMenuScreen>
           child: _NeonSmallButton(
             text: 'IMPOSTAZIONI',
             icon: Icons.settings_outlined,
-            color: Colors.white.withValues(alpha: 0.3),
+            color: Colors.white,
             onTap: widget.onSettings,
           ),
         ),
@@ -692,7 +650,7 @@ class _MainMenuScreenState extends State<MainMenuScreen>
         _NeonMenuButton(
           text: 'CLASSIFICA',
           icon: Icons.emoji_events_outlined,
-          color: const Color(0xFFFF8800),
+          color: const Color(0xFFFFAA44),
           onTap: widget.onLeaderboard!,
         ),
       if (widget.onAchievements != null)
@@ -706,7 +664,7 @@ class _MainMenuScreenState extends State<MainMenuScreen>
         _NeonMenuButton(
           text: 'STATISTICHE',
           icon: Icons.bar_chart_rounded,
-          color: const Color(0xFF8866FF),
+          color: const Color(0xFFFF4466),
           onTap: widget.onStats!,
         ),
     ];
@@ -837,8 +795,8 @@ class _NeonMenuButtonState extends State<_NeonMenuButton>
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(10),
                 border: Border.all(
-                  color: widget.color.withValues(alpha: 0.25 + glow * 0.45),
-                  width: 1 + glow * 0.5,
+                  color: widget.color.withValues(alpha: 0.45 + glow * 0.45),
+                  width: 1.8 + glow * 0.5,
                 ),
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
@@ -866,11 +824,9 @@ class _NeonMenuButtonState extends State<_NeonMenuButton>
                     children: [
                       Icon(
                         widget.icon,
-                        color: widget.color.withValues(alpha: 0.6 + glow * 0.4),
-                        size: 22,
-                        shadows: glow > 0.5
-                            ? [Shadow(color: widget.color, blurRadius: 8)]
-                            : null,
+                        color: widget.color.withValues(alpha: 0.8 + glow * 0.2),
+                        size: 24,
+                        shadows: [Shadow(color: widget.color, blurRadius: 6)],
                       ),
                       if (widget.badge != null)
                         Positioned(
@@ -901,8 +857,8 @@ class _NeonMenuButtonState extends State<_NeonMenuButton>
                     widget.text,
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      color: widget.color.withValues(alpha: 0.5 + glow * 0.5),
-                      fontSize: 9, fontWeight: FontWeight.bold,
+                      color: widget.color.withValues(alpha: 0.7 + glow * 0.3),
+                      fontSize: 10, fontWeight: FontWeight.w900,
                       fontFamily: 'monospace', letterSpacing: 1,
                     ),
                     overflow: TextOverflow.ellipsis,
@@ -947,18 +903,30 @@ class _NeonSmallButtonState extends State<_NeonSmallButton> {
         scale: _pressed ? 0.95 : 1.0,
         duration: const Duration(milliseconds: 80),
         child: AnimatedOpacity(
-          opacity: _pressed ? 0.8 : 0.5,
+          opacity: _pressed ? 0.9 : 0.7,
           duration: const Duration(milliseconds: 80),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(widget.icon, color: widget.color, size: 14),
-              const SizedBox(width: 6),
-              Text(widget.text, style: TextStyle(
-                color: widget.color, fontSize: 10,
-                fontFamily: 'monospace', letterSpacing: 2,
-              )),
-            ],
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: widget.color.withValues(alpha: 0.5),
+                width: 1.5,
+              ),
+              color: widget.color.withValues(alpha: 0.04),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(widget.icon, color: widget.color, size: 16),
+                const SizedBox(width: 6),
+                Text(widget.text, style: TextStyle(
+                  color: widget.color, fontSize: 11,
+                  fontWeight: FontWeight.w900,
+                  fontFamily: 'monospace', letterSpacing: 2,
+                )),
+              ],
+            ),
           ),
         ),
       ),
@@ -986,15 +954,15 @@ class _AnimatedBorderPainter extends CustomPainter {
     final rect = Rect.fromLTWH(0, 0, size.width, size.height);
     final rrect = RRect.fromRectAndRadius(rect, Radius.circular(borderRadius));
 
-    // Gradient che ruota lungo il bordo
+    // Gradient che ruota lungo il bordo — usa transform per evitare seam
     final sweep = SweepGradient(
-      startAngle: progress * math.pi * 2,
-      endAngle: progress * math.pi * 2 + math.pi * 2,
+      center: Alignment.center,
+      transform: GradientRotation(progress * math.pi * 2),
       colors: [
         Colors.cyanAccent.withValues(alpha: 0.8),
         const Color(0xFFFF00AA).withValues(alpha: 0.6),
         const Color(0xFF00FF88).withValues(alpha: 0.5),
-        Colors.cyanAccent.withValues(alpha: 0.3),
+        Colors.cyanAccent.withValues(alpha: 0.6),
         const Color(0xFFFF00AA).withValues(alpha: 0.6),
         Colors.cyanAccent.withValues(alpha: 0.8),
       ],

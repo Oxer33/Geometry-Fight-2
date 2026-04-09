@@ -153,6 +153,71 @@ class _SettingsScreenState extends State<SettingsScreen>
                           Icons.warning_rounded, Colors.redAccent, entrance, 0.3),
                       const SizedBox(height: 12),
                       _buildResetButton(entrance, glow),
+
+                      const SizedBox(height: 32),
+
+                      // Test / Debug section
+                      _buildSectionHeader('TEST / DEBUG',
+                          Icons.bug_report_rounded, Colors.amberAccent, entrance, 0.4),
+                      const SizedBox(height: 12),
+                      _buildTestButton(
+                        label: '+1000 CREDITI',
+                        icon: Icons.add_circle_outline,
+                        color: Colors.amberAccent,
+                        entrance: entrance,
+                        delay: 0.45,
+                        onTap: () async {
+                          final save = SaveManager.load();
+                          save.goldGeoms += 1000;
+                          await SaveManager.save(save);
+                          if (!mounted) return;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('+1000 crediti! Totale: ${save.goldGeoms}',
+                                  style: const TextStyle(fontFamily: 'monospace')),
+                              backgroundColor: Colors.amberAccent.shade700,
+                              duration: const Duration(seconds: 1),
+                            ),
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 12),
+                      _buildTestButton(
+                        label: 'RESET ACQUISTI',
+                        icon: Icons.restart_alt_rounded,
+                        color: Colors.orangeAccent,
+                        entrance: entrance,
+                        delay: 0.5,
+                        onTap: () async {
+                          final save = SaveManager.load();
+                          save.unlockedSkins
+                            ..clear()
+                            ..add('classic');
+                          save.unlockedTrails
+                            ..clear()
+                            ..add('normal');
+                          save.unlockedWeapons
+                            ..clear()
+                            ..add('basic');
+                          save.unlockedModes
+                            ..clear()
+                            ..add('classic');
+                          save.upgrades.clear();
+                          save.activeSkin = 'classic';
+                          save.activeTrail = 'normal';
+                          save.startingWeapon = 'basic';
+                          await SaveManager.save(save);
+                          if (!mounted) return;
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Acquisti resettati!',
+                                  style: TextStyle(fontFamily: 'monospace')),
+                              backgroundColor: Colors.orangeAccent,
+                              duration: Duration(seconds: 1),
+                            ),
+                          );
+                        },
+                      ),
                     ],
                   ),
                 ),
@@ -451,6 +516,57 @@ class _SettingsScreenState extends State<SettingsScreen>
                 ),
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTestButton({
+    required String label,
+    required IconData icon,
+    required Color color,
+    required double entrance,
+    required double delay,
+    required VoidCallback onTap,
+  }) {
+    final e = ((entrance - delay) / (1.0 - delay)).clamp(0.0, 1.0);
+    return Opacity(
+      opacity: e,
+      child: Transform.translate(
+        offset: Offset(0, 15 * (1 - e)),
+        child: Center(
+          child: GestureDetector(
+            onTap: onTap,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: color.withValues(alpha: 0.4)),
+                gradient: LinearGradient(
+                  colors: [
+                    color.withValues(alpha: 0.08),
+                    color.withValues(alpha: 0.02),
+                  ],
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(icon, color: color, size: 18),
+                  const SizedBox(width: 8),
+                  Text(
+                    label,
+                    style: TextStyle(
+                      color: color,
+                      fontFamily: 'monospace',
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 2,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
         ),
       ),

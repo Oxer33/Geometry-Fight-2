@@ -139,6 +139,7 @@ class GeometryFightGame extends FlameGame
   // Game stats for current session
   int sessionGeoms = 0;
   int sessionKills = 0;
+  double _sessionTimeSec = 0;
 
   // Perfect Wave tracking
   bool _hitThisWave = false;
@@ -248,6 +249,8 @@ class GeometryFightGame extends FlameGame
       waveSystem.update(scaledDt);
     }
     scoreSystem.update(scaledDt);
+    // Traccia tempo di gioco sessione (usa dt reale, non scalato)
+    _sessionTimeSec += dt;
     // Vite extra per soglie punteggio (10K, 100K, 1M, 10M, 100M, 1B)
     if (scoreSystem.earnedExtraLife) {
       player.lives++;
@@ -837,6 +840,9 @@ class GeometryFightGame extends FlameGame
     if (consecutivePerfectWaves > currentMaxPerfect) {
       saveData.stats['maxPerfectStreak'] = consecutivePerfectWaves;
     }
+
+    // Track playtime (secondi)
+    saveData.totalPlaytime += _sessionTimeSec.round();
 
     // Track mode played
     if (!saveData.playedModes.contains(gameMode.name)) {
