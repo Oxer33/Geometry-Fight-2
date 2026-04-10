@@ -110,4 +110,13 @@ class AudioSystem {
     _play('extra_life.wav');
     if (_vibrationEnabled) HapticFeedback.mediumImpact();
   }
+
+  /// Ferma tutti i suoni in riproduzione (chiamato su game over / quit)
+  static void stopAll() {
+    try {
+      FlameAudio.audioCache.clearAll();
+      // Re-init al prossimo gioco
+      _initialized = false;
+    } catch (_) {}
+  }
 }

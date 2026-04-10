@@ -328,6 +328,7 @@ class GeometryFightGame extends FlameGame
         // Tempo scaduto = game over
         gameState = GameState.gameOver;
         saveSessionData();
+        pauseEngine();
         onGameOver?.call();
         return;
       }
@@ -863,6 +864,7 @@ class GeometryFightGame extends FlameGame
     if (player.lives <= 0) {
       gameState = GameState.gameOver;
       saveSessionData();
+      pauseEngine(); // Ferma il loop Flame: niente più update/render/audio
       onGameOver?.call();
     }
   }
@@ -960,6 +962,9 @@ class GeometryFightGame extends FlameGame
   }
 
   void restartGame() {
+    // Riprendi il motore se era stato fermato (game over / pausa)
+    resumeEngine();
+
     // Rimuovi screenShake dal viewfinder prima di pulire il world
     screenShake.removeFromParent();
 
@@ -975,6 +980,7 @@ class GeometryFightGame extends FlameGame
     maxMultiplierReached = 0;
     _hitThisWave = false;
     _sessionSaved = false;
+    _sessionTimeSec = 0;
     showPerfectWave = false;
     hitFlashTimer = 0;
     timeAttackTimer = 180;

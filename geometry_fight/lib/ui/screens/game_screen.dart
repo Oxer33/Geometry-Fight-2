@@ -8,6 +8,7 @@ import '../../data/difficulty.dart';
 import '../../data/leaderboard.dart';
 import '../../data/save_data.dart';
 import '../../game/game_world.dart';
+import '../../game/systems/audio_system.dart';
 import '../hud.dart';
 import '../widgets/animated_builder_widget.dart';
 import '../widgets/virtual_joystick.dart';
@@ -45,6 +46,8 @@ class _GameScreenState extends State<GameScreen> {
   @override
   void initState() {
     super.initState();
+    // Assicura che l'audio sia inizializzato (potrebbe essere stato fermato)
+    AudioSystem.init();
     _game = GeometryFightGame(
       difficulty: widget.difficulty,
       gameMode: widget.gameMode,
@@ -157,6 +160,17 @@ class _GameScreenState extends State<GameScreen> {
     if (!mounted) return;
     setState(() => _showTutorial = false);
     _game.togglePause(); // Riprendi il gioco
+  }
+
+  @override
+  void dispose() {
+    // Ferma il motore Flame e l'audio quando si esce dalla schermata
+    // per evitare che suoni/vibrazioni continuino in background
+    _game.pauseEngine();
+    _game.onGameOver = null;
+    _game.onPause = null;
+    AudioSystem.stopAll();
+    super.dispose();
   }
 
   @override
