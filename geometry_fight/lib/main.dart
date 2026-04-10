@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'data/save_data.dart';
+import 'game/systems/audio_system.dart';
 import 'data/leaderboard.dart';
 import 'data/achievements.dart';
 import 'data/difficulty.dart';
@@ -39,6 +41,13 @@ void main() async {
     await LeaderboardManager.init();
     await AchievementManager.init();
   }
+
+  // Initialize audio system
+  await AudioSystem.init();
+  // Load SFX volume from prefs
+  final prefs = await SharedPreferences.getInstance();
+  AudioSystem.setSfxVolume(prefs.getDouble('sfx_volume') ?? 0.8);
+  AudioSystem.setVibration(prefs.getBool('vibration') ?? true);
 
   runApp(const GeometryFightApp());
 }

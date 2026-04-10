@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../data/save_data.dart';
+import '../../game/systems/audio_system.dart';
 
 class SettingsScreen extends StatefulWidget {
   final VoidCallback onBack;
@@ -61,6 +62,8 @@ class _SettingsScreenState extends State<SettingsScreen>
     await prefs.setDouble('sfx_volume', _sfxVolume);
     await prefs.setBool('vibration', _vibration);
     await prefs.setBool('show_fps', _showFps);
+    AudioSystem.setSfxVolume(_sfxVolume);
+    AudioSystem.setVibration(_vibration);
   }
 
   @override

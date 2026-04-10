@@ -22,12 +22,11 @@ class PowerUpSystem {
   void _spawnRandomInArena() {
     final Vector2 pos;
     if (game.isTunnelMode) {
-      // Tunnel: spawna nella zona visibile della camera
       final cam = game.camera.viewfinder.position;
       final halfW = game.size.x > 0 ? game.size.x / 2 : 400.0;
       final halfH = game.size.y > 0 ? game.size.y / 2 : 300.0;
       pos = Vector2(
-        cam.x + (_random.nextDouble() - 0.3) * halfW * 1.5, // Leggermente avanti
+        cam.x + (_random.nextDouble() - 0.3) * halfW * 1.5,
         cam.y + (_random.nextDouble() - 0.5) * halfH * 1.2,
       );
     } else {
@@ -40,8 +39,8 @@ class PowerUpSystem {
   }
 
   void spawnRandomPowerUp(Vector2 position) {
-    final types = PowerUpType.values;
-    final type = types[_random.nextInt(types.length)];
+    // Selezione pesata per rarità
+    final type = PowerUpRarityConfig.rollWeighted(_random);
     final powerUp = PowerUp(type: type);
     powerUp.position = position;
     game.world.add(powerUp);

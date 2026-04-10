@@ -34,6 +34,7 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
   // Shield
   int shieldHits = 0;
   bool hasShield = false;
+  double shieldTimer = 0;
 
   // Power-up states
   double rapidFireTimer = 0;
@@ -131,6 +132,13 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
       weaponTimer -= realDt;
       if (weaponTimer <= 0) {
         temporaryWeapon = null;
+      }
+    }
+    if (hasShield && shieldTimer > 0) {
+      shieldTimer -= realDt;
+      if (shieldTimer <= 0) {
+        hasShield = false;
+        shieldHits = 0;
       }
     }
 
@@ -296,6 +304,7 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
   void applyShield(int hits) {
     hasShield = true;
     shieldHits = hits;
+    // shieldTimer viene impostato dal chiamante (power-up: 60s)
   }
 
   @override

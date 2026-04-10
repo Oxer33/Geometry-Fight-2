@@ -1,86 +1,113 @@
+import 'package:flame_audio/flame_audio.dart';
 import 'package:flutter/services.dart';
 
-/// Sistema audio minimale con feedback aptico.
-/// Usa vibrazioni del dispositivo per feedback tattile su eventi di gioco.
-/// Struttura pronta per integrare file audio reali in futuro.
+/// Sistema audio con SFX procedurali + feedback aptico.
 class AudioSystem {
   static bool _vibrationEnabled = true;
+  static double _sfxVolume = 0.8;
+  static bool _initialized = false;
 
-  /// Inizializza il sistema audio (placeholder per audio reale futuro)
+  /// Inizializza il sistema audio: pre-carica tutti i file SFX
   static Future<void> init() async {
-    // Pronto per integrare flame_audio o audioplayers in futuro
+    try {
+      await FlameAudio.audioCache.loadAll([
+        'shoot.wav',
+        'enemy_death.wav',
+        'bomb.wav',
+        'powerup.wav',
+        'player_hit.wav',
+        'boss_spawn.wav',
+        'wave_complete.wav',
+        'game_over.wav',
+        'geom.wav',
+        'extra_life.wav',
+      ]);
+      _initialized = true;
+    } catch (_) {
+      // Audio non disponibile (es. emulatore senza audio)
+      _initialized = false;
+    }
   }
 
-  /// Abilita/disabilita vibrazioni
   static void setVibration(bool enabled) {
     _vibrationEnabled = enabled;
   }
 
-  /// Feedback aptico leggero (sparo)
+  static void setSfxVolume(double volume) {
+    _sfxVolume = volume.clamp(0.0, 1.0);
+  }
+
+  static void _play(String file, {double volumeScale = 1.0}) {
+    if (!_initialized || _sfxVolume <= 0) return;
+    try {
+      FlameAudio.play(file, volume: _sfxVolume * volumeScale);
+    } catch (_) {
+      // Ignora errori audio
+    }
+  }
+
+  /// Sparo
   static void playShoot() {
-    if (_vibrationEnabled) {
-      HapticFeedback.selectionClick();
-    }
+    _play('shoot.wav', volumeScale: 0.4);
+    if (_vibrationEnabled) HapticFeedback.selectionClick();
   }
 
-  /// Feedback aptico medio (nemico ucciso)
+  /// Nemico ucciso
   static void playEnemyDeath() {
-    if (_vibrationEnabled) {
-      HapticFeedback.lightImpact();
-    }
+    _play('enemy_death.wav', volumeScale: 0.6);
+    if (_vibrationEnabled) HapticFeedback.lightImpact();
   }
 
-  /// Feedback aptico forte (esplosione bomba)
+  /// Esplosione bomba
   static void playBombExplosion() {
-    if (_vibrationEnabled) {
-      HapticFeedback.heavyImpact();
-    }
+    _play('bomb.wav');
+    if (_vibrationEnabled) HapticFeedback.heavyImpact();
   }
 
-  /// Feedback aptico (player colpito)
+  /// Player colpito
   static void playPlayerHit() {
-    if (_vibrationEnabled) {
-      HapticFeedback.mediumImpact();
-    }
+    _play('player_hit.wav');
+    if (_vibrationEnabled) HapticFeedback.mediumImpact();
   }
 
-  /// Feedback aptico (power-up raccolto)
+  /// Power-up raccolto
   static void playPowerUp() {
-    if (_vibrationEnabled) {
-      HapticFeedback.selectionClick();
-    }
+    _play('powerup.wav');
+    if (_vibrationEnabled) HapticFeedback.selectionClick();
   }
 
-  /// Feedback aptico (boss spawna)
+  /// Boss spawna
   static void playBossSpawn() {
-    if (_vibrationEnabled) {
-      HapticFeedback.heavyImpact();
-    }
+    _play('boss_spawn.wav');
+    if (_vibrationEnabled) HapticFeedback.heavyImpact();
   }
 
-  /// Feedback aptico (geom raccolto)
+  /// Geom raccolto
   static void playGeomCollect() {
-    // Nessuna vibrazione per geom (troppo frequente)
+    _play('geom.wav', volumeScale: 0.25);
   }
 
-  /// Feedback aptico (wave completata)
+  /// Wave completata
   static void playWaveComplete() {
-    if (_vibrationEnabled) {
-      HapticFeedback.mediumImpact();
-    }
+    _play('wave_complete.wav');
+    if (_vibrationEnabled) HapticFeedback.mediumImpact();
   }
 
-  /// Feedback aptico (perfect wave)
+  /// Perfect wave
   static void playPerfectWave() {
-    if (_vibrationEnabled) {
-      HapticFeedback.heavyImpact();
-    }
+    _play('wave_complete.wav');
+    if (_vibrationEnabled) HapticFeedback.heavyImpact();
   }
 
-  /// Feedback aptico (game over)
+  /// Game over
   static void playGameOver() {
-    if (_vibrationEnabled) {
-      HapticFeedback.heavyImpact();
-    }
+    _play('game_over.wav');
+    if (_vibrationEnabled) HapticFeedback.heavyImpact();
+  }
+
+  /// Extra life
+  static void playExtraLife() {
+    _play('extra_life.wav');
+    if (_vibrationEnabled) HapticFeedback.mediumImpact();
   }
 }

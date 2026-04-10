@@ -630,19 +630,20 @@ class GeometryFightGame extends FlameGame
   }
 
   void spawnExplosion(Vector2 position, Color color,
-      {double radius = 50, int particleCount = 20}) {
+      {double radius = 50, int particleCount = 20, bool epic = false}) {
     final explosion = ExplosionEffect(
       color: color,
       radius: radius,
       particleCount: particleCount,
+      epic: epic,
     );
     explosion.position = position.clone();
     world.add(explosion);
     // Grid distortion solo se non in tunnel mode (la grid non è nel world in tunnel)
     if (!isTunnelMode) {
-      grid.applyForce(position, radius * 2, 500);
+      grid.applyForce(position, radius * 2, epic ? 800 : 500);
     }
-    triggerScreenShake();
+    triggerScreenShake(epic ? 4 : 2, epic ? 0.15 : 0.08);
   }
 
   void spawnPowerUp(Vector2 position) {

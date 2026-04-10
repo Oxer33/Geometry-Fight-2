@@ -4,6 +4,7 @@ import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
 import '../../data/constants.dart';
 import '../game_world.dart';
+import '../systems/audio_system.dart';
 import 'player.dart';
 
 enum PowerUpType {
@@ -15,17 +16,70 @@ enum PowerUpType {
   overdrive,
   smartBomb,
   scoreMultiplier,
+  extraLife,
+}
+
+/// Rarità dei power-up: influenza probabilità di spawn e visual
+enum PowerUpRarity {
+  common,   // bordo singolo, spawna spesso
+  rare,     // bordo doppio + glow, spawna meno
+  epic,     // bordo triplo + particelle, spawna raramente
+  legendary, // aura dorata + pulsazione forte, estremamente raro
+}
+
+class PowerUpRarityConfig {
+  final PowerUpType type;
+  final PowerUpRarity rarity;
+  final double weight; // peso relativo per spawn
+
+  const PowerUpRarityConfig(this.type, this.rarity, this.weight);
+
+  static const List<PowerUpRarityConfig> configs = [
+    // Common (peso alto — frequenti)
+    PowerUpRarityConfig(PowerUpType.rapidFire, PowerUpRarity.common, 20),
+    PowerUpRarityConfig(PowerUpType.magnet, PowerUpRarity.common, 20),
+    PowerUpRarityConfig(PowerUpType.scoreMultiplier, PowerUpRarity.common, 18),
+    // Rare
+    PowerUpRarityConfig(PowerUpType.spreadShot, PowerUpRarity.rare, 14),
+    PowerUpRarityConfig(PowerUpType.smartBomb, PowerUpRarity.rare, 12),
+    // Epic
+    PowerUpRarityConfig(PowerUpType.shield, PowerUpRarity.epic, 8),
+    PowerUpRarityConfig(PowerUpType.timeSlow, PowerUpRarity.epic, 8),
+    PowerUpRarityConfig(PowerUpType.overdrive, PowerUpRarity.epic, 6),
+    // Legendary
+    PowerUpRarityConfig(PowerUpType.extraLife, PowerUpRarity.legendary, 2),
+  ];
+
+  /// Total weight for weighted random
+  static final double _totalWeight = configs.fold(0, (s, c) => s + c.weight);
+
+  /// Seleziona un power-up casuale pesato per rarità
+  static PowerUpType rollWeighted(math.Random rng) {
+    double roll = rng.nextDouble() * _totalWeight;
+    for (final config in configs) {
+      roll -= config.weight;
+      if (roll <= 0) return config.type;
+    }
+    return configs.last.type;
+  }
+
+  static PowerUpRarity rarityOf(PowerUpType type) {
+    return configs.firstWhere((c) => c.type == type).rarity;
+  }
 }
 
 class PowerUp extends PositionComponent
     with HasGameReference<GeometryFightGame>, CollisionCallbacks {
   final PowerUpType type;
+  late final PowerUpRarity rarity;
   double _lifetime = 10.0;
   double _phase = 0;
   double _pulsePhase = 0;
 
   PowerUp({required this.type})
-      : super(size: Vector2(24, 24), anchor: Anchor.center);
+      : super(size: Vector2(24, 24), anchor: Anchor.center) {
+    rarity = PowerUpRarityConfig.rarityOf(type);
+  }
 
   Color get color {
     switch (type) {
@@ -45,6 +99,8 @@ class PowerUp extends PositionComponent
         return NeonColors.green;
       case PowerUpType.scoreMultiplier:
         return NeonColors.gold;
+      case PowerUpType.extraLife:
+        return const Color(0xFFFF4466);
     }
   }
 
@@ -94,7 +150,9 @@ class PowerUp extends PositionComponent
         player.temporaryWeapon = WeaponType.spread;
         player.weaponTimer = powerUpDuration;
       case PowerUpType.shield:
-        player.applyShield(player.game.saveData.shieldCapacity);
+        // Scudo salvavita: dura 60s, assorbe 1 colpo
+        player.applyShield(1);
+        player.shieldTimer = 60.0;
       case PowerUpType.magnet:
         player.magnetTimer = powerUpDuration;
       case PowerUpType.timeSlow:
@@ -107,8 +165,10 @@ class PowerUp extends PositionComponent
           player.bombs++;
         }
       case PowerUpType.scoreMultiplier:
-        // Bonus: aggiunge 10 al moltiplicatore (come raccogliere 10 geom)
         player.game.scoreSystem.addGeoms(10);
+      case PowerUpType.extraLife:
+        player.lives++;
+        AudioSystem.playExtraLife();
     }
   }
 
@@ -119,13 +179,54 @@ class PowerUp extends PositionComponent
     final cx = size.x / 2;
     final cy = size.y / 2;
 
-    // Glow
+    // === RARITY VISUALS ===
+    switch (rarity) {
+      case PowerUpRarity.legendary:
+        // Aura dorata grande pulsante
+        final legendPulse = 1.0 + math.sin(_pulsePhase * 1.5) * 0.3;
+        final auraPaint = Paint()
+          ..color = const Color(0xFFFFD700).withValues(alpha: alpha * 0.25)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 20);
+        canvas.drawCircle(Offset(cx, cy), 22 * legendPulse, auraPaint);
+        // Anello esterno dorato
+        final ringPaint = Paint()
+          ..color = const Color(0xFFFFD700).withValues(alpha: alpha * 0.5)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.5;
+        canvas.drawCircle(Offset(cx, cy), 18 * legendPulse, ringPaint);
+      case PowerUpRarity.epic:
+        // Particelle orbitanti
+        for (int i = 0; i < 4; i++) {
+          final angle = _phase * 2 + i * math.pi / 2;
+          final px = cx + math.cos(angle) * 16;
+          final py = cy + math.sin(angle) * 16;
+          final pPaint = Paint()
+            ..color = color.withValues(alpha: alpha * 0.5)
+            ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
+          canvas.drawCircle(Offset(px, py), 1.5, pPaint);
+        }
+        // Glow forte
+        final epicGlow = Paint()
+          ..color = color.withValues(alpha: alpha * 0.5)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 16);
+        canvas.drawCircle(Offset(cx, cy), 18 * pulse, epicGlow);
+      case PowerUpRarity.rare:
+        // Doppio anello glow
+        final rareGlow = Paint()
+          ..color = color.withValues(alpha: alpha * 0.35)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 14);
+        canvas.drawCircle(Offset(cx, cy), 17 * pulse, rareGlow);
+      case PowerUpRarity.common:
+        break; // Solo glow base
+    }
+
+    // Glow base (tutti)
     final glowPaint = Paint()
       ..color = color.withValues(alpha: alpha * 0.4)
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 12);
     canvas.drawCircle(Offset(cx, cy), 16 * pulse, glowPaint);
 
-    // Shape (rotating)
+    // Shape (rotating hexagon)
     canvas.save();
     canvas.translate(cx, cy);
     canvas.rotate(_phase);
@@ -146,9 +247,30 @@ class PowerUp extends PositionComponent
     path.close();
     canvas.drawPath(path, paint);
 
-    // Inner icon hint
-    paint.color = const Color(0xFFFFFFFF).withValues(alpha: alpha * 0.8);
-    canvas.drawCircle(Offset.zero, 3, paint);
+    // Bordo based on rarity
+    if (rarity != PowerUpRarity.common) {
+      final borderPaint = Paint()
+        ..color = (rarity == PowerUpRarity.legendary
+            ? const Color(0xFFFFD700)
+            : color).withValues(alpha: alpha * 0.7)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = rarity == PowerUpRarity.legendary ? 1.5 : 1.0;
+      canvas.drawPath(path, borderPaint);
+    }
+
+    // Inner icon (cuore per extraLife, cerchio per il resto)
+    if (type == PowerUpType.extraLife) {
+      paint.color = const Color(0xFFFFFFFF).withValues(alpha: alpha * 0.9);
+      // Cuoricino semplificato
+      final heartPath = Path()
+        ..moveTo(0, 2)
+        ..cubicTo(-4, -2, -4, -5, 0, -3)
+        ..cubicTo(4, -5, 4, -2, 0, 2);
+      canvas.drawPath(heartPath, paint);
+    } else {
+      paint.color = const Color(0xFFFFFFFF).withValues(alpha: alpha * 0.8);
+      canvas.drawCircle(Offset.zero, 3, paint);
+    }
 
     canvas.restore();
   }
