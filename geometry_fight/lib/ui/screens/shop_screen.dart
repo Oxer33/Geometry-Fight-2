@@ -608,61 +608,66 @@ class _ShopScreenState extends State<ShopScreen>
                   final item = items[previewIndex.clamp(0, items.length - 1)];
                   final owned = unlocked.contains(item.id);
 
-                  return Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      // Preview canvas
-                      Container(
-                        width: 200, height: 200,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: Colors.cyanAccent.withValues(alpha: 0.08),
+                  return LayoutBuilder(
+                    builder: (context, previewConstraints) {
+                      final previewSize = (previewConstraints.maxHeight - 80).clamp(80.0, 200.0);
+                      return Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          // Preview canvas
+                          Container(
+                            width: previewSize, height: previewSize,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: Colors.cyanAccent.withValues(alpha: 0.08),
+                              ),
+                              gradient: RadialGradient(
+                                colors: [
+                                  Colors.cyanAccent.withValues(alpha: 0.03),
+                                  Colors.transparent,
+                                ],
+                              ),
+                            ),
+                            child: CustomPaint(
+                              painter: previewBuilder(item, _previewController.value * 10),
+                              size: Size(previewSize, previewSize),
+                            ),
                           ),
-                          gradient: RadialGradient(
-                            colors: [
-                              Colors.cyanAccent.withValues(alpha: 0.03),
-                              Colors.transparent,
-                            ],
-                          ),
-                        ),
-                        child: CustomPaint(
-                          painter: previewBuilder(item, _previewController.value * 10),
-                          size: const Size(200, 200),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      // Nome
-                      Text(item.name, style: const TextStyle(
-                        color: Colors.cyanAccent,
-                        fontSize: 16, fontWeight: FontWeight.bold,
-                        fontFamily: 'monospace', letterSpacing: 2,
-                      )),
-                      const SizedBox(height: 4),
-                      Text(item.description, style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.4),
-                        fontSize: 10, fontFamily: 'monospace',
-                      )),
-                      const SizedBox(height: 12),
-                      if (!owned)
-                        _PurchaseButton(
-                          cost: item.cost,
-                          canAfford: _saveData.goldGeoms >= item.cost,
-                          color: Colors.cyanAccent,
-                          onTap: () => onPurchase(item),
-                          large: true,
-                        )
-                      else
-                        Text(
-                          item.id == activeId ? 'EQUIPPED' : 'OWNED — TAP TO EQUIP',
-                          style: TextStyle(
-                            color: item.id == activeId
-                                ? Colors.greenAccent
-                                : Colors.white.withValues(alpha: 0.4),
-                            fontSize: 10, fontFamily: 'monospace', letterSpacing: 1,
-                          ),
-                        ),
-                    ],
+                          const SizedBox(height: 12),
+                          // Nome
+                          Text(item.name, style: const TextStyle(
+                            color: Colors.cyanAccent,
+                            fontSize: 16, fontWeight: FontWeight.bold,
+                            fontFamily: 'monospace', letterSpacing: 2,
+                          )),
+                          const SizedBox(height: 4),
+                          Text(item.description, style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.4),
+                            fontSize: 10, fontFamily: 'monospace',
+                          )),
+                          const SizedBox(height: 10),
+                          if (!owned)
+                            _PurchaseButton(
+                              cost: item.cost,
+                              canAfford: _saveData.goldGeoms >= item.cost,
+                              color: Colors.cyanAccent,
+                              onTap: () => onPurchase(item),
+                              large: true,
+                            )
+                          else
+                            Text(
+                              item.id == activeId ? 'EQUIPPED' : 'OWNED — TAP TO EQUIP',
+                              style: TextStyle(
+                                color: item.id == activeId
+                                    ? Colors.greenAccent
+                                    : Colors.white.withValues(alpha: 0.4),
+                                fontSize: 10, fontFamily: 'monospace', letterSpacing: 1,
+                              ),
+                            ),
+                        ],
+                      );
+                    },
                   );
                 },
               ),

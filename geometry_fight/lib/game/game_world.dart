@@ -1038,14 +1038,24 @@ class GeometryFightGame extends FlameGame
   /// Ritorna il boss attivo (se presente) per mostrare la barra HP nella HUD
   BossBase? get activeBoss => _cachedActiveBoss;
 
-  /// Aggiorna i conteggi cached (chiamato ogni 2 frame)
+  /// Aggiorna i conteggi cached (chiamato ogni 3 frame, singolo pass)
   void _updateEntityCounts() {
     _countCacheTimer -= 1;
     if (_countCacheTimer > 0) return;
-    _countCacheTimer = 2; // Aggiorna ogni 2 frame (~30 volte/sec a 60fps)
-    _cachedEnemyCount = world.children.whereType<EnemyBase>().length;
-    final bosses = world.children.whereType<BossBase>();
-    _cachedBossCount = bosses.length;
-    _cachedActiveBoss = bosses.isEmpty ? null : bosses.first;
+    _countCacheTimer = 3; // Aggiorna ogni 3 frame (~20 volte/sec a 60fps)
+    int enemies = 0;
+    int bosses = 0;
+    BossBase? firstBoss;
+    for (final child in world.children) {
+      if (child is EnemyBase) {
+        enemies++;
+      } else if (child is BossBase) {
+        bosses++;
+        firstBoss ??= child;
+      }
+    }
+    _cachedEnemyCount = enemies;
+    _cachedBossCount = bosses;
+    _cachedActiveBoss = firstBoss;
   }
 }

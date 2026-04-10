@@ -90,21 +90,22 @@ class SwarmDroneEnemy extends EnemyBase {
     final color = isGloballyEnraged
         ? const Color(0xFFFF0000)
         : paint.color;
-    final p = Paint()..color = color;
+    EnemyBase.detailPaint.color = color;
 
     // Scia motore (2 trail sfumati dietro)
     if (scale <= 1.01) {
       for (int i = 1; i <= 2; i++) {
         final trailAlpha = isGloballyEnraged ? 0.3 - i * 0.1 : 0.15 - i * 0.05;
         if (trailAlpha > 0) {
-          final trailPaint = Paint()..color = color.withValues(alpha: trailAlpha);
+          EnemyBase.detailPaint.color = color.withValues(alpha: trailAlpha);
           final trailPath = Path()
             ..moveTo(s * 0.3, s * 0.5 + i * 4)
             ..lineTo(0, s * 0.5 + i * 6)
             ..lineTo(-s * 0.3, s * 0.5 + i * 4);
-          canvas.drawPath(trailPath, trailPaint);
+          canvas.drawPath(trailPath, EnemyBase.detailPaint);
         }
       }
+      EnemyBase.detailPaint.color = color;
     }
 
     // Corpo triangolare
@@ -113,15 +114,16 @@ class SwarmDroneEnemy extends EnemyBase {
       ..lineTo(s * 0.7, s * 0.5)
       ..lineTo(-s * 0.7, s * 0.5)
       ..close();
-    canvas.drawPath(path, p);
+    canvas.drawPath(path, EnemyBase.detailPaint);
 
     if (scale <= 1.01) {
       // Linee ala interne (struttura)
-      final linePaint = Paint()
-        ..color = color.withValues(alpha: 0.3)
-        ..strokeWidth = 0.5;
-      canvas.drawLine(Offset(0, -s * 0.5), Offset(s * 0.4, s * 0.3), linePaint);
-      canvas.drawLine(Offset(0, -s * 0.5), Offset(-s * 0.4, s * 0.3), linePaint);
+      EnemyBase.detailPaint.color = color.withValues(alpha: 0.3);
+      EnemyBase.detailPaint.strokeWidth = 0.5;
+      EnemyBase.detailPaint.style = PaintingStyle.stroke;
+      canvas.drawLine(Offset(0, -s * 0.5), Offset(s * 0.4, s * 0.3), EnemyBase.detailPaint);
+      canvas.drawLine(Offset(0, -s * 0.5), Offset(-s * 0.4, s * 0.3), EnemyBase.detailPaint);
+      EnemyBase.detailPaint.style = PaintingStyle.fill;
 
       // Nucleo centrale
       final pulse = isGloballyEnraged
@@ -130,15 +132,14 @@ class SwarmDroneEnemy extends EnemyBase {
       final coreColor = isGloballyEnraged
           ? const Color(0xFFFF4400)
           : const Color(0xFFFFFFFF);
-      final corePaint = Paint()..color = coreColor.withValues(alpha: pulse);
-      canvas.drawCircle(Offset(0, s * 0.05), s * 0.15, corePaint);
+      EnemyBase.detailPaint.color = coreColor.withValues(alpha: pulse);
+      canvas.drawCircle(Offset(0, s * 0.05), s * 0.15, EnemyBase.detailPaint);
 
       // Punti propulsore alla base
       if (isGloballyEnraged) {
-        final thrustPaint = Paint()
-          ..color = const Color(0xFFFF6600).withValues(alpha: 0.5);
-        canvas.drawCircle(Offset(s * 0.25, s * 0.4), 1.0, thrustPaint);
-        canvas.drawCircle(Offset(-s * 0.25, s * 0.4), 1.0, thrustPaint);
+        EnemyBase.detailPaint.color = const Color(0xFFFF6600).withValues(alpha: 0.5);
+        canvas.drawCircle(Offset(s * 0.25, s * 0.4), 1.0, EnemyBase.detailPaint);
+        canvas.drawCircle(Offset(-s * 0.25, s * 0.4), 1.0, EnemyBase.detailPaint);
       }
     }
 

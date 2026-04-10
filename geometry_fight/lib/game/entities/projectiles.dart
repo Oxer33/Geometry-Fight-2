@@ -77,10 +77,8 @@ class PlayerBullet extends PositionComponent
 
   // Paint cache statici per evitare allocazioni ogni frame
   // (con 50+ proiettili × 60fps = migliaia di allocazioni risparmiate)
-  static final _trailPaint = Paint()
-    ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2);
-  static final _glowPaint = Paint()
-    ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5);
+  static final _trailPaint = Paint();
+  static final _glowPaint = Paint();
   static final _bodyPaint = Paint();
   static final _corePaint = Paint()
     ..color = const Color(0xFFFFFFFF).withValues(alpha: 0.7);
@@ -276,6 +274,10 @@ class LaserBeam extends PositionComponent
     }
   }
 
+  static final _laserGlowPaint = Paint()
+    ..color = NeonColors.laserRed.withValues(alpha: 0.4);
+  static final _laserCorePaint = Paint()..color = NeonColors.laserRed;
+
   @override
   void render(Canvas canvas) {
     final angle = math.atan2(direction.y, direction.x) - math.pi / 2;
@@ -283,15 +285,10 @@ class LaserBeam extends PositionComponent
     canvas.translate(size.x / 2, 0);
     canvas.rotate(angle);
 
-    // Glow
-    final glowPaint = Paint()
-      ..color = NeonColors.laserRed.withValues(alpha: 0.4)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10);
-    canvas.drawRect(Rect.fromCenter(center: Offset.zero, width: 12, height: 800), glowPaint);
-
+    // Glow (no blur — troppo costoso con beam attivi)
+    canvas.drawRect(Rect.fromCenter(center: Offset.zero, width: 12, height: 800), _laserGlowPaint);
     // Core
-    final paint = Paint()..color = NeonColors.laserRed;
-    canvas.drawRect(Rect.fromCenter(center: Offset.zero, width: 3, height: 800), paint);
+    canvas.drawRect(Rect.fromCenter(center: Offset.zero, width: 3, height: 800), _laserCorePaint);
 
     canvas.restore();
   }
@@ -334,18 +331,19 @@ class PlasmaBullet extends PositionComponent
     }
   }
 
+  static final _plasmaGlowPaint = Paint();
+  static final _plasmaBodyPaint = Paint();
+
   @override
   void render(Canvas canvas) {
     final radius = 10 + math.sin(_phase) * 2;
-    final paint = Paint()
-      ..color = NeonColors.plasmaViolet.withValues(alpha: 0.4)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 12);
-    canvas.drawCircle(Offset(size.x / 2, size.y / 2), radius * 1.5, paint);
-
-    paint
-      ..color = NeonColors.plasmaViolet
-      ..maskFilter = null;
-    canvas.drawCircle(Offset(size.x / 2, size.y / 2), radius, paint);
+    final center = Offset(size.x / 2, size.y / 2);
+    // Glow (no blur per performance)
+    _plasmaGlowPaint.color = NeonColors.plasmaViolet.withValues(alpha: 0.4);
+    canvas.drawCircle(center, radius * 1.5, _plasmaGlowPaint);
+    // Core
+    _plasmaBodyPaint.color = NeonColors.plasmaViolet;
+    canvas.drawCircle(center, radius, _plasmaBodyPaint);
   }
 
   void _explode() {
@@ -387,6 +385,8 @@ class HomingMissile extends PositionComponent
 
   late Vector2 _velocity;
   double _lifetime = 3.0;
+  PositionComponent? _cachedTarget;
+  int _searchCooldown = 0;
 
   HomingMissile({required this.direction, this.damage = 1.5})
       : super(size: Vector2(8, 12), anchor: Anchor.center);
@@ -401,29 +401,32 @@ class HomingMissile extends PositionComponent
   void update(double dt) {
     super.update(dt);
 
-    // Find nearest enemy or boss
-    PositionComponent? nearest;
-    double nearestDist = double.infinity;
-    for (final child in game.world.children) {
-      if (child is EnemyBase) {
-        final dist = child.position.distanceTo(position);
-        if (dist < nearestDist) {
-          nearestDist = dist;
-          nearest = child;
-        }
-      }
-      if (child is BossBase) {
-        final dist = child.position.distanceTo(position);
-        if (dist < nearestDist) {
-          nearestDist = dist;
-          nearest = child;
+    // Find nearest enemy or boss (throttled: every 5 frames)
+    _searchCooldown--;
+    if (_searchCooldown <= 0 || _cachedTarget == null || _cachedTarget!.isRemoved) {
+      _searchCooldown = 5;
+      _cachedTarget = null;
+      double nearestDist = double.infinity;
+      for (final child in game.world.children) {
+        if (child is EnemyBase) {
+          final dist = child.position.distanceTo(position);
+          if (dist < nearestDist) {
+            nearestDist = dist;
+            _cachedTarget = child;
+          }
+        } else if (child is BossBase) {
+          final dist = child.position.distanceTo(position);
+          if (dist < nearestDist) {
+            nearestDist = dist;
+            _cachedTarget = child;
+          }
         }
       }
     }
 
     // Steering
-    if (nearest != null) {
-      final desired = (nearest.position - position).normalized() * 500;
+    if (_cachedTarget != null && !_cachedTarget!.isRemoved) {
+      final desired = (_cachedTarget!.position - position).normalized() * 500;
       final steering = (desired - _velocity)..clampLength(0, 800 * dt);
       _velocity += steering;
       if (_velocity.length > 500) {
@@ -436,22 +439,20 @@ class HomingMissile extends PositionComponent
     if (_lifetime <= 0) removeFromParent();
   }
 
+  static final _homingBodyPaint = Paint();
+  static final _homingTrailPaint = Paint();
+
   @override
   void render(Canvas canvas) {
-    final paint = Paint()
-      ..color = NeonColors.cyan
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
+    final center = Offset(size.x / 2, size.y / 2);
+    _homingBodyPaint.color = NeonColors.cyan;
     canvas.drawRect(
-      Rect.fromCenter(
-          center: Offset(size.x / 2, size.y / 2),
-          width: size.x,
-          height: size.y),
-      paint,
+      Rect.fromCenter(center: center, width: size.x, height: size.y),
+      _homingBodyPaint,
     );
-
-    // Red trail
-    paint.color = NeonColors.red.withValues(alpha: 0.5);
-    canvas.drawCircle(Offset(size.x / 2, size.y + 4), 3, paint);
+    // Red trail (no blur)
+    _homingTrailPaint.color = NeonColors.red.withValues(alpha: 0.5);
+    canvas.drawCircle(Offset(size.x / 2, size.y + 4), 3, _homingTrailPaint);
   }
 
   @override
@@ -491,7 +492,8 @@ class OverdriveBeam extends PositionComponent
 
     // Kill everything in path (enemies AND bosses)
     final dir = direction.normalized();
-    for (final child in game.world.children.toList()) {
+    final toRemove = <EnemyBullet>[];
+    for (final child in game.world.children) {
       if (child is EnemyBase) {
         final toEnemy = child.position - position;
         final dot = toEnemy.dot(dir);
@@ -501,8 +503,7 @@ class OverdriveBeam extends PositionComponent
             child.takeDamage(999);
           }
         }
-      }
-      if (child is BossBase) {
+      } else if (child is BossBase) {
         final toBoss = child.position - position;
         final dot = toBoss.dot(dir);
         if (dot > 0 && dot < 1200) {
@@ -511,19 +512,25 @@ class OverdriveBeam extends PositionComponent
             child.takeDamage(10); // Danno boss dall'overdrive
           }
         }
-      }
-      if (child is EnemyBullet) {
+      } else if (child is EnemyBullet) {
         final toB = child.position - position;
         final dot = toB.dot(dir);
         if (dot > 0 && dot < 1200) {
           final perpDist = (toB - dir * dot).length;
           if (perpDist < 30) {
-            child.removeFromParent();
+            toRemove.add(child);
           }
         }
       }
     }
+    for (final b in toRemove) {
+      b.removeFromParent();
+    }
   }
+
+  static final _odGlowPaint = Paint();
+  static final _odCorePaint = Paint();
+  static final _odEdgePaint = Paint();
 
   @override
   void render(Canvas canvas) {
@@ -537,22 +544,20 @@ class OverdriveBeam extends PositionComponent
     final rainbowColor =
         HSVColor.fromAHSV(1.0, hue, 1.0, 1.0).toColor();
 
-    // Glow
-    final glowPaint = Paint()
-      ..color = rainbowColor.withValues(alpha: 0.3)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 20);
+    // Glow (no blur — overdrive is rare but still saves GPU)
+    _odGlowPaint.color = rainbowColor.withValues(alpha: 0.3);
     canvas.drawRect(
-        Rect.fromCenter(center: Offset.zero, width: 60, height: 1200), glowPaint);
+        Rect.fromCenter(center: Offset.zero, width: 60, height: 1200), _odGlowPaint);
 
     // Core - white
-    final paint = Paint()..color = const Color(0xFFFFFFFF);
+    _odCorePaint.color = const Color(0xFFFFFFFF);
     canvas.drawRect(
-        Rect.fromCenter(center: Offset.zero, width: 20, height: 1200), paint);
+        Rect.fromCenter(center: Offset.zero, width: 20, height: 1200), _odCorePaint);
 
     // Colored edge
-    paint.color = rainbowColor;
+    _odEdgePaint.color = rainbowColor.withValues(alpha: 0.5);
     canvas.drawRect(
-        Rect.fromCenter(center: Offset.zero, width: 40, height: 1200), paint..color = rainbowColor.withValues(alpha: 0.5));
+        Rect.fromCenter(center: Offset.zero, width: 40, height: 1200), _odEdgePaint);
 
     canvas.restore();
   }

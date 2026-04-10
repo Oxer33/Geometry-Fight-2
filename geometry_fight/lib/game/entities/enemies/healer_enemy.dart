@@ -81,15 +81,14 @@ class HealerEnemy extends EnemyBase {
     final cy = size.y / 2;
     final s = size.x / 2 * scale;
 
-    // Onda di cura espansiva
+    // Onda di cura espansiva (no blur per performance)
     if (_healPulseActive && scale <= 1.01) {
       final alpha = (1 - _healPulseRadius / _healRadius) * 0.4;
-      final wavePaint = Paint()
-        ..color = neonColor.withValues(alpha: alpha)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 2
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
-      canvas.drawCircle(Offset(cx, cy), _healPulseRadius, wavePaint);
+      EnemyBase.detailPaint.color = neonColor.withValues(alpha: alpha);
+      EnemyBase.detailPaint.style = PaintingStyle.stroke;
+      EnemyBase.detailPaint.strokeWidth = 2;
+      canvas.drawCircle(Offset(cx, cy), _healPulseRadius, EnemyBase.detailPaint);
+      EnemyBase.detailPaint.style = PaintingStyle.fill;
     }
 
     // Croce medica
@@ -108,12 +107,10 @@ class HealerEnemy extends EnemyBase {
 
     // Dettagli interni
     if (scale <= 1.01) {
-      // Nucleo pulsante
+      // Nucleo pulsante (no blur)
       final pulse = 0.5 + math.sin(idlePhase * 4) * 0.3;
-      final corePaint = Paint()
-        ..color = const Color(0xFFFFFFFF).withValues(alpha: pulse)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
-      canvas.drawCircle(Offset(cx, cy), s * 0.2, corePaint);
+      EnemyBase.detailPaint.color = const Color(0xFFFFFFFF).withValues(alpha: pulse);
+      canvas.drawCircle(Offset(cx, cy), s * 0.2, EnemyBase.detailPaint);
 
       // Cerchio indicatore raggio cura
       final rangePaint = Paint()

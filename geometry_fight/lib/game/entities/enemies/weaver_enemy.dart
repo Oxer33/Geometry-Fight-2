@@ -44,7 +44,7 @@ class WeaverEnemy extends EnemyBase {
       PlayerBullet? closestBullet;
       double closestDist = 140; // Raggio di rilevamento ampio
 
-      for (final child in game.world.children.toList()) {
+      for (final child in game.world.children) {
         if (child is PlayerBullet) {
           final dist = child.position.distanceTo(position);
           if (dist < closestDist) {

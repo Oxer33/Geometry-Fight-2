@@ -149,10 +149,9 @@ class MutatorEnemy extends EnemyBase {
 
     if (scale <= 1.01) {
       // Pentagramma interno (stella a 5 punte connettendo vertici non adiacenti)
-      final starPaint = Paint()
-        ..color = paint.color.withValues(alpha: 0.25)
-        ..strokeWidth = 0.7
-        ..style = PaintingStyle.stroke;
+      EnemyBase.detailPaint.color = paint.color.withValues(alpha: 0.25);
+      EnemyBase.detailPaint.strokeWidth = 0.7;
+      EnemyBase.detailPaint.style = PaintingStyle.stroke;
       for (int i = 0; i < 5; i++) {
         final angle1 = i * math.pi * 2 / 5 - math.pi / 2;
         final angle2 = ((i + 2) % 5) * math.pi * 2 / 5 - math.pi / 2;
@@ -160,7 +159,7 @@ class MutatorEnemy extends EnemyBase {
         final y1 = r * 0.75 * math.sin(angle1);
         final x2 = r * 0.75 * math.cos(angle2);
         final y2 = r * 0.75 * math.sin(angle2);
-        canvas.drawLine(Offset(x1, y1), Offset(x2, y2), starPaint);
+        canvas.drawLine(Offset(x1, y1), Offset(x2, y2), EnemyBase.detailPaint);
       }
 
       // Pentagono interno piccolo (formato dall'intersezione del pentagramma)
@@ -172,11 +171,10 @@ class MutatorEnemy extends EnemyBase {
         if (i == 0) innerPentPath.moveTo(x, y); else innerPentPath.lineTo(x, y);
       }
       innerPentPath.close();
-      final innerPentPaint = Paint()
-        ..color = paint.color.withValues(alpha: 0.2)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 0.5;
-      canvas.drawPath(innerPentPath, innerPentPaint);
+      EnemyBase.detailPaint.color = paint.color.withValues(alpha: 0.2);
+      EnemyBase.detailPaint.strokeWidth = 0.5;
+      canvas.drawPath(innerPentPath, EnemyBase.detailPaint);
+      EnemyBase.detailPaint.style = PaintingStyle.fill;
 
       // Nucleo pulsante
       final corePulse = 0.5 + math.sin(_pulsePhase * 2) * 0.3;

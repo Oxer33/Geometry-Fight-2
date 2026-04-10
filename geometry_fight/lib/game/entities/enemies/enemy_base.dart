@@ -144,7 +144,7 @@ abstract class EnemyBase extends PositionComponent
 
   /// true = pochi nemici → dettagli completi (blur, particelle, decorazioni)
   /// false = molti nemici → solo forma base senza blur
-  bool get highDetail => game.enemyCount < 60;
+  bool get highDetail => game.enemyCount < 40;
 
   // Paint cache riutilizzabili per evitare allocazioni ogni frame
   // (con 60 nemici x 60fps = migliaia di allocazioni risparmiate)

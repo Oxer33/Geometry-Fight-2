@@ -49,17 +49,17 @@ class TeslaEnemy extends EnemyBase {
       }
     } else {
       // PACK: posizionati sul lato opposto del player rispetto agli altri Tesla
-      // Calcola angolo medio degli altri Tesla rispetto al player
       double avgAngle = 0;
+      int myIndex = 0;
+      int teslaIndex = 0;
       for (final other in otherTeslas) {
         final diff = other.position - playerPosition;
         avgAngle += math.atan2(diff.y, diff.x);
+        if (other.hashCode < hashCode) myIndex = teslaIndex + 1;
+        teslaIndex++;
       }
       avgAngle /= otherTeslas.length;
 
-      // Vai sul lato opposto + offset per non sovrapporsi
-      final myIndex =
-          game.world.children.whereType<TeslaEnemy>().toList().indexOf(this);
       final spreadAngle = math.pi / (otherTeslas.length + 1);
       final targetAngle =
           avgAngle + math.pi + (myIndex - otherTeslas.length / 2) * spreadAngle;
@@ -138,28 +138,34 @@ class TeslaEnemy extends EnemyBase {
 
     // Dettagli interni
     if (scale <= 1.01) {
-      // Nucleo elettrico pulsante
+      // Nucleo elettrico pulsante (no blur per performance)
       final spark = 0.4 + math.sin(_sparkPhase) * 0.4;
-      final sparkPaint = Paint()
-        ..color = const Color(0xFFFFFFFF).withValues(alpha: spark)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
-      canvas.drawCircle(Offset.zero, r * 0.3, sparkPaint);
+      EnemyBase.detailPaint.color = const Color(0xFFFFFFFF).withValues(alpha: spark);
+      canvas.drawCircle(Offset.zero, r * 0.3, EnemyBase.detailPaint);
 
       // Mini scariche dal centro ai vertici
+      EnemyBase.detailPaint.color = paint.color.withValues(alpha: 0.3);
+      EnemyBase.detailPaint.strokeWidth = 0.5;
+      EnemyBase.detailPaint.style = PaintingStyle.stroke;
       for (int i = 0; i < 4; i++) {
         final angle = i * math.pi / 2 + _sparkPhase * 0.3;
-        final lp = Paint()
-          ..color = paint.color.withValues(alpha: 0.3)
-          ..strokeWidth = 0.5;
         canvas.drawLine(
           Offset.zero,
           Offset(r * 0.6 * math.cos(angle), r * 0.6 * math.sin(angle)),
-          lp,
+          EnemyBase.detailPaint,
         );
       }
+      EnemyBase.detailPaint.style = PaintingStyle.fill;
     }
     canvas.restore();
   }
+
+  static final _lightningPaint = Paint()
+    ..strokeWidth = 1.5
+    ..style = PaintingStyle.stroke;
+  static final _lightningGlowPaint = Paint()
+    ..strokeWidth = 3
+    ..style = PaintingStyle.stroke;
 
   /// Disegna un arco elettrico tra due punti
   void _drawLightning(
@@ -167,18 +173,10 @@ class TeslaEnemy extends EnemyBase {
     final random = math.Random((_sparkPhase * 10).toInt());
     final dx = x2 - x1;
     final dy = y2 - y1;
-    final steps = 6;
+    const steps = 6;
 
-    final lightningPaint = Paint()
-      ..color = neonColor.withValues(alpha: 0.6)
-      ..strokeWidth = 1.5
-      ..style = PaintingStyle.stroke;
-
-    final glowPaint = Paint()
-      ..color = neonColor.withValues(alpha: 0.2)
-      ..strokeWidth = 3
-      ..style = PaintingStyle.stroke
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
+    _lightningPaint.color = neonColor.withValues(alpha: 0.6);
+    _lightningGlowPaint.color = neonColor.withValues(alpha: 0.2);
 
     final path = Path()..moveTo(x1, y1);
     for (int i = 1; i < steps; i++) {
@@ -189,7 +187,7 @@ class TeslaEnemy extends EnemyBase {
     }
     path.lineTo(x2, y2);
 
-    canvas.drawPath(path, glowPaint);
-    canvas.drawPath(path, lightningPaint);
+    canvas.drawPath(path, _lightningGlowPaint);
+    canvas.drawPath(path, _lightningPaint);
   }
 }

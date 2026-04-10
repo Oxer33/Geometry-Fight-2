@@ -168,20 +168,16 @@ class ShieldEnemy extends EnemyBase {
         ..strokeWidth = 0.8;
       canvas.drawCircle(Offset(cx, cy), r * 0.6, ringPaint);
 
-      // Nucleo pulsante (più veloce durante lock-on)
+      // Nucleo pulsante (più veloce durante lock-on, no blur)
       final pulseSpeed = _state == _ShieldState.lockOn ? 12.0 : 4.0;
       final pulse = 0.4 + math.sin(idlePhase * pulseSpeed) * 0.3;
-      final corePaint = Paint()
-        ..color = const Color(0xFFFFFFFF).withValues(alpha: pulse)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2);
-      canvas.drawCircle(Offset(cx, cy), r * 0.25, corePaint);
+      EnemyBase.detailPaint.color = const Color(0xFFFFFFFF).withValues(alpha: pulse);
+      canvas.drawCircle(Offset(cx, cy), r * 0.25, EnemyBase.detailPaint);
 
-      // Indicatore stato (flash durante charging)
+      // Indicatore stato (flash durante charging, no blur)
       if (_state == _ShieldState.charging) {
-        final rushPaint = Paint()
-          ..color = const Color(0xFFFFFFFF).withValues(alpha: 0.4)
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8);
-        canvas.drawCircle(Offset(cx, cy), r * 1.3, rushPaint);
+        EnemyBase.detailPaint.color = const Color(0xFFFFFFFF).withValues(alpha: 0.4);
+        canvas.drawCircle(Offset(cx, cy), r * 1.3, EnemyBase.detailPaint);
       }
     }
 
@@ -195,19 +191,18 @@ class ShieldEnemy extends EnemyBase {
       canvas.translate(cx, cy);
       canvas.rotate(angle);
 
-      // Glow dello scudo
-      final glowPaint = Paint()
-        ..color = NeonColors.purple.withValues(alpha: shieldAlpha * 0.3)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6);
+      // Glow dello scudo (no blur per performance)
+      EnemyBase.detailPaint.color = NeonColors.purple.withValues(alpha: shieldAlpha * 0.3);
+      EnemyBase.detailPaint.strokeWidth = 5;
+      EnemyBase.detailPaint.style = PaintingStyle.stroke;
       canvas.drawArc(
         Rect.fromCircle(center: Offset.zero, radius: 15 * scale),
         -math.pi / 3,
         math.pi * 2 / 3,
         false,
-        glowPaint
-          ..strokeWidth = 5
-          ..style = PaintingStyle.stroke,
+        EnemyBase.detailPaint,
       );
+      EnemyBase.detailPaint.style = PaintingStyle.fill;
 
       // Scudo principale (più largo durante charge)
       final shieldArc =

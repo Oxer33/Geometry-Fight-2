@@ -11,6 +11,7 @@ import '../projectiles.dart';
 /// I proiettili nel suo raggio diventano più lenti e fanno meno danno.
 class SirenEnemy extends EnemyBase {
   double _wavePhase = 0;
+  int _slowFrameCounter = 0;
   static const double _interferenceRadius = 150.0;
 
   SirenEnemy()
@@ -31,14 +32,18 @@ class SirenEnemy extends EnemyBase {
     final velocity = seekPlayer(speed);
     position += velocity * dt;
 
-    // Rallenta i proiettili del player nel raggio (usa whereType per efficienza)
-    for (final bullet in game.world.children.whereType<PlayerBullet>()) {
-      final dist = bullet.position.distanceTo(position);
-      if (dist < _interferenceRadius) {
-        final pushDir = (bullet.position - position);
-        if (pushDir.length > 0) {
-          pushDir.normalize();
-          bullet.position -= pushDir * 100 * dt; // Controvento
+    // Rallenta i proiettili del player nel raggio (throttled: ogni 2 frame)
+    _slowFrameCounter++;
+    if (_slowFrameCounter >= 2) {
+      _slowFrameCounter = 0;
+      for (final bullet in game.world.children.whereType<PlayerBullet>()) {
+        final dist = bullet.position.distanceTo(position);
+        if (dist < _interferenceRadius) {
+          final pushDir = (bullet.position - position);
+          if (pushDir.length > 0) {
+            pushDir.normalize();
+            bullet.position -= pushDir * 200 * dt; // Controvento (2x per compensare skip)
+          }
         }
       }
     }
@@ -52,17 +57,17 @@ class SirenEnemy extends EnemyBase {
 
     // Onde concentriche di interferenza (solo layer principale)
     if (scale <= 1.01) {
+      EnemyBase.detailPaint.style = PaintingStyle.stroke;
+      EnemyBase.detailPaint.strokeWidth = 1;
       for (int i = 0; i < 3; i++) {
         final waveR = ((_wavePhase + i * 1.5) % 4) / 4 * _interferenceRadius * 0.5;
         final waveAlpha = (1 - waveR / (_interferenceRadius * 0.5)) * 0.2;
         if (waveAlpha > 0) {
-          final wavePaint = Paint()
-            ..color = neonColor.withValues(alpha: waveAlpha)
-            ..style = PaintingStyle.stroke
-            ..strokeWidth = 1;
-          canvas.drawCircle(Offset(cx, cy), waveR + r, wavePaint);
+          EnemyBase.detailPaint.color = neonColor.withValues(alpha: waveAlpha);
+          canvas.drawCircle(Offset(cx, cy), waveR + r, EnemyBase.detailPaint);
         }
       }
+      EnemyBase.detailPaint.style = PaintingStyle.fill;
     }
 
     // Pentagono
@@ -89,31 +94,28 @@ class SirenEnemy extends EnemyBase {
         if (i == 0) innerPentPath.moveTo(x, y); else innerPentPath.lineTo(x, y);
       }
       innerPentPath.close();
-      final innerPentPaint = Paint()
-        ..color = paint.color.withValues(alpha: 0.25)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 0.6;
-      canvas.drawPath(innerPentPath, innerPentPaint);
+      EnemyBase.detailPaint.color = paint.color.withValues(alpha: 0.25);
+      EnemyBase.detailPaint.style = PaintingStyle.stroke;
+      EnemyBase.detailPaint.strokeWidth = 0.6;
+      canvas.drawPath(innerPentPath, EnemyBase.detailPaint);
 
       // Linee di risonanza (connessioni vertice → centro)
-      final resPaint = Paint()
-        ..color = paint.color.withValues(alpha: 0.15)
-        ..strokeWidth = 0.5;
+      EnemyBase.detailPaint.color = paint.color.withValues(alpha: 0.15);
+      EnemyBase.detailPaint.strokeWidth = 0.5;
       for (int i = 0; i < 5; i++) {
         final angle = i * math.pi * 2 / 5 - math.pi / 2;
         final x = r * 0.85 * math.cos(angle);
         final y = r * 0.85 * math.sin(angle);
-        canvas.drawLine(Offset.zero, Offset(x, y), resPaint);
+        canvas.drawLine(Offset.zero, Offset(x, y), EnemyBase.detailPaint);
       }
 
       // Archi armonici rotanti (2 archi sfasati)
-      final arcPaint = Paint()
-        ..color = paint.color.withValues(alpha: 0.2)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 0.7;
+      EnemyBase.detailPaint.color = paint.color.withValues(alpha: 0.2);
+      EnemyBase.detailPaint.strokeWidth = 0.7;
       final arcRect = Rect.fromCircle(center: Offset.zero, radius: r * 0.7);
-      canvas.drawArc(arcRect, _wavePhase, math.pi * 0.6, false, arcPaint);
-      canvas.drawArc(arcRect, _wavePhase + math.pi, math.pi * 0.6, false, arcPaint);
+      canvas.drawArc(arcRect, _wavePhase, math.pi * 0.6, false, EnemyBase.detailPaint);
+      canvas.drawArc(arcRect, _wavePhase + math.pi, math.pi * 0.6, false, EnemyBase.detailPaint);
+      EnemyBase.detailPaint.style = PaintingStyle.fill;
 
       // 5 nodi frequenza sui vertici (pulsano con la wave)
       for (int i = 0; i < 5; i++) {
