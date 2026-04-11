@@ -15,7 +15,7 @@ enum WeaponType {
   plasma,
   ricochet,
   homing,
-  twin,
+  triple,
   overdrive,
 }
 
@@ -125,7 +125,10 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
     if (timeSlowTimer > 0) {
       timeSlowTimer -= realDt;
       if (timeSlowTimer <= 0) {
-        game.timeScale = 1.0;
+        // Non resettare timeScale se c'è un burst slow-mo attivo (bomba/morte)
+        if (game.slowMoTimer <= 0) {
+          game.timeScale = 1.0;
+        }
       }
     }
     if (weaponTimer > 0) {
@@ -215,7 +218,7 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
           _spawnHomingMissile(offset, damageMultiplier);
         }
         _fireTimer = 0.5;
-      case WeaponType.twin:
+      case WeaponType.triple:
         // Sparo triplo con angolo ristretto (~12° totali)
         for (final angle in [-0.105, 0.0, 0.105]) {
           final rotDir = _rotateVector(dir, angle);
@@ -301,10 +304,10 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
     }
   }
 
-  void applyShield(int hits) {
+  void applyShield(int hits, {double duration = 60.0}) {
     hasShield = true;
     shieldHits = hits;
-    // shieldTimer viene impostato dal chiamante (power-up: 60s)
+    shieldTimer = duration;
   }
 
   @override

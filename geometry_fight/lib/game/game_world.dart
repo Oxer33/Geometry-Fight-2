@@ -86,6 +86,7 @@ class GeometryFightGame extends FlameGame
   GameState gameState = GameState.playing;
   double timeScale = 1.0;
   double _slowMoTimer = 0;
+  double get slowMoTimer => _slowMoTimer;
 
   // Modificatori attivi
   List<String> activeModifiers = [];
@@ -227,11 +228,16 @@ class GeometryFightGame extends FlameGame
     // Apply time scale
     final scaledDt = dt * timeScale;
 
-    // Slow-mo timer
+    // Slow-mo timer (bomba/morte — brevi burst)
     if (_slowMoTimer > 0) {
       _slowMoTimer -= dt;
       if (_slowMoTimer <= 0) {
-        timeScale = 1.0;
+        // Non resettare timeScale se il player ha ancora il power-up TimeSlow attivo
+        if (player.timeSlowTimer <= 0) {
+          timeScale = 1.0;
+        } else {
+          timeScale = 0.4; // Ripristina la scala del power-up TimeSlow
+        }
       }
     }
 
@@ -281,6 +287,7 @@ class GeometryFightGame extends FlameGame
       for (int i = _bombExplosionTimers!.length - 1; i >= 0; i--) {
         _bombExplosionTimers![i] -= scaledDt;
         if (_bombExplosionTimers![i] <= 0) {
+          // Onda 2: cyan, Onda 3: arancione (onda 1 spawnata direttamente in useBomb)
           if (i == 1) {
             spawnExplosion(_bombExplosionPos!, NeonColors.cyan,
                 radius: 600, particleCount: 60);

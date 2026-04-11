@@ -113,9 +113,11 @@ class PowerUp extends PositionComponent
   @override
   void update(double dt) {
     super.update(dt);
+    // Usa dt reale per lifetime (non affetto da slow-mo)
+    final realDt = game.timeScale > 0.01 ? dt / game.timeScale : dt;
     _phase += dt * 3;
     _pulsePhase += dt * 6;
-    _lifetime -= dt;
+    _lifetime -= realDt;
     if (_lifetime <= 0) {
       removeFromParent();
       return;
@@ -151,8 +153,7 @@ class PowerUp extends PositionComponent
         player.weaponTimer = powerUpDuration;
       case PowerUpType.shield:
         // Scudo salvavita: dura 60s, assorbe 1 colpo
-        player.applyShield(1);
-        player.shieldTimer = 60.0;
+        player.applyShield(1, duration: 60.0);
       case PowerUpType.magnet:
         player.magnetTimer = powerUpDuration;
       case PowerUpType.timeSlow:

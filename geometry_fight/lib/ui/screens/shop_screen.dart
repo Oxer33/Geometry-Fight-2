@@ -240,7 +240,7 @@ class _ShopScreenState extends State<ShopScreen>
   Widget _buildWeaponsTab() {
     final weapons = [
       _WeaponDef('basic', 'Basic Gun', 0, 'Proiettile singolo — affidabile e preciso', NeonColors.bulletYellow, 'parallel'),
-      _WeaponDef('twin', 'Triple Shot', 800, '3 proiettili ravvicinati — fuoco concentrato', NeonColors.white, 'twin'),
+      _WeaponDef('triple', 'Triple Shot', 800, '3 proiettili ravvicinati — fuoco concentrato', NeonColors.white, 'triple'),
       _WeaponDef('spread', 'Spread Shot', 1000, '5 proiettili a ventaglio — ottimo vs gruppi', NeonColors.spreadOrange, 'fan'),
       _WeaponDef('ricochet', 'Ricochet', 1200, 'Rimbalza sui muri — colpisce da dietro', NeonColors.ricochetGreen, 'bounce'),
       _WeaponDef('homing', 'Homing', 1500, 'Insegue i nemici — non manca mai', NeonColors.pink, 'homing'),
@@ -704,7 +704,7 @@ class _PurchaseButtonState extends State<_PurchaseButton> {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTapDown: (_) => setState(() => _pressed = true),
-      onTapUp: (_) { setState(() => _pressed = false); widget.onTap(); },
+      onTapUp: (_) { setState(() => _pressed = false); if (widget.canAfford) widget.onTap(); },
       onTapCancel: () => setState(() => _pressed = false),
       child: AnimatedScale(
         scale: _pressed ? 0.93 : 1.0,
@@ -1395,7 +1395,7 @@ class _WeaponPreviewPainter extends CustomPainter {
 
     switch (pattern) {
       case 'parallel': _drawParallelBullets(canvas, cx, shipY, fireRate, bulletSpeed); break;
-      case 'twin': _drawTwinBullets(canvas, cx, shipY, fireRate, bulletSpeed); break;
+      case 'triple': _drawTripleBullets(canvas, cx, shipY, fireRate, bulletSpeed); break;
       case 'fan': _drawFanBullets(canvas, cx, shipY, fireRate, bulletSpeed); break;
       case 'bounce': _drawBounceBullets(canvas, cx, shipY, size); break;
       case 'homing': _drawHomingMissiles(canvas, cx, shipY, size); break;
@@ -1436,7 +1436,7 @@ class _WeaponPreviewPainter extends CustomPainter {
     switch (pattern) {
       case 'plasma': return 0.6;
       case 'homing': return 0.7;
-      case 'twin': return 0.12;
+      case 'triple': return 0.12;
       default: return 0.18;
     }
   }
@@ -1462,7 +1462,7 @@ class _WeaponPreviewPainter extends CustomPainter {
     }
   }
 
-  void _drawTwinBullets(Canvas canvas, double cx, double shipY, double rate, double speed) {
+  void _drawTripleBullets(Canvas canvas, double cx, double shipY, double rate, double speed) {
     final bulletPaint = Paint()..color = color;
     final glowPaint = Paint()
       ..color = color.withValues(alpha: 0.3)

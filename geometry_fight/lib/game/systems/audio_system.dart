@@ -37,6 +37,17 @@ class AudioSystem {
     _sfxVolume = volume.clamp(0.0, 1.0);
   }
 
+  static double _bgmVolume = 0.7;
+
+  /// Imposta il volume della musica di sottofondo (0.0–1.0).
+  /// Pronto per quando verrà aggiunta la BGM.
+  static void setBgmVolume(double volume) {
+    _bgmVolume = volume.clamp(0.0, 1.0);
+    // TODO: applicare a FlameAudio.bgm quando la BGM sarà implementata
+  }
+
+  static double get bgmVolume => _bgmVolume;
+
   static void _play(String file, {double volumeScale = 1.0}) {
     if (!_initialized || _sfxVolume <= 0) return;
     try {

@@ -63,6 +63,7 @@ class _SettingsScreenState extends State<SettingsScreen>
     await prefs.setBool('vibration', _vibration);
     await prefs.setBool('show_fps', _showFps);
     AudioSystem.setSfxVolume(_sfxVolume);
+    AudioSystem.setBgmVolume(_bgmVolume);
     AudioSystem.setVibration(_vibration);
   }
 

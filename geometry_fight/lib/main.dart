@@ -47,6 +47,7 @@ void main() async {
   // Load SFX volume from prefs
   final prefs = await SharedPreferences.getInstance();
   AudioSystem.setSfxVolume(prefs.getDouble('sfx_volume') ?? 0.8);
+  AudioSystem.setBgmVolume(prefs.getDouble('bgm_volume') ?? 0.7);
   AudioSystem.setVibration(prefs.getBool('vibration') ?? true);
 
   runApp(const GeometryFightApp());
