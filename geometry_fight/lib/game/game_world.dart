@@ -216,7 +216,13 @@ class GeometryFightGame extends FlameGame
 
   @override
   void update(double dt) {
-    if (gameState == GameState.paused || gameState == GameState.gameOver) return;
+    if (gameState == GameState.paused || gameState == GameState.gameOver) {
+      // Processa lifecycle events (mount/unmount) anche in pausa/game over.
+      // Senza questo, componenti in _addLater/_removeLater restano zombie
+      // e si accumulano ad ogni restart causando lag progressivo.
+      super.update(0);
+      return;
+    }
 
     // Apply time scale
     final scaledDt = dt * timeScale;
@@ -968,7 +974,7 @@ class GeometryFightGame extends FlameGame
     // Rimuovi screenShake dal viewfinder prima di pulire il world
     screenShake.removeFromParent();
 
-    world.removeAll(world.children);
+    world.removeAll(world.children.toList());
     gameState = GameState.playing;
     timeScale = 1.0;
     sessionGeoms = 0;

@@ -42,10 +42,24 @@ class _GameScreenState extends State<GameScreen> {
   List<AchievementDef> _newAchievements = [];
   // Overlay nero per nascondere il flash bianco del GameWidget durante l'init
   double _fadeOverlayOpacity = 1.0;
+  // Key per forzare ricostruzione GameWidget su restart (pulisce completamente lo stato Flame)
+  int _gameKey = 0;
 
   @override
   void initState() {
     super.initState();
+    _initGame();
+    // Tutorial al primo avvio
+    _checkTutorial();
+    // Dissolvi l'overlay nero dopo che il GameWidget ha renderizzato i primi frame
+    Future.delayed(const Duration(milliseconds: 300), () {
+      if (mounted) setState(() => _fadeOverlayOpacity = 0.0);
+    });
+  }
+
+  /// Crea una nuova istanza del gioco con tutti i callback configurati.
+  /// Usato sia in initState che su Retry per avere uno stato completamente pulito.
+  void _initGame() {
     // Assicura che l'audio sia inizializzato (potrebbe essere stato fermato)
     AudioSystem.init();
     _game = GeometryFightGame(
@@ -56,18 +70,14 @@ class _GameScreenState extends State<GameScreen> {
     final saveData = SaveManager.load();
     _game.activeModifiers = List.from(saveData.activeModifiers);
     _game.onGameOver = () {
+      if (!mounted) return;
       _saveLeaderboard();
       setState(() => _showGameOver = true);
     };
     _game.onPause = () {
+      if (!mounted) return;
       setState(() => _showPause = true);
     };
-    // Tutorial al primo avvio
-    _checkTutorial();
-    // Dissolvi l'overlay nero dopo che il GameWidget ha renderizzato i primi frame
-    Future.delayed(const Duration(milliseconds: 300), () {
-      if (mounted) setState(() => _fadeOverlayOpacity = 0.0);
-    });
   }
 
   void _saveLeaderboard() {
@@ -180,7 +190,10 @@ class _GameScreenState extends State<GameScreen> {
       body: Stack(
         children: [
           // === GAME ENGINE ===
+          // Key cambia ad ogni restart → Flutter distrugge il vecchio GameWidget
+          // e ne crea uno nuovo, garantendo pulizia completa dello stato Flame
           GameWidget(
+            key: ValueKey(_gameKey),
             game: _game,
             loadingBuilder: (context) => Container(color: Colors.black),
           ),
@@ -239,12 +252,24 @@ class _GameScreenState extends State<GameScreen> {
               bossKills: _game.sessionBossKills,
               newAchievements: _newAchievements,
               onRetry: () {
+                // Ferma il vecchio gioco e l'audio
+                _game.pauseEngine();
+                _game.onGameOver = null;
+                _game.onPause = null;
+                AudioSystem.stopAll();
+                // Crea un gioco NUOVO da zero — niente leak di stato Flame
+                _initGame();
                 setState(() {
                   _showGameOver = false;
                   _leaderboardSaved = false;
                   _newAchievements = [];
+                  _gameKey++; // Forza ricostruzione GameWidget
+                  _fadeOverlayOpacity = 1.0; // Reset overlay
                 });
-                _game.restartGame();
+                // Dissolvi l'overlay dopo l'init del nuovo GameWidget
+                Future.delayed(const Duration(milliseconds: 300), () {
+                  if (mounted) setState(() => _fadeOverlayOpacity = 0.0);
+                });
               },
               onQuit: widget.onQuit,
             ),
