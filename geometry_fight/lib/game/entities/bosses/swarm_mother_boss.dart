@@ -145,15 +145,15 @@ class SwarmMotherBoss extends BossBase {
     if (currentPhase == 3) {
       final berserkPaint = Paint()
         ..color = NeonColors.red.withValues(alpha: 0.3 + math.sin(_phase * 10) * 0.2)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 25);
-      canvas.drawCircle(Offset(cx, cy), 100 * scale, berserkPaint);
+        ;
+      canvas.drawCircle(Offset(cx, cy), 120 * scale, berserkPaint);
     }
 
     // Laser
     if (_laserActive) {
       final laserPaint = Paint()
         ..color = NeonColors.laserRed.withValues(alpha: 0.7)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8);
+        ;
 
       canvas.save();
       canvas.translate(cx, cy);

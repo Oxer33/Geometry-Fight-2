@@ -177,6 +177,12 @@ class ChronoWraithBoss extends BossBase {
     }
   }
 
+  static final _aiPaint = Paint();
+  static final _warpPaint = Paint();
+  static final _arcPaint = Paint()
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 2;
+
   @override
   void renderBoss(Canvas canvas, Paint paint, double scale) {
     final cx = size.x / 2;
@@ -185,10 +191,9 @@ class ChronoWraithBoss extends BossBase {
     // Draw afterimages
     for (final ai in _afterimages) {
       final offset = ai.position - position;
-      final aiPaint = Paint()
-        ..color = neonColor.withValues(alpha: ai.opacity * 0.3);
+      _aiPaint.color = neonColor.withValues(alpha: ai.opacity * 0.3);
       _drawWraithShape(
-          canvas, aiPaint, scale * 0.9, Offset(cx + offset.x, cy + offset.y));
+          canvas, _aiPaint, scale * 0.9, Offset(cx + offset.x, cy + offset.y));
     }
 
     // Main body
@@ -196,16 +201,14 @@ class ChronoWraithBoss extends BossBase {
 
     // Time warp visual
     if (_timeWarping) {
-      final warpPaint = Paint()
-        ..color = NeonColors.deepPurple.withValues(alpha: 0.2)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 30);
-      canvas.drawCircle(Offset(cx, cy), 100 * scale, warpPaint);
+      // Larger circle at lower alpha instead of blur
+      _warpPaint.color = NeonColors.deepPurple.withValues(alpha: 0.1);
+      canvas.drawCircle(Offset(cx, cy), 130 * scale, _warpPaint);
+      _warpPaint.color = NeonColors.deepPurple.withValues(alpha: 0.15);
+      canvas.drawCircle(Offset(cx, cy), 100 * scale, _warpPaint);
 
       // Clock-like rotating arcs
-      final arcPaint = Paint()
-        ..color = NeonColors.white.withValues(alpha: 0.4)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 2;
+      _arcPaint.color = NeonColors.white.withValues(alpha: 0.4);
       canvas.save();
       canvas.translate(cx, cy);
       canvas.rotate(_phase * 3);
@@ -214,14 +217,14 @@ class ChronoWraithBoss extends BossBase {
         0,
         math.pi / 3,
         false,
-        arcPaint,
+        _arcPaint,
       );
       canvas.drawArc(
         Rect.fromCircle(center: Offset.zero, radius: 80 * scale),
         math.pi,
         math.pi / 3,
         false,
-        arcPaint,
+        _arcPaint,
       );
       canvas.restore();
     }

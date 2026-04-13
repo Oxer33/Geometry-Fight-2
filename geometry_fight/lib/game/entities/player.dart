@@ -324,13 +324,13 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
       _renderOverdriveAura(canvas, cx, cy);
     }
 
-    // === 3. GLOW ESTERNO DELLA NAVE ===
+    // === 3. GLOW ESTERNO DELLA NAVE — senza blur ===
     final baseColor = hasOverdrive
         ? _getRainbowColor(_energyPhase)
         : NeonColors.cyan;
-    paint.color = baseColor.withValues(alpha: 0.25);
-    paint.maskFilter = const MaskFilter.blur(BlurStyle.normal, 16);
-    _drawShipBody(canvas, paint, 1.4);
+    paint.color = baseColor.withValues(alpha: 0.12);
+    paint.maskFilter = null;
+    _drawShipBody(canvas, paint, 1.7);
 
     // === 4. THRUSTER (doppio motore con fiamme) ===
     _renderThrusters(canvas, cx, cy);
@@ -357,6 +357,9 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
     }
   }
 
+  static final _trailPaint = Paint();
+  static final _detailPaint = Paint();
+
   /// Scia luminosa dietro la nave durante il movimento
   void _renderTrail(Canvas canvas, double cx, double cy) {
     if (_trail.isEmpty) return;
@@ -367,26 +370,33 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
       final color = hasOverdrive
           ? _getRainbowColor(_energyPhase + i * 0.3)
           : NeonColors.cyan;
-      final p = Paint()
-        ..color = color.withValues(alpha: alpha)
-        ..maskFilter = MaskFilter.blur(BlurStyle.normal, trailSize + 2);
+      // Soft glow senza blur — cerchio più grande, alpha ridotta
+      _trailPaint.color = color.withValues(alpha: alpha * 0.5);
+      _trailPaint.maskFilter = null;
+      canvas.drawCircle(
+        Offset(cx + offset.x, cy + offset.y),
+        trailSize * 1.8,
+        _trailPaint,
+      );
+      _trailPaint.color = color.withValues(alpha: alpha);
       canvas.drawCircle(
         Offset(cx + offset.x, cy + offset.y),
         trailSize,
-        p,
+        _trailPaint,
       );
     }
   }
 
-  /// Alone arcobaleno attorno alla nave durante overdrive
+  static final _auraPaint = Paint();
+
+  /// Alone arcobaleno attorno alla nave durante overdrive — senza blur
   void _renderOverdriveAura(Canvas canvas, double cx, double cy) {
     for (int i = 0; i < 3; i++) {
       final hue = ((_energyPhase * 60 + i * 120) % 360);
-      final color = HSVColor.fromAHSV(0.15 - i * 0.03, hue, 1, 1).toColor();
-      final p = Paint()
-        ..color = color
-        ..maskFilter = MaskFilter.blur(BlurStyle.normal, 18 + i * 6.0);
-      canvas.drawCircle(Offset(cx, cy), 22 + i * 4.0, p);
+      final color = HSVColor.fromAHSV(0.08 - i * 0.02, hue, 1, 1).toColor();
+      _auraPaint.color = color;
+      _auraPaint.maskFilter = null;
+      canvas.drawCircle(Offset(cx, cy), 30 + i * 8.0, _auraPaint);
     }
   }
 
@@ -409,33 +419,34 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
     canvas.restore();
   }
 
-  /// Disegna una fiamma singola del thruster
+  static final _flameCorePaint = Paint();
+  static final _flameInnerPaint = Paint();
+  static final _flameOuterPaint = Paint();
+
+  /// Disegna una fiamma singola del thruster — senza blur
   void _drawFlame(Canvas canvas, double x, double y, double length, double width) {
-    // Core bianco (centro fiamma)
-    final corePaint = Paint()
-      ..color = const Color(0xFFFFFFFF).withValues(alpha: 0.9)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2);
+    // Fiamma esterna (rosso/viola glow) — cerchio più grande, no blur
+    _flameOuterPaint.color = const Color(0xFFFF2200).withValues(alpha: 0.15);
+    _flameOuterPaint.maskFilter = null;
     canvas.drawOval(
-      Rect.fromCenter(center: Offset(x, y + length * 0.3), width: width * 0.6, height: length * 0.5),
-      corePaint,
+      Rect.fromCenter(center: Offset(x, y + length * 0.6), width: width * 2.2, height: length * 1.3),
+      _flameOuterPaint,
     );
 
     // Fiamma interna (arancione brillante)
-    final innerPaint = Paint()
-      ..color = const Color(0xFFFF6600).withValues(alpha: 0.7)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
+    _flameInnerPaint.color = const Color(0xFFFF6600).withValues(alpha: 0.7);
+    _flameInnerPaint.maskFilter = null;
     canvas.drawOval(
       Rect.fromCenter(center: Offset(x, y + length * 0.5), width: width, height: length * 0.7),
-      innerPaint,
+      _flameInnerPaint,
     );
 
-    // Fiamma esterna (rosso/viola glow)
-    final outerPaint = Paint()
-      ..color = const Color(0xFFFF2200).withValues(alpha: 0.3)
-      ..maskFilter = MaskFilter.blur(BlurStyle.normal, width + 2);
+    // Core bianco (centro fiamma)
+    _flameCorePaint.color = const Color(0xFFFFFFFF).withValues(alpha: 0.9);
+    _flameCorePaint.maskFilter = null;
     canvas.drawOval(
-      Rect.fromCenter(center: Offset(x, y + length * 0.6), width: width * 1.8, height: length),
-      outerPaint,
+      Rect.fromCenter(center: Offset(x, y + length * 0.3), width: width * 0.6, height: length * 0.5),
+      _flameCorePaint,
     );
   }
 
@@ -445,32 +456,34 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
     canvas.translate(cx, cy);
     canvas.rotate(_rotation);
 
-    // Cockpit (cerchio luminoso al centro-alto della nave)
+    // Cockpit (cerchio luminoso al centro-alto della nave) — senza blur
     final cockpitGlow = 0.6 + math.sin(_energyPhase * 2) * 0.2;
-    final cockpitPaint = Paint()
-      ..color = const Color(0xFFFFFFFF).withValues(alpha: cockpitGlow)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
-    canvas.drawCircle(const Offset(0, -4), 3, cockpitPaint);
-    cockpitPaint.maskFilter = null;
-    cockpitPaint.color = baseColor.withValues(alpha: 0.9);
-    canvas.drawCircle(const Offset(0, -4), 2, cockpitPaint);
+    _detailPaint.color = const Color(0xFFFFFFFF).withValues(alpha: cockpitGlow * 0.5);
+    _detailPaint.maskFilter = null;
+    _detailPaint.style = PaintingStyle.fill;
+    canvas.drawCircle(const Offset(0, -4), 5, _detailPaint);
+    _detailPaint.color = const Color(0xFFFFFFFF).withValues(alpha: cockpitGlow);
+    canvas.drawCircle(const Offset(0, -4), 3, _detailPaint);
+    _detailPaint.color = baseColor.withValues(alpha: 0.9);
+    canvas.drawCircle(const Offset(0, -4), 2, _detailPaint);
 
     // Linee strutturali sulle ali
-    final linePaint = Paint()
-      ..color = baseColor.withValues(alpha: 0.3)
-      ..strokeWidth = 0.5
-      ..style = PaintingStyle.stroke;
+    _detailPaint.color = baseColor.withValues(alpha: 0.3);
+    _detailPaint.strokeWidth = 0.5;
+    _detailPaint.style = PaintingStyle.stroke;
     // Linea ala sinistra
-    canvas.drawLine(const Offset(-2, 0), const Offset(-10, 10), linePaint);
+    canvas.drawLine(const Offset(-2, 0), const Offset(-10, 10), _detailPaint);
     // Linea ala destra
-    canvas.drawLine(const Offset(2, 0), const Offset(10, 10), linePaint);
+    canvas.drawLine(const Offset(2, 0), const Offset(10, 10), _detailPaint);
     // Linea centrale
-    canvas.drawLine(const Offset(0, -8), const Offset(0, 8), linePaint);
+    canvas.drawLine(const Offset(0, -8), const Offset(0, 8), _detailPaint);
 
     canvas.restore();
   }
 
-  /// Luci sulle punte delle ali che pulsano
+  static final _wingPaint = Paint();
+
+  /// Luci sulle punte delle ali che pulsano — senza blur
   void _renderWingLights(Canvas canvas, double cx, double cy) {
     final pulse = 0.5 + math.sin(_wingPulse) * 0.5;
 
@@ -478,59 +491,61 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
     canvas.translate(cx, cy);
     canvas.rotate(_rotation);
 
-    // Luce ala sinistra (rossa)
-    final leftPaint = Paint()
-      ..color = Color.fromRGBO(255, 50, 50, pulse * 0.8)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
-    canvas.drawCircle(const Offset(-12, 10), 2, leftPaint);
+    // Luce ala sinistra (rossa) — glow + core
+    _wingPaint.maskFilter = null;
+    _wingPaint.color = Color.fromRGBO(255, 50, 50, pulse * 0.3);
+    canvas.drawCircle(const Offset(-12, 10), 4, _wingPaint);
+    _wingPaint.color = Color.fromRGBO(255, 50, 50, pulse * 0.8);
+    canvas.drawCircle(const Offset(-12, 10), 2, _wingPaint);
 
-    // Luce ala destra (verde)
-    final rightPaint = Paint()
-      ..color = Color.fromRGBO(50, 255, 100, pulse * 0.8)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
-    canvas.drawCircle(const Offset(12, 10), 2, rightPaint);
+    // Luce ala destra (verde) — glow + core
+    _wingPaint.color = Color.fromRGBO(50, 255, 100, pulse * 0.3);
+    canvas.drawCircle(const Offset(12, 10), 4, _wingPaint);
+    _wingPaint.color = Color.fromRGBO(50, 255, 100, pulse * 0.8);
+    canvas.drawCircle(const Offset(12, 10), 2, _wingPaint);
 
     canvas.restore();
   }
 
-  /// Scudo esagonale force field con animazione
+  static final _shieldPaint = Paint();
+
+  /// Scudo esagonale force field con animazione — senza blur
   void _renderShield(Canvas canvas, double cx, double cy) {
     final shieldAlpha = 0.2 + math.sin(_shieldPhase * 2) * 0.1;
 
-    // Glow esterno
-    final glowPaint = Paint()
-      ..color = NeonColors.cyan.withValues(alpha: shieldAlpha * 0.5)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10);
-    _drawHexagonAt(canvas, cx, cy, 24, glowPaint);
+    // Glow esterno — esagono più grande, alpha ridotta, no blur
+    _shieldPaint.color = NeonColors.cyan.withValues(alpha: shieldAlpha * 0.25);
+    _shieldPaint.style = PaintingStyle.fill;
+    _shieldPaint.strokeWidth = 0;
+    _shieldPaint.maskFilter = null;
+    _drawHexagonAt(canvas, cx, cy, 28, _shieldPaint);
 
     // Bordo esagonale principale
-    final borderPaint = Paint()
-      ..color = NeonColors.cyan.withValues(alpha: shieldAlpha + 0.2)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.5;
-    _drawHexagonAt(canvas, cx, cy, 22, borderPaint);
+    _shieldPaint.color = NeonColors.cyan.withValues(alpha: shieldAlpha + 0.2);
+    _shieldPaint.style = PaintingStyle.stroke;
+    _shieldPaint.strokeWidth = 1.5;
+    _drawHexagonAt(canvas, cx, cy, 22, _shieldPaint);
 
     // Secondo esagono interno (ruotato)
     canvas.save();
     canvas.translate(cx, cy);
     canvas.rotate(_shieldPhase * 0.3);
-    final innerPaint = Paint()
-      ..color = NeonColors.cyan.withValues(alpha: shieldAlpha * 0.4)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 0.5;
-    _drawHexagonAt(canvas, 0, 0, 18, innerPaint);
+    _shieldPaint.color = NeonColors.cyan.withValues(alpha: shieldAlpha * 0.4);
+    _shieldPaint.strokeWidth = 0.5;
+    _drawHexagonAt(canvas, 0, 0, 18, _shieldPaint);
     canvas.restore();
 
-    // Punti energetici sui vertici
+    // Punti energetici sui vertici — senza blur
+    _shieldPaint.style = PaintingStyle.fill;
     for (int i = 0; i < 6; i++) {
       final angle = i * math.pi / 3 - math.pi / 6;
       final px = cx + 22 * math.cos(angle);
       final py = cy + 22 * math.sin(angle);
       final dotAlpha = 0.3 + math.sin(_shieldPhase * 3 + i) * 0.3;
-      final dotPaint = Paint()
-        ..color = NeonColors.cyan.withValues(alpha: dotAlpha)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
-      canvas.drawCircle(Offset(px, py), 1.5, dotPaint);
+      _shieldPaint.color = NeonColors.cyan.withValues(alpha: dotAlpha * 0.5);
+      canvas.drawCircle(Offset(px, py), 3, _shieldPaint);
+      _shieldPaint.color = NeonColors.cyan.withValues(alpha: dotAlpha);
+      canvas.drawCircle(Offset(px, py), 1.5, _shieldPaint);
     }
   }
 

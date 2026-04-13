@@ -77,11 +77,10 @@ class PhantomEnemy extends EnemyBase {
 
   @override
   void render(Canvas canvas) {
-    // Override render to apply opacity
+    // Override render to apply opacity — senza blur
     final glowPaint = Paint()
-      ..color = neonColor.withValues(alpha: 0.3 * _opacity)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10);
-    renderShape(canvas, glowPaint, 1.3);
+      ..color = neonColor.withValues(alpha: 0.15 * _opacity);
+    renderShape(canvas, glowPaint, 1.6);
 
     final mainPaint = Paint()..color = neonColor.withValues(alpha: _opacity);
     renderShape(canvas, mainPaint, 1.0);

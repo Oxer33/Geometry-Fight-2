@@ -1127,9 +1127,9 @@ class _GameNotifier extends ChangeNotifier implements Listenable {
   bool _disposed = false;
 
   _GameNotifier(this.game) {
-    // Rebuild periodico per aggiornare la HUD
+    // Rebuild periodico per aggiornare la HUD (~30fps)
     Future.doWhile(() async {
-      await Future.delayed(const Duration(milliseconds: 80));
+      await Future.delayed(const Duration(milliseconds: 33));
       if (!_disposed) {
         notifyListeners();
       }

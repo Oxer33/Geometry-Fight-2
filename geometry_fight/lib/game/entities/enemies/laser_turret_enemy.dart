@@ -83,34 +83,20 @@ class LaserTurretEnemy extends EnemyBase {
 
       // Linea del laser (se attivo)
       if (_laserActive) {
-        // Glow del laser
-        final laserGlow = Paint()
-          ..color = neonColor.withValues(alpha: 0.2)
-          ..strokeWidth = 6
-          ..style = PaintingStyle.stroke
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6);
-        canvas.drawLine(
-          Offset.zero,
-          Offset(math.cos(_laserAngle) * _laserLength, math.sin(_laserAngle) * _laserLength),
-          laserGlow,
-        );
+        final laserEnd = Offset(math.cos(_laserAngle) * _laserLength, math.sin(_laserAngle) * _laserLength);
+        // Glow del laser — senza blur, linea più spessa
+        EnemyBase.detailPaint.color = neonColor.withValues(alpha: 0.1);
+        EnemyBase.detailPaint.strokeWidth = 8;
+        EnemyBase.detailPaint.style = PaintingStyle.stroke;
+        canvas.drawLine(Offset.zero, laserEnd, EnemyBase.detailPaint);
         // Core del laser
-        final laserCore = Paint()
-          ..color = neonColor
-          ..strokeWidth = 2
-          ..style = PaintingStyle.stroke;
-        canvas.drawLine(
-          Offset.zero,
-          Offset(math.cos(_laserAngle) * _laserLength, math.sin(_laserAngle) * _laserLength),
-          laserCore,
-        );
-        // Punto luminoso alla fine del laser
-        canvas.drawCircle(
-          Offset(math.cos(_laserAngle) * _laserLength, math.sin(_laserAngle) * _laserLength),
-          3,
-          Paint()..color = const Color(0xFFFFFFFF).withValues(alpha: 0.5)
-            ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3),
-        );
+        EnemyBase.detailPaint.color = neonColor;
+        EnemyBase.detailPaint.strokeWidth = 2;
+        canvas.drawLine(Offset.zero, laserEnd, EnemyBase.detailPaint);
+        // Punto luminoso alla fine — senza blur
+        EnemyBase.detailPaint.style = PaintingStyle.fill;
+        EnemyBase.detailPaint.color = const Color(0xFFFFFFFF).withValues(alpha: 0.5);
+        canvas.drawCircle(laserEnd, 3, EnemyBase.detailPaint);
       } else {
         // Warmup: indicatore di carica (cerchio che si riempie)
         final chargeProgress = 1.0 - (_warmupTimer / 1.5).clamp(0.0, 1.0);
@@ -124,13 +110,13 @@ class LaserTurretEnemy extends EnemyBase {
         );
       }
 
-      // Nucleo
+      // Nucleo — senza blur
       final coreAlpha = _laserActive ? 0.8 : 0.3;
-      canvas.drawCircle(
-        Offset.zero, r * 0.2,
-        Paint()..color = const Color(0xFFFFFFFF).withValues(alpha: coreAlpha)
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3),
-      );
+      EnemyBase.detailPaint.color = const Color(0xFFFFFFFF).withValues(alpha: coreAlpha * 0.5);
+      EnemyBase.detailPaint.style = PaintingStyle.fill;
+      canvas.drawCircle(Offset.zero, r * 0.3, EnemyBase.detailPaint);
+      EnemyBase.detailPaint.color = const Color(0xFFFFFFFF).withValues(alpha: coreAlpha);
+      canvas.drawCircle(Offset.zero, r * 0.2, EnemyBase.detailPaint);
     }
     canvas.restore();
   }

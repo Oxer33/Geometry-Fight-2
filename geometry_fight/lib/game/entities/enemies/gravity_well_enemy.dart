@@ -13,6 +13,15 @@ class GravityWellEnemy extends EnemyBase {
   double _pulsePhase = 0;
   static const double _invertRadius = 180.0;
 
+  static final _ringPaint = Paint()
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 0.5;
+  static final _spiralPaint = Paint()
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 1;
+  static final _particlePaint = Paint();
+  static final _corePaint = Paint();
+
   GravityWellEnemy()
       : super(
           hp: 8,
@@ -51,11 +60,8 @@ class GravityWellEnemy extends EnemyBase {
       for (int ring = 3; ring >= 0; ring--) {
         final ringR = _invertRadius * 0.3 * (ring + 1) * 0.25;
         final ringAlpha = 0.04 + ring * 0.02;
-        final ringPaint = Paint()
-          ..color = neonColor.withValues(alpha: ringAlpha)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 0.5;
-        canvas.drawCircle(Offset(cx, cy), ringR, ringPaint);
+        _ringPaint.color = neonColor.withValues(alpha: ringAlpha);
+        canvas.drawCircle(Offset(cx, cy), ringR, _ringPaint);
       }
     }
 
@@ -65,10 +71,7 @@ class GravityWellEnemy extends EnemyBase {
     // Dettagli interni
     if (scale <= 1.01) {
       // Spirale interna
-      final spiralPaint = Paint()
-        ..color = paint.color.withValues(alpha: 0.3)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1;
+      _spiralPaint.color = paint.color.withValues(alpha: 0.3);
       final spiralPath = Path();
       for (int i = 0; i < 60; i++) {
         final angle = _spiralPhase + i * 0.15;
@@ -77,7 +80,7 @@ class GravityWellEnemy extends EnemyBase {
         final sy = cy + dist * math.sin(angle);
         if (i == 0) spiralPath.moveTo(sx, sy); else spiralPath.lineTo(sx, sy);
       }
-      canvas.drawPath(spiralPath, spiralPaint);
+      canvas.drawPath(spiralPath, _spiralPaint);
 
       // Particelle orbitanti (6 particelle)
       for (int i = 0; i < 6; i++) {
@@ -86,18 +89,23 @@ class GravityWellEnemy extends EnemyBase {
         final px = cx + pDist * math.cos(pAngle);
         final py = cy + pDist * math.sin(pAngle);
         final pAlpha = 0.4 + math.sin(_spiralPhase * 2 + i) * 0.3;
-        canvas.drawCircle(
-          Offset(px, py), 1.5,
-          Paint()..color = const Color(0xFF8844FF).withValues(alpha: pAlpha)
-            ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2),
-        );
+        // Outer soft glow — larger radius, half alpha, no blur
+        _particlePaint.color = const Color(0xFF8844FF).withValues(alpha: pAlpha * 0.5);
+        _particlePaint.maskFilter = null;
+        canvas.drawCircle(Offset(px, py), 3.5, _particlePaint);
+        // Inner bright core
+        _particlePaint.color = const Color(0xFF8844FF).withValues(alpha: pAlpha);
+        canvas.drawCircle(Offset(px, py), 1.5, _particlePaint);
       }
 
-      // Nucleo luminoso
-      final corePaint = Paint()
-        ..color = const Color(0xFFAA66FF).withValues(alpha: 0.6 + math.sin(_pulsePhase * 3) * 0.2)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5);
-      canvas.drawCircle(Offset(cx, cy), r * 0.25, corePaint);
+      // Nucleo luminoso — outer soft glow, no blur
+      final coreAlpha = 0.6 + math.sin(_pulsePhase * 3) * 0.2;
+      _corePaint.color = const Color(0xFFAA66FF).withValues(alpha: coreAlpha * 0.35);
+      _corePaint.maskFilter = null;
+      canvas.drawCircle(Offset(cx, cy), r * 0.45, _corePaint);
+      // Inner bright core
+      _corePaint.color = const Color(0xFFAA66FF).withValues(alpha: coreAlpha);
+      canvas.drawCircle(Offset(cx, cy), r * 0.25, _corePaint);
     }
   }
 }

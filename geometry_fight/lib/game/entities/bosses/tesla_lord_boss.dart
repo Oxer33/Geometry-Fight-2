@@ -123,8 +123,7 @@ class TeslaLordBoss extends BossBase {
         final offset = _towerPositions[i] - position;
         // Torre
         final towerPaint = Paint()
-          ..color = neonColor.withValues(alpha: 0.5)
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
+          ..color = neonColor.withValues(alpha: 0.5);
         canvas.drawCircle(Offset(cx + offset.x, cy + offset.y), 8, towerPaint);
 
         // Fulmine alla torre successiva
@@ -155,7 +154,7 @@ class TeslaLordBoss extends BossBase {
         final lp = Paint()
           ..color = neonColor.withValues(alpha: 0.4)
           ..strokeWidth = 1.5
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2);
+          ;
         canvas.drawLine(Offset.zero, Offset(r * 0.6 * math.cos(angle), r * 0.6 * math.sin(angle)), lp);
       }
 
@@ -163,7 +162,8 @@ class TeslaLordBoss extends BossBase {
       final pulse = 0.5 + math.sin(_sparkPhase * 0.5) * 0.3;
       final corePaint = Paint()
         ..color = const Color(0xFFFFFFFF).withValues(alpha: pulse)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8);
+        ;
+      canvas.drawCircle(Offset.zero, r * 0.35, Paint()..color = const Color(0xFFFFFFFF).withValues(alpha: pulse * 0.3));
       canvas.drawCircle(Offset.zero, r * 0.2, corePaint);
     }
     canvas.restore();
@@ -186,7 +186,7 @@ class TeslaLordBoss extends BossBase {
       ..color = neonColor.withValues(alpha: 0.5)
       ..strokeWidth = 2
       ..style = PaintingStyle.stroke
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
+      ;
     canvas.drawPath(path, lp);
   }
 }

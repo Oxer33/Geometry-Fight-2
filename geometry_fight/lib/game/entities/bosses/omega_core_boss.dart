@@ -169,7 +169,7 @@ class OmegaCoreBoss extends BossBase {
         final offset = zone.position - position;
         final zonePaint = Paint()
           ..color = const Color(0xFFFF2200).withValues(alpha: 0.2)
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8);
+          ;
         canvas.drawCircle(Offset(cx + offset.x, cy + offset.y), 50, zonePaint);
         final borderPaint = Paint()
           ..color = const Color(0xFFFF2200).withValues(alpha: 0.4)
@@ -212,7 +212,8 @@ class OmegaCoreBoss extends BossBase {
       final pulse = 0.5 + math.sin(_phase * 2) * 0.3;
       final corePaint = Paint()
         ..color = const Color(0xFFFFFFFF).withValues(alpha: pulse)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 12);
+        ;
+      canvas.drawCircle(Offset(cx, cy), r * 0.4, Paint()..color = const Color(0xFFFFFFFF).withValues(alpha: pulse * 0.3));
       canvas.drawCircle(Offset(cx, cy), r * 0.25, corePaint);
 
       // Particelle orbitanti
@@ -223,7 +224,7 @@ class OmegaCoreBoss extends BossBase {
         final py = cy + pR * math.sin(pAngle);
         final pPaint = Paint()
           ..color = _getCurrentColor().withValues(alpha: 0.6)
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
+          ;
         canvas.drawCircle(Offset(px, py), 3, pPaint);
       }
 

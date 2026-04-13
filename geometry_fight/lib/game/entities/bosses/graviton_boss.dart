@@ -17,6 +17,15 @@ class GravitonBoss extends BossBase {
   double _attackTimer = 2.0;
   static const double _gravityRadius = 350.0;
 
+  // Cached paints — avoid per-frame allocations in renderBoss
+  static final _fieldPaint = Paint();
+  static final _particlePaint = Paint();
+  static final _ringPaint = Paint()..style = PaintingStyle.stroke;
+  static final _spherePaint = Paint();
+  static final _borderPaint = Paint()..style = PaintingStyle.stroke;
+  static final _corePaint = Paint();
+  static final _indicatorPaint = Paint();
+
   GravitonBoss()
       : super(
           hp: 2200,
@@ -101,10 +110,10 @@ class GravitonBoss extends BossBase {
 
     // Campo gravitazionale visibile
     if (scale <= 1.01) {
-      final fieldColor = _isPulling
+      _fieldPaint.color = _isPulling
           ? const Color(0xFF4400AA).withValues(alpha: 0.08)
           : const Color(0xFFFFD700).withValues(alpha: 0.06);
-      canvas.drawCircle(Offset(cx, cy), _gravityRadius * 0.4, Paint()..color = fieldColor);
+      canvas.drawCircle(Offset(cx, cy), _gravityRadius * 0.4, _fieldPaint);
 
       // Particelle aspirate/respinte
       for (int i = 0; i < 12; i++) {
@@ -116,10 +125,8 @@ class GravitonBoss extends BossBase {
         final px = cx + pDist * math.cos(pAngle);
         final py = cy + pDist * math.sin(pAngle);
         final pAlpha = _isPulling ? pProgress * 0.3 : (1 - pProgress) * 0.3;
-        canvas.drawCircle(
-          Offset(px, py), 1.5,
-          Paint()..color = const Color(0xFFFFD700).withValues(alpha: pAlpha),
-        );
+        _particlePaint.color = const Color(0xFFFFD700).withValues(alpha: pAlpha);
+        canvas.drawCircle(Offset(px, py), 1.5, _particlePaint);
       }
     }
 
@@ -152,8 +159,7 @@ class GravitonBoss extends BossBase {
       final pulse = _isPulling ? 0.6 : 0.3;
       canvas.drawCircle(
         Offset(cx, cy), r * 0.15,
-        Paint()..color = const Color(0xFFFFD700).withValues(alpha: pulse)
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6),
+        Paint()..color = const Color(0xFFFFD700).withValues(alpha: pulse),
       );
 
       // Indicatore pull/push
@@ -162,7 +168,7 @@ class GravitonBoss extends BossBase {
           : const Color(0xFFFFD700);
       canvas.drawCircle(
         Offset(cx, cy - r * 0.55), 3,
-        Paint()..color = indicatorColor..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3),
+        Paint()..color = indicatorColor,
       );
     }
   }

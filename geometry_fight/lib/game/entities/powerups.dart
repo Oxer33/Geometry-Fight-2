@@ -173,6 +173,9 @@ class PowerUp extends PositionComponent
     }
   }
 
+  static final _puPaint = Paint();
+  static final _puBorderPaint = Paint()..style = PaintingStyle.stroke;
+
   @override
   void render(Canvas canvas) {
     final alpha = _lifetime < 2 ? _lifetime / 2 : 1.0;
@@ -180,59 +183,55 @@ class PowerUp extends PositionComponent
     final cx = size.x / 2;
     final cy = size.y / 2;
 
-    // === RARITY VISUALS ===
+    // === RARITY VISUALS — senza blur ===
     switch (rarity) {
       case PowerUpRarity.legendary:
-        // Aura dorata grande pulsante
         final legendPulse = 1.0 + math.sin(_pulsePhase * 1.5) * 0.3;
-        final auraPaint = Paint()
-          ..color = const Color(0xFFFFD700).withValues(alpha: alpha * 0.25)
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 20);
-        canvas.drawCircle(Offset(cx, cy), 22 * legendPulse, auraPaint);
+        // Aura dorata — cerchio grande, no blur
+        _puPaint.color = const Color(0xFFFFD700).withValues(alpha: alpha * 0.12);
+        _puPaint.maskFilter = null;
+        _puPaint.style = PaintingStyle.fill;
+        canvas.drawCircle(Offset(cx, cy), 30 * legendPulse, _puPaint);
         // Anello esterno dorato
-        final ringPaint = Paint()
-          ..color = const Color(0xFFFFD700).withValues(alpha: alpha * 0.5)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 1.5;
-        canvas.drawCircle(Offset(cx, cy), 18 * legendPulse, ringPaint);
+        _puBorderPaint.color = const Color(0xFFFFD700).withValues(alpha: alpha * 0.5);
+        _puBorderPaint.strokeWidth = 1.5;
+        canvas.drawCircle(Offset(cx, cy), 18 * legendPulse, _puBorderPaint);
       case PowerUpRarity.epic:
-        // Particelle orbitanti
+        // Particelle orbitanti — senza blur
         for (int i = 0; i < 4; i++) {
           final angle = _phase * 2 + i * math.pi / 2;
           final px = cx + math.cos(angle) * 16;
           final py = cy + math.sin(angle) * 16;
-          final pPaint = Paint()
-            ..color = color.withValues(alpha: alpha * 0.5)
-            ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
-          canvas.drawCircle(Offset(px, py), 1.5, pPaint);
+          _puPaint.color = color.withValues(alpha: alpha * 0.5);
+          _puPaint.maskFilter = null;
+          _puPaint.style = PaintingStyle.fill;
+          canvas.drawCircle(Offset(px, py), 1.5, _puPaint);
         }
-        // Glow forte
-        final epicGlow = Paint()
-          ..color = color.withValues(alpha: alpha * 0.5)
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 16);
-        canvas.drawCircle(Offset(cx, cy), 18 * pulse, epicGlow);
+        // Glow — cerchio grande, no blur
+        _puPaint.color = color.withValues(alpha: alpha * 0.2);
+        canvas.drawCircle(Offset(cx, cy), 24 * pulse, _puPaint);
       case PowerUpRarity.rare:
-        // Doppio anello glow
-        final rareGlow = Paint()
-          ..color = color.withValues(alpha: alpha * 0.35)
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 14);
-        canvas.drawCircle(Offset(cx, cy), 17 * pulse, rareGlow);
+        // Glow — cerchio grande, no blur
+        _puPaint.color = color.withValues(alpha: alpha * 0.15);
+        _puPaint.maskFilter = null;
+        _puPaint.style = PaintingStyle.fill;
+        canvas.drawCircle(Offset(cx, cy), 24 * pulse, _puPaint);
       case PowerUpRarity.common:
-        break; // Solo glow base
+        break;
     }
 
-    // Glow base (tutti)
-    final glowPaint = Paint()
-      ..color = color.withValues(alpha: alpha * 0.4)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 12);
-    canvas.drawCircle(Offset(cx, cy), 16 * pulse, glowPaint);
+    // Glow base (tutti) — senza blur, cerchio più grande
+    _puPaint.color = color.withValues(alpha: alpha * 0.18);
+    _puPaint.maskFilter = null;
+    _puPaint.style = PaintingStyle.fill;
+    canvas.drawCircle(Offset(cx, cy), 22 * pulse, _puPaint);
 
     // Shape (rotating hexagon)
     canvas.save();
     canvas.translate(cx, cy);
     canvas.rotate(_phase);
 
-    final paint = Paint()..color = color.withValues(alpha: alpha);
+    _puPaint.color = color.withValues(alpha: alpha);
     final path = Path();
     for (int i = 0; i < 6; i++) {
       final angle = i * math.pi / 3;
@@ -246,31 +245,28 @@ class PowerUp extends PositionComponent
       }
     }
     path.close();
-    canvas.drawPath(path, paint);
+    canvas.drawPath(path, _puPaint);
 
     // Bordo based on rarity
     if (rarity != PowerUpRarity.common) {
-      final borderPaint = Paint()
-        ..color = (rarity == PowerUpRarity.legendary
-            ? const Color(0xFFFFD700)
-            : color).withValues(alpha: alpha * 0.7)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = rarity == PowerUpRarity.legendary ? 1.5 : 1.0;
-      canvas.drawPath(path, borderPaint);
+      _puBorderPaint.color = (rarity == PowerUpRarity.legendary
+          ? const Color(0xFFFFD700)
+          : color).withValues(alpha: alpha * 0.7);
+      _puBorderPaint.strokeWidth = rarity == PowerUpRarity.legendary ? 1.5 : 1.0;
+      canvas.drawPath(path, _puBorderPaint);
     }
 
     // Inner icon (cuore per extraLife, cerchio per il resto)
     if (type == PowerUpType.extraLife) {
-      paint.color = const Color(0xFFFFFFFF).withValues(alpha: alpha * 0.9);
-      // Cuoricino semplificato
+      _puPaint.color = const Color(0xFFFFFFFF).withValues(alpha: alpha * 0.9);
       final heartPath = Path()
         ..moveTo(0, 2)
         ..cubicTo(-4, -2, -4, -5, 0, -3)
         ..cubicTo(4, -5, 4, -2, 0, 2);
-      canvas.drawPath(heartPath, paint);
+      canvas.drawPath(heartPath, _puPaint);
     } else {
-      paint.color = const Color(0xFFFFFFFF).withValues(alpha: alpha * 0.8);
-      canvas.drawCircle(Offset.zero, 3, paint);
+      _puPaint.color = const Color(0xFFFFFFFF).withValues(alpha: alpha * 0.8);
+      canvas.drawCircle(Offset.zero, 3, _puPaint);
     }
 
     canvas.restore();

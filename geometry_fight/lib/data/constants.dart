@@ -23,7 +23,7 @@ const int maxBounces = 2;
 const double bulletLifetime = 2.0;
 
 // Camera
-const double cameraSmoothing = 0.08;
+const double cameraSmoothing = 0.12;
 
 // Grid
 const int gridCols = 50;

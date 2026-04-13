@@ -106,8 +106,7 @@ class MirrorMasterBoss extends BossBase {
       final pulse = 0.4 + math.sin(_mirrorAngle * 2) * 0.3;
       canvas.drawCircle(
         Offset.zero, r * 0.25,
-        Paint()..color = const Color(0xFFFFFFFF).withValues(alpha: pulse)
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6),
+        Paint()..color = const Color(0xFFFFFFFF).withValues(alpha: pulse),
       );
     }
     canvas.restore();

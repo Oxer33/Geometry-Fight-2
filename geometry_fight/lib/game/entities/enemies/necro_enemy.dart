@@ -96,13 +96,13 @@ class NecroEnemy extends EnemyBase {
       }
       canvas.restore();
 
-      // Indicatori resurrezioni pending
+      // Indicatori resurrezioni pending — senza blur
       for (int i = 0; i < _pendingRes.length; i++) {
-        final resPaint = Paint()
-          ..color = neonColor.withValues(alpha: 0.5)
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
         final offset = _pendingRes[i].position - position;
-        canvas.drawCircle(Offset(cx + offset.x, cy + offset.y), 5, resPaint);
+        EnemyBase.detailPaint.color = neonColor.withValues(alpha: 0.2);
+        canvas.drawCircle(Offset(cx + offset.x, cy + offset.y), 8, EnemyBase.detailPaint);
+        EnemyBase.detailPaint.color = neonColor.withValues(alpha: 0.5);
+        canvas.drawCircle(Offset(cx + offset.x, cy + offset.y), 5, EnemyBase.detailPaint);
       }
     }
 
@@ -117,11 +117,9 @@ class NecroEnemy extends EnemyBase {
       canvas.drawCircle(Offset(cx + r * 0.25, cy - r * 0.1), r * 0.15, eyePaint);
       // Pupille luminose
       final pupilGlow = 0.5 + math.sin(_ritualPhase * 3) * 0.5;
-      final pupilPaint = Paint()
-        ..color = neonColor.withValues(alpha: pupilGlow)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2);
-      canvas.drawCircle(Offset(cx - r * 0.25, cy - r * 0.1), r * 0.08, pupilPaint);
-      canvas.drawCircle(Offset(cx + r * 0.25, cy - r * 0.1), r * 0.08, pupilPaint);
+      EnemyBase.detailPaint.color = neonColor.withValues(alpha: pupilGlow);
+      canvas.drawCircle(Offset(cx - r * 0.25, cy - r * 0.1), r * 0.08, EnemyBase.detailPaint);
+      canvas.drawCircle(Offset(cx + r * 0.25, cy - r * 0.1), r * 0.08, EnemyBase.detailPaint);
       // Bocca (linea)
       final mouthPaint = Paint()
         ..color = const Color(0xFF000000)

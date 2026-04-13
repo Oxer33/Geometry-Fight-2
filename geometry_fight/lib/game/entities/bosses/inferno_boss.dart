@@ -102,7 +102,7 @@ class InfernoBoss extends BossBase {
           Offset(cx + offset.x, cy + offset.y), trailR,
           Paint()
             ..color = neonColor.withValues(alpha: alpha)
-            ..maskFilter = MaskFilter.blur(BlurStyle.normal, trailR),
+            ,
         );
       }
     }
@@ -130,7 +130,7 @@ class InfernoBoss extends BossBase {
       canvas.drawCircle(
         Offset.zero, r * 0.25,
         Paint()..color = const Color(0xFFFFDD00).withValues(alpha: pulse)
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8),
+          ,
       );
       // Centro bianco
       canvas.drawCircle(

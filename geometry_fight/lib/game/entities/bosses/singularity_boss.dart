@@ -163,8 +163,8 @@ class SingularityBoss extends BossBase {
     final glowIntensity = 0.3 + math.sin(_phase * 2) * 0.1;
     final greenGlow = Paint()
       ..color = NeonColors.green.withValues(alpha: glowIntensity)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 20);
-    canvas.drawCircle(Offset(cx, cy), r * 1.3, greenGlow);
+      ;
+    canvas.drawCircle(Offset(cx, cy), r * 1.6, greenGlow);
 
     // Edge ring
     paint.style = PaintingStyle.stroke;

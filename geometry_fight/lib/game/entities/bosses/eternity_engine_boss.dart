@@ -180,8 +180,7 @@ class EternityEngineBoss extends BossBase {
     // Glow esterno
     canvas.drawCircle(
       Offset(cx, cy), r * 0.25,
-      Paint()..color = coreColor.withValues(alpha: 0.3)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 12),
+      Paint()..color = coreColor.withValues(alpha: 0.15),
     );
     // Nucleo solido
     canvas.drawCircle(Offset(cx, cy), r * 0.18, Paint()..color = coreColor);
@@ -240,8 +239,7 @@ class EternityEngineBoss extends BossBase {
         final angle = i * math.pi * 2 / segments;
         canvas.drawCircle(
           Offset(radius * math.cos(angle), radius * math.sin(angle)), 2,
-          Paint()..color = color.withValues(alpha: 0.7)
-            ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2),
+          Paint()..color = color.withValues(alpha: 0.7),
         );
       }
     }

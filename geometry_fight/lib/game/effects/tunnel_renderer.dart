@@ -15,6 +15,27 @@ class TunnelRenderer extends PositionComponent
   double _obstacleSpawnTimer = 5.0;
   static final _random = math.Random();
 
+  // Cached static Paints
+  static final _wallGlowPaint = Paint()
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 10;
+  static final _wallMainPaint = Paint()
+    ..color = const Color(0xFF00FFFF).withValues(alpha: 0.6)
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 2.5;
+  static final _wallInnerPaint = Paint()
+    ..color = const Color(0xFF0088AA).withValues(alpha: 0.15)
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 1;
+  static final _obsGlowPaint = Paint();
+  static final _obsBarrierPaint = Paint();
+  static final _obsBorderPaint = Paint()
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 1;
+  static final _speedLinePaint = Paint()
+    ..color = const Color(0xFF0044AA).withValues(alpha: 0.06)
+    ..strokeWidth = 0.5;
+
   TunnelRenderer() : super(priority: -5); // Sopra sfondo, sotto entità
 
   /// Altezza del tunnel dal game_world
@@ -157,28 +178,16 @@ class TunnelRenderer extends PositionComponent
       else { bottomPath.lineTo(x, by); }
     }
 
-    // Glow esterno dei muri
-    final glowPaint = Paint()
-      ..color = const Color(0xFF00FFFF).withValues(alpha: 0.12)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 10
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 14);
-    canvas.drawPath(topPath, glowPaint);
-    canvas.drawPath(bottomPath, glowPaint);
+    // Glow esterno dei muri — senza blur, linea più spessa con alpha bassa
+    _wallGlowPaint.color = const Color(0xFF00FFFF).withValues(alpha: 0.12);
+    canvas.drawPath(topPath, _wallGlowPaint);
+    canvas.drawPath(bottomPath, _wallGlowPaint);
 
     // Muri principali
-    final wallPaint = Paint()
-      ..color = const Color(0xFF00FFFF).withValues(alpha: 0.6)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.5;
-    canvas.drawPath(topPath, wallPaint);
-    canvas.drawPath(bottomPath, wallPaint);
+    canvas.drawPath(topPath, _wallMainPaint);
+    canvas.drawPath(bottomPath, _wallMainPaint);
 
     // Seconda linea parallasse (interna)
-    final innerPaint = Paint()
-      ..color = const Color(0xFF0088AA).withValues(alpha: 0.15)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1;
     final topInner = Path();
     final bottomInner = Path();
     bool ft = true, fb = true;
@@ -192,8 +201,8 @@ class TunnelRenderer extends PositionComponent
       if (fb) { bottomInner.moveTo(x, by); fb = false; }
       else { bottomInner.lineTo(x, by); }
     }
-    canvas.drawPath(topInner, innerPaint);
-    canvas.drawPath(bottomInner, innerPaint);
+    canvas.drawPath(topInner, _wallInnerPaint);
+    canvas.drawPath(bottomInner, _wallInnerPaint);
 
     // Check collisione player con muri del tunnel
     _checkWallCollision();
@@ -225,46 +234,28 @@ class TunnelRenderer extends PositionComponent
       // Barriera laser
       final baseY = obs.isTop ? topY : bottomY;
       final endY = obs.isTop ? topY + obs.height : bottomY - obs.height;
-
-      // Glow
-      final glowPaint = Paint()
-        ..color = const Color(0xFFFF2200).withValues(alpha: alpha * 0.3 * pulse)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8);
-      canvas.drawRect(
-        Rect.fromLTRB(obs.x - obs.width / 2, math.min(baseY, endY),
-            obs.x + obs.width / 2, math.max(baseY, endY)),
-        glowPaint,
+      final obsRect = Rect.fromLTRB(
+        obs.x - obs.width / 2, math.min(baseY, endY),
+        obs.x + obs.width / 2, math.max(baseY, endY),
       );
+
+      // Glow — senza blur, rettangolo inflated
+      _obsGlowPaint.color = const Color(0xFFFF2200).withValues(alpha: alpha * 0.15 * pulse);
+      _obsGlowPaint.maskFilter = null;
+      canvas.drawRect(obsRect.inflate(4), _obsGlowPaint);
 
       // Barriera principale
-      final barrierPaint = Paint()
-        ..color = const Color(0xFFFF4400).withValues(alpha: alpha * 0.6 * pulse);
-      canvas.drawRect(
-        Rect.fromLTRB(obs.x - obs.width / 2, math.min(baseY, endY),
-            obs.x + obs.width / 2, math.max(baseY, endY)),
-        barrierPaint,
-      );
+      _obsBarrierPaint.color = const Color(0xFFFF4400).withValues(alpha: alpha * 0.6 * pulse);
+      canvas.drawRect(obsRect, _obsBarrierPaint);
 
       // Bordo luminoso
-      final borderPaint = Paint()
-        ..color = const Color(0xFFFF6600).withValues(alpha: alpha * 0.8)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1;
-      canvas.drawRect(
-        Rect.fromLTRB(obs.x - obs.width / 2, math.min(baseY, endY),
-            obs.x + obs.width / 2, math.max(baseY, endY)),
-        borderPaint,
-      );
+      _obsBorderPaint.color = const Color(0xFFFF6600).withValues(alpha: alpha * 0.8);
+      canvas.drawRect(obsRect, _obsBorderPaint);
     }
   }
 
   void _renderSpeedLines(Canvas canvas, double startX, double endX,
       double topY, double bottomY) {
-    // Linee orizzontali di velocità per dare senso di movimento
-    final linePaint = Paint()
-      ..color = const Color(0xFF0044AA).withValues(alpha: 0.06)
-      ..strokeWidth = 0.5;
-
     final midY = (topY + bottomY) / 2;
     final halfH = (bottomY - topY) / 2;
     for (int i = 0; i < 8; i++) {
@@ -272,7 +263,7 @@ class TunnelRenderer extends PositionComponent
       canvas.drawLine(
         Offset(startX, midY + yOffset),
         Offset(endX, midY + yOffset),
-        linePaint,
+        _speedLinePaint,
       );
     }
   }

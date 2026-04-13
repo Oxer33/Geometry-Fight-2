@@ -29,6 +29,10 @@ class HydraBoss extends BossBase {
   bool _rageMode = false;
   double _rageShootTimer = 0;
 
+  // Cached Paint objects to avoid per-frame allocations
+  static final _tentaclePaint = Paint()..style = PaintingStyle.stroke;
+  static final _ragePaint = Paint();
+
   HydraBoss()
       : super(
           hp: 800,
@@ -199,10 +203,8 @@ class HydraBoss extends BossBase {
       if (!head.alive) continue;
 
       // Tentacle (bezier curve)
-      final tentaclePaint = Paint()
-        ..color = neonColor.withValues(alpha: paint.color.a)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 3 * scale;
+      _tentaclePaint.color = neonColor.withValues(alpha: paint.color.a);
+      _tentaclePaint.strokeWidth = 3 * scale;
 
       final startPoint = Offset(cx, cy);
       final endPoint = Offset(cx + head.position.x, cy + head.position.y);
@@ -217,7 +219,7 @@ class HydraBoss extends BossBase {
         ..moveTo(startPoint.dx, startPoint.dy)
         ..quadraticBezierTo(
             controlPoint.dx, controlPoint.dy, endPoint.dx, endPoint.dy);
-      canvas.drawPath(path, tentaclePaint);
+      canvas.drawPath(path, _tentaclePaint);
 
       // Head
       canvas.drawCircle(endPoint, 12 * scale, paint);
@@ -226,12 +228,10 @@ class HydraBoss extends BossBase {
     // Core
     canvas.drawCircle(Offset(cx, cy), 25 * scale, paint);
 
-    // Rage indicator
+    // Rage indicator (no blur — larger shape at lower alpha)
     if (_rageMode) {
-      final ragePaint = Paint()
-        ..color = NeonColors.red.withValues(alpha: 0.3 + math.sin(_ragePhase * 8) * 0.2)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 15);
-      canvas.drawCircle(Offset(cx, cy), 35 * scale, ragePaint);
+      _ragePaint.color = NeonColors.red.withValues(alpha: 0.15 + math.sin(_ragePhase * 8) * 0.1);
+      canvas.drawCircle(Offset(cx, cy), 50 * scale, _ragePaint);
     }
   }
 }

@@ -147,7 +147,8 @@ class VoidReaperBoss extends BossBase {
       final pulse = 0.4 + math.sin(_movePhase * 3) * 0.3;
       final corePaint = Paint()
         ..color = const Color(0xFFCC44FF).withValues(alpha: pulse)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10);
+        ;
+      canvas.drawCircle(Offset(cx, cy), r * 0.4, Paint()..color = const Color(0xFFCC44FF).withValues(alpha: pulse * 0.3));
       canvas.drawCircle(Offset(cx, cy), r * 0.25, corePaint);
     }
   }

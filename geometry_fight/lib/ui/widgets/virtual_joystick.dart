@@ -163,6 +163,25 @@ class _JoystickPainter extends CustomPainter {
   final double radius;
   final double pulseValue;
 
+  // Cached static Paints — riusati tra frame per evitare allocazioni
+  static final _baseGlowPaint = Paint();
+  static final _baseBorderPaint = Paint()
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 1.5;
+  static final _linePaint = Paint()
+    ..strokeWidth = 1.5
+    ..style = PaintingStyle.stroke;
+  static final _midPaint = Paint()
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 0.5;
+  static final _thumbGlowPaint = Paint();
+  static final _thumbBorderPaint = Paint()
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 2;
+  static final _thumbCenterPaint = Paint();
+  static final _dotPaint = Paint();
+  static final _crossPaint = Paint()..strokeWidth = 0.5;
+
   _JoystickPainter({
     required this.color,
     required this.thumbOffset,
@@ -175,72 +194,52 @@ class _JoystickPainter extends CustomPainter {
     final center = Offset(size.width / 2, size.height / 2);
     final thumbCenter = center + thumbOffset;
 
-    // === Cerchio base esterno (glow) ===
-    final baseGlowPaint = Paint()
-      ..color = color.withValues(alpha: 0.08 + pulseValue * 0.04)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 15);
-    canvas.drawCircle(center, radius, baseGlowPaint);
+    // === Cerchio base esterno (glow) — senza blur ===
+    _baseGlowPaint.color = color.withValues(alpha: 0.08 + pulseValue * 0.04);
+    canvas.drawCircle(center, radius * 1.1, _baseGlowPaint);
 
     // === Cerchio base (bordo) ===
-    final basePaint = Paint()
-      ..color = color.withValues(alpha: 0.15 + pulseValue * 0.05)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.5;
-    canvas.drawCircle(center, radius, basePaint);
+    _baseBorderPaint.color = color.withValues(alpha: 0.15 + pulseValue * 0.05);
+    canvas.drawCircle(center, radius, _baseBorderPaint);
 
     // === Linea direzionale dal centro al thumb ===
     if (thumbOffset.distance > 5) {
-      final linePaint = Paint()
-        ..color = color.withValues(alpha: 0.2)
-        ..strokeWidth = 1.5
-        ..style = PaintingStyle.stroke;
-      canvas.drawLine(center, thumbCenter, linePaint);
+      _linePaint.color = color.withValues(alpha: 0.2);
+      canvas.drawLine(center, thumbCenter, _linePaint);
 
       // Cerchi concentrici intermedi per profondità
-      final midPaint = Paint()
-        ..color = color.withValues(alpha: 0.06)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 0.5;
-      canvas.drawCircle(center, radius * 0.5, midPaint);
-      canvas.drawCircle(center, radius * 0.75, midPaint);
+      _midPaint.color = color.withValues(alpha: 0.06);
+      canvas.drawCircle(center, radius * 0.5, _midPaint);
+      canvas.drawCircle(center, radius * 0.75, _midPaint);
     }
 
-    // === Thumb (pallino mobile) - glow esterno ===
-    final thumbGlowPaint = Paint()
-      ..color = color.withValues(alpha: 0.3)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10);
-    canvas.drawCircle(thumbCenter, 18, thumbGlowPaint);
+    // === Thumb (pallino mobile) - glow esterno — senza blur ===
+    _thumbGlowPaint.color = color.withValues(alpha: 0.15);
+    canvas.drawCircle(thumbCenter, 22, _thumbGlowPaint);
 
     // === Thumb - bordo ===
-    final thumbBorderPaint = Paint()
-      ..color = color.withValues(alpha: 0.6)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2;
-    canvas.drawCircle(thumbCenter, 14, thumbBorderPaint);
+    _thumbBorderPaint.color = color.withValues(alpha: 0.6);
+    canvas.drawCircle(thumbCenter, 14, _thumbBorderPaint);
 
     // === Thumb - centro luminoso ===
-    final thumbCenterPaint = Paint()
-      ..color = color.withValues(alpha: 0.4 + pulseValue * 0.2);
-    canvas.drawCircle(thumbCenter, 8, thumbCenterPaint);
+    _thumbCenterPaint.color = color.withValues(alpha: 0.4 + pulseValue * 0.2);
+    canvas.drawCircle(thumbCenter, 8, _thumbCenterPaint);
 
     // === Thumb - punto bianco centrale ===
-    final dotPaint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.7);
-    canvas.drawCircle(thumbCenter, 3, dotPaint);
+    _dotPaint.color = Colors.white.withValues(alpha: 0.7);
+    canvas.drawCircle(thumbCenter, 3, _dotPaint);
 
     // === Croce al centro del joystick (indicatore) ===
-    final crossPaint = Paint()
-      ..color = color.withValues(alpha: 0.1)
-      ..strokeWidth = 0.5;
+    _crossPaint.color = color.withValues(alpha: 0.1);
     canvas.drawLine(
       Offset(center.dx - 8, center.dy),
       Offset(center.dx + 8, center.dy),
-      crossPaint,
+      _crossPaint,
     );
     canvas.drawLine(
       Offset(center.dx, center.dy - 8),
       Offset(center.dx, center.dy + 8),
-      crossPaint,
+      _crossPaint,
     );
   }
 

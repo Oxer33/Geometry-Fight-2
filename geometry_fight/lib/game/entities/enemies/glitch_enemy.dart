@@ -122,8 +122,7 @@ class GlitchEnemy extends EnemyBase {
       final ghostAlpha = _flashTimer / 0.2;
       final ghostOffset = _prevPosition! - position;
       final ghostPaint = Paint()
-        ..color = neonColor.withValues(alpha: ghostAlpha * 0.3)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6);
+        ..color = neonColor.withValues(alpha: ghostAlpha * 0.15);
       canvas.drawRect(
         Rect.fromCenter(
           center: Offset(cx + ghostOffset.x, cy + ghostOffset.y),
@@ -190,10 +189,10 @@ class GlitchEnemy extends EnemyBase {
 
     // Punto centrale luminoso
     if (_isTeleporting) {
-      final tpPaint = Paint()
-        ..color = const Color(0xFFFFFFFF)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8);
-      canvas.drawCircle(Offset(cx, cy), r * 0.8, tpPaint);
+      EnemyBase.detailPaint.color = const Color(0xFFFFFFFF).withValues(alpha: 0.4);
+      canvas.drawCircle(Offset(cx, cy), r * 1.2, EnemyBase.detailPaint);
+      EnemyBase.detailPaint.color = const Color(0xFFFFFFFF);
+      canvas.drawCircle(Offset(cx, cy), r * 0.8, EnemyBase.detailPaint);
     }
   }
 }

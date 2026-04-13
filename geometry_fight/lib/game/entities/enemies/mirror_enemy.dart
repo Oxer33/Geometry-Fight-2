@@ -115,10 +115,10 @@ class MirrorEnemy extends EnemyBase {
 
       // Nucleo specchiato (riflette la luce)
       final coreShimmer = 0.3 + math.sin(idlePhase * 6) * 0.3;
-      final corePaint = Paint()
-        ..color = const Color(0xFFFFFFFF).withValues(alpha: coreShimmer)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
-      canvas.drawCircle(Offset(cx, cy), r * 0.25, corePaint);
+      EnemyBase.detailPaint.color = const Color(0xFFFFFFFF).withValues(alpha: coreShimmer * 0.5);
+      canvas.drawCircle(Offset(cx, cy), r * 0.35, EnemyBase.detailPaint);
+      EnemyBase.detailPaint.color = const Color(0xFFFFFFFF).withValues(alpha: coreShimmer);
+      canvas.drawCircle(Offset(cx, cy), r * 0.25, EnemyBase.detailPaint);
 
       // Indicatore cooldown riflesso
       if (_reflectCooldown > 0) {
@@ -131,23 +131,21 @@ class MirrorEnemy extends EnemyBase {
       }
     }
 
-    // Flash prismatico quando riflette
+    // Flash prismatico quando riflette — senza blur
     if (_shieldFlash > 0) {
-      // Flash bianco centrale
-      final flashPaint = Paint()
-        ..color = NeonColors.white.withValues(alpha: _shieldFlash * 3)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10);
-      canvas.drawCircle(Offset(cx, cy), r * 1.3, flashPaint);
-      // Effetto prismatico (arcobaleno)
-      final prismPaint = Paint()
-        ..color = NeonColors.cyan.withValues(alpha: _shieldFlash * 1.5)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
-      canvas.drawCircle(Offset(cx + 2, cy), r * 1.2, prismPaint);
-      prismPaint.color =
-          NeonColors.spreadOrange.withValues(alpha: _shieldFlash * 1.5);
-      canvas.drawCircle(Offset(cx - 2, cy), r * 1.2, prismPaint);
+      // Flash bianco — cerchio grande, no blur
+      EnemyBase.detailPaint.color = NeonColors.white.withValues(alpha: _shieldFlash * 1.5);
+      EnemyBase.detailPaint.style = PaintingStyle.fill;
+      canvas.drawCircle(Offset(cx, cy), r * 1.8, EnemyBase.detailPaint);
+      EnemyBase.detailPaint.color = NeonColors.white.withValues(alpha: _shieldFlash * 3);
+      canvas.drawCircle(Offset(cx, cy), r * 1.3, EnemyBase.detailPaint);
+      // Prisma
+      EnemyBase.detailPaint.color = NeonColors.cyan.withValues(alpha: _shieldFlash * 1.5);
+      EnemyBase.detailPaint.style = PaintingStyle.stroke;
+      EnemyBase.detailPaint.strokeWidth = 1;
+      canvas.drawCircle(Offset(cx + 2, cy), r * 1.2, EnemyBase.detailPaint);
+      EnemyBase.detailPaint.color = NeonColors.spreadOrange.withValues(alpha: _shieldFlash * 1.5);
+      canvas.drawCircle(Offset(cx - 2, cy), r * 1.2, EnemyBase.detailPaint);
     }
   }
 }

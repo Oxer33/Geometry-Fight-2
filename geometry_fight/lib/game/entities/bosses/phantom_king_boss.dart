@@ -171,7 +171,8 @@ class PhantomKingBoss extends BossBase {
       // Occhio centrale
       final eyePaint = Paint()
         ..color = const Color(0xFFFFFFFF).withValues(alpha: 0.6 + math.sin(_crownPhase * 3) * 0.2)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
+        ;
+      canvas.drawCircle(Offset.zero, r * 0.22, Paint()..color = const Color(0xFFFFFFFF).withValues(alpha: 0.3));
       canvas.drawCircle(Offset.zero, r * 0.15, eyePaint);
     }
     canvas.restore();

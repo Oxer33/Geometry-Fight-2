@@ -87,24 +87,19 @@ class SpawnerEnemy extends EnemyBase {
         );
       }
 
-      // Punti energetici sui vertici
+      // Punti energetici sui vertici — senza blur
       for (int i = 0; i < 6; i++) {
         final dotAlpha = 0.3 + math.sin(idlePhase * 3 + i) * 0.2;
-        final dotPaint = Paint()
-          ..color = paint.color.withValues(alpha: dotAlpha)
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2);
-        canvas.drawCircle(vertices[i], 1.5, dotPaint);
+        EnemyBase.detailPaint.color = paint.color.withValues(alpha: dotAlpha);
+        canvas.drawCircle(vertices[i], 1.5, EnemyBase.detailPaint);
       }
     }
 
-    // Nucleo pulsante (più grande e luminoso)
+    // Nucleo pulsante — senza blur
     final corePulse = 5 + math.sin(idlePhase * 4) * 2;
-    final coreGlow = Paint()
-      ..color = NeonColors.orange.withValues(alpha: 0.3)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5);
-    canvas.drawCircle(Offset(cx, cy), corePulse * 1.3, coreGlow);
-    final corePaint = Paint()
-      ..color = NeonColors.orange.withValues(alpha: 0.8);
-    canvas.drawCircle(Offset(cx, cy), corePulse, corePaint);
+    EnemyBase.detailPaint.color = NeonColors.orange.withValues(alpha: 0.15);
+    canvas.drawCircle(Offset(cx, cy), corePulse * 1.8, EnemyBase.detailPaint);
+    EnemyBase.detailPaint.color = NeonColors.orange.withValues(alpha: 0.8);
+    canvas.drawCircle(Offset(cx, cy), corePulse, EnemyBase.detailPaint);
   }
 }

@@ -100,9 +100,8 @@ class DecoyEnemy extends EnemyBase {
         // Scintillio ingannevole
         final sparkle = 0.3 + math.sin(_mimicPhase * 3) * 0.3;
         canvas.drawCircle(
-          Offset.zero, r * 0.5,
-          Paint()..color = paint.color.withValues(alpha: sparkle * 0.2)
-            ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4),
+          Offset.zero, r * 0.7,
+          Paint()..color = paint.color.withValues(alpha: sparkle * 0.1),
         );
       } else {
         // Scoperto: mostra teschio/pericolo
@@ -116,9 +115,8 @@ class DecoyEnemy extends EnemyBase {
         // Glow rosso pulsante
         final dangerPulse = 0.3 + math.sin(_mimicPhase * 4) * 0.3;
         canvas.drawCircle(
-          Offset.zero, r * 0.6,
-          Paint()..color = const Color(0xFFFF0000).withValues(alpha: dangerPulse)
-            ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6),
+          Offset.zero, r * 0.9,
+          Paint()..color = const Color(0xFFFF0000).withValues(alpha: dangerPulse * 0.5),
         );
       }
     }

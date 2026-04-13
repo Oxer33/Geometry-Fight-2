@@ -109,12 +109,10 @@ class TimeBombEnemy extends EnemyBase {
       // Scudo attivazione (se non ancora attivato)
       if (!_activated) {
         final shieldAlpha = (_activationTimer / 2.0).clamp(0.0, 1.0);
-        final shieldPaint = Paint()
-          ..color = const Color(0xFF4488FF).withValues(alpha: shieldAlpha * 0.4)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 2
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
-        canvas.drawCircle(Offset(cx, cy), r * 1.3, shieldPaint);
+        EnemyBase.detailPaint.color = const Color(0xFF4488FF).withValues(alpha: shieldAlpha * 0.4);
+        EnemyBase.detailPaint.style = PaintingStyle.stroke;
+        EnemyBase.detailPaint.strokeWidth = 2;
+        canvas.drawCircle(Offset(cx, cy), r * 1.3, EnemyBase.detailPaint);
       }
 
       // Anelli di pericolo (appaiono quando countdown < 4s)

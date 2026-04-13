@@ -134,13 +134,15 @@ class ExplosionEffect extends PositionComponent {
     // === FLASH CENTRALE ===
     if (_flashTimer > 0) {
       final flashAlpha = (_flashTimer / 0.12).clamp(0.0, 1.0);
-      // Glow colorato
+      // Glow colorato — senza blur, cerchio più grande con alpha bassa
+      _flashPaint.color = color.withValues(alpha: flashAlpha * 0.25);
+      _flashPaint.maskFilter = null;
+      canvas.drawCircle(Offset(cx, cy), radius * (epic ? 1.2 : 0.8), _flashPaint);
+      // Core colorato
       _flashPaint.color = color.withValues(alpha: flashAlpha * 0.5);
-      _flashPaint.maskFilter = MaskFilter.blur(BlurStyle.normal, epic ? 12 : 6);
       canvas.drawCircle(Offset(cx, cy), radius * (epic ? 0.8 : 0.5), _flashPaint);
       // Core bianco
       _flashPaint.color = const Color(0xFFFFFFFF).withValues(alpha: flashAlpha * 0.8);
-      _flashPaint.maskFilter = null;
       canvas.drawCircle(Offset(cx, cy), radius * (epic ? 0.4 : 0.25), _flashPaint);
     }
 
@@ -150,20 +152,19 @@ class ExplosionEffect extends PositionComponent {
       final alpha = (p.lifetime / p.maxLifetime).clamp(0.0, 1.0);
       final pSize = p.size * alpha;
 
-      // Glow per particelle grandi (epic)
+      // Glow per particelle grandi (epic) — senza blur
       if (epic && p.size > 4) {
-        _particlePaint.color = p.color.withValues(alpha: alpha * 0.3);
-        _particlePaint.maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
+        _particlePaint.color = p.color.withValues(alpha: alpha * 0.2);
+        _particlePaint.maskFilter = null;
         canvas.drawCircle(
           Offset(cx + p.position.x, cy + p.position.y),
-          pSize * 1.5,
+          pSize * 2,
           _particlePaint,
         );
       }
 
       // Particella principale
       _particlePaint.color = p.color.withValues(alpha: alpha);
-      _particlePaint.maskFilter = null;
       canvas.drawCircle(
         Offset(cx + p.position.x, cy + p.position.y),
         pSize,

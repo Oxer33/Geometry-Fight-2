@@ -100,18 +100,17 @@ class PulsarEnemy extends EnemyBase {
 
       // Nucleo pulsante teal (brilla di più prima del pulse)
       final coreIntensity = 0.4 + chargeProgress * 0.4;
-      final corePaint = Paint()
-        ..color = const Color(0xFFFFFFFF).withValues(alpha: coreIntensity)
-        ..maskFilter = MaskFilter.blur(BlurStyle.normal, 3 + chargeProgress * 3);
-      canvas.drawCircle(Offset(cx, cy), r * 0.3, corePaint);
+      // Core — senza blur, glow simulato
+      EnemyBase.detailPaint.color = const Color(0xFFFFFFFF).withValues(alpha: coreIntensity * 0.4);
+      canvas.drawCircle(Offset(cx, cy), r * 0.5, EnemyBase.detailPaint);
+      EnemyBase.detailPaint.color = const Color(0xFFFFFFFF).withValues(alpha: coreIntensity);
+      canvas.drawCircle(Offset(cx, cy), r * 0.3, EnemyBase.detailPaint);
 
-      // Particelle luminose sui vertici
+      // Particelle luminose sui vertici — senza blur
       for (int i = 0; i < 5; i++) {
         final dotAlpha = 0.3 + math.sin(idlePhase * 3 + i * 1.2) * 0.3;
-        final dotPaint = Paint()
-          ..color = paint.color.withValues(alpha: dotAlpha)
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2);
-        canvas.drawCircle(vertices[i], 1.5, dotPaint);
+        EnemyBase.detailPaint.color = paint.color.withValues(alpha: dotAlpha);
+        canvas.drawCircle(vertices[i], 1.5, EnemyBase.detailPaint);
       }
 
       // Linee interne dal centro ai vertici
@@ -130,8 +129,7 @@ class PulsarEnemy extends EnemyBase {
       final innerRing = Paint()
         ..color = NeonColors.teal.withValues(alpha: alpha * 0.5)
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 2.5
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
+        ..strokeWidth = 2.5;
       canvas.drawCircle(Offset(cx, cy), _pulseRadius, innerRing);
       // Onda esterna sottile
       final outerRing = Paint()

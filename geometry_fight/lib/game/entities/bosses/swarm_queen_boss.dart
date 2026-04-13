@@ -83,7 +83,7 @@ class SwarmQueenBoss extends BossBase {
       for (int side = -1; side <= 1; side += 2) {
         final wingPaint = Paint()
           ..color = neonColor.withValues(alpha: 0.15)
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
+          ;
         final wingPath = Path()
           ..moveTo(cx + side * r * 0.4, cy)
           ..quadraticBezierTo(
@@ -138,7 +138,7 @@ class SwarmQueenBoss extends BossBase {
       canvas.drawCircle(
         Offset.zero, r * 0.15,
         Paint()..color = const Color(0xFFFFFFFF).withValues(alpha: pulse)
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5),
+          ,
       );
     }
     canvas.restore();

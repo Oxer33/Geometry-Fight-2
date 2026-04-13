@@ -80,19 +80,17 @@ class OrbiterEnemy extends EnemyBase {
       canvas.drawCircle(Offset(sx, sy), 3 * scale, paint);
 
       if (scale <= 1.01) {
-        final glowP = Paint()
-          ..color = paint.color.withValues(alpha: 0.4)
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
-        canvas.drawCircle(Offset(sx, sy), 4 * scale, glowP);
+        EnemyBase.detailPaint.color = paint.color.withValues(alpha: 0.2);
+        canvas.drawCircle(Offset(sx, sy), 5 * scale, EnemyBase.detailPaint);
       }
     }
 
     // Nucleo
     if (scale <= 1.01) {
-      final corePaint = Paint()
-        ..color = const Color(0xFFFFFFFF).withValues(alpha: 0.6)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2);
-      canvas.drawCircle(Offset(cx, cy), r * 0.2, corePaint);
+      EnemyBase.detailPaint.color = const Color(0xFFFFFFFF).withValues(alpha: 0.3);
+      canvas.drawCircle(Offset(cx, cy), r * 0.3, EnemyBase.detailPaint);
+      EnemyBase.detailPaint.color = const Color(0xFFFFFFFF).withValues(alpha: 0.6);
+      canvas.drawCircle(Offset(cx, cy), r * 0.2, EnemyBase.detailPaint);
     }
   }
 }
@@ -132,11 +130,10 @@ class _OrbiterBullet extends PositionComponent
   void render(Canvas canvas) {
     final cx = size.x / 2;
     final cy = size.y / 2;
-    final p = Paint()
-      ..color = color
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
+    final p = Paint()..color = color.withValues(alpha: 0.4);
+    canvas.drawCircle(Offset(cx, cy), 5, p);
+    p.color = color;
     canvas.drawCircle(Offset(cx, cy), 3, p);
-    p.maskFilter = null;
     p.color = const Color(0xFFFFFFFF).withValues(alpha: 0.8);
     canvas.drawCircle(Offset(cx, cy), 1.5, p);
   }

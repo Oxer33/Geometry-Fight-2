@@ -189,7 +189,8 @@ class TheGridBoss extends BossBase {
       final pulseR = s * (0.15 + currentPhase * 0.05) + math.sin(_gridPhase * 3) * 5;
       final corePaint = Paint()
         ..color = phaseColor.withValues(alpha: 0.5)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8);
+        ;
+      canvas.drawCircle(Offset(cx, cy), pulseR * 1.5, Paint()..color = phaseColor.withValues(alpha: 0.2));
       canvas.drawCircle(Offset(cx, cy), pulseR, corePaint);
       // Centro bianco
       canvas.drawCircle(Offset(cx, cy), pulseR * 0.4,
@@ -199,7 +200,7 @@ class TheGridBoss extends BossBase {
       final cornerGlow = 0.4 + math.sin(_gridPhase * 4) * 0.3;
       final cornerPaint = Paint()
         ..color = phaseColor.withValues(alpha: cornerGlow)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
+        ;
       canvas.drawCircle(Offset(cx - s, cy - s), 4, cornerPaint);
       canvas.drawCircle(Offset(cx + s, cy - s), 4, cornerPaint);
       canvas.drawCircle(Offset(cx + s, cy + s), 4, cornerPaint);
@@ -217,7 +218,7 @@ class TheGridBoss extends BossBase {
     if (_laserActive) {
       final laserPaint = Paint()
         ..color = NeonColors.laserRed.withValues(alpha: 0.6)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10);
+        ;
       canvas.save();
       canvas.translate(cx, cy);
       canvas.rotate(_laserAngle);

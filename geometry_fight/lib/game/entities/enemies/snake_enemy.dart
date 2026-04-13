@@ -137,8 +137,7 @@ class SnakeEnemy extends EnemyBase {
         final lineAlpha = (1.0 - i / _segments.length) * 0.3;
         final linePaint = Paint()
           ..color = paint.color.withValues(alpha: lineAlpha)
-          ..strokeWidth = (2.5 - i * 0.2).clamp(0.5, 2.5)
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2);
+          ..strokeWidth = (2.5 - i * 0.2).clamp(0.5, 2.5);
         canvas.drawLine(
           Offset(cx + seg1.x, cy + seg1.y),
           Offset(cx + seg2.x, cy + seg2.y),
@@ -168,8 +167,7 @@ class SnakeEnemy extends EnemyBase {
       if (scale <= 1.01 && i % 2 == 0) {
         final pulse = 0.3 + math.sin(idlePhase * 4 + i * 0.5) * 0.2;
         final corePaint = Paint()
-          ..color = const Color(0xFFFFFFFF).withValues(alpha: pulse)
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 1.5);
+          ..color = const Color(0xFFFFFFFF).withValues(alpha: pulse);
         canvas.drawCircle(
             Offset(cx + seg.x, cy + seg.y), radius * 0.35, corePaint);
       }

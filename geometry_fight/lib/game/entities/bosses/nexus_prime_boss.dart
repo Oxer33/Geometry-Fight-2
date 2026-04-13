@@ -123,7 +123,7 @@ class NexusPrimeBoss extends BossBase {
           ..color = neonColor.withValues(alpha: portalAlpha)
           ..style = PaintingStyle.stroke
           ..strokeWidth = 2
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
+          ;
         canvas.drawCircle(Offset(cx + offset.x, cy + offset.y), 20, portalPaint);
       }
     }
@@ -151,7 +151,8 @@ class NexusPrimeBoss extends BossBase {
       final pulse = 0.5 + math.sin(_portalPhase * 2) * 0.3;
       final corePaint = Paint()
         ..color = const Color(0xFFFFFFFF).withValues(alpha: pulse)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8);
+        ;
+      canvas.drawCircle(Offset(cx, cy), r * 0.4, Paint()..color = const Color(0xFFFFFFFF).withValues(alpha: pulse * 0.4));
       canvas.drawCircle(Offset(cx, cy), r * 0.25, corePaint);
     }
   }

@@ -201,25 +201,29 @@ class SpaceBackground extends PositionComponent
     _renderDust(canvas);
   }
 
+  static final _bgPaint = Paint();
+  static Shader? _bgShader;
+
   void _renderDeepSpaceGradient(Canvas canvas) {
-    // Gradiente radiale dal centro dell'arena: blu notte -> nero
-    final gradient = RadialGradient(
+    final rect = Rect.fromLTWH(0, 0, arenaWidth, arenaHeight);
+    // Cache del gradiente statico (non cambia mai)
+    _bgShader ??= const RadialGradient(
       center: Alignment.center,
       radius: 0.8,
-      colors: const [
-        Color(0xFF0A0E1A), // Blu notte profondo al centro
-        Color(0xFF060A14), // Blu scurissimo
-        Color(0xFF030508), // Quasi nero
-        Color(0xFF010203), // Nero profondo ai bordi
+      colors: [
+        Color(0xFF0A0E1A),
+        Color(0xFF060A14),
+        Color(0xFF030508),
+        Color(0xFF010203),
       ],
-      stops: const [0.0, 0.3, 0.6, 1.0],
-    );
+      stops: [0.0, 0.3, 0.6, 1.0],
+    ).createShader(rect);
 
-    final rect = Rect.fromLTWH(0, 0, arenaWidth, arenaHeight);
-    final paint = Paint()
-      ..shader = gradient.createShader(rect);
-    canvas.drawRect(rect, paint);
+    _bgPaint.shader = _bgShader;
+    canvas.drawRect(rect, _bgPaint);
   }
+
+  static final _nebulaPaint = Paint();
 
   void _renderNebulae(Canvas canvas) {
     for (final nebula in _nebulae) {
@@ -244,53 +248,49 @@ class SpaceBackground extends PositionComponent
         radius: currentRadius,
       );
 
-      final paint = Paint()
-        ..shader = nebulaGradient.createShader(nebulaRect);
-      canvas.drawCircle(Offset(nebula.x, nebula.y), currentRadius, paint);
+      _nebulaPaint.shader = nebulaGradient.createShader(nebulaRect);
+      canvas.drawCircle(Offset(nebula.x, nebula.y), currentRadius, _nebulaPaint);
     }
   }
 
-  void _renderStars(Canvas canvas) {
-    final paint = Paint();
+  static final _starPaint = Paint();
 
+  void _renderStars(Canvas canvas) {
     for (final star in _stars) {
       // Calcola twinkle (scintillio)
       final twinkle = 0.5 +
           0.5 * math.sin(_time * star.twinkleSpeed + star.twinklePhase);
       final alpha = star.brightness * twinkle;
 
-      // Glow esterno (solo stelle grandi)
+      // Glow esterno (solo stelle grandi) — senza blur, cerchio più grande con alpha bassa
       if (star.size > 1.5) {
-        paint
-          ..color = star.color.withValues(alpha: alpha * 0.3)
-          ..maskFilter = MaskFilter.blur(BlurStyle.normal, star.size * 3);
-        canvas.drawCircle(Offset(star.x, star.y), star.size * 2, paint);
+        _starPaint.color = star.color.withValues(alpha: alpha * 0.15);
+        _starPaint.maskFilter = null;
+        canvas.drawCircle(Offset(star.x, star.y), star.size * 2.5, _starPaint);
       }
 
       // Corpo della stella
-      paint
-        ..color = star.color.withValues(alpha: alpha)
-        ..maskFilter = null;
-      canvas.drawCircle(Offset(star.x, star.y), star.size, paint);
+      _starPaint.color = star.color.withValues(alpha: alpha);
+      canvas.drawCircle(Offset(star.x, star.y), star.size, _starPaint);
 
       // Centro luminoso per stelle grandi
       if (star.size > 2.0) {
-        paint.color = const Color(0xFFFFFFFF).withValues(alpha: alpha * 0.8);
-        canvas.drawCircle(Offset(star.x, star.y), star.size * 0.4, paint);
+        _starPaint.color = const Color(0xFFFFFFFF).withValues(alpha: alpha * 0.8);
+        canvas.drawCircle(Offset(star.x, star.y), star.size * 0.4, _starPaint);
       }
     }
   }
 
-  void _renderDust(Canvas canvas) {
-    final paint = Paint();
+  static final _dustPaint = Paint();
 
+  void _renderDust(Canvas canvas) {
     for (final d in _dust) {
       // Pulsazione lenta dell'alpha
       final pulse = 0.7 + 0.3 * math.sin(_time * 1.5 + d.x * 0.01);
-      paint
-        ..color = d.color.withValues(alpha: d.alpha * pulse)
-        ..maskFilter = MaskFilter.blur(BlurStyle.normal, d.size);
-      canvas.drawCircle(Offset(d.x, d.y), d.size, paint);
+      _dustPaint.color = d.color.withValues(alpha: d.alpha * pulse);
+      _dustPaint.maskFilter = null;
+      // Cerchio leggermente più grande al posto del blur per effetto morbido
+      canvas.drawCircle(Offset(d.x, d.y), d.size * 1.5, _dustPaint);
     }
   }
 }

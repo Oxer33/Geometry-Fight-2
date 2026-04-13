@@ -80,8 +80,7 @@ class TitanEnemy extends EnemyBase {
       final wavePaint = Paint()
         ..color = neonColor.withValues(alpha: waveAlpha * 0.4)
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 3
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
+        ..strokeWidth = 3;
       canvas.drawCircle(Offset(cx, cy), _shockwaveRadius, wavePaint);
     }
 
@@ -113,10 +112,10 @@ class TitanEnemy extends EnemyBase {
 
     // Nucleo interno pulsante
     final pulseR = r * 0.4 + math.sin(_armorPhase * 3) * 2;
-    final corePaint = Paint()
-      ..color = const Color(0xFFFFAA00).withValues(alpha: 0.8)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
-    canvas.drawCircle(Offset(cx, cy), pulseR, corePaint);
+    EnemyBase.detailPaint.color = const Color(0xFFFFAA00).withValues(alpha: 0.35);
+    canvas.drawCircle(Offset(cx, cy), pulseR * 1.5, EnemyBase.detailPaint);
+    EnemyBase.detailPaint.color = const Color(0xFFFFAA00).withValues(alpha: 0.8);
+    canvas.drawCircle(Offset(cx, cy), pulseR, EnemyBase.detailPaint);
 
     // Croce interna (indicatore armatura)
     final crossPaint = Paint()
