@@ -2,29 +2,43 @@ import 'package:flame_audio/flame_audio.dart';
 import 'package:flutter/services.dart';
 
 /// Sistema audio con SFX procedurali + feedback aptico.
+/// Usa AudioPool per suoni frequenti (evita memory leak da AudioPlayer accumulati).
+/// Cooldown per non sovrapporre lo stesso suono troppo rapidamente.
 class AudioSystem {
   static bool _vibrationEnabled = true;
   static double _sfxVolume = 0.8;
   static bool _initialized = false;
 
-  /// Inizializza il sistema audio: pre-carica tutti i file SFX
+  // Pool per suoni ad alta frequenza (riutilizzano gli AudioPlayer)
+  static AudioPool? _shootPool;
+  static AudioPool? _enemyDeathPool;
+  static AudioPool? _geomPool;
+
+  // Cooldown: impedisce lo stesso suono di suonare troppo spesso
+  static final _lastPlayTime = <String, int>{};
+  static const _minIntervalMs = 50; // ms minimo tra due riproduzioni dello stesso suono
+
+  /// Inizializza il sistema audio: crea pool per suoni frequenti e pre-carica il resto
   static Future<void> init() async {
+    if (_initialized) return;
     try {
+      // Pool per suoni ad alta frequenza (max 4 player simultanei ciascuno)
+      _shootPool = await FlameAudio.createPool('shoot.wav', maxPlayers: 4);
+      _enemyDeathPool = await FlameAudio.createPool('enemy_death.wav', maxPlayers: 4);
+      _geomPool = await FlameAudio.createPool('geom.wav', maxPlayers: 3);
+
+      // Pre-carica suoni rari (usati con FlameAudio.play — OK perché rarissimi)
       await FlameAudio.audioCache.loadAll([
-        'shoot.wav',
-        'enemy_death.wav',
         'bomb.wav',
         'powerup.wav',
         'player_hit.wav',
         'boss_spawn.wav',
         'wave_complete.wav',
         'game_over.wav',
-        'geom.wav',
         'extra_life.wav',
       ]);
       _initialized = true;
     } catch (_) {
-      // Audio non disponibile (es. emulatore senza audio)
       _initialized = false;
     }
   }
@@ -39,94 +53,118 @@ class AudioSystem {
 
   static double _bgmVolume = 0.7;
 
-  /// Imposta il volume della musica di sottofondo (0.0–1.0).
-  /// Pronto per quando verrà aggiunta la BGM.
   static void setBgmVolume(double volume) {
     _bgmVolume = volume.clamp(0.0, 1.0);
-    // TODO: applicare a FlameAudio.bgm quando la BGM sarà implementata
   }
 
   static double get bgmVolume => _bgmVolume;
 
-  static void _play(String file, {double volumeScale = 1.0}) {
-    if (!_initialized || _sfxVolume <= 0) return;
-    try {
-      FlameAudio.play(file, volume: _sfxVolume * volumeScale);
-    } catch (_) {
-      // Ignora errori audio
-    }
+  /// Controlla il cooldown per evitare spam dello stesso suono
+  static bool _canPlay(String key) {
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final last = _lastPlayTime[key] ?? 0;
+    if (now - last < _minIntervalMs) return false;
+    _lastPlayTime[key] = now;
+    return true;
   }
 
-  /// Sparo
+  /// Suono raro via FlameAudio.play (OK perché chiamato poche volte per partita)
+  static void _playRare(String file, {double volumeScale = 1.0}) {
+    if (!_initialized || _sfxVolume <= 0) return;
+    if (!_canPlay(file)) return;
+    try {
+      FlameAudio.play(file, volume: _sfxVolume * volumeScale);
+    } catch (_) {}
+  }
+
+  /// Sparo — pool (alta frequenza)
   static void playShoot() {
-    _play('shoot.wav', volumeScale: 0.4);
+    if (!_initialized || _sfxVolume <= 0) return;
+    if (!_canPlay('shoot')) return;
+    try {
+      _shootPool?.start(volume: _sfxVolume * 0.4);
+    } catch (_) {}
     if (_vibrationEnabled) HapticFeedback.selectionClick();
   }
 
-  /// Nemico ucciso
+  /// Nemico ucciso — pool (altissima frequenza)
   static void playEnemyDeath() {
-    _play('enemy_death.wav', volumeScale: 0.6);
+    if (!_initialized || _sfxVolume <= 0) return;
+    if (!_canPlay('enemy_death')) return;
+    try {
+      _enemyDeathPool?.start(volume: _sfxVolume * 0.6);
+    } catch (_) {}
     if (_vibrationEnabled) HapticFeedback.lightImpact();
   }
 
-  /// Esplosione bomba
+  /// Geom raccolto — pool (alta frequenza)
+  static void playGeomCollect() {
+    if (!_initialized || _sfxVolume <= 0) return;
+    if (!_canPlay('geom')) return;
+    try {
+      _geomPool?.start(volume: _sfxVolume * 0.25);
+    } catch (_) {}
+  }
+
+  /// Esplosione bomba (raro)
   static void playBombExplosion() {
-    _play('bomb.wav');
+    _playRare('bomb.wav');
     if (_vibrationEnabled) HapticFeedback.heavyImpact();
   }
 
-  /// Player colpito
+  /// Player colpito (raro)
   static void playPlayerHit() {
-    _play('player_hit.wav');
+    _playRare('player_hit.wav');
     if (_vibrationEnabled) HapticFeedback.mediumImpact();
   }
 
-  /// Power-up raccolto
+  /// Power-up raccolto (raro)
   static void playPowerUp() {
-    _play('powerup.wav');
+    _playRare('powerup.wav');
     if (_vibrationEnabled) HapticFeedback.selectionClick();
   }
 
-  /// Boss spawna
+  /// Boss spawna (raro)
   static void playBossSpawn() {
-    _play('boss_spawn.wav');
+    _playRare('boss_spawn.wav');
     if (_vibrationEnabled) HapticFeedback.heavyImpact();
   }
 
-  /// Geom raccolto
-  static void playGeomCollect() {
-    _play('geom.wav', volumeScale: 0.25);
-  }
-
-  /// Wave completata
+  /// Wave completata (raro)
   static void playWaveComplete() {
-    _play('wave_complete.wav');
+    _playRare('wave_complete.wav');
     if (_vibrationEnabled) HapticFeedback.mediumImpact();
   }
 
-  /// Perfect wave
+  /// Perfect wave (raro)
   static void playPerfectWave() {
-    _play('wave_complete.wav');
+    _playRare('wave_complete.wav');
     if (_vibrationEnabled) HapticFeedback.heavyImpact();
   }
 
-  /// Game over
+  /// Game over (raro)
   static void playGameOver() {
-    _play('game_over.wav');
+    _playRare('game_over.wav');
     if (_vibrationEnabled) HapticFeedback.heavyImpact();
   }
 
-  /// Extra life
+  /// Extra life (raro)
   static void playExtraLife() {
-    _play('extra_life.wav');
+    _playRare('extra_life.wav');
     if (_vibrationEnabled) HapticFeedback.mediumImpact();
   }
 
-  /// Ferma tutti i suoni in riproduzione (chiamato su game over / quit)
+  /// Ferma tutti i suoni e rilascia risorse
   static void stopAll() {
     try {
+      _shootPool?.dispose();
+      _enemyDeathPool?.dispose();
+      _geomPool?.dispose();
+      _shootPool = null;
+      _enemyDeathPool = null;
+      _geomPool = null;
       FlameAudio.audioCache.clearAll();
-      // Re-init al prossimo gioco
+      _lastPlayTime.clear();
       _initialized = false;
     } catch (_) {}
   }
