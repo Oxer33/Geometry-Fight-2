@@ -11,7 +11,7 @@ import 'enemy_base.dart';
 /// Meccanica unica: non puoi scappare perché ti segue in orbita!
 class OrbiterEnemy extends EnemyBase {
   double _orbitAngle = 0;
-  double _orbitRadius = 180;
+  final double _orbitRadius = 180;
   double _shootTimer = 2.0;
   double _spherePhase = 0;
 

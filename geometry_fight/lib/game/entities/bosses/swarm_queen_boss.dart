@@ -104,7 +104,11 @@ class SwarmQueenBoss extends BossBase {
       final angle = i * math.pi / 3 - math.pi / 6;
       final x = r * 0.7 * math.cos(angle);
       final y = r * 0.7 * math.sin(angle);
-      if (i == 0) hexPath.moveTo(x, y); else hexPath.lineTo(x, y);
+      if (i == 0) {
+        hexPath.moveTo(x, y);
+      } else {
+        hexPath.lineTo(x, y);
+      }
     }
     hexPath.close();
     canvas.drawPath(hexPath, paint);
@@ -127,7 +131,11 @@ class SwarmQueenBoss extends BossBase {
           final a = j * math.pi / 3;
           final mx = ccx + r * 0.12 * math.cos(a);
           final my = ccy + r * 0.12 * math.sin(a);
-          if (j == 0) miniPath.moveTo(mx, my); else miniPath.lineTo(mx, my);
+          if (j == 0) {
+            miniPath.moveTo(mx, my);
+          } else {
+            miniPath.lineTo(mx, my);
+          }
         }
         miniPath.close();
         canvas.drawPath(miniPath, cellPaint);

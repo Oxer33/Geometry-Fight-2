@@ -78,7 +78,11 @@ class PulsarEnemy extends EnemyBase {
       final x = cx + r * math.cos(angle);
       final y = cy + r * math.sin(angle);
       vertices.add(Offset(x, y));
-      if (i == 0) path.moveTo(x, y); else path.lineTo(x, y);
+      if (i == 0) {
+        path.moveTo(x, y);
+      } else {
+        path.lineTo(x, y);
+      }
     }
     path.close();
     canvas.drawPath(path, paint);

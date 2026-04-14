@@ -142,7 +142,11 @@ class MutatorEnemy extends EnemyBase {
       final angle = i * math.pi * 2 / 5 - math.pi / 2;
       final x = r * 0.85 * math.cos(angle);
       final y = r * 0.85 * math.sin(angle);
-      if (i == 0) path.moveTo(x, y); else path.lineTo(x, y);
+      if (i == 0) {
+        path.moveTo(x, y);
+      } else {
+        path.lineTo(x, y);
+      }
     }
     path.close();
     canvas.drawPath(path, paint);
@@ -168,7 +172,11 @@ class MutatorEnemy extends EnemyBase {
         final angle = i * math.pi * 2 / 5 - math.pi / 2 + math.pi / 5;
         final x = r * 0.33 * math.cos(angle);
         final y = r * 0.33 * math.sin(angle);
-        if (i == 0) innerPentPath.moveTo(x, y); else innerPentPath.lineTo(x, y);
+        if (i == 0) {
+          innerPentPath.moveTo(x, y);
+        } else {
+          innerPentPath.lineTo(x, y);
+        }
       }
       innerPentPath.close();
       EnemyBase.detailPaint.color = paint.color.withValues(alpha: 0.2);

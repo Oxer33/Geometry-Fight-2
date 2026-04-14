@@ -38,7 +38,7 @@ abstract class BossBase extends PositionComponent
     // Usa il raggio più grande tra x e y per coprire tutta la forma
     final hitboxRadius = math.max(size.x, size.y) / 2 * 0.95;
     add(CircleHitbox(radius: hitboxRadius, anchor: Anchor.center)
-      ..position = this.size / 2);
+      ..position = size / 2);
   }
 
   double get healthPercent => hp / maxHp;

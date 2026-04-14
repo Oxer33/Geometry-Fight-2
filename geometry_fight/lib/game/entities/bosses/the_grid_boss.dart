@@ -152,9 +152,13 @@ class TheGridBoss extends BossBase {
 
     // Colore per fase (bianco → giallo → rosso)
     Color phaseColor;
-    if (currentPhase == 0) phaseColor = NeonColors.white;
-    else if (currentPhase == 1) phaseColor = NeonColors.yellow;
-    else phaseColor = NeonColors.red;
+    if (currentPhase == 0) {
+      phaseColor = NeonColors.white;
+    } else if (currentPhase == 1) {
+      phaseColor = NeonColors.yellow;
+    } else {
+      phaseColor = NeonColors.red;
+    }
 
     // Se il paint è per il glow, usa alpha ridotto
     final isGlow = scale > 1.1;

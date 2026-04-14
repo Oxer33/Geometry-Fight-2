@@ -10,7 +10,6 @@ import '../game_world.dart';
 /// barriere laser che appaiono periodicamente.
 class TunnelRenderer extends PositionComponent
     with HasGameReference<GeometryFightGame> {
-  double _scrollOffset = 0; // Usato per tracking posizione scroll
   final List<_TunnelObstacle> _obstacles = [];
   double _obstacleSpawnTimer = 5.0;
   static final _random = math.Random();
@@ -48,9 +47,6 @@ class TunnelRenderer extends PositionComponent
   void update(double dt) {
     super.update(dt);
     if (!game.isTunnelMode) return;
-
-    // Scroll del tunnel basato sulla posizione del player
-    _scrollOffset = game.player.position.x * 0.5;
 
     // Spawn ostacoli periodicamente
     _obstacleSpawnTimer -= dt;
@@ -95,7 +91,9 @@ class TunnelRenderer extends PositionComponent
     }
 
     // Limita ostacoli
-    while (_obstacles.length > 15) _obstacles.removeAt(0);
+    while (_obstacles.length > 15) {
+      _obstacles.removeAt(0);
+    }
   }
 
   void _spawnObstacle() {

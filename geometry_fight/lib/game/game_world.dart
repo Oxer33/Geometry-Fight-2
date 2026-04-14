@@ -1,5 +1,4 @@
 import 'dart:math' as math;
-import 'dart:ui';
 import 'package:flame/components.dart';
 import 'package:flame/events.dart';
 import 'package:flame/game.dart';
@@ -72,6 +71,20 @@ import 'systems/audio_system.dart';
 
 enum GameState { playing, paused, gameOver, bossIntro, waveIntro }
 
+class _DelayedExplosion {
+  double timeLeft;
+  final Color color;
+  final double radius;
+  final int particleCount;
+
+  _DelayedExplosion({
+    required this.timeLeft,
+    required this.color,
+    required this.radius,
+    required this.particleCount,
+  });
+}
+
 class GeometryFightGame extends FlameGame
     with HasCollisionDetection, KeyboardEvents {
   late Player player;
@@ -101,11 +114,11 @@ class GeometryFightGame extends FlameGame
   double _chaosTimer = 10.0;
 
   // Bomb explosion timer (sostituisce Future.delayed per rispettare pause/dispose)
-  List<double>? _bombExplosionTimers;
+  List<_DelayedExplosion>? _bombExplosionTimers;
   Vector2? _bombExplosionPos;
 
   // Death explosion timer (mega shockwave quando il player muore)
-  List<double>? _deathExplosionTimers;
+  List<_DelayedExplosion>? _deathExplosionTimers;
   Vector2? _deathExplosionPos;
 
   // Shared Random instance (evita creazione ripetuta)
@@ -198,6 +211,7 @@ class GeometryFightGame extends FlameGame
     player.position = Vector2(arenaWidth / 2, arenaHeight / 2);
     player.lives = diffConfig.startingLives + (saveData.startingLives - 3);
     player.bombs = diffConfig.startingBombs;
+    player.setWeaponFromId(saveData.startingWeapon);
     world.add(player);
 
     // Applica modificatori
@@ -285,16 +299,15 @@ class GeometryFightGame extends FlameGame
     // Bomb explosion delayed waves (timer-based, rispetta pause)
     if (_bombExplosionTimers != null && _bombExplosionPos != null) {
       for (int i = _bombExplosionTimers!.length - 1; i >= 0; i--) {
-        _bombExplosionTimers![i] -= scaledDt;
-        if (_bombExplosionTimers![i] <= 0) {
-          // Onda 2: cyan, Onda 3: arancione (onda 1 spawnata direttamente in useBomb)
-          if (i == 1) {
-            spawnExplosion(_bombExplosionPos!, NeonColors.cyan,
-                radius: 600, particleCount: 60);
-          } else if (i == 2) {
-            spawnExplosion(_bombExplosionPos!, NeonColors.spreadOrange,
-                radius: 400, particleCount: 40);
-          }
+        final explosion = _bombExplosionTimers![i];
+        explosion.timeLeft -= scaledDt;
+        if (explosion.timeLeft <= 0) {
+          spawnExplosion(
+            _bombExplosionPos!,
+            explosion.color,
+            radius: explosion.radius,
+            particleCount: explosion.particleCount,
+          );
           _bombExplosionTimers!.removeAt(i);
         }
       }
@@ -307,15 +320,15 @@ class GeometryFightGame extends FlameGame
     // Death explosion delayed waves (timer-based, rispetta pause)
     if (_deathExplosionTimers != null && _deathExplosionPos != null) {
       for (int i = _deathExplosionTimers!.length - 1; i >= 0; i--) {
-        _deathExplosionTimers![i] -= scaledDt;
-        if (_deathExplosionTimers![i] <= 0) {
-          if (i == 1) {
-            spawnExplosion(_deathExplosionPos!, const Color(0xFFFF6600),
-                radius: 450, particleCount: 50);
-          } else if (i == 2) {
-            spawnExplosion(_deathExplosionPos!, const Color(0xFFFFFFFF),
-                radius: 300, particleCount: 35);
-          }
+        final explosion = _deathExplosionTimers![i];
+        explosion.timeLeft -= scaledDt;
+        if (explosion.timeLeft <= 0) {
+          spawnExplosion(
+            _deathExplosionPos!,
+            explosion.color,
+            radius: explosion.radius,
+            particleCount: explosion.particleCount,
+          );
           _deathExplosionTimers!.removeAt(i);
         }
       }
@@ -376,7 +389,7 @@ class GeometryFightGame extends FlameGame
           currentPos + (targetPos - currentPos) * cameraSmoothing;
     }
 
-    super.update(dt);
+    super.update(scaledDt);
   }
 
   // Flag per distinguere input touch da tastiera (pubblici per accesso da game_screen)
@@ -407,7 +420,22 @@ class GeometryFightGame extends FlameGame
       keyboardMove.x += 1;
     }
 
-    // Applica input tastiera solo se non c'è touch attivo
+    // Mira tastiera: SOLO frecce (non movimento), per evitare auto-fire mentre ci si muove.
+    final keyboardAim = Vector2.zero();
+    if (_pressedKeys.contains(LogicalKeyboardKey.arrowUp)) {
+      keyboardAim.y -= 1;
+    }
+    if (_pressedKeys.contains(LogicalKeyboardKey.arrowDown)) {
+      keyboardAim.y += 1;
+    }
+    if (_pressedKeys.contains(LogicalKeyboardKey.arrowLeft)) {
+      keyboardAim.x -= 1;
+    }
+    if (_pressedKeys.contains(LogicalKeyboardKey.arrowRight)) {
+      keyboardAim.x += 1;
+    }
+
+    // Applica input movimento da tastiera solo se non c'è touch attivo
     if (!usingTouchMove) {
       if (keyboardMove.length > 0) {
         keyboardMove.normalize();
@@ -415,9 +443,14 @@ class GeometryFightGame extends FlameGame
       moveInput = keyboardMove;
     }
 
-    // Aim con frecce (solo se touch aim non attivo)
-    if (!usingTouchAim && moveInput.length > 0 && aimInput.length == 0) {
-      aimInput = moveInput.clone();
+    // Aim da tastiera con frecce (solo se touch aim non attivo)
+    if (!usingTouchAim) {
+      if (keyboardAim.length > 0) {
+        keyboardAim.normalize();
+        aimInput = keyboardAim;
+      } else {
+        aimInput = Vector2.zero();
+      }
     }
   }
 
@@ -678,8 +711,10 @@ class GeometryFightGame extends FlameGame
       waveSystem.onTunnelKill();
     }
 
-    // Drop geoms
-    for (int i = 0; i < enemy.geomValue; i++) {
+    // Drop geoms (scalato per difficoltà)
+    final geomDrops =
+        (enemy.geomValue * diffConfig.geomDropMultiplier).round().clamp(1, 30);
+    for (int i = 0; i < geomDrops; i++) {
       final offset = Vector2(
         (_random.nextDouble() - 0.5) * 30,
         (_random.nextDouble() - 0.5) * 30,
@@ -742,8 +777,10 @@ class GeometryFightGame extends FlameGame
     scoreSystem.addKill(boss.pointValue * 10, boss.position);
     sessionBossKills++;
 
-    // Drop lots of geoms
-    for (int i = 0; i < 50; i++) {
+    // Drop lots of geoms (scalato per difficoltà)
+    final bossGeomDrops =
+        (50 * diffConfig.geomDropMultiplier).round().clamp(30, 120);
+    for (int i = 0; i < bossGeomDrops; i++) {
       final offset = Vector2(
         (_random.nextDouble() - 0.5) * 100,
         (_random.nextDouble() - 0.5) * 100,
@@ -775,7 +812,20 @@ class GeometryFightGame extends FlameGame
     }
 
     // Tripla esplosione concentrica (rosso → arancione → bianco)
-    _deathExplosionTimers = [0.0, 0.12, 0.25];
+    _deathExplosionTimers = [
+      _DelayedExplosion(
+        timeLeft: 0.12,
+        color: const Color(0xFFFF6600),
+        radius: 450,
+        particleCount: 50,
+      ),
+      _DelayedExplosion(
+        timeLeft: 0.25,
+        color: const Color(0xFFFFFFFF),
+        radius: 300,
+        particleCount: 35,
+      ),
+    ];
     _deathExplosionPos = player.position.clone();
     spawnExplosion(_deathExplosionPos!, const Color(0xFFFF2200),
         radius: 600, particleCount: 70);
@@ -950,7 +1000,20 @@ class GeometryFightGame extends FlameGame
     }
 
     // Esplosione DEVASTANTE: tripla esplosione concentrica (timer-based, rispetta pause/dispose)
-    _bombExplosionTimers = [0.0, 0.1, 0.2];
+    _bombExplosionTimers = [
+      _DelayedExplosion(
+        timeLeft: 0.1,
+        color: NeonColors.cyan,
+        radius: 600,
+        particleCount: 60,
+      ),
+      _DelayedExplosion(
+        timeLeft: 0.2,
+        color: NeonColors.spreadOrange,
+        radius: 400,
+        particleCount: 40,
+      ),
+    ];
     _bombExplosionPos = player.position.clone();
     spawnExplosion(_bombExplosionPos!, NeonColors.white,
         radius: 800, particleCount: 80);
@@ -1030,6 +1093,7 @@ class GeometryFightGame extends FlameGame
     player.position = Vector2(arenaWidth / 2, arenaHeight / 2);
     player.lives = diffConfig.startingLives + (saveData.startingLives - 3);
     player.bombs = diffConfig.startingBombs;
+    player.setWeaponFromId(saveData.startingWeapon);
     world.add(player);
 
     // Re-apply modifiers (glass_cannon, speed_demon, etc.)

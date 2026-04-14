@@ -14,10 +14,9 @@ class ProtonEnemy extends EnemyBase {
   late Vector2 _moveDir;
   double _lifetime = 5.0;
 
-  ProtonEnemy({Vector2? direction, double speed = 280})
+  ProtonEnemy({Vector2? direction, super.speed = 280})
       : super(
           hp: 1,
-          speed: speed,
           pointValue: 2,
           geomValue: 1,
           neonColor: const Color(0xFFFF2200),

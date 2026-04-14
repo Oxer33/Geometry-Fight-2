@@ -171,8 +171,11 @@ class SwarmMotherBoss extends BossBase {
       final irregularity = 1.0 + math.sin(i * 1.5 + _phase) * 0.15;
       final x = center.dx + r * irregularity * math.cos(angle);
       final y = center.dy + r * irregularity * math.sin(angle);
-      if (i == 0) path.moveTo(x, y);
-      else path.lineTo(x, y);
+      if (i == 0) {
+        path.moveTo(x, y);
+      } else {
+        path.lineTo(x, y);
+      }
     }
     path.close();
     canvas.drawPath(path, paint);
@@ -188,8 +191,11 @@ class SwarmMotherBoss extends BossBase {
       final irregularity = 1.0 + math.sin(i * 2.0 + _phase * 2) * 0.1;
       final x = center.dx + r * irregularity * math.cos(angle);
       final y = center.dy + r * irregularity * math.sin(angle);
-      if (i == 0) path.moveTo(x, y);
-      else path.lineTo(x, y);
+      if (i == 0) {
+        path.moveTo(x, y);
+      } else {
+        path.lineTo(x, y);
+      }
     }
     path.close();
     canvas.drawPath(path, paint);

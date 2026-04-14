@@ -40,7 +40,7 @@ abstract class EnemyBase extends PositionComponent
   @override
   Future<void> onLoad() async {
     add(CircleHitbox(radius: size.x / 2, anchor: Anchor.center)
-      ..position = this.size / 2);
+      ..position = size / 2);
   }
 
   @override

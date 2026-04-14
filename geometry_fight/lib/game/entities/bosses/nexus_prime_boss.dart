@@ -163,7 +163,11 @@ class NexusPrimeBoss extends BossBase {
       final angle = i * math.pi / 3 - math.pi / 6;
       final x = cx + r * math.cos(angle);
       final y = cy + r * math.sin(angle);
-      if (i == 0) path.moveTo(x, y); else path.lineTo(x, y);
+      if (i == 0) {
+        path.moveTo(x, y);
+      } else {
+        path.lineTo(x, y);
+      }
     }
     path.close();
     canvas.drawPath(path, paint);

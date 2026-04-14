@@ -142,7 +142,11 @@ class TeslaLordBoss extends BossBase {
       final angle = i * math.pi / 4;
       final x = r * 0.8 * math.cos(angle);
       final y = r * 0.8 * math.sin(angle);
-      if (i == 0) path.moveTo(x, y); else path.lineTo(x, y);
+      if (i == 0) {
+        path.moveTo(x, y);
+      } else {
+        path.lineTo(x, y);
+      }
     }
     path.close();
     canvas.drawPath(path, paint);

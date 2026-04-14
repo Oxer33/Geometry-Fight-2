@@ -65,7 +65,9 @@ class InfernoBoss extends BossBase {
       }
     }
     // Limita trails
-    while (_trails.length > 60) _trails.removeAt(0);
+    while (_trails.length > 60) {
+      _trails.removeAt(0);
+    }
 
     // Attacco: proiettili di fuoco
     _attackTimer -= dt;
@@ -119,7 +121,11 @@ class InfernoBoss extends BossBase {
       final starR = i % 2 == 0 ? r * 0.85 + flameWobble : r * 0.4;
       final x = starR * math.cos(angle);
       final y = starR * math.sin(angle);
-      if (i == 0) starPath.moveTo(x, y); else starPath.lineTo(x, y);
+      if (i == 0) {
+        starPath.moveTo(x, y);
+      } else {
+        starPath.lineTo(x, y);
+      }
     }
     starPath.close();
     canvas.drawPath(starPath, paint);

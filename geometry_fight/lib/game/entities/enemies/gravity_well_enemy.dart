@@ -78,7 +78,11 @@ class GravityWellEnemy extends EnemyBase {
         final dist = r * 0.1 + r * 0.7 * (i / 60);
         final sx = cx + dist * math.cos(angle);
         final sy = cy + dist * math.sin(angle);
-        if (i == 0) spiralPath.moveTo(sx, sy); else spiralPath.lineTo(sx, sy);
+        if (i == 0) {
+          spiralPath.moveTo(sx, sy);
+        } else {
+          spiralPath.lineTo(sx, sy);
+        }
       }
       canvas.drawPath(spiralPath, _spiralPaint);
 

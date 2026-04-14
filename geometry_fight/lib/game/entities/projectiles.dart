@@ -71,7 +71,7 @@ class PlayerBullet extends PositionComponent
       }
     }
 
-    _lifetime -= dt;
+    _lifetime -= realDt;
     if (_lifetime <= 0) removeFromParent();
   }
 

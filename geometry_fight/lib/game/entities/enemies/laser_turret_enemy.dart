@@ -10,7 +10,7 @@ import 'enemy_base.dart';
 /// Il raggio danneggia il player al contatto. Va distrutto da lontano.
 class LaserTurretEnemy extends EnemyBase {
   double _laserAngle = 0;
-  double _laserSpeed = 1.2; // radianti/secondo
+  final double _laserSpeed = 1.2; // radianti/secondo
   double _warmupTimer = 1.5; // Tempo prima che il laser si attivi
   bool _laserActive = false;
   static const double _laserLength = 250.0;

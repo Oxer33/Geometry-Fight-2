@@ -1,5 +1,5 @@
-/// Sistema di difficoltà per Geometry Fight 2.
-/// Ogni livello modifica HP nemici, velocità, spawn rate e drop rate.
+// Sistema di difficoltà per Geometry Fight 2.
+// Ogni livello modifica HP nemici, velocità, spawn rate e drop rate.
 
 enum Difficulty {
   easy,

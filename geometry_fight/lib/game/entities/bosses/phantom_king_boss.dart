@@ -19,7 +19,6 @@ class PhantomKingBoss extends BossBase {
   double _attackTimer = 2.0;
   double _cloneTimer = 8.0;
   double _crownPhase = 0;
-  int _cloneCount = 0;
 
   PhantomKingBoss()
       : super(
@@ -90,7 +89,6 @@ class PhantomKingBoss extends BossBase {
     // Crea cloni periodicamente
     _cloneTimer -= dt;
     if (_cloneTimer <= 0) {
-      _cloneCount = 0; // Reset per permettere nuovi cloni ogni ciclo
       _cloneTimer = currentPhase == 2 ? 5.0 : 8.0;
       _spawnClone();
     }
@@ -119,7 +117,6 @@ class PhantomKingBoss extends BossBase {
   }
 
   void _spawnClone() {
-    _cloneCount++;
     // Spawna un nemico drone colorato come il boss
     game.spawnEnemy(EnemyType.drone, position + Vector2(
       (math.Random().nextDouble() - 0.5) * 100,

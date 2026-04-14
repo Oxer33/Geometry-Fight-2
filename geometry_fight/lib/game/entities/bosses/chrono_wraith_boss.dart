@@ -15,6 +15,7 @@ class ChronoWraithBoss extends BossBase {
   final List<_Afterimage> _afterimages = [];
   bool _timeWarping = false;
   double _timeWarpDuration = 0;
+  double _warpShotTimer = 0;
 
   ChronoWraithBoss()
       : super(
@@ -80,6 +81,7 @@ class ChronoWraithBoss extends BossBase {
       _timeWarping = true;
       _timeWarpDuration = 3.0;
       _timeWarpTimer = 8.0;
+      _warpShotTimer = 0;
       // Slow everything except boss
       game.timeScale = 0.3;
     }
@@ -88,11 +90,15 @@ class ChronoWraithBoss extends BossBase {
       _timeWarpDuration -= dt;
       if (_timeWarpDuration <= 0) {
         _timeWarping = false;
-        game.timeScale = 1.0;
+        if (game.slowMoTimer <= 0) {
+          game.timeScale = game.player.timeSlowTimer > 0 ? 0.4 : 1.0;
+        }
       }
 
-      // During time warp, spawn extra bullets
-      if ((_phase * 8).floor() % 2 == 0) {
+      // During time warp, spawn extra bullets at fixed cadence (no frame-rate spam).
+      _warpShotTimer -= dt;
+      if (_warpShotTimer <= 0) {
+        _warpShotTimer = (0.22 - currentPhase * 0.03).clamp(0.12, 0.22);
         for (int i = 0; i < 6; i++) {
           final angle = i * math.pi / 3 + _phase * 2;
           final bulletDir = Vector2(math.cos(angle), math.sin(angle));
@@ -125,7 +131,9 @@ class ChronoWraithBoss extends BossBase {
   void onDeath() {
     // Ripristina timeScale se il boss muore durante time warp
     if (_timeWarping) {
-      game.timeScale = 1.0;
+      if (game.slowMoTimer <= 0) {
+        game.timeScale = game.player.timeSlowTimer > 0 ? 0.4 : 1.0;
+      }
     }
     super.onDeath();
   }

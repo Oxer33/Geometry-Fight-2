@@ -16,7 +16,6 @@ class SingularityBoss extends BossBase {
   double _pullDuration = 0;
   double _phase = 0;
   final List<Vector2> _vortexPositions = [];
-  double _vortexAngle = 0;
 
   SingularityBoss()
       : super(
@@ -86,8 +85,6 @@ class SingularityBoss extends BossBase {
         _createVortex();
       }
 
-      // Rotate vortex positions
-      _vortexAngle += dt * 0.5;
     }
 
     // Black rain (phase 2, periodic)

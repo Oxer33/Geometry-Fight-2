@@ -16,19 +16,34 @@ class WaveSystem {
   int? _pendingWave; // Wave da avviare dopo il delay
   late List<WaveConfig> _configs;
   WaveConfig? _currentConfig;
+  final int _dailySeed;
 
-  WaveSystem(this.game) {
+  WaveSystem(this.game)
+      : _dailySeed = _computeDailySeed(DateTime.now()) {
     _configs = generateWaveConfigs();
   }
 
   /// Ritorna la modalità di gioco attuale dal game
   GameMode get _mode => game.gameMode;
 
+  static int _computeDailySeed(DateTime date) =>
+      date.year * 10000 + date.month * 100 + date.day;
+
+  int _scaledSpawnCount(int baseCount) {
+    final scaled = (baseCount * game.diffConfig.enemyCountMultiplier).round();
+    return scaled.clamp(1, 500);
+  }
+
+  double _scaledSpawnDelay(double baseDelay) {
+    return (baseDelay * game.diffConfig.spawnDelayMultiplier).clamp(0.05, 10.0);
+  }
+
   /// Reset stato tunnel per nuova partita
   void reset() {
     _tunnelSpawnTimer = 0.5;
     _tunnelKillCount = 0;
     _nextBossAt = 30;
+    _tunnelBossCooldown = 0;
     currentWave = 0;
     _waveActive = false;
     _bossActive = false;
@@ -40,7 +55,7 @@ class WaveSystem {
     currentWave = wave;
     _waveActive = true;
     _spawnIndex = 0;
-    _spawnTimer = 1.0; // Delay iniziale prima del primo spawn
+    _spawnTimer = _scaledSpawnDelay(1.0); // Delay iniziale prima del primo spawn
     _allSpawned = false;
     _postSpawnDelay = 0;
 
@@ -65,6 +80,12 @@ class WaveSystem {
           (c) => c.waveNumber == wave,
           orElse: () => _generateEndlessWave(wave),
         );
+    }
+
+    // Wave senza gruppi spawnabili: considera subito "all spawned"
+    if (_currentConfig!.spawns.isEmpty) {
+      _allSpawned = true;
+      _postSpawnDelay = 0;
     }
 
     // Check for boss — spawna solo se non c'è già un boss attivo
@@ -111,13 +132,14 @@ class WaveSystem {
     if (_spawnTimer <= 0 && _currentConfig != null && !_allSpawned) {
       if (_spawnIndex < _currentConfig!.spawns.length) {
         final spawn = _currentConfig!.spawns[_spawnIndex];
-        for (int i = 0; i < spawn.count; i++) {
+        final spawnCount = _scaledSpawnCount(spawn.count);
+        for (int i = 0; i < spawnCount; i++) {
           game.spawnEnemy(spawn.type);
         }
         _spawnIndex++;
 
         if (_spawnIndex < _currentConfig!.spawns.length) {
-          _spawnTimer = _currentConfig!.spawns[_spawnIndex].delay;
+          _spawnTimer = _scaledSpawnDelay(_currentConfig!.spawns[_spawnIndex].delay);
         } else {
           // Tutti i gruppi spawnati - avvia il delay di sicurezza
           _allSpawned = true;
@@ -158,6 +180,10 @@ class WaveSystem {
 
   void onBossDefeated() {
     _bossActive = false;
+    // Tunnel mode: dopo un boss ucciso aspetta 45s prima del prossimo (respiro al player)
+    if (game.isTunnelMode) {
+      _tunnelBossCooldown = 45.0;
+    }
   }
 
   /// Boss Rush: ogni wave è UN SOLO boss. I nemici li spawna il boss stesso
@@ -219,19 +245,21 @@ class WaveSystem {
   double _tunnelSpawnTimer = 0.5;
   int _tunnelKillCount = 0; // Per boss ogni N kill
   int _nextBossAt = 30; // Soglia kill per il prossimo boss
+  double _tunnelBossCooldown = 0; // Tempo minimo tra boss (s)
   static final _tunnelRng = math.Random();
 
   /// Tunnel: spawn continuo di nemici randomici davanti al player.
-  /// Mantiene sempre 10+ nemici vicini. Boss ogni 30 kill.
+  /// Mantiene sempre 10+ nemici vicini. Boss ogni 30 kill con cooldown 45s.
   void updateTunnel(double dt) {
     _tunnelSpawnTimer -= dt;
+    if (_tunnelBossCooldown > 0) _tunnelBossCooldown -= dt;
 
     // Mantieni almeno 20 nemici attivi — spawna se ce ne sono meno
     if (_tunnelSpawnTimer <= 0 || game.enemyCount < 20) {
       _tunnelSpawnTimer = 0.3 + _tunnelRng.nextDouble() * 0.5;
 
       // Spawna 4-8 nemici randomici ogni tick
-      final count = 4 + _tunnelRng.nextInt(5);
+      final count = _scaledSpawnCount(4 + _tunnelRng.nextInt(5));
       for (int i = 0; i < count; i++) {
         if (game.enemyCount >= 80) break; // Max 80 nel tunnel
         final type = _randomTunnelEnemyType();
@@ -240,7 +268,10 @@ class WaveSystem {
     }
 
     // Boss ogni 30 kill — usa _nextBossAt per evitare off-by-one
-    if (_tunnelKillCount >= _nextBossAt && game.bossCount == 0) {
+    // Cooldown 45s dopo ogni boss ucciso (respiro al player)
+    if (_tunnelKillCount >= _nextBossAt &&
+        game.bossCount == 0 &&
+        _tunnelBossCooldown <= 0) {
       final bosses = BossType.values;
       final bossIdx = (_nextBossAt ~/ 30 - 1) % bosses.length;
       game.spawnBoss(bosses[bossIdx]);
@@ -305,9 +336,7 @@ class WaveSystem {
   /// Stesse wave per tutti i giocatori dello stesso giorno.
   WaveConfig _generateDailyChallengeWave(int wave) {
     // Seed basato sulla data: tutti i player hanno le stesse wave
-    final now = DateTime.now();
-    final daySeed = now.year * 10000 + now.month * 100 + now.day;
-    final rng = math.Random(daySeed + wave * 7);
+    final rng = math.Random(_dailySeed + wave * 7);
 
     // Tipi nemico filtrati per wave: early waves = solo nemici base
     final List<EnemyType> availableTypes;

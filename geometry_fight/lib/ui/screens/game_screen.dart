@@ -1,4 +1,4 @@
-import 'package:flame/components.dart';
+import 'dart:async';
 import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -71,7 +71,7 @@ class _GameScreenState extends State<GameScreen> {
     _game.activeModifiers = List.from(saveData.activeModifiers);
     _game.onGameOver = () {
       if (!mounted) return;
-      _saveLeaderboard();
+      unawaited(_saveLeaderboard());
       setState(() => _showGameOver = true);
     };
     _game.onPause = () {
@@ -80,10 +80,10 @@ class _GameScreenState extends State<GameScreen> {
     };
   }
 
-  void _saveLeaderboard() {
+  Future<void> _saveLeaderboard() async {
     if (_leaderboardSaved || _game.scoreSystem.score <= 0) return;
     _leaderboardSaved = true;
-    LeaderboardManager.addEntry(LeaderboardEntry(
+    await LeaderboardManager.addEntry(LeaderboardEntry(
       mode: widget.gameMode.name,
       difficulty: widget.difficulty.name,
       score: _game.scoreSystem.score,
@@ -139,7 +139,7 @@ class _GameScreenState extends State<GameScreen> {
       saveData.goldGeoms += achievement.reward;
     }
     if (perfBonus > 0 || _newAchievements.isNotEmpty) {
-      SaveManager.save(saveData);
+      await SaveManager.save(saveData);
     }
   }
 
@@ -232,7 +232,7 @@ class _GameScreenState extends State<GameScreen> {
               },
               onQuit: () {
                 _game.saveSessionData();
-                _saveLeaderboard();
+                unawaited(_saveLeaderboard());
                 widget.onQuit();
               },
             ),

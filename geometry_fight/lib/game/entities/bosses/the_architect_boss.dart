@@ -190,8 +190,11 @@ class TheArchitectBoss extends BossBase {
         final angle = i * math.pi / 3;
         final x = cx + sPos.x + 10 * math.cos(angle);
         final y = cy + sPos.y + 10 * math.sin(angle);
-        if (i == 0) path.moveTo(x, y);
-        else path.lineTo(x, y);
+        if (i == 0) {
+          path.moveTo(x, y);
+        } else {
+          path.lineTo(x, y);
+        }
       }
       path.close();
       canvas.drawPath(path, sPaint);

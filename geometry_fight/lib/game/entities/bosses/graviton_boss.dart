@@ -135,40 +135,40 @@ class GravitonBoss extends BossBase {
       canvas.save();
       canvas.translate(cx, cy);
       canvas.rotate(_gravPhase * (0.3 + ring * 0.2) * (_isPulling ? 1 : -1));
-      final ringPaint = Paint()
-        ..color = const Color(0xFFFFD700).withValues(alpha: 0.3 - ring * 0.08)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = (2 - ring * 0.5) * scale;
-      canvas.drawCircle(Offset.zero, r * (0.6 + ring * 0.15), ringPaint);
+      _ringPaint.color = const Color(0xFFFFD700).withValues(alpha: 0.3 - ring * 0.08);
+      _ringPaint.strokeWidth = (2 - ring * 0.5) * scale;
+      canvas.drawCircle(Offset.zero, r * (0.6 + ring * 0.15), _ringPaint);
       canvas.restore();
     }
 
     // Sfera nera centrale
-    canvas.drawCircle(Offset(cx, cy), r * 0.4, Paint()..color = const Color(0xFF000011));
+    _spherePaint.color = const Color(0xFF000011);
+    canvas.drawCircle(Offset(cx, cy), r * 0.4, _spherePaint);
     // Bordo dorato
+    _borderPaint.color = const Color(0xFFFFD700).withValues(alpha: 0.6);
+    _borderPaint.strokeWidth = 2 * scale;
     canvas.drawCircle(
       Offset(cx, cy), r * 0.4,
-      Paint()
-        ..color = const Color(0xFFFFD700).withValues(alpha: 0.6)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 2 * scale,
+      _borderPaint,
     );
 
     // Nucleo
     if (scale <= 1.01) {
       final pulse = _isPulling ? 0.6 : 0.3;
+      _corePaint.color = const Color(0xFFFFD700).withValues(alpha: pulse);
       canvas.drawCircle(
         Offset(cx, cy), r * 0.15,
-        Paint()..color = const Color(0xFFFFD700).withValues(alpha: pulse),
+        _corePaint,
       );
 
       // Indicatore pull/push
       final indicatorColor = _isPulling
           ? const Color(0xFF4400AA)
           : const Color(0xFFFFD700);
+      _indicatorPaint.color = indicatorColor;
       canvas.drawCircle(
         Offset(cx, cy - r * 0.55), 3,
-        Paint()..color = indicatorColor,
+        _indicatorPaint,
       );
     }
   }

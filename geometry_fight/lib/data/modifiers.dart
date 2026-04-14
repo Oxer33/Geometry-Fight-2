@@ -1,5 +1,5 @@
-/// Modificatori di gioco (mutatori) per Geometry Fight 2.
-/// Ogni modificatore altera le regole base per aggiungere varietà.
+// Modificatori di gioco (mutatori) per Geometry Fight 2.
+// Ogni modificatore altera le regole base per aggiungere varietà.
 
 class GameModifier {
   final String id;

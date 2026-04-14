@@ -1,7 +1,6 @@
 import 'dart:math' as math;
 import 'dart:ui';
 import 'package:flame/components.dart';
-import '../../../data/constants.dart';
 import 'enemy_base.dart';
 
 /// LEECH - Nemico parassita che si aggancia al player e lo rallenta.
@@ -17,7 +16,11 @@ class LeechEnemy extends EnemyBase {
 
   // Contatore globale leeches agganciati: applica slow solo quando > 0
   static int _attachedCount = 0;
-  static void resetAttachedCount() => _attachedCount = 0;
+  static double? _savedPlayerSpeed;
+  static void resetAttachedCount() {
+    _attachedCount = 0;
+    _savedPlayerSpeed = null;
+  }
 
   @override
   void onDeath() {
@@ -30,9 +33,10 @@ class LeechEnemy extends EnemyBase {
   void _detach() {
     _attached = false;
     _attachedCount = (_attachedCount - 1).clamp(0, 100);
-    // Ripristina velocità solo quando nessun leech è agganciato
-    if (_attachedCount == 0) {
-      game.player.speed = playerSpeed;
+    // Ripristina la velocità precedente solo quando nessun leech è agganciato.
+    if (_attachedCount == 0 && _savedPlayerSpeed != null) {
+      game.player.speed = _savedPlayerSpeed!;
+      _savedPlayerSpeed = null;
     }
   }
 
@@ -57,9 +61,6 @@ class LeechEnemy extends EnemyBase {
         math.sin(_tentaclePhase * 2) * 20,
       );
 
-      // EFFETTO RALLENTAMENTO: riduce la velocità del player
-      game.player.speed = playerSpeed * 0.7;
-
       _attachTimer -= dt;
       if (_attachTimer <= 0) {
         _detach();
@@ -73,6 +74,12 @@ class LeechEnemy extends EnemyBase {
       // Si aggancia!
       _attached = true;
       _attachTimer = 5.0;
+      // Applica slow solo al primo leech agganciato, preservando la velocità attuale
+      // (upgrade/modificatori già applicati).
+      if (_attachedCount == 0) {
+        _savedPlayerSpeed = game.player.speed;
+        game.player.speed = game.player.speed * 0.7;
+      }
       _attachedCount++;
     } else {
       // Seek veloce con zigzag

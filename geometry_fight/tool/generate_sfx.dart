@@ -1,5 +1,5 @@
-/// Genera file WAV procedurali per SFX del gioco.
-/// Eseguire con: dart run tool/generate_sfx.dart
+// Genera file WAV procedurali per SFX del gioco.
+// Eseguire con: dart run tool/generate_sfx.dart
 import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
@@ -106,7 +106,9 @@ void main() {
     },
   ));
 
-  print('Generated ${outDir.listSync().length} SFX files in ${outDir.path}');
+  stdout.writeln(
+    'Generated ${outDir.listSync().length} SFX files in ${outDir.path}',
+  );
 }
 
 Float64List _synth({

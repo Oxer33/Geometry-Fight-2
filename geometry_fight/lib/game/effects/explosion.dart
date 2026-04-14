@@ -60,9 +60,15 @@ class ExplosionEffect extends PositionComponent {
         pColor = const Color(0xFFFFFFFF); // Scintille bianche
       } else {
         // Colore leggermente diverso (shift hue)
-        final r = (color.red + _random.nextInt(60) - 30).clamp(0, 255);
-        final g = (color.green + _random.nextInt(60) - 30).clamp(0, 255);
-        final b = (color.blue + _random.nextInt(60) - 30).clamp(0, 255);
+        final r = ((color.r * 255).round() + _random.nextInt(60) - 30)
+            .clamp(0, 255)
+            .toInt();
+        final g = ((color.g * 255).round() + _random.nextInt(60) - 30)
+            .clamp(0, 255)
+            .toInt();
+        final b = ((color.b * 255).round() + _random.nextInt(60) - 30)
+            .clamp(0, 255)
+            .toInt();
         pColor = Color.fromARGB(255, r, g, b);
       }
 

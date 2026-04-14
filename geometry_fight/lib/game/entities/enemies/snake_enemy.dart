@@ -99,26 +99,6 @@ class SnakeEnemy extends EnemyBase {
     }
   }
 
-  void _split() {
-    if (_segments.length < 4) return;
-
-    final midPoint = _segments.length ~/ 2;
-
-    // Create a new snake from the tail half
-    final tailSnake = SnakeEnemy(
-        segmentCount: _segments.length - midPoint, isFragment: true);
-    tailSnake.position = _segments[midPoint].clone();
-    tailSnake.hp = (_segments.length - midPoint).toDouble();
-    tailSnake.clearSpawnInvulnerability(); // Generato in-game, killabile subito
-    game.world.add(tailSnake);
-
-    // Trim current snake
-    while (_segments.length > midPoint) {
-      _segments.removeLast();
-    }
-    hp = _segments.length.toDouble();
-  }
-
   @override
   void renderShape(Canvas canvas, Paint paint, double scale) {
     final cx = size.x / 2;

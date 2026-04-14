@@ -202,25 +202,23 @@ class _SplashPainter extends CustomPainter {
     // Nebulosa blu-viola in alto a sinistra
     final p1 = Offset(size.width * 0.2, size.height * 0.3);
     final pulse1 = 0.03 + math.sin(bgPhase * math.pi * 2) * 0.01;
-    paint
-      ..shader = RadialGradient(
-        colors: [
-          Color.fromRGBO(30, 0, 100, pulse1),
-          Colors.transparent,
-        ],
-      ).createShader(Rect.fromCircle(center: p1, radius: size.width * 0.5));
+    paint.shader = RadialGradient(
+      colors: [
+        Color.fromRGBO(30, 0, 100, pulse1),
+        Colors.transparent,
+      ],
+    ).createShader(Rect.fromCircle(center: p1, radius: size.width * 0.5));
     canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), paint);
 
     // Nebulosa cyan in basso a destra
     final p2 = Offset(size.width * 0.8, size.height * 0.7);
     final pulse2 = 0.02 + math.sin(bgPhase * math.pi * 2 + 2) * 0.01;
-    paint
-      ..shader = RadialGradient(
-        colors: [
-          Color.fromRGBO(0, 50, 80, pulse2),
-          Colors.transparent,
-        ],
-      ).createShader(Rect.fromCircle(center: p2, radius: size.width * 0.4));
+    paint.shader = RadialGradient(
+      colors: [
+        Color.fromRGBO(0, 50, 80, pulse2),
+        Colors.transparent,
+      ],
+    ).createShader(Rect.fromCircle(center: p2, radius: size.width * 0.4));
     canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), paint);
 
     paint.shader = null;

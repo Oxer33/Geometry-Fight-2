@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../data/achievements.dart';
+import '../../data/leaderboard.dart';
 import '../../data/save_data.dart';
 import '../../game/systems/audio_system.dart';
 
@@ -171,11 +173,12 @@ class _SettingsScreenState extends State<SettingsScreen>
                         entrance: entrance,
                         delay: 0.45,
                         onTap: () async {
+                          final messenger = ScaffoldMessenger.of(context);
                           final save = SaveManager.load();
                           save.goldGeoms += 1000;
                           await SaveManager.save(save);
                           if (!mounted) return;
-                          ScaffoldMessenger.of(context).showSnackBar(
+                          messenger.showSnackBar(
                             SnackBar(
                               content: Text('+1000 crediti! Totale: ${save.goldGeoms}',
                                   style: const TextStyle(fontFamily: 'monospace')),
@@ -193,6 +196,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                         entrance: entrance,
                         delay: 0.5,
                         onTap: () async {
+                          final messenger = ScaffoldMessenger.of(context);
                           final save = SaveManager.load();
                           save.unlockedSkins
                             ..clear()
@@ -212,7 +216,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                           save.startingWeapon = 'basic';
                           await SaveManager.save(save);
                           if (!mounted) return;
-                          ScaffoldMessenger.of(context).showSnackBar(
+                          messenger.showSnackBar(
                             const SnackBar(
                               content: Text('Acquisti resettati!',
                                   style: TextStyle(fontFamily: 'monospace')),
@@ -636,6 +640,8 @@ class _SettingsScreenState extends State<SettingsScreen>
               );
               if (confirm == true) {
                 await SaveManager.clear();
+                await LeaderboardManager.clear();
+                await AchievementManager.clear();
                 final prefs = await SharedPreferences.getInstance();
                 await prefs.remove('bgm_volume');
                 await prefs.remove('sfx_volume');

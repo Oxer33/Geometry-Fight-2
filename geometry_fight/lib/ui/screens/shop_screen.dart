@@ -514,11 +514,9 @@ class _ShopScreenState extends State<ShopScreen>
 
                   return GestureDetector(
                     onTap: () {
+                      // Tap sulla riga = seleziona solo la preview.
+                      // L'azione (buy/equip) passa dal pulsante dedicato a destra.
                       setState(() => _selectedPreviewIndex = index);
-                      if (owned) {
-                        onSelect(item);
-                      }
-                      // Non-owned: solo seleziona la preview, l'acquisto avviene dal bottone nel pannello preview
                     },
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 200),
@@ -559,21 +557,24 @@ class _ShopScreenState extends State<ShopScreen>
                               ],
                             ),
                           ),
-                          if (isActive)
-                            Icon(Icons.check_circle, color: Colors.greenAccent.withValues(alpha: 0.6), size: 16)
-                          else if (!owned)
-                            Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                const Icon(Icons.diamond, color: Color(0xFFFFD700), size: 10),
-                                const SizedBox(width: 2),
-                                Text('${item.cost}', style: TextStyle(
-                                  color: _saveData.goldGeoms >= item.cost
-                                      ? const Color(0xFFFFD700) : Colors.white24,
-                                  fontSize: 10, fontFamily: 'monospace',
-                                )),
-                              ],
-                            ),
+                          const SizedBox(width: 6),
+                          _ShopActionButton(
+                            state: isActive
+                                ? _ShopActionState.equipped
+                                : owned
+                                    ? _ShopActionState.equip
+                                    : _ShopActionState.buy,
+                            cost: item.cost,
+                            canAfford: _saveData.goldGeoms >= item.cost,
+                            onTap: () {
+                              if (isActive) return;
+                              if (owned) {
+                                onSelect(item);
+                              } else {
+                                onPurchase(item);
+                              }
+                            },
+                          ),
                         ],
                       ),
                     ),
@@ -610,62 +611,74 @@ class _ShopScreenState extends State<ShopScreen>
 
                   return LayoutBuilder(
                     builder: (context, previewConstraints) {
-                      final previewSize = (previewConstraints.maxHeight - 80).clamp(80.0, 200.0);
-                      return Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          // Preview canvas
-                          Container(
-                            width: previewSize, height: previewSize,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: Colors.cyanAccent.withValues(alpha: 0.08),
+                      // Preview dinamica: riduci molto su schermi corti per lasciar posto al bottone.
+                      final previewSize = (previewConstraints.maxHeight - 140).clamp(60.0, 200.0);
+                      final isActive = item.id == activeId;
+                      return SingleChildScrollView(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            // Preview canvas
+                            Container(
+                              width: previewSize, height: previewSize,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: Colors.cyanAccent.withValues(alpha: 0.08),
+                                ),
+                                gradient: RadialGradient(
+                                  colors: [
+                                    Colors.cyanAccent.withValues(alpha: 0.03),
+                                    Colors.transparent,
+                                  ],
+                                ),
                               ),
-                              gradient: RadialGradient(
-                                colors: [
-                                  Colors.cyanAccent.withValues(alpha: 0.03),
-                                  Colors.transparent,
-                                ],
+                              child: CustomPaint(
+                                painter: previewBuilder(item, _previewController.value * 10),
+                                size: Size(previewSize, previewSize),
                               ),
                             ),
-                            child: CustomPaint(
-                              painter: previewBuilder(item, _previewController.value * 10),
-                              size: Size(previewSize, previewSize),
+                            const SizedBox(height: 12),
+                            // Nome
+                            Text(item.name, style: const TextStyle(
+                              color: Colors.cyanAccent,
+                              fontSize: 16, fontWeight: FontWeight.bold,
+                              fontFamily: 'monospace', letterSpacing: 2,
+                            )),
+                            const SizedBox(height: 4),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 12),
+                              child: Text(
+                                item.description,
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: Colors.white.withValues(alpha: 0.4),
+                                  fontSize: 10, fontFamily: 'monospace',
+                                ),
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 12),
-                          // Nome
-                          Text(item.name, style: const TextStyle(
-                            color: Colors.cyanAccent,
-                            fontSize: 16, fontWeight: FontWeight.bold,
-                            fontFamily: 'monospace', letterSpacing: 2,
-                          )),
-                          const SizedBox(height: 4),
-                          Text(item.description, style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.4),
-                            fontSize: 10, fontFamily: 'monospace',
-                          )),
-                          const SizedBox(height: 10),
-                          if (!owned)
-                            _PurchaseButton(
+                            const SizedBox(height: 12),
+                            _ShopActionButton(
+                              state: isActive
+                                  ? _ShopActionState.equipped
+                                  : owned
+                                      ? _ShopActionState.equip
+                                      : _ShopActionState.buy,
                               cost: item.cost,
                               canAfford: _saveData.goldGeoms >= item.cost,
-                              color: Colors.cyanAccent,
-                              onTap: () => onPurchase(item),
                               large: true,
-                            )
-                          else
-                            Text(
-                              item.id == activeId ? 'EQUIPPED' : 'OWNED — TAP TO EQUIP',
-                              style: TextStyle(
-                                color: item.id == activeId
-                                    ? Colors.greenAccent
-                                    : Colors.white.withValues(alpha: 0.4),
-                                fontSize: 10, fontFamily: 'monospace', letterSpacing: 1,
-                              ),
+                              onTap: () {
+                                if (isActive) return;
+                                if (owned) {
+                                  onSelect(item);
+                                } else {
+                                  onPurchase(item);
+                                }
+                              },
                             ),
-                        ],
+                          ],
+                        ),
                       );
                     },
                   );
@@ -679,6 +692,119 @@ class _ShopScreenState extends State<ShopScreen>
   }
 }
 
+// ==================== SHOP ACTION BUTTON (BUY / EQUIP / EQUIPPED) ====================
+
+enum _ShopActionState { buy, equip, equipped }
+
+class _ShopActionButton extends StatefulWidget {
+  final _ShopActionState state;
+  final int cost;
+  final bool canAfford;
+  final VoidCallback onTap;
+  final bool large;
+
+  const _ShopActionButton({
+    required this.state,
+    required this.cost,
+    required this.canAfford,
+    required this.onTap,
+    this.large = false,
+  });
+
+  @override
+  State<_ShopActionButton> createState() => _ShopActionButtonState();
+}
+
+class _ShopActionButtonState extends State<_ShopActionButton> {
+  bool _pressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    // Colori per stato
+    final Color borderColor;
+    final Color bgColor;
+    final Color textColor;
+    final String label;
+    final IconData? leadingIcon;
+    final bool tappable;
+
+    switch (widget.state) {
+      case _ShopActionState.buy:
+        borderColor = widget.canAfford
+            ? const Color(0xFFFFD700).withValues(alpha: 0.6)
+            : Colors.white.withValues(alpha: 0.15);
+        bgColor = widget.canAfford
+            ? const Color(0xFFFFD700).withValues(alpha: _pressed ? 0.18 : 0.06)
+            : Colors.transparent;
+        textColor = widget.canAfford
+            ? const Color(0xFFFFD700)
+            : Colors.white24;
+        label = '${widget.cost}';
+        leadingIcon = Icons.diamond;
+        tappable = widget.canAfford;
+      case _ShopActionState.equip:
+        borderColor = Colors.cyanAccent.withValues(alpha: 0.6);
+        bgColor = Colors.cyanAccent.withValues(alpha: _pressed ? 0.18 : 0.06);
+        textColor = Colors.cyanAccent;
+        label = 'EQUIP';
+        leadingIcon = null;
+        tappable = true;
+      case _ShopActionState.equipped:
+        borderColor = Colors.greenAccent.withValues(alpha: 0.5);
+        bgColor = Colors.greenAccent.withValues(alpha: 0.08);
+        textColor = Colors.greenAccent;
+        label = 'EQUIPPED';
+        leadingIcon = Icons.check_circle;
+        tappable = false;
+    }
+
+    return GestureDetector(
+      onTapDown: tappable ? (_) => setState(() => _pressed = true) : null,
+      onTapUp: tappable
+          ? (_) {
+              setState(() => _pressed = false);
+              widget.onTap();
+            }
+          : null,
+      onTapCancel: tappable ? () => setState(() => _pressed = false) : null,
+      child: AnimatedScale(
+        scale: _pressed ? 0.93 : 1.0,
+        duration: const Duration(milliseconds: 80),
+        child: Container(
+          padding: EdgeInsets.symmetric(
+            horizontal: widget.large ? 20 : 10,
+            vertical: widget.large ? 8 : 5,
+          ),
+          decoration: BoxDecoration(
+            border: Border.all(color: borderColor),
+            borderRadius: BorderRadius.circular(6),
+            color: bgColor,
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (leadingIcon != null) ...[
+                Icon(leadingIcon, color: textColor, size: widget.large ? 14 : 11),
+                SizedBox(width: widget.large ? 6 : 3),
+              ],
+              Text(
+                label,
+                style: TextStyle(
+                  color: textColor,
+                  fontFamily: 'monospace',
+                  fontWeight: FontWeight.bold,
+                  fontSize: widget.large ? 13 : 10,
+                  letterSpacing: 1,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 // ==================== PURCHASE BUTTON ====================
 
 class _PurchaseButton extends StatefulWidget {
@@ -686,11 +812,10 @@ class _PurchaseButton extends StatefulWidget {
   final bool canAfford;
   final Color color;
   final VoidCallback onTap;
-  final bool large;
 
   const _PurchaseButton({
     required this.cost, required this.canAfford,
-    required this.color, required this.onTap, this.large = false,
+    required this.color, required this.onTap,
   });
 
   @override
@@ -711,8 +836,8 @@ class _PurchaseButtonState extends State<_PurchaseButton> {
         duration: const Duration(milliseconds: 80),
         child: Container(
           padding: EdgeInsets.symmetric(
-            horizontal: widget.large ? 20 : 12,
-            vertical: widget.large ? 8 : 5,
+            horizontal: 12,
+            vertical: 5,
           ),
           decoration: BoxDecoration(
             border: Border.all(
@@ -732,14 +857,14 @@ class _PurchaseButtonState extends State<_PurchaseButton> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(Icons.diamond, color: const Color(0xFFFFD700),
-                  size: widget.large ? 16 : 12),
-              SizedBox(width: widget.large ? 6 : 4),
+                  size: 12),
+              const SizedBox(width: 4),
               Text(
                 '${widget.cost}',
                 style: TextStyle(
                   color: widget.canAfford ? const Color(0xFFFFD700) : Colors.white24,
                   fontFamily: 'monospace', fontWeight: FontWeight.bold,
-                  fontSize: widget.large ? 14 : 12,
+                  fontSize: 12,
                 ),
               ),
             ],
@@ -881,7 +1006,11 @@ class _SkinPreviewPainter extends CustomPainter {
           final a = i * math.pi / 3 + math.pi / 6;
           final hx = x + math.cos(a) * spacing * 0.35;
           final hy = y + math.sin(a) * spacing * 0.35;
-          if (i == 0) path.moveTo(hx, hy); else path.lineTo(hx, hy);
+          if (i == 0) {
+            path.moveTo(hx, hy);
+          } else {
+            path.lineTo(hx, hy);
+          }
         }
         path.close();
         canvas.drawPath(path, paint);
@@ -1072,7 +1201,11 @@ class _SkinPreviewPainter extends CustomPainter {
       final innerAngle = angle + math.pi / 4;
       final innerX = math.cos(innerAngle) * 6 * s;
       final innerY = math.sin(innerAngle) * 6 * s;
-      if (i == 0) path.moveTo(outerX, outerY); else path.lineTo(outerX, outerY);
+      if (i == 0) {
+        path.moveTo(outerX, outerY);
+      } else {
+        path.lineTo(outerX, outerY);
+      }
       path.lineTo(innerX, innerY);
     }
     path.close();
@@ -1102,7 +1235,11 @@ class _SkinPreviewPainter extends CustomPainter {
       final innerAngle = angle + math.pi / 4;
       final innerX = math.cos(innerAngle) * 3 * s;
       final innerY = math.sin(innerAngle) * 3 * s;
-      if (i == 0) innerPath.moveTo(outerX, outerY); else innerPath.lineTo(outerX, outerY);
+      if (i == 0) {
+        innerPath.moveTo(outerX, outerY);
+      } else {
+        innerPath.lineTo(outerX, outerY);
+      }
       innerPath.lineTo(innerX, innerY);
     }
     innerPath.close();
@@ -1555,7 +1692,6 @@ class _WeaponPreviewPainter extends CustomPainter {
 
       // Flash sui punti di rimbalzo
       if (idx > 2 && idx < points.length - 1) {
-        final prev = points[idx - 1];
         final curr = points[idx];
         if ((curr.dx < 18 || curr.dx > size.width - 18) || (curr.dy < 18 || curr.dy > shipY - 18)) {
           canvas.drawCircle(curr, 5, Paint()

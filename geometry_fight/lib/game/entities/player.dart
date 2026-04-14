@@ -65,6 +65,28 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
       ..position = size / 2);
   }
 
+  /// Imposta l'arma equipaggiata a partire dall'id salvato (shop).
+  /// Valori validi: 'basic', 'triple', 'spread', 'ricochet', 'homing', 'plasma', 'laser'.
+  void setWeaponFromId(String id) {
+    switch (id) {
+      case 'triple':
+        currentWeapon = WeaponType.triple;
+      case 'spread':
+        currentWeapon = WeaponType.spread;
+      case 'ricochet':
+        currentWeapon = WeaponType.ricochet;
+      case 'homing':
+        currentWeapon = WeaponType.homing;
+      case 'plasma':
+        currentWeapon = WeaponType.plasma;
+      case 'laser':
+        currentWeapon = WeaponType.laser;
+      case 'basic':
+      default:
+        currentWeapon = WeaponType.basic;
+    }
+  }
+
   @override
   void update(double dt) {
     // Il player NON è affetto dal slow-motion: compensa il timeScale

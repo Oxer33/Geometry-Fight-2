@@ -29,6 +29,15 @@ class _NeonAnimatedBuilderState extends State<NeonAnimatedBuilder> {
     super.dispose();
   }
 
+  @override
+  void didUpdateWidget(covariant NeonAnimatedBuilder oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.animation != widget.animation) {
+      oldWidget.animation.removeListener(_rebuild);
+      widget.animation.addListener(_rebuild);
+    }
+  }
+
   void _rebuild() {
     if (mounted) setState(() {});
   }

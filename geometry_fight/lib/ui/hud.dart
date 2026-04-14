@@ -637,47 +637,6 @@ class _BossHpBarPainter extends CustomPainter {
 }
 
 // ===================================================================
-// COMBO POPUP - Grande e luminoso al centro
-// ===================================================================
-class _ComboPopup extends StatelessWidget {
-  final int comboCount;
-
-  const _ComboPopup({required this.comboCount});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(
-          'COMBO',
-          style: TextStyle(
-            color: const Color(0xFFFFD700).withValues(alpha: 0.7),
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            fontFamily: 'monospace',
-            letterSpacing: 6,
-          ),
-        ),
-        Text(
-          'x$comboCount',
-          style: const TextStyle(
-            color: Color(0xFFFFD700),
-            fontSize: 42,
-            fontWeight: FontWeight.w900,
-            fontFamily: 'monospace',
-            shadows: [
-              Shadow(color: Color(0xFFFFD700), blurRadius: 20),
-              Shadow(color: Color(0xFFFF8800), blurRadius: 40),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-// ===================================================================
 // POWER-UP BAR - Barre colorate con countdown
 // ===================================================================
 class _PowerUpBar extends StatelessWidget {
