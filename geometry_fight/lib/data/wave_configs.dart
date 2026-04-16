@@ -261,14 +261,14 @@ List<WaveConfig> generateWaveConfigs() {
       spawns.add(WaveSpawn(EnemyType.shieldEnemy, 25, delay: 4));
     }
 
-    // Spawner: genera mini nemici
+    // Spawner: genera mini nemici — limitato, ogni spawner crea già molti figli
     if (wave >= 8) {
-      spawns.add(WaveSpawn(EnemyType.spawner, 25, delay: 4));
+      spawns.add(WaveSpawn(EnemyType.spawner, (wave ~/ 6).clamp(2, 8), delay: 4));
     }
 
-    // Black Hole: raro ma devastante
+    // Black Hole: raro ma devastante — mai più di 4 per wave
     if (wave >= 9 && wave % 4 == 0) {
-      spawns.add(WaveSpawn(EnemyType.blackHole, 25, delay: 5));
+      spawns.add(WaveSpawn(EnemyType.blackHole, (wave ~/ 15).clamp(1, 4), delay: 5));
     }
 
     // Pulsar: onde d'urto
@@ -296,9 +296,9 @@ List<WaveConfig> generateWaveConfigs() {
       spawns.add(WaveSpawn(EnemyType.phantom, 25, delay: 5));
     }
 
-    // Titan: tank
+    // Titan: tank — pochi ma resistenti
     if (wave >= 15 && wave % 3 == 0) {
-      spawns.add(WaveSpawn(EnemyType.titan, 25, delay: 5));
+      spawns.add(WaveSpawn(EnemyType.titan, (wave ~/ 8).clamp(2, 8), delay: 5));
     }
 
     // Vortex
@@ -306,9 +306,9 @@ List<WaveConfig> generateWaveConfigs() {
       spawns.add(WaveSpawn(EnemyType.vortex, 25, delay: 5));
     }
 
-    // Healer: cura nemici (priorità target!)
+    // Healer: cura nemici (priorità target!) — supporto, mai troppi
     if (wave >= 20 && wave % 3 == 0) {
-      spawns.add(WaveSpawn(EnemyType.healer, 25, delay: 5));
+      spawns.add(WaveSpawn(EnemyType.healer, (wave ~/ 10).clamp(2, 6), delay: 5));
     }
 
     // Tesla: archi elettrici in pack
@@ -326,9 +326,9 @@ List<WaveConfig> generateWaveConfigs() {
       spawns.add(WaveSpawn(EnemyType.siren, 25, delay: 6));
     }
 
-    // Necro: resuscita nemici
+    // Necro: resuscita nemici — pochissimi, ogni necro è già moltiplicatore
     if (wave >= 30 && wave % 4 == 0) {
-      spawns.add(WaveSpawn(EnemyType.necro, 25, delay: 7));
+      spawns.add(WaveSpawn(EnemyType.necro, (wave ~/ 15).clamp(1, 4), delay: 7));
     }
 
     // Laser Turret
@@ -341,9 +341,9 @@ List<WaveConfig> generateWaveConfigs() {
       spawns.add(WaveSpawn(EnemyType.timeBomb, 25, delay: 5));
     }
 
-    // Gravity Well: raro
+    // Gravity Well: raro — mai più di 3
     if (wave >= 35 && wave % 5 == 0) {
-      spawns.add(WaveSpawn(EnemyType.gravityWell, 25, delay: 7));
+      spawns.add(WaveSpawn(EnemyType.gravityWell, (wave ~/ 20).clamp(1, 3), delay: 7));
     }
 
     // Decoy: trappole

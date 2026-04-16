@@ -15,8 +15,16 @@ class BouncerEnemy extends EnemyBase {
 
   // Endpoint radius used for kill/damage logic
   static const double _endpointRadius = 12.0;
-  static const double _centerKillRadius = 8.0;
-  static const double _playerKillRadius = 10.0;
+  static const double _centerKillRadius = 12.0; // aumentato: zona sicura più ampia
+  static const double _playerKillRadius = 7.0;  // ridotto: non sovrappone la zona centrale
+
+  // Paint cache statici — evita allocazioni ogni frame
+  static final _barPaint = Paint()..style = PaintingStyle.stroke;
+  static final _circlePaint = Paint()..style = PaintingStyle.fill;
+  static final _glowPaint = Paint()..style = PaintingStyle.fill;
+  static final _centerPaint = Paint()
+    ..color = const Color(0xFFFFFFFF).withValues(alpha: 0.3)
+    ..style = PaintingStyle.fill;
 
   BouncerEnemy()
       : super(
@@ -79,8 +87,9 @@ class BouncerEnemy extends EnemyBase {
 
     final playerPos = game.player.position;
 
-    // Check if player touches an endpoint (kill player)
-    if (playerPos.distanceTo(ep1) < _playerKillRadius || playerPos.distanceTo(ep2) < _playerKillRadius) {
+    // Check if player touches an endpoint (kill player) — guard su isInvincible
+    if (!game.player.isInvincible &&
+        (playerPos.distanceTo(ep1) < _playerKillRadius || playerPos.distanceTo(ep2) < _playerKillRadius)) {
       game.player.takeDamage();
     }
 
@@ -135,39 +144,30 @@ class BouncerEnemy extends EnemyBase {
     canvas.rotate(_rotAngle);
 
     // Connecting bar (thin line between the two circles)
-    final barPaint = Paint()
-      ..color = paint.color
-      ..strokeWidth = 2 * scale
-      ..style = PaintingStyle.stroke;
+    _barPaint.color = paint.color;
+    _barPaint.strokeWidth = 2 * scale;
     canvas.drawLine(
       Offset(-_endpointRadius, 0),
       Offset(_endpointRadius, 0),
-      barPaint,
+      _barPaint,
     );
 
     // Two endpoint circles
-    final circlePaint = Paint()
-      ..color = paint.color
-      ..style = PaintingStyle.fill;
+    _circlePaint.color = paint.color;
 
     // Glow around endpoints
     if (scale <= 1.01) {
-      final glowPaint = Paint()
-        ..color = paint.color.withValues(alpha: 0.25)
-        ..style = PaintingStyle.fill;
-      canvas.drawCircle(Offset(-_endpointRadius, 0), 7 * scale, glowPaint);
-      canvas.drawCircle(Offset(_endpointRadius, 0), 7 * scale, glowPaint);
+      _glowPaint.color = paint.color.withValues(alpha: 0.25);
+      canvas.drawCircle(Offset(-_endpointRadius, 0), 7 * scale, _glowPaint);
+      canvas.drawCircle(Offset(_endpointRadius, 0), 7 * scale, _glowPaint);
     }
 
-    canvas.drawCircle(Offset(-_endpointRadius, 0), 5 * scale, circlePaint);
-    canvas.drawCircle(Offset(_endpointRadius, 0), 5 * scale, circlePaint);
+    canvas.drawCircle(Offset(-_endpointRadius, 0), 5 * scale, _circlePaint);
+    canvas.drawCircle(Offset(_endpointRadius, 0), 5 * scale, _circlePaint);
 
     // Center dot (shows the kill zone)
     if (scale <= 1.01) {
-      final centerPaint = Paint()
-        ..color = const Color(0xFFFFFFFF).withValues(alpha: 0.3)
-        ..style = PaintingStyle.fill;
-      canvas.drawCircle(Offset.zero, 2.5, centerPaint);
+      canvas.drawCircle(Offset.zero, 2.5, _centerPaint);
     }
 
     canvas.restore();

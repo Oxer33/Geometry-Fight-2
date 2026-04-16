@@ -97,7 +97,8 @@ class PlayerBullet extends PositionComponent
         if (destroyed) { removeFromParent(); return; }
       } else {
         // Arma normale: distruggi quando supera 900px dalla posizione di spawn
-        if (position.distanceTo(_spawnPos) > 900) {
+        // distanceToSquared evita sqrt — equivalente a distanceTo > 900
+        if (position.distanceToSquared(_spawnPos) > 810000) {
           removeFromParent();
           return;
         }

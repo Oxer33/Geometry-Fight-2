@@ -157,7 +157,8 @@ class WaveSystem {
 
     if (!_waveActive) return;
 
-    _waveElapsedTimer += dt;
+    // Timer inizia solo quando tutti i gruppi sono spawnati — 30s DOPO l'ultimo spawn
+    if (_allSpawned) _waveElapsedTimer += dt;
 
     // Classic mode: forza avanzamento wave dopo 30s — i nemici rimasti restano vivi!
     // Diventa sempre più difficile se non li uccidi.
