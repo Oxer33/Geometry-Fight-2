@@ -4,7 +4,6 @@ import '../../data/constants.dart';
 import '../../data/difficulty.dart';
 import '../../data/wave_configs.dart';
 import '../game_world.dart';
-import '../entities/enemies/enemy_base.dart';
 
 /// 25 formazioni geometriche uniche per il formation spawn system
 enum _Formation {
@@ -160,14 +159,9 @@ class WaveSystem {
 
     _waveElapsedTimer += dt;
 
-    // Classic mode: forza completamento wave dopo 30s se tutti i gruppi sono stati spawnati
+    // Classic mode: forza avanzamento wave dopo 30s — i nemici rimasti restano vivi!
+    // Diventa sempre più difficile se non li uccidi.
     if (_mode == GameMode.classic && _allSpawned && _waveElapsedTimer >= 30.0 && !_bossActive) {
-      // Uccidi silenziosamente i nemici rimasti
-      for (final child in List.from(game.world.children)) {
-        if (child is EnemyBase) {
-          child.killSilently();
-        }
-      }
       _completeWave();
       return;
     }

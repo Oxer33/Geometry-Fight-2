@@ -16,9 +16,10 @@ class BlackHoleEnemy extends EnemyBase {
 
   static const int _protonThreshold = 7;
 
+  // HP alto: con baseFireRate 8 e damageMultiplier ~1.0, servono ~3-5s di fuoco diretto
   BlackHoleEnemy()
       : super(
-          hp: 999,
+          hp: 35,
           speed: 0,
           pointValue: 30,
           geomValue: 10,
@@ -29,16 +30,12 @@ class BlackHoleEnemy extends EnemyBase {
   @override
   void takeDamage(double amount) {
     if (_dead) return;
-    // Bomb damage (>= 50) actually kills the black hole
-    if (amount >= 50) {
-      super.takeDamage(amount);
-      return;
-    }
-    // Normal bullets just activate it
+    // Il primo colpo attiva il black hole
     if (!_activated) {
       _activated = true;
     }
-    // Invulnerable to bullets — don't call super.takeDamage
+    // Danno reale — ci vogliono 3-5 secondi per ucciderlo
+    super.takeDamage(amount);
   }
 
   @override
@@ -88,10 +85,23 @@ class BlackHoleEnemy extends EnemyBase {
       game.world.add(proton);
     }
 
-    game.spawnExplosion(position, NeonColors.red, radius: 120, particleCount: 30);
+    // Shockwave: uccidi nemici vicini (non altri black hole) e respingi player
+    for (final child in List.from(game.world.children)) {
+      if (child is EnemyBase && child != this && child is! BlackHoleEnemy) {
+        if (child.position.distanceTo(position) < 200) {
+          child.killSilently();
+        }
+      }
+    }
+    final toPlayer = game.player.position - position;
+    if (toPlayer.length > 0 && toPlayer.length < 300) {
+      game.player.position += toPlayer.normalized() * 400 * (1.0 - toPlayer.length / 300);
+    }
+
+    game.spawnExplosion(position, NeonColors.red, radius: 150, particleCount: 30, epic: true);
     game.triggerScreenShake(8, 0.4);
     if (!game.isTunnelMode) {
-      game.grid.applyForce(position, 250, 2000);
+      game.grid.applyForce(position, 300, 2500);
     }
 
     game.onEnemyKilled(this);
@@ -102,7 +112,41 @@ class BlackHoleEnemy extends EnemyBase {
   void onDeath() {
     if (_dead) return;
     _dead = true;
+
+    // Esplosione alla morte: uccide nemici vicini (esclusi altri black hole) e respinge player
+    _deathExplosion();
+
     super.onDeath();
+  }
+
+  /// Shockwave alla morte: uccide nemici entro 200px e respinge il player
+  void _deathExplosion() {
+    const killRadius = 200.0;
+    const pushForce = 400.0;
+
+    // Uccidi nemici vicini (non altri black hole)
+    for (final child in List.from(game.world.children)) {
+      if (child is EnemyBase && child != this && child is! BlackHoleEnemy) {
+        final dist = child.position.distanceTo(position);
+        if (dist < killRadius) {
+          child.killSilently();
+        }
+      }
+    }
+
+    // Respingi il player
+    final toPlayer = game.player.position - position;
+    if (toPlayer.length > 0 && toPlayer.length < killRadius * 1.5) {
+      final pushDir = toPlayer.normalized();
+      game.player.position += pushDir * pushForce * (1.0 - toPlayer.length / (killRadius * 1.5));
+    }
+
+    // Mega esplosione visiva
+    game.spawnExplosion(position, NeonColors.red, radius: 150, particleCount: 25, epic: true);
+    game.triggerScreenShake(6, 0.3);
+    if (!game.isTunnelMode) {
+      game.grid.applyForce(position, 300, 2500);
+    }
   }
 
   @override
