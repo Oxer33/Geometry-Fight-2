@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 import 'dart:ui';
 import 'package:flame/components.dart';
+import 'package:flutter/painting.dart' show HSVColor;
 import '../../../data/constants.dart';
 import 'enemy_base.dart';
 import 'proton_enemy.dart';
@@ -149,89 +150,107 @@ class BlackHoleEnemy extends EnemyBase {
     }
   }
 
+  /// Colore che cicla nello spettro HSV — molto appariscente
+  Color _chromaColor(double hueOffset) {
+    final hue = (_rotAngle * 40 + hueOffset) % 360;
+    return HSVColor.fromAHSV(1.0, hue, 1.0, 1.0).toColor();
+  }
+
   @override
   void renderShape(Canvas canvas, Paint paint, double scale) {
     final cx = size.x / 2;
     final cy = size.y / 2;
     final r = 18 * scale;
+    final active = _activated;
+    final pulse = math.sin(_rotAngle * 3);
 
-    // Gravitational radius indicator (subtle circle)
-    if (scale <= 1.01) {
-      final indicatorAlpha = _activated ? 0.12 : 0.06;
-      EnemyBase.detailPaint.color = NeonColors.darkRed.withValues(alpha: indicatorAlpha);
+    // === ALONE CROMATICO ESTERNO (molto grande e luminoso) ===
+    // 3 strati sovrapposti con hue sfasato → effetto arcobaleno rotante
+    for (int layer = 0; layer < 3; layer++) {
+      final layerR = r * (2.8 - layer * 0.4);
+      final alpha = active ? (0.20 - layer * 0.05 + pulse * 0.05) : (0.08 - layer * 0.02);
+      final c = _chromaColor(layer * 120.0);
+      EnemyBase.detailPaint.color = c.withValues(alpha: alpha.clamp(0.0, 1.0));
+      canvas.drawCircle(Offset(cx, cy), layerR, EnemyBase.detailPaint);
+    }
+
+    // === INDICATORE RAGGIO GRAVITAZIONALE (cerchio sottile, colore che cicla) ===
+    if (scale <= 1.01 && active) {
+      final indColor = _chromaColor(0);
+      EnemyBase.detailPaint.color = indColor.withValues(alpha: 0.10);
       EnemyBase.detailPaint.style = PaintingStyle.stroke;
-      EnemyBase.detailPaint.strokeWidth = 0.5;
+      EnemyBase.detailPaint.strokeWidth = 1.0;
       canvas.drawCircle(Offset(cx, cy), 150, EnemyBase.detailPaint);
       EnemyBase.detailPaint.style = PaintingStyle.fill;
     }
 
-    // Outer red glow (pulsing)
-    final glowPulse = 0.15 + math.sin(_rotAngle * 1.5) * 0.05;
-    final glowAlpha = _activated ? glowPulse * 2 : glowPulse;
-    EnemyBase.detailPaint.color = NeonColors.red.withValues(alpha: glowAlpha.clamp(0.0, 1.0));
-    canvas.drawCircle(Offset(cx, cy), r * 2, EnemyBase.detailPaint);
-
-    // Rotating gravitational rings
+    // === ANELLI GRAVITAZIONALI ROTANTI (colore cromatico) ===
     canvas.save();
     canvas.translate(cx, cy);
     canvas.rotate(_rotAngle);
-    _ringPaint.color = NeonColors.red.withValues(alpha: 0.4);
-    _ringPaint.strokeWidth = 2 * scale;
-    for (int i = 0; i < 4; i++) {
-      final angle = i * math.pi / 2;
+    for (int i = 0; i < 6; i++) {
+      final arcColor = _chromaColor(i * 60.0);
+      _ringPaint.color = arcColor.withValues(alpha: active ? 0.7 : 0.3);
+      _ringPaint.strokeWidth = (active ? 2.5 : 1.5) * scale;
+      final angle = i * math.pi / 3;
       canvas.drawArc(
         Rect.fromCircle(center: Offset.zero, radius: r),
-        angle, math.pi / 3, false, _ringPaint,
-      );
-    }
-    canvas.restore();
-
-    // Inner ring, counter-rotating
-    canvas.save();
-    canvas.translate(cx, cy);
-    canvas.rotate(-_rotAngle * 1.3);
-    _ringPaint.color = NeonColors.red.withValues(alpha: 0.25);
-    _ringPaint.strokeWidth = 1.5 * scale;
-    for (int i = 0; i < 3; i++) {
-      final angle = i * math.pi * 2 / 3;
-      canvas.drawArc(
-        Rect.fromCircle(center: Offset.zero, radius: r * 0.7),
         angle, math.pi / 4, false, _ringPaint,
       );
     }
     canvas.restore();
 
-    // Black core with red border
+    // === ANELLO INTERNO CONTRO-ROTANTE ===
+    canvas.save();
+    canvas.translate(cx, cy);
+    canvas.rotate(-_rotAngle * 1.8);
+    for (int i = 0; i < 4; i++) {
+      final arcColor = _chromaColor(i * 90.0 + 45);
+      _ringPaint.color = arcColor.withValues(alpha: active ? 0.5 : 0.2);
+      _ringPaint.strokeWidth = 1.5 * scale;
+      final angle = i * math.pi / 2;
+      canvas.drawArc(
+        Rect.fromCircle(center: Offset.zero, radius: r * 0.65),
+        angle, math.pi / 5, false, _ringPaint,
+      );
+    }
+    canvas.restore();
+
+    // === NUCLEO NERO con bordo cromatico pulsante ===
     _darkPaint.color = const Color(0xFF000000);
     canvas.drawCircle(Offset(cx, cy), r * 0.5, _darkPaint);
-    final borderPulse = 0.5 + math.sin(_rotAngle * 3) * 0.3;
-    _ringPaint.color = NeonColors.red.withValues(alpha: borderPulse);
-    _ringPaint.strokeWidth = 1.5;
+    final borderColor = _chromaColor(0);
+    final borderAlpha = (0.6 + pulse * 0.3).clamp(0.0, 1.0);
+    _ringPaint.color = borderColor.withValues(alpha: borderAlpha);
+    _ringPaint.strokeWidth = active ? 2.5 : 1.5;
     canvas.drawCircle(Offset(cx, cy), r * 0.5, _ringPaint);
 
-    // Spiraling particles (main layer only)
+    // === PARTICELLE SPIRALANTI CROMATICHE ===
     if (scale <= 1.01) {
-      for (int i = 0; i < 8; i++) {
-        final pAngle = _rotAngle * 2 + i * math.pi / 4;
-        final pDist = r * (0.6 + 0.4 * math.sin(_rotAngle + i * 0.5));
+      final particleCount = active ? 12 : 6;
+      for (int i = 0; i < particleCount; i++) {
+        final pAngle = _rotAngle * 2.5 + i * math.pi * 2 / particleCount;
+        final pDist = r * (0.6 + 0.4 * math.sin(_rotAngle * 1.5 + i * 0.7));
         final px = cx + pDist * math.cos(pAngle);
         final py = cy + pDist * math.sin(pAngle);
-        final pAlpha = 0.2 + math.sin(_rotAngle * 3 + i) * 0.15;
-        EnemyBase.detailPaint.color = NeonColors.red.withValues(alpha: pAlpha);
-        canvas.drawCircle(Offset(px, py), 1.5, EnemyBase.detailPaint);
+        final pColor = _chromaColor(i * (360.0 / particleCount));
+        final pAlpha = active ? (0.4 + math.sin(_rotAngle * 4 + i) * 0.2) : 0.15;
+        EnemyBase.detailPaint.color = pColor.withValues(alpha: pAlpha.clamp(0.0, 1.0));
+        canvas.drawCircle(Offset(px, py), active ? 2.0 : 1.2, EnemyBase.detailPaint);
       }
 
-      // Central bright dot
-      EnemyBase.detailPaint.color = const Color(0xFFFF4400).withValues(alpha: 0.5 + math.sin(_rotAngle * 4) * 0.3);
-      canvas.drawCircle(Offset(cx, cy), r * 0.15, EnemyBase.detailPaint);
+      // Punto luminoso centrale — bianco brillante pulsante
+      final coreAlpha = (0.7 + pulse * 0.3).clamp(0.0, 1.0);
+      EnemyBase.detailPaint.color = Color.fromARGB((coreAlpha * 255).round(), 255, 255, 255);
+      canvas.drawCircle(Offset(cx, cy), r * 0.2, EnemyBase.detailPaint);
 
-      // Dormant state indicator: a small dim ring to hint it's waiting
-      if (!_activated) {
-        EnemyBase.detailPaint.color = NeonColors.red.withValues(alpha: 0.15);
+      // Dormant: anello sottile che pulsa lentamente per segnalare pericolo latente
+      if (!active) {
+        final dormantColor = _chromaColor(0);
+        EnemyBase.detailPaint.color = dormantColor.withValues(alpha: 0.12 + math.sin(_rotAngle * 2) * 0.06);
         EnemyBase.detailPaint.style = PaintingStyle.stroke;
-        // ignore: deprecated_member_use
         EnemyBase.detailPaint.strokeWidth = 1.0;
-        canvas.drawCircle(Offset(cx, cy), r * 1.1, EnemyBase.detailPaint);
+        canvas.drawCircle(Offset(cx, cy), r * 1.3, EnemyBase.detailPaint);
         EnemyBase.detailPaint.style = PaintingStyle.fill;
       }
     }
