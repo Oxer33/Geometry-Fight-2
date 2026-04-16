@@ -4,6 +4,7 @@ import '../../data/constants.dart';
 import '../../data/difficulty.dart';
 import '../../data/wave_configs.dart';
 import '../game_world.dart';
+import '../entities/enemies/enemy_base.dart';
 
 /// 25 formazioni geometriche uniche per il formation spawn system
 enum _Formation {
@@ -43,6 +44,7 @@ class WaveSystem {
   bool _bossActive = false;
   bool _allSpawned = false; // Tutti i gruppi sono stati spawnati
   double _postSpawnDelay = 0; // Delay dopo l'ultimo spawn prima di controllare completamento
+  double _waveElapsedTimer = 0; // Timer per forzare completamento wave in classic mode
   double _interWaveDelay = 0; // Timer tra una wave e la successiva
   int? _pendingWave; // Wave da avviare dopo il delay
   late List<WaveConfig> _configs;
@@ -98,6 +100,7 @@ class WaveSystem {
     _spawnTimer = _scaledSpawnDelay(1.0); // Delay iniziale prima del primo spawn
     _allSpawned = false;
     _postSpawnDelay = 0;
+    _waveElapsedTimer = 0;
 
     // Genera config in base alla modalità di gioco
     switch (_mode) {
@@ -154,6 +157,20 @@ class WaveSystem {
     }
 
     if (!_waveActive) return;
+
+    _waveElapsedTimer += dt;
+
+    // Classic mode: forza completamento wave dopo 30s se tutti i gruppi sono stati spawnati
+    if (_mode == GameMode.classic && _allSpawned && _waveElapsedTimer >= 30.0 && !_bossActive) {
+      // Uccidi silenziosamente i nemici rimasti
+      for (final child in List.from(game.world.children)) {
+        if (child is EnemyBase) {
+          child.killSilently();
+        }
+      }
+      _completeWave();
+      return;
+    }
 
     if (_bossActive) {
       // Wait for boss to die, ma continua a spawnare nemici se presenti

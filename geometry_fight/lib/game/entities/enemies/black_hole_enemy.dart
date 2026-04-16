@@ -2,24 +2,23 @@ import 'dart:math' as math;
 import 'dart:ui';
 import 'package:flame/components.dart';
 import '../../../data/constants.dart';
-import '../../../data/wave_configs.dart';
 import 'enemy_base.dart';
 import 'proton_enemy.dart';
-import '../projectiles.dart';
 
 class BlackHoleEnemy extends EnemyBase {
   static final _ringPaint = Paint()..style = PaintingStyle.stroke;
   static final _darkPaint = Paint();
 
   double _rotAngle = 0;
-  double _spawnTimer = 5.0;
-  int _absorbedCount = 0; // Conta nemici assorbiti (per Proton explosion come GW)
-  bool _dead = false; // Guard per double-kill (proton explosion + takeDamage nello stesso frame)
-  static const int _protonThreshold = 5; // Dopo 5 nemici assorbiti → BOOM!
+  int _absorbedCount = 0;
+  bool _dead = false;
+  bool _activated = false;
+
+  static const int _protonThreshold = 7;
 
   BlackHoleEnemy()
       : super(
-          hp: 20,
+          hp: 999,
           speed: 0,
           pointValue: 30,
           geomValue: 10,
@@ -28,66 +27,59 @@ class BlackHoleEnemy extends EnemyBase {
         );
 
   @override
-  void updateBehavior(double dt) {
-    _rotAngle += dt * 2;
-
-    // Attract player (weak force)
-    final toHole = position - game.player.position;
-    if (toHole.length > 0 && toHole.length < 300) {
-      final force = toHole.normalized() * 50 * dt;
-      game.player.position += force;
+  void takeDamage(double amount) {
+    if (_dead) return;
+    // Bomb damage (>= 50) actually kills the black hole
+    if (amount >= 50) {
+      super.takeDamage(amount);
+      return;
     }
+    // Normal bullets just activate it
+    if (!_activated) {
+      _activated = true;
+    }
+    // Invulnerable to bullets — don't call super.takeDamage
+  }
 
-    // Attract nearby enemies + curve player projectiles
-    // Prima fase: attrazione + colleziona nemici assorbiti (senza rimuoverli)
+  @override
+  void updateBehavior(double dt) {
+    // Rotation speed doubles when activated
+    _rotAngle += dt * (_activated ? 4 : 2);
+
+    if (!_activated) return;
+
+    // Attract nearby enemies (NOT player, NOT player bullets)
     final toAbsorb = <EnemyBase>[];
     for (final child in game.world.children) {
       if (child is EnemyBase && child != this) {
-        final toHole2 = position - child.position;
-        if (toHole2.length > 0 && toHole2.length < 200) {
-          child.position += toHole2.normalized() * 30 * dt;
-          if (toHole2.length < 15) {
+        // Black holes cannot absorb other black holes
+        if (child is BlackHoleEnemy) continue;
+        final toHole = position - child.position;
+        if (toHole.length > 0 && toHole.length < 250) {
+          child.position += toHole.normalized() * 60 * dt;
+          if (toHole.length < 15) {
             toAbsorb.add(child);
           }
         }
-      } else if (child is PlayerBullet) {
-        final toBH = position - child.position;
-        if (toBH.length > 0 && toBH.length < 200) {
-          child.position += toBH.normalized() * 80 * dt;
-        }
       }
     }
-    // Seconda fase: rimuovi i nemici assorbiti (fuori dal loop)
+
+    // Remove absorbed enemies outside the loop
     for (final enemy in toAbsorb) {
       enemy.removeFromParent();
       _absorbedCount++;
     }
-    // GW Proton mechanic: troppi assorbiti → ESPLODE in Proton!
+
+    // Proton explosion after absorbing enough enemies
     if (_absorbedCount >= _protonThreshold) {
       _explodeIntoProtons();
-      return;
-    }
-
-    // Spawn bonus enemies
-    _spawnTimer -= dt;
-    if (_spawnTimer <= 0) {
-      _spawnTimer = 5.0;
-      game.spawnEnemy(
-          EnemyType.drone,
-          position +
-              Vector2(
-                (math.Random().nextDouble() - 0.5) * 60,
-                (math.Random().nextDouble() - 0.5) * 60,
-              ));
     }
   }
 
-  /// GW:RE2 Proton mechanic: il buco nero esplode in una pioggia di mini-nemici velocissimi.
-  /// Risk/reward: lasciar assorbire nemici al buco nero è pericoloso!
   void _explodeIntoProtons() {
     if (_dead) return;
     _dead = true;
-    final protonCount = 6 + _absorbedCount; // Più ha assorbito, più Proton genera
+    final protonCount = 8 + _absorbedCount;
     for (int i = 0; i < protonCount; i++) {
       final angle = i * math.pi * 2 / protonCount;
       final dir = Vector2(math.cos(angle), math.sin(angle));
@@ -96,30 +88,19 @@ class BlackHoleEnemy extends EnemyBase {
       game.world.add(proton);
     }
 
-    // Mega esplosione visiva
     game.spawnExplosion(position, NeonColors.red, radius: 120, particleCount: 30);
     game.triggerScreenShake(8, 0.4);
     if (!game.isTunnelMode) {
       game.grid.applyForce(position, 250, 2000);
     }
 
-    // Il buco nero muore
     game.onEnemyKilled(this);
     removeFromParent();
   }
 
   @override
-  void takeDamage(double amount) {
-    if (_dead) return; // Già esploso in proton
-    // Immune to normal bullets - only plasma, bomb, laser do damage
-    // This is handled by checking weapon type in the bullet collision
-    // For simplicity, all damage works but normal bullets do reduced
-    super.takeDamage(amount * 0.3);
-  }
-
-  @override
   void onDeath() {
-    if (_dead) return; // Evita double-kill se esplode in proton e viene ucciso nello stesso frame
+    if (_dead) return;
     _dead = true;
     super.onDeath();
   }
@@ -130,22 +111,23 @@ class BlackHoleEnemy extends EnemyBase {
     final cy = size.y / 2;
     final r = 18 * scale;
 
-    // === INDICATORE RAGGIO GRAVITAZIONALE (cerchio sottile) ===
+    // Gravitational radius indicator (subtle circle)
     if (scale <= 1.01) {
-      EnemyBase.detailPaint.color = NeonColors.darkRed.withValues(alpha: 0.06);
+      final indicatorAlpha = _activated ? 0.12 : 0.06;
+      EnemyBase.detailPaint.color = NeonColors.darkRed.withValues(alpha: indicatorAlpha);
       EnemyBase.detailPaint.style = PaintingStyle.stroke;
       EnemyBase.detailPaint.strokeWidth = 0.5;
       canvas.drawCircle(Offset(cx, cy), 150, EnemyBase.detailPaint);
       EnemyBase.detailPaint.style = PaintingStyle.fill;
     }
 
-    // === GLOW ESTERNO ROSSO (ampio, pulsante — no blur per performance) ===
+    // Outer red glow (pulsing)
     final glowPulse = 0.15 + math.sin(_rotAngle * 1.5) * 0.05;
-    EnemyBase.detailPaint.color = NeonColors.red.withValues(alpha: glowPulse);
+    final glowAlpha = _activated ? glowPulse * 2 : glowPulse;
+    EnemyBase.detailPaint.color = NeonColors.red.withValues(alpha: glowAlpha.clamp(0.0, 1.0));
     canvas.drawCircle(Offset(cx, cy), r * 2, EnemyBase.detailPaint);
 
-    // === ANELLI GRAVITAZIONALI ROTANTI ===
-    // Anello 1: esterno, rotazione oraria
+    // Rotating gravitational rings
     canvas.save();
     canvas.translate(cx, cy);
     canvas.rotate(_rotAngle);
@@ -160,7 +142,7 @@ class BlackHoleEnemy extends EnemyBase {
     }
     canvas.restore();
 
-    // Anello 2: interno, rotazione antioraria
+    // Inner ring, counter-rotating
     canvas.save();
     canvas.translate(cx, cy);
     canvas.rotate(-_rotAngle * 1.3);
@@ -175,16 +157,15 @@ class BlackHoleEnemy extends EnemyBase {
     }
     canvas.restore();
 
-    // === NUCLEO NERO con bordo rosso ===
+    // Black core with red border
     _darkPaint.color = const Color(0xFF000000);
     canvas.drawCircle(Offset(cx, cy), r * 0.5, _darkPaint);
-    // Bordo rosso pulsante del nucleo
     final borderPulse = 0.5 + math.sin(_rotAngle * 3) * 0.3;
     _ringPaint.color = NeonColors.red.withValues(alpha: borderPulse);
     _ringPaint.strokeWidth = 1.5;
     canvas.drawCircle(Offset(cx, cy), r * 0.5, _ringPaint);
 
-    // === PARTICELLE SPIRALANTI (solo layer principale, no blur) ===
+    // Spiraling particles (main layer only)
     if (scale <= 1.01) {
       for (int i = 0; i < 8; i++) {
         final pAngle = _rotAngle * 2 + i * math.pi / 4;
@@ -196,9 +177,19 @@ class BlackHoleEnemy extends EnemyBase {
         canvas.drawCircle(Offset(px, py), 1.5, EnemyBase.detailPaint);
       }
 
-      // Punto luminoso centrale
+      // Central bright dot
       EnemyBase.detailPaint.color = const Color(0xFFFF4400).withValues(alpha: 0.5 + math.sin(_rotAngle * 4) * 0.3);
       canvas.drawCircle(Offset(cx, cy), r * 0.15, EnemyBase.detailPaint);
+
+      // Dormant state indicator: a small dim ring to hint it's waiting
+      if (!_activated) {
+        EnemyBase.detailPaint.color = NeonColors.red.withValues(alpha: 0.15);
+        EnemyBase.detailPaint.style = PaintingStyle.stroke;
+        // ignore: deprecated_member_use
+        EnemyBase.detailPaint.strokeWidth = 1.0;
+        canvas.drawCircle(Offset(cx, cy), r * 1.1, EnemyBase.detailPaint);
+        EnemyBase.detailPaint.style = PaintingStyle.fill;
+      }
     }
 
     paint.style = PaintingStyle.fill;

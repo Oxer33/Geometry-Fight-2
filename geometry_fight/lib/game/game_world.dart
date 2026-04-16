@@ -699,8 +699,8 @@ class GeometryFightGame extends FlameGame
     // Grid distortion: tutte le esplosioni distorcono la griglia, ma capped a 4/frame
     // Epic = forza e raggio maggiori; mob normali = distorsione piccola e sottile
     if (!isTunnelMode && _gridDistortionCount < 4) {
-      final distRadius = epic ? radius * 2.5 : radius * 1.0;
-      final distForce  = epic ? 800.0 : 180.0;
+      final distRadius = epic ? radius * 3.75 : radius * 1.5;
+      final distForce  = epic ? 1200.0 : 270.0;
       grid.applyForce(position, distRadius, distForce);
       _gridDistortionCount++;
     }

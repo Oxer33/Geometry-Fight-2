@@ -220,8 +220,8 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
         _spawnBullet(dir, damageMultiplier, NeonColors.bulletYellow, offset: perp, pierce: pierce);
         _spawnBullet(dir, damageMultiplier, NeonColors.bulletYellow, offset: -perp, pierce: pierce);
       case WeaponType.spread:
-        // 5 proiettili con angolo totale 20° (±10°) — 0.175 rad = 10°
-        for (final angle in [-0.175, -0.0875, 0.0, 0.0875, 0.175]) {
+        // 9 proiettili con angolo totale 20° (±10°) — 0.175 rad = 10°
+        for (final angle in [-0.175, -0.13125, -0.0875, -0.04375, 0.0, 0.04375, 0.0875, 0.13125, 0.175]) {
           final rotDir = _rotateVector(dir, angle);
           _spawnBullet(rotDir, damageMultiplier * 0.7, NeonColors.spreadOrange,
               speed: bulletSpeed * 1.2, pierce: pierce);

@@ -3,57 +3,48 @@ import 'dart:ui';
 import 'package:flame/components.dart';
 import '../../../data/constants.dart';
 import 'enemy_base.dart';
+import '../projectiles.dart';
 
-/// BOUNCER → WANDERER (Pinwheel) - come Geometry Wars originale.
-/// Random walk, rimbalza sui muri, NON insegue il player.
-/// Pericoloso solo perché imprevedibile e numeroso.
+/// BOUNCER → GATE / DUMBBELL enemy (Geometry Wars "Bouncer" style).
+/// A rotating dumbbell: two endpoint spheres connected by a thin bar.
+/// Bullets bounce off it. Player kills it by passing through the center (thin gap).
+/// The endpoints kill the player on contact.
 class BouncerEnemy extends EnemyBase {
-  double _dirChangeTimer = 0;
+  double _rotAngle = 0;
   late double _moveAngle;
+
+  // Endpoint radius used for kill/damage logic
+  static const double _endpointRadius = 12.0;
+  static const double _centerKillRadius = 8.0;
+  static const double _playerKillRadius = 10.0;
 
   BouncerEnemy()
       : super(
-          hp: 1,
-          speed: 45, // GW Wanderer: 35-50 px/s
-          pointValue: 1,
-          geomValue: 1,
-          neonColor: NeonColors.purple, // Viola come GW Wanderer
-          size: Vector2(16, 16),
+          hp: 999,
+          speed: 30,
+          pointValue: 5,
+          geomValue: 3,
+          neonColor: NeonColors.purple,
+          size: Vector2(40, 40),
         ) {
     _moveAngle = math.Random().nextDouble() * math.pi * 2;
-    _dirChangeTimer = 1.5 + math.Random().nextDouble() * 1.5;
+  }
+
+  @override
+  void takeDamage(double amount) {
+    // Invulnerable to bullets — do nothing
   }
 
   @override
   void updateBehavior(double dt) {
-    _dirChangeTimer -= dt;
+    _rotAngle += dt * 1.5;
 
-    if (_dirChangeTimer <= 0) {
-      // Cambio direzione con pesi GW: 0°:35%, ±45°:30%, ±90°:5%
-      _dirChangeTimer = 1.5 + math.Random().nextDouble() * 1.5;
-      final r = math.Random().nextDouble();
-      double angleChange;
-      if (r < 0.05) {
-        angleChange = -math.pi / 2;
-      } else if (r < 0.35) {
-        angleChange = -math.pi / 4;
-      } else if (r < 0.70) {
-        angleChange = 0;
-      } else if (r < 0.95) {
-        angleChange = math.pi / 4;
-      } else {
-        angleChange = math.pi / 2;
-      }
-      _moveAngle += angleChange;
-    }
-
-    // Movimento nella direzione corrente
+    // Slow drift
     position.x += math.cos(_moveAngle) * speed * dt;
     position.y += math.sin(_moveAngle) * speed * dt;
 
-    // Rimbalzo sui muri (reflection)
+    // Wall bounce
     if (game.isTunnelMode) {
-      // Tunnel mode: solo rimbalzo Y (basato su tunnelHeight), niente X
       final camY = game.camera.viewfinder.position.y;
       final halfH = game.tunnelHeight / 2;
       final minY = camY - halfH + 10;
@@ -81,90 +72,104 @@ class BouncerEnemy extends EnemyBase {
         position.y = arenaHeight - 10;
       }
     }
+
+    // Compute the two endpoint positions (world space)
+    final ep1 = position + Vector2(math.cos(_rotAngle) * _endpointRadius, math.sin(_rotAngle) * _endpointRadius);
+    final ep2 = position - Vector2(math.cos(_rotAngle) * _endpointRadius, math.sin(_rotAngle) * _endpointRadius);
+
+    final playerPos = game.player.position;
+
+    // Check if player touches an endpoint (kill player)
+    if (playerPos.distanceTo(ep1) < _playerKillRadius || playerPos.distanceTo(ep2) < _playerKillRadius) {
+      game.player.takeDamage();
+    }
+
+    // Check if player passes through the center gap (kill bouncer + shockwave)
+    final distToCenter = playerPos.distanceTo(position);
+    if (distToCenter < _centerKillRadius) {
+      // Make sure the player is NOT near the endpoints (i.e., near the center line)
+      final nearEp1 = playerPos.distanceTo(ep1) < _endpointRadius + 4;
+      final nearEp2 = playerPos.distanceTo(ep2) < _endpointRadius + 4;
+      if (!nearEp1 && !nearEp2) {
+        _triggerCenterKill();
+      }
+    }
+  }
+
+  void _triggerCenterKill() {
+    // Shockwave: kill all enemies within radius 150
+    final toKill = <EnemyBase>[];
+    for (final child in game.world.children) {
+      if (child is EnemyBase && child != this) {
+        if (child.position.distanceTo(position) < 150) {
+          toKill.add(child);
+        }
+      }
+    }
+    for (final enemy in toKill) {
+      enemy.killSilently();
+    }
+
+    game.spawnExplosion(position, NeonColors.purple, radius: 150, particleCount: 25);
+    game.triggerScreenShake(6, 0.3);
+
+    onDeath();
+  }
+
+  @override
+  void onCollisionStart(Set<Vector2> intersectionPoints, PositionComponent other) {
+    if (other is PlayerBullet) {
+      // Reflect the bullet
+      other.reflect();
+    }
+    super.onCollisionStart(intersectionPoints, other);
   }
 
   @override
   void renderShape(Canvas canvas, Paint paint, double scale) {
     final cx = size.x / 2;
     final cy = size.y / 2;
-    final r = 8 * scale;
 
     canvas.save();
     canvas.translate(cx, cy);
-    canvas.rotate(idlePhase * 3.14);
+    canvas.rotate(_rotAngle);
 
-    // Stella a 4 punte esterna (pinwheel)
-    final path = Path();
-    for (int i = 0; i < 4; i++) {
-      final angle = i * math.pi / 2;
-      final outerX = r * math.cos(angle);
-      final outerY = r * math.sin(angle);
-      final innerAngle = angle + math.pi / 4;
-      final innerX = r * 0.35 * math.cos(innerAngle);
-      final innerY = r * 0.35 * math.sin(innerAngle);
+    // Connecting bar (thin line between the two circles)
+    final barPaint = Paint()
+      ..color = paint.color
+      ..strokeWidth = 2 * scale
+      ..style = PaintingStyle.stroke;
+    canvas.drawLine(
+      Offset(-_endpointRadius, 0),
+      Offset(_endpointRadius, 0),
+      barPaint,
+    );
 
-      if (i == 0) {
-        path.moveTo(outerX, outerY);
-      } else {
-        path.lineTo(outerX, outerY);
-      }
-      path.lineTo(innerX, innerY);
-    }
-    path.close();
-    canvas.drawPath(path, paint);
+    // Two endpoint circles
+    final circlePaint = Paint()
+      ..color = paint.color
+      ..style = PaintingStyle.fill;
 
+    // Glow around endpoints
     if (scale <= 1.01) {
-      // Seconda stella interna contro-rotante (ruota il doppio in senso opposto)
-      final innerStarPath = Path();
-      for (int i = 0; i < 4; i++) {
-        final angle = i * math.pi / 2 + math.pi / 4; // Sfasata 45°
-        final outerX = r * 0.5 * math.cos(angle);
-        final outerY = r * 0.5 * math.sin(angle);
-        final innerAngle = angle + math.pi / 4;
-        final innerX = r * 0.2 * math.cos(innerAngle);
-        final innerY = r * 0.2 * math.sin(innerAngle);
-        if (i == 0) {
-          innerStarPath.moveTo(outerX, outerY);
-        } else {
-          innerStarPath.lineTo(outerX, outerY);
-        }
-        innerStarPath.lineTo(innerX, innerY);
-      }
-      innerStarPath.close();
-      final innerStarPaint = Paint()
-        ..color = paint.color.withValues(alpha: 0.4)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 0.7;
-      canvas.drawPath(innerStarPath, innerStarPaint);
-
-      // Raggi energetici dalle punte verso il centro
-      final spokePaint = Paint()
-        ..color = paint.color.withValues(alpha: 0.2)
-        ..strokeWidth = 0.5;
-      for (int i = 0; i < 4; i++) {
-        final angle = i * math.pi / 2;
-        final tipX = r * 0.8 * math.cos(angle);
-        final tipY = r * 0.8 * math.sin(angle);
-        canvas.drawLine(Offset.zero, Offset(tipX, tipY), spokePaint);
-      }
-
-      // 4 micro-nodi energetici tra le punte
-      for (int i = 0; i < 4; i++) {
-        final angle = i * math.pi / 2 + math.pi / 4;
-        final nx = r * 0.55 * math.cos(angle);
-        final ny = r * 0.55 * math.sin(angle);
-        final nodePulse = 0.3 + math.sin(idlePhase * 6 + i * 1.2) * 0.3;
-        final nodePaint = Paint()
-          ..color = paint.color.withValues(alpha: nodePulse);
-        canvas.drawCircle(Offset(nx, ny), 0.8, nodePaint);
-      }
-
-      // Nucleo centrale pulsante
-      final pulse = 0.4 + math.sin(idlePhase * 4) * 0.3;
-      final corePaint = Paint()
-        ..color = const Color(0xFFFFFFFF).withValues(alpha: pulse);
-      canvas.drawCircle(Offset.zero, r * 0.15, corePaint);
+      final glowPaint = Paint()
+        ..color = paint.color.withValues(alpha: 0.25)
+        ..style = PaintingStyle.fill;
+      canvas.drawCircle(Offset(-_endpointRadius, 0), 7 * scale, glowPaint);
+      canvas.drawCircle(Offset(_endpointRadius, 0), 7 * scale, glowPaint);
     }
+
+    canvas.drawCircle(Offset(-_endpointRadius, 0), 5 * scale, circlePaint);
+    canvas.drawCircle(Offset(_endpointRadius, 0), 5 * scale, circlePaint);
+
+    // Center dot (shows the kill zone)
+    if (scale <= 1.01) {
+      final centerPaint = Paint()
+        ..color = const Color(0xFFFFFFFF).withValues(alpha: 0.3)
+        ..style = PaintingStyle.fill;
+      canvas.drawCircle(Offset.zero, 2.5, centerPaint);
+    }
+
     canvas.restore();
   }
 }

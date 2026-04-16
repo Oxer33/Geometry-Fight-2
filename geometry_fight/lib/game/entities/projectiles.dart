@@ -21,6 +21,7 @@ class PlayerBullet extends PositionComponent
   int _bounces = 0;
   double _lifetime = bulletLifetime;
   late Vector2 _velocity;
+  late Vector2 _spawnPos;
 
   // Trail
   final List<Vector2> _trail = [];
@@ -38,6 +39,7 @@ class PlayerBullet extends PositionComponent
   @override
   Future<void> onLoad() async {
     _velocity = direction.normalized() * speed;
+    _spawnPos = game.player.position.clone();
     // Hitbox circolare per proiettili rotondi
     add(CircleHitbox(radius: 3, anchor: Anchor.center)
       ..position = size / 2);
@@ -69,29 +71,37 @@ class PlayerBullet extends PositionComponent
         return;
       }
     } else {
-      // Arena normale: rimbalza (ricochet) o distruggi esattamente al bordo
-      bool destroyed = false;
-      if (position.x <= 0) {
-        position.x = 0;
-        if (maxBounces > 0 && _bounces < maxBounces) { _velocity.x = _velocity.x.abs(); _bounces++; }
-        else { destroyed = true; }
-      } else if (position.x >= arenaWidth) {
-        position.x = arenaWidth;
-        if (maxBounces > 0 && _bounces < maxBounces) { _velocity.x = -_velocity.x.abs(); _bounces++; }
-        else { destroyed = true; }
-      }
-      if (!destroyed) {
-        if (position.y <= 0) {
-          position.y = 0;
-          if (maxBounces > 0 && _bounces < maxBounces) { _velocity.y = _velocity.y.abs(); _bounces++; }
+      if (maxBounces > 2) {
+        // Ricochet weapon: rimbalza sui muri
+        bool destroyed = false;
+        if (position.x <= 0) {
+          position.x = 0;
+          if (_bounces < maxBounces) { _velocity.x = _velocity.x.abs(); _bounces++; }
           else { destroyed = true; }
-        } else if (position.y >= arenaHeight) {
-          position.y = arenaHeight;
-          if (maxBounces > 0 && _bounces < maxBounces) { _velocity.y = -_velocity.y.abs(); _bounces++; }
+        } else if (position.x >= arenaWidth) {
+          position.x = arenaWidth;
+          if (_bounces < maxBounces) { _velocity.x = -_velocity.x.abs(); _bounces++; }
           else { destroyed = true; }
         }
+        if (!destroyed) {
+          if (position.y <= 0) {
+            position.y = 0;
+            if (_bounces < maxBounces) { _velocity.y = _velocity.y.abs(); _bounces++; }
+            else { destroyed = true; }
+          } else if (position.y >= arenaHeight) {
+            position.y = arenaHeight;
+            if (_bounces < maxBounces) { _velocity.y = -_velocity.y.abs(); _bounces++; }
+            else { destroyed = true; }
+          }
+        }
+        if (destroyed) { removeFromParent(); return; }
+      } else {
+        // Arma normale: distruggi quando supera 900px dalla posizione di spawn
+        if (position.distanceTo(_spawnPos) > 900) {
+          removeFromParent();
+          return;
+        }
       }
-      if (destroyed) { removeFromParent(); return; }
     }
 
     _lifetime -= realDt;
@@ -160,6 +170,11 @@ class PlayerBullet extends PositionComponent
       }
     }
     super.onCollisionStart(intersectionPoints, other);
+  }
+
+  /// Reflect the bullet's velocity (used by BouncerEnemy deflection).
+  void reflect() {
+    _velocity = -_velocity;
   }
 
   /// GW:RE2 Fear: quando un proiettile colpisce, solo i nemici "fear-dodge"

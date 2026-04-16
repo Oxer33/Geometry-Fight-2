@@ -28,7 +28,7 @@ const double cameraSmoothing = 0.12;
 // Waves
 // Delay tra gruppi di spawn in modalità classica.
 // Cambiare qui a 8.0 / 12.0 per ritoccare il ritmo globale.
-const double classicWaveGroupDelaySeconds = 6.0;
+const double classicWaveGroupDelaySeconds = 4.0;
 
 // Grid
 const int gridCols = 50;
