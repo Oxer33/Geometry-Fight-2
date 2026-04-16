@@ -61,7 +61,7 @@ class SingularityBoss extends BossBase {
     if (_pulling) {
       // Pull player towards boss
       final pullDir = (position - playerPosition);
-      if (pullDir.length > 0) {
+      if (pullDir.length > 20) { // FIX C8: guard against NaN when player == boss position
         game.player.position += pullDir.normalized() * 150 * dt;
       }
       _pullDuration -= dt;

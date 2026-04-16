@@ -89,6 +89,7 @@ class SnakeEnemy extends EnemyBase {
 
   @override
   void takeDamage(double amount) {
+    if (isSpawnInvulnerable) return; // FIX H13: rispetta spawn invulnerability
     hp -= amount;
     if (hp <= 0) {
       // Quando la testa muore, tutto il verme esplode

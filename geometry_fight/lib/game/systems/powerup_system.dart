@@ -38,6 +38,10 @@ class PowerUpSystem {
     spawnRandomPowerUp(pos);
   }
 
+  void reset() {
+    _spawnTimer = 20.0;
+  }
+
   void spawnRandomPowerUp(Vector2 position) {
     // Selezione pesata per rarità
     final type = PowerUpRarityConfig.rollWeighted(_random);

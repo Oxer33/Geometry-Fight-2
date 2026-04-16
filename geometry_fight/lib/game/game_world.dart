@@ -124,6 +124,9 @@ class GeometryFightGame extends FlameGame
   // Shared Random instance (evita creazione ripetuta)
   final math.Random _random = math.Random();
 
+  // Grid distortion cap: massimo 4 distorsioni per frame (evita lag su kill multipli)
+  int _gridDistortionCount = 0;
+
   // Difficoltà e modalità di gioco
   final Difficulty difficulty;
   final GameMode gameMode;
@@ -238,6 +241,9 @@ class GeometryFightGame extends FlameGame
       super.update(0);
       return;
     }
+
+    // Reset grid distortion cap ogni frame
+    _gridDistortionCount = 0;
 
     // Apply time scale
     final scaledDt = dt * timeScale;
@@ -377,16 +383,20 @@ class GeometryFightGame extends FlameGame
       // Camera X: scrolling costante. Camera Y: segue player per comfort
       final currentPos = camera.viewfinder.position;
       final targetY = player.position.y;
+      // Frame-rate independent lerp: stesso feeling a qualunque fps
+      final lerpFactorTunnel = 1.0 - math.pow(1.0 - cameraSmoothing, scaledDt * 60).toDouble();
       camera.viewfinder.position = Vector2(
         _tunnelCameraX + arenaWidth / 2, // Offset iniziale + scroll
-        currentPos.y + (targetY - currentPos.y) * cameraSmoothing,
+        currentPos.y + (targetY - currentPos.y) * lerpFactorTunnel,
       );
     } else {
       // Modalità normali: camera segue player
       final targetPos = player.position.clone();
       final currentPos = camera.viewfinder.position;
+      // Frame-rate independent lerp: stesso feeling a qualunque fps
+      final lerpFactor = 1.0 - math.pow(1.0 - cameraSmoothing, scaledDt * 60).toDouble();
       camera.viewfinder.position =
-          currentPos + (targetPos - currentPos) * cameraSmoothing;
+          currentPos + (targetPos - currentPos) * lerpFactor;
     }
 
     super.update(scaledDt);
@@ -686,11 +696,18 @@ class GeometryFightGame extends FlameGame
     );
     explosion.position = position.clone();
     world.add(explosion);
-    // Grid distortion solo se non in tunnel mode (la grid non è nel world in tunnel)
-    if (!isTunnelMode) {
-      grid.applyForce(position, radius * 2, epic ? 800 : 500);
+    // Grid distortion: tutte le esplosioni distorcono la griglia, ma capped a 4/frame
+    // Epic = forza e raggio maggiori; mob normali = distorsione piccola e sottile
+    if (!isTunnelMode && _gridDistortionCount < 4) {
+      final distRadius = epic ? radius * 2.5 : radius * 1.0;
+      final distForce  = epic ? 800.0 : 180.0;
+      grid.applyForce(position, distRadius, distForce);
+      _gridDistortionCount++;
     }
-    triggerScreenShake(epic ? 4 : 2, epic ? 0.15 : 0.08);
+    // Screen shake solo per esplosioni epic (boss/titan/ecc.)
+    if (epic) {
+      triggerScreenShake(4, 0.15);
+    }
   }
 
   void spawnPowerUp(Vector2 position) {
@@ -730,7 +747,7 @@ class GeometryFightGame extends FlameGame
     // Notifica Necro nemici vicini della morte (per resurrezione)
     // Escludi il nemico stesso (se è un Necro che muore) e non resuscitare Necro
     final enemyType = _getEnemyType(enemy);
-    if (enemyType != EnemyType.necro) {
+    if (enemyType != EnemyType.necro && _cachedNecroCount > 0) {
       for (final child in world.children) {
         if (child is NecroEnemy && child != enemy) {
           child.onNearbyEnemyDeath(enemyType, enemy.position);
@@ -963,6 +980,8 @@ class GeometryFightGame extends FlameGame
         // Others handled in their respective systems
       }
     }
+    // Applica il moltiplicatore score dai modifier (glass_cannon 3×, bullet_hell 2×, ecc.)
+    scoreSystem.modifierMultiplier = modifierScoreMultiplier;
   }
 
   bool hasModifier(String id) => activeModifiers.contains(id);
@@ -971,6 +990,37 @@ class GeometryFightGame extends FlameGame
   // Arena effettiva (con modificatore tiny_arena)
   double get effectiveArenaWidth => hasModifier('tiny_arena') ? arenaWidth * 0.5 : arenaWidth;
   double get effectiveArenaHeight => hasModifier('tiny_arena') ? arenaHeight * 0.5 : arenaHeight;
+
+  // ══════════════════════════════════════════════════════════════
+  // TUNNEL GEOMETRY — usata da nemici, proiettili e TunnelRenderer
+  // (duplicata qui per accesso diretto senza cercare il componente)
+  // ══════════════════════════════════════════════════════════════
+
+  /// Offset Y del centro del tunnel alla posizione X (curva sinusoidale)
+  double tunnelCenterOffsetAt(double x) {
+    final slow  = math.sin(x * 0.0008) * 120;
+    final med   = math.sin(x * 0.003  + 1.7) * 60;
+    final fast  = math.sin(x * 0.008  + 3.1) * 25;
+    final sharp = math.sin(x * 0.015  + 0.5) * 15;
+    final sCurve = math.atan(math.sin(x * 0.002 + 2.3) * 3) * 50;
+    return slow + med + fast + sharp + sCurve;
+  }
+
+  /// Metà altezza del tunnel alla posizione X (varia per strozzature)
+  double tunnelHalfHeightAt(double x) {
+    final base   = tunnelHeight / 2;
+    final narrow = math.sin(x * 0.004 + 0.8) * base * 0.15;
+    final wide   = math.sin(x * 0.001 + 2.0) * base * 0.10;
+    return (base + narrow + wide).clamp(base * 0.5, base * 1.3);
+  }
+
+  /// Restituisce (topWall, bottomWall) per la posizione X nel tunnel
+  (double, double) tunnelWallsAtX(double x) {
+    final offset = tunnelCenterOffsetAt(x);
+    final half   = tunnelHalfHeightAt(x);
+    final cy     = arenaHeight / 2;
+    return (cy + offset - half, cy + offset + half);
+  }
 
   void useBomb() {
     if (player.bombs <= 0) return;
@@ -1047,6 +1097,7 @@ class GeometryFightGame extends FlameGame
     world.removeAll(world.children.toList());
     gameState = GameState.playing;
     timeScale = 1.0;
+    _slowMoTimer = 0;
     sessionGeoms = 0;
     sessionKills = 0;
     sessionBombs = 0;
@@ -1073,6 +1124,7 @@ class GeometryFightGame extends FlameGame
     scoreSystem.reset();
     scoreSystem.geomValueMultiplier = diffConfig.geomValueMultiplier;
     scoreSystem.scoreMultiplier = diffConfig.scoreMultiplier;
+    scoreSystem.modifierMultiplier = modifierScoreMultiplier;
 
     // Re-add components
     spaceBackground = SpaceBackground();
@@ -1105,6 +1157,7 @@ class GeometryFightGame extends FlameGame
 
     waveSystem = WaveSystem(this);
     waveSystem.reset(); // Reset tunnel counters e stato wave
+    powerUpSystem.reset(); // Resetta spawn timer
     waveSystem.startWave(1);
     resumeEngine();
   }
@@ -1112,6 +1165,7 @@ class GeometryFightGame extends FlameGame
   // Cache conteggi nemici/boss — aggiornati una volta per frame in update()
   int _cachedEnemyCount = 0;
   int _cachedBossCount = 0;
+  int _cachedNecroCount = 0; // Early-exit per O(n²) NecroEnemy loop in onEnemyKilled
   BossBase? _cachedActiveBoss;
   double _countCacheTimer = 0;
 
@@ -1128,9 +1182,13 @@ class GeometryFightGame extends FlameGame
     _countCacheTimer = 3; // Aggiorna ogni 3 frame (~20 volte/sec a 60fps)
     int enemies = 0;
     int bosses = 0;
+    int necros = 0;
     BossBase? firstBoss;
     for (final child in world.children) {
-      if (child is EnemyBase) {
+      if (child is NecroEnemy) {
+        enemies++;
+        necros++;
+      } else if (child is EnemyBase) {
         enemies++;
       } else if (child is BossBase) {
         bosses++;
@@ -1139,6 +1197,7 @@ class GeometryFightGame extends FlameGame
     }
     _cachedEnemyCount = enemies;
     _cachedBossCount = bosses;
+    _cachedNecroCount = necros;
     _cachedActiveBoss = firstBoss;
   }
 }

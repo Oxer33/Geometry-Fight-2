@@ -16,16 +16,19 @@ abstract class EnemyBase extends PositionComponent
   double _flashTimer = 0;
   double _spawnPulse = 0.4; // Pulse ring on spawn
   double _idlePhase = 0;
+  bool _isDead = false; // FIX C1: guard contro double-death
 
   // Spawn invulnerability (come GW:RE2 — nemici appaiono con effetto materializzazione)
   double _spawnInvulnTimer = 0.8; // 0.8s invulnerabile allo spawn
   bool get isSpawnInvulnerable => _spawnInvulnTimer > 0;
+  double get spawnInvulnTimer => _spawnInvulnTimer; // FIX H5: accesso da PhantomEnemy
   /// Azzera invulnerabilità spawn (per nemici generati in-game, non spawnati)
   void clearSpawnInvulnerability() => _spawnInvulnTimer = 0;
 
   // Fear mechanic (come GW:RE2 — nemici fuggono brevemente quando colpiti da proiettili vicini)
   double _fearTimer = 0;
   Vector2? _fearDirection;
+  bool get canFearDodge => false;
 
   EnemyBase({
     required this.hp,
@@ -71,7 +74,10 @@ abstract class EnemyBase extends PositionComponent
 
     // Clamp to arena DOPO il movimento (fear + updateBehavior) per evitare jitter
     if (game.isTunnelMode) {
-      // Tunnel: NO clamp statico (il tunnel renderer gestisce i muri dinamici)
+      // Tunnel: clamp Y ai muri dinamici sinusoidali
+      final (topWall, bottomWall) = game.tunnelWallsAtX(position.x);
+      const margin = 6.0;
+      position.y = position.y.clamp(topWall + margin, bottomWall - margin);
     } else {
       position.x = position.x.clamp(5, arenaWidth - 5);
       position.y = position.y.clamp(5, arenaHeight - 5);
@@ -95,6 +101,7 @@ abstract class EnemyBase extends PositionComponent
   /// Fear: un proiettile passa vicino senza colpire — il nemico fugge brevemente.
   /// Chiamato dal sistema proiettili quando un bullet esplode nelle vicinanze.
   void applyFear(Vector2 bulletPos) {
+    if (!canFearDodge) return;
     if (_fearTimer > 0) return; // Gi spaventato
     final away = position - bulletPos;
     if (away.length > 0) {
@@ -104,6 +111,8 @@ abstract class EnemyBase extends PositionComponent
   }
 
   void onDeath() {
+    if (_isDead) return; // FIX C1: evita double-death (bullet + bomba nello stesso frame)
+    _isDead = true;
     game.onEnemyKilled(this);
     // Esplosioni scalate per valore nemico: mob deboli piccole, nemici forti epic
     final isEpic = geomValue >= 4 || pointValue >= 10;

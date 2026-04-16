@@ -33,7 +33,7 @@ class GameScreen extends StatefulWidget {
   State<GameScreen> createState() => _GameScreenState();
 }
 
-class _GameScreenState extends State<GameScreen> {
+class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
   late GeometryFightGame _game;
   bool _showPause = false;
   bool _showGameOver = false;
@@ -48,6 +48,7 @@ class _GameScreenState extends State<GameScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _initGame();
     // Tutorial al primo avvio
     _checkTutorial();
@@ -173,7 +174,22 @@ class _GameScreenState extends State<GameScreen> {
   }
 
   @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.inactive) {
+      if (_game.gameState == GameState.playing) {
+        _game.pauseEngine();
+        AudioSystem.stopAll();
+      }
+    } else if (state == AppLifecycleState.resumed) {
+      // Non auto-resume: l'utente deve riprendere manualmente dalla pausa UI
+      // ma almeno riavvia l'audio
+    }
+  }
+
+  @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     // Ferma il motore Flame e l'audio quando si esce dalla schermata
     // per evitare che suoni/vibrazioni continuino in background
     _game.pauseEngine();

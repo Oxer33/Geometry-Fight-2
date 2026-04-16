@@ -29,7 +29,7 @@ class MineEnemy extends EnemyBase {
 
     if (_detonating) {
       _detonateTimer -= dt;
-      if (_detonateTimer <= 0) {
+      if (_detonateTimer <= 0 && !_exploded) { // FIX C2: evita double-death se già esplosa
         onDeath(); // onDeath chiama _explode + super.onDeath
         return;
       }

@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'dart:ui';
 import 'package:flame/components.dart';
 import '../../data/constants.dart';
@@ -14,7 +15,9 @@ class _GridNode {
 
 class GridDistortion extends PositionComponent {
   final List<List<_GridNode>> _nodes = [];
-  final double _spacing = arenaWidth / gridCols;
+  // Spacing separato per X e Y — copre l'arena 16:9 senza deformazioni
+  final double _spacingX = arenaWidth / gridCols;
+  final double _spacingY = arenaHeight / gridRows;
 
   // Path cache — evita 102 allocazioni Path ogni frame
   final List<Path> _hPaths = [];
@@ -27,6 +30,18 @@ class GridDistortion extends PositionComponent {
     ..style = PaintingStyle.stroke
     ..strokeWidth = 0.5;
 
+  // At-rest early exit: salta l'update quando la griglia è ferma (caso comune)
+  // → 0 lavoro tra un'esplosione e l'altra, indipendente dal refresh rate
+  bool _hasActiveNodes = false;
+
+  // Skip-frame physics: fisica a ~60Hz anche a 120fps
+  // Accumula dt e aggiorna solo quando supera la soglia minima
+  double _physicsAccumulator = 0.0;
+  static const _physicsStep = 1.0 / 60.0; // 60Hz fisica
+
+  // Render dirty flag: evita rebuild dei Path quando la griglia è a riposo
+  bool _pathsDirty = false;
+
   GridDistortion() : super(priority: -10);
 
   @override
@@ -35,7 +50,7 @@ class GridDistortion extends PositionComponent {
     for (int y = 0; y <= gridRows; y++) {
       final row = <_GridNode>[];
       for (int x = 0; x <= gridCols; x++) {
-        row.add(_GridNode(Vector2(x * _spacing, y * _spacing)));
+        row.add(_GridNode(Vector2(x * _spacingX, y * _spacingY)));
       }
       _nodes.add(row);
     }
@@ -65,6 +80,7 @@ class GridDistortion extends PositionComponent {
         }
       }
     }
+    _hasActiveNodes = true;
   }
 
   void applyAttraction(Vector2 center, double radius, double force) {
@@ -82,55 +98,90 @@ class GridDistortion extends PositionComponent {
         }
       }
     }
+    _hasActiveNodes = true;
   }
 
   @override
   void update(double dt) {
     super.update(dt);
 
+    // At-rest early exit: nessuna distorsione attiva → 0 lavoro
+    if (!_hasActiveNodes) return;
+
+    // Accumula dt e aggiorna fisica a step fissi (~60Hz)
+    // A 120fps: aggiorna ogni 2 frame con dt doppio → metà CPU, fisica identica
+    _physicsAccumulator += dt;
+    if (_physicsAccumulator < _physicsStep) return;
+    // Clamp: max 4 step accumulati (~66ms) — previene esplosione spring su app resume
+    final stepDt = _physicsAccumulator.clamp(0.0, _physicsStep * 4);
+    _physicsAccumulator = 0.0;
+
+    // Damping frame-rate independent: esponente normalizza per frequenza
+    // Identico visivamente a 30, 60 o 120fps
+    final frameDamping = math.pow(gridDamping, stepDt * 60).toDouble();
+
+    bool stillActive = false;
     for (final row in _nodes) {
       for (final node in row) {
         // Spring back to rest
         final displacement = node.restPosition - node.position;
-        node.velocity += displacement * gridSpringStiffness * dt;
+        node.velocity += displacement * gridSpringStiffness * stepDt;
 
-        // Damping
-        node.velocity *= gridDamping;
+        // Damping normalizzato per dt
+        node.velocity *= frameDamping;
 
         // Update position
-        node.position += node.velocity * dt;
+        node.position += node.velocity * stepDt;
+
+        // Check if any node still has meaningful velocity
+        if (node.velocity.length2 > 0.1) stillActive = true;
       }
     }
+    // Quando tutti i nodi si sono fermati, disabilita updates finché
+    // non arriva una nuova esplosione (applyForce/applyAttraction)
+    _hasActiveNodes = stillActive;
+    _pathsDirty = true;
   }
 
   @override
   void render(Canvas canvas) {
     if (!_pathsCreated) return;
 
-    // Riutilizza Path esistenti con reset() — 0 allocazioni per frame
-    for (int y = 0; y <= gridRows; y++) {
-      _hPaths[y].reset();
-      for (int x = 0; x <= gridCols; x++) {
-        final pos = _nodes[y][x].position;
-        if (x == 0) {
-          _hPaths[y].moveTo(pos.x, pos.y);
-        } else {
-          _hPaths[y].lineTo(pos.x, pos.y);
+    if (_pathsDirty) {
+      // Ricostruisce i Path solo quando la fisica ha aggiornato le posizioni
+      // Riutilizza Path esistenti con reset() — 0 allocazioni per frame
+      _pathsDirty = false;
+
+      for (int y = 0; y <= gridRows; y++) {
+        _hPaths[y].reset();
+        for (int x = 0; x <= gridCols; x++) {
+          final pos = _nodes[y][x].position;
+          if (x == 0) {
+            _hPaths[y].moveTo(pos.x, pos.y);
+          } else {
+            _hPaths[y].lineTo(pos.x, pos.y);
+          }
         }
       }
-      canvas.drawPath(_hPaths[y], _gridPaint);
+
+      for (int x = 0; x <= gridCols; x++) {
+        _vPaths[x].reset();
+        for (int y = 0; y <= gridRows; y++) {
+          final pos = _nodes[y][x].position;
+          if (y == 0) {
+            _vPaths[x].moveTo(pos.x, pos.y);
+          } else {
+            _vPaths[x].lineTo(pos.x, pos.y);
+          }
+        }
+      }
     }
 
+    // Disegna i Path (cached o appena ricostruiti) — sempre necessario ogni frame
+    for (int y = 0; y <= gridRows; y++) {
+      canvas.drawPath(_hPaths[y], _gridPaint);
+    }
     for (int x = 0; x <= gridCols; x++) {
-      _vPaths[x].reset();
-      for (int y = 0; y <= gridRows; y++) {
-        final pos = _nodes[y][x].position;
-        if (y == 0) {
-          _vPaths[x].moveTo(pos.x, pos.y);
-        } else {
-          _vPaths[x].lineTo(pos.x, pos.y);
-        }
-      }
       canvas.drawPath(_vPaths[x], _gridPaint);
     }
   }

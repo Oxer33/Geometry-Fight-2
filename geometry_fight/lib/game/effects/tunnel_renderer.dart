@@ -43,6 +43,17 @@ class TunnelRenderer extends PositionComponent
   /// Centro Y dell'arena
   double get centerY => arenaHeight / 2;
 
+  double get _screenHalfW => game.size.x > 0 ? game.size.x / 2 : 400.0;
+
+  _TunnelBounds _boundsAtX(double x) {
+    final offset = game.tunnelCenterOffsetAt(x);
+    final halfH = game.tunnelHalfHeightAt(x);
+    return _TunnelBounds(
+      top: centerY + offset - halfH,
+      bottom: centerY + offset + halfH,
+    );
+  }
+
   @override
   void update(double dt) {
     super.update(dt);
@@ -56,7 +67,7 @@ class TunnelRenderer extends PositionComponent
     }
 
     // Aggiorna ostacoli
-    final cameraLeft = game.camera.viewfinder.position.x - game.size.x / 2 - 100;
+    final cameraLeft = game.camera.viewfinder.position.x - _screenHalfW - 100;
     for (int i = _obstacles.length - 1; i >= 0; i--) {
       _obstacles[i].lifetime -= dt;
       _obstacles[i].phase += dt * 3;
@@ -72,8 +83,9 @@ class TunnelRenderer extends PositionComponent
       final dx = (playerPos.x - obs.x).abs();
       if (dx < obs.width / 2) {
         // Il player è nella colonna dell'ostacolo
-        final topWall = centerY - tunnelH / 2;
-        final bottomWall = centerY + tunnelH / 2;
+        final bounds = _boundsAtX(obs.x);
+        final topWall = bounds.top;
+        final bottomWall = bounds.bottom;
         if (obs.isTop) {
           // Ostacolo dal muro superiore
           if (playerPos.y < topWall + obs.height) {
@@ -99,13 +111,18 @@ class TunnelRenderer extends PositionComponent
   void _spawnObstacle() {
     // Spawna un ostacolo avanti alla camera (fuori schermo a destra)
     final cameraX = game.camera.viewfinder.position.x;
-    final screenHalfW = game.size.x / 2;
-    final aheadX = cameraX + screenHalfW + 100 + _random.nextDouble() * 300;
+    final aheadX = cameraX + _screenHalfW + 100 + _random.nextDouble() * 300;
+    final bounds = _boundsAtX(aheadX);
+    final tunnelSpan = bounds.bottom - bounds.top;
+    // Mantieni sempre un corridoio giocabile: ostacolo <= 42% dell'altezza locale.
+    final maxObsHeight = (tunnelSpan * 0.42).clamp(40.0, tunnelSpan * 0.49);
+    final obsHeight = (tunnelSpan * (0.18 + _random.nextDouble() * 0.2))
+        .clamp(30.0, maxObsHeight);
     _obstacles.add(_TunnelObstacle(
       x: aheadX,
       isTop: _random.nextBool(),
       width: 30 + _random.nextDouble() * 40,
-      height: tunnelH * (0.2 + _random.nextDouble() * 0.25),
+      height: obsHeight,
       lifetime: 12.0,
     ));
   }
@@ -116,7 +133,7 @@ class TunnelRenderer extends PositionComponent
 
     // Usa la posizione della camera per il viewport (non il player!)
     final cameraX = game.camera.viewfinder.position.x;
-    final viewWidth = game.size.x / 2 + 100; // Larghezza visibile + margine
+    final viewWidth = _screenHalfW + 100; // Larghezza visibile + margine
     final startX = cameraX - viewWidth;
     final endX = cameraX + viewWidth;
 
@@ -127,34 +144,10 @@ class TunnelRenderer extends PositionComponent
     _renderTunnelWalls(canvas, startX, endX, topWallY, bottomWallY);
 
     // === OSTACOLI ===
-    _renderObstacles(canvas, topWallY, bottomWallY);
+    _renderObstacles(canvas);
 
     // === LINEE GUIDA (effetto velocità) ===
     _renderSpeedLines(canvas, startX, endX, topWallY, bottomWallY);
-  }
-
-  /// Calcola l'offset Y del centro del tunnel a una data posizione X.
-  /// Usa noise multi-ottava per curve complesse e variabili.
-  double _tunnelCenterOffset(double x) {
-    // Seed deterministico basato su X per coerenza
-    // Combina più frequenze per curve ampie, medie e strette
-    final slow = math.sin(x * 0.0008) * 120; // Curve ampie e lente
-    final med = math.sin(x * 0.003 + 1.7) * 60; // Curve medie
-    final fast = math.sin(x * 0.008 + 3.1) * 25; // Oscillazioni rapide
-    final sharp = math.sin(x * 0.015 + 0.5) * 15; // Micro-variazioni
-    // Curve a S improvvise (usando atan per appiattimento)
-    final sCurve = math.atan(math.sin(x * 0.002 + 2.3) * 3) * 50;
-    return slow + med + fast + sharp + sCurve;
-  }
-
-  /// Calcola la metà altezza del tunnel a una data posizione X.
-  /// Varia per creare strozzature e allargamenti.
-  double _tunnelHalfHeight(double x) {
-    final base = tunnelH / 2;
-    // Variazioni di larghezza: strozzature e allargamenti
-    final narrow = math.sin(x * 0.004 + 0.8) * base * 0.15;
-    final wide = math.sin(x * 0.001 + 2.0) * base * 0.1;
-    return (base + narrow + wide).clamp(base * 0.5, base * 1.3);
   }
 
   void _renderTunnelWalls(Canvas canvas, double startX, double endX,
@@ -164,8 +157,8 @@ class TunnelRenderer extends PositionComponent
     bool firstTop = true, firstBottom = true;
 
     for (double x = startX; x <= endX; x += 6) {
-      final offset = _tunnelCenterOffset(x);
-      final halfH = _tunnelHalfHeight(x);
+      final offset = game.tunnelCenterOffsetAt(x);
+      final halfH = game.tunnelHalfHeightAt(x);
 
       final ty = centerY + offset - halfH;
       final by = centerY + offset + halfH;
@@ -190,8 +183,8 @@ class TunnelRenderer extends PositionComponent
     final bottomInner = Path();
     bool ft = true, fb = true;
     for (double x = startX; x <= endX; x += 10) {
-      final offset = _tunnelCenterOffset(x);
-      final halfH = _tunnelHalfHeight(x);
+      final offset = game.tunnelCenterOffsetAt(x);
+      final halfH = game.tunnelHalfHeightAt(x);
       final ty = centerY + offset - halfH + 15;
       final by = centerY + offset + halfH - 15;
       if (ft) { topInner.moveTo(x, ty); ft = false; }
@@ -210,8 +203,8 @@ class TunnelRenderer extends PositionComponent
   void _checkWallCollision() {
     final px = game.player.position.x;
     final py = game.player.position.y;
-    final offset = _tunnelCenterOffset(px);
-    final halfH = _tunnelHalfHeight(px);
+    final offset = game.tunnelCenterOffsetAt(px);
+    final halfH = game.tunnelHalfHeightAt(px);
     final topWall = centerY + offset - halfH;
     final bottomWall = centerY + offset + halfH;
 
@@ -224,12 +217,15 @@ class TunnelRenderer extends PositionComponent
     }
   }
 
-  void _renderObstacles(Canvas canvas, double topY, double bottomY) {
+  void _renderObstacles(Canvas canvas) {
     for (final obs in _obstacles) {
       final alpha = (obs.lifetime / 12.0).clamp(0.0, 1.0);
       final pulse = 0.7 + math.sin(obs.phase) * 0.3;
 
       // Barriera laser
+      final bounds = _boundsAtX(obs.x);
+      final topY = bounds.top;
+      final bottomY = bounds.bottom;
       final baseY = obs.isTop ? topY : bottomY;
       final endY = obs.isTop ? topY + obs.height : bottomY - obs.height;
       final obsRect = Rect.fromLTRB(
@@ -283,4 +279,11 @@ class _TunnelObstacle {
     required this.height,
     required this.lifetime,
   });
+}
+
+class _TunnelBounds {
+  final double top;
+  final double bottom;
+
+  const _TunnelBounds({required this.top, required this.bottom});
 }

@@ -10,6 +10,7 @@ class ScoreSystem {
   double multiplier = 1.0;
   double geomValueMultiplier = 1.0; // +Nx per geom (1.0 easy/normal, 1.25 hard, 1.5 nightmare)
   double scoreMultiplier = 1.0; // Moltiplicatore punti per difficoltà (0.5x easy → 4x nightmare)
+  double modifierMultiplier = 1.0; // Moltiplicatore da modifier attivi (glass_cannon 3×, bullet_hell 2×, ecc.)
 
   static const double _maxMultiplier = 9999; // Cap ragionevole per evitare overflow
 
@@ -36,8 +37,8 @@ class ScoreSystem {
   int get multiplierDisplay => multiplier.round();
 
   void addKill(int points, Vector2 position) {
-    // Punti = base × multiplier geom × scoreMultiplier difficoltà
-    final earnedPoints = (points * multiplier * scoreMultiplier).round();
+    // Punti = base × multiplier geom × scoreMultiplier difficoltà × modifierMultiplier
+    final earnedPoints = (points * multiplier * scoreMultiplier * modifierMultiplier).round();
     score += earnedPoints;
   }
 
@@ -59,7 +60,7 @@ class ScoreSystem {
     multiplier = 1.0;
     _nextLifeIndex = 0;
     _extraLifeEarned = false;
-    // NOTA: geomValueMultiplier e scoreMultiplier NON resettati qui
-    // perché sono settati dalla difficoltà in game_world
+    // NOTA: geomValueMultiplier, scoreMultiplier e modifierMultiplier NON resettati qui
+    // perché sono settati dalla difficoltà/modifier in game_world
   }
 }

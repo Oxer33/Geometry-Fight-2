@@ -276,22 +276,22 @@ class _ShopScreenState extends State<ShopScreen>
 
   Widget _buildUpgradesTab() {
     final upgrades = [
-      _UpgradeItem('firepower', 'FIREPOWER', [100, 200, 400, 800, 1500], 5,
-          'Danno proiettili: +15% → +30% → +50% → +70% → +100%', Icons.local_fire_department, const Color(0xFFFF4400)),
-      _UpgradeItem('speed', 'SPEED', [100, 200, 400, 800, 1500], 5,
-          'Velocità navicella: +10% per livello (max +50%)', Icons.speed, NeonColors.cyan),
-      _UpgradeItem('fire_rate', 'FIRE RATE', [100, 200, 400, 800, 1500], 5,
-          'Cadenza di fuoco: +8% per livello (max +40%)', Icons.bolt, NeonColors.bulletYellow),
-      _UpgradeItem('shield_capacity', 'SHIELD', [300, 700, 1500], 3,
-          'Colpi assorbiti dallo scudo: 2 → 3 → 4 (Lv3: rigenera!)', Icons.shield_outlined, const Color(0xFF00AAFF)),
+      _UpgradeItem('firepower', 'FIREPOWER', [100, 200, 300, 400, 500], 5,
+          '+5% danno per livello (max +25%)', Icons.local_fire_department, const Color(0xFFFF4400)),
+      _UpgradeItem('speed', 'SPEED', [100, 200, 300, 400, 500], 5,
+          '+5% velocità per livello (max +25%)', Icons.speed, NeonColors.cyan),
+      _UpgradeItem('fire_rate', 'FIRE RATE', [100, 200, 300, 400, 500], 5,
+          '+5% cadenza per livello (max +25%)', Icons.bolt, NeonColors.bulletYellow),
+      _UpgradeItem('shield_capacity', 'SHIELD', [300, 600, 900, 1200, 1500], 5,
+          'Scudo post-morte: 5s → 10s → 15s → 20s → 25s', Icons.shield_outlined, const Color(0xFF00AAFF)),
       _UpgradeItem('starting_lives', 'LIVES', [500, 1200], 2,
           'Vite iniziali: 3 → 4 → 5', Icons.favorite, const Color(0xFFFF4466)),
       _UpgradeItem('bomb_capacity', 'BOMBS', [400, 900], 2,
           'Bombe disponibili: 3 → 4 → 5', Icons.blur_circular, NeonColors.orange),
-      _UpgradeItem('magnet_range', 'MAGNET', [250, 600, 1200], 3,
-          'Raggio raccolta geom: +50px → +150px → +350px', Icons.radar, NeonColors.purple),
-      _UpgradeItem('xp_boost', 'XP BOOST', [300, 700, 1500], 3,
-          'Moltiplicatore GoldGeom: x1.2 → x1.4 → x1.7', Icons.auto_awesome, const Color(0xFFFFD700)),
+      _UpgradeItem('magnet_range', 'MAGNET', [200, 400, 600, 800, 1000], 5,
+          '+10px raggio magnete per livello (max +50px)', Icons.radar, NeonColors.purple),
+      _UpgradeItem('xp_boost', 'XP BOOST', [200, 400, 600, 800, 1000], 5,
+          '+10% GoldGeom per livello (max +50%)', Icons.auto_awesome, const Color(0xFFFFD700)),
     ];
 
     return ListView.builder(
@@ -301,7 +301,8 @@ class _ShopScreenState extends State<ShopScreen>
         final item = upgrades[index];
         final currentLevel = _saveData.getUpgradeLevel(item.id);
         final isMaxed = currentLevel >= item.maxLevel;
-        final cost = isMaxed ? 0 : item.costs[currentLevel];
+        final safeLvl = currentLevel.clamp(0, item.costs.length - 1); // FIX C11: bounds check
+        final cost = isMaxed ? 0 : item.costs[safeLvl];
 
         return Container(
           margin: const EdgeInsets.only(bottom: 10),

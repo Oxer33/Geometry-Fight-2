@@ -225,30 +225,46 @@ class SpaceBackground extends PositionComponent
 
   static final _nebulaPaint = Paint();
 
+  // Cache degli shader per nebula — evita 480 alloc/sec (8 nebule × 60fps)
+  final Map<int, Shader> _nebulaShaderCache = {};
+
   void _renderNebulae(Canvas canvas) {
-    for (final nebula in _nebulae) {
+    for (int i = 0; i < _nebulae.length; i++) {
+      final nebula = _nebulae[i];
       // Pulsazione lenta della nebulosa
       final pulse = 1.0 + math.sin(_time * 0.3 + nebula.phase) * 0.1;
       final currentRadius = nebula.radius * pulse;
       final currentAlpha = nebula.alpha *
           (0.8 + math.sin(_time * 0.2 + nebula.phase * 2) * 0.2);
 
-      // Gradiente radiale per ogni nebulosa
-      final nebulaGradient = RadialGradient(
-        colors: [
-          nebula.color.withValues(alpha: currentAlpha),
-          nebula.color.withValues(alpha: currentAlpha * 0.5),
-          nebula.color.withValues(alpha: 0),
-        ],
-        stops: const [0.0, 0.5, 1.0],
-      );
-
       final nebulaRect = Rect.fromCircle(
         center: Offset(nebula.x, nebula.y),
         radius: currentRadius,
       );
 
-      _nebulaPaint.shader = nebulaGradient.createShader(nebulaRect);
+      // Quantizza alpha e radius per chiave cache (riduce variazioni continue)
+      final quantizedAlpha = (currentAlpha * 20).round();
+      final quantizedRadius = (currentRadius / 5).round() * 5;
+      final cacheKey = i * 10000 + quantizedAlpha * 100 + quantizedRadius;
+
+      Shader shader;
+      if (_nebulaShaderCache.containsKey(cacheKey)) {
+        shader = _nebulaShaderCache[cacheKey]!;
+      } else {
+        shader = RadialGradient(
+          colors: [
+            nebula.color.withValues(alpha: currentAlpha),
+            nebula.color.withValues(alpha: currentAlpha * 0.5),
+            nebula.color.withValues(alpha: 0),
+          ],
+          stops: const [0.0, 0.5, 1.0],
+        ).createShader(nebulaRect);
+        _nebulaShaderCache[cacheKey] = shader;
+        // Limita dimensione cache per evitare accumulo illimitato
+        if (_nebulaShaderCache.length > 200) _nebulaShaderCache.clear();
+      }
+
+      _nebulaPaint.shader = shader;
       canvas.drawCircle(Offset(nebula.x, nebula.y), currentRadius, _nebulaPaint);
     }
   }

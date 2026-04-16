@@ -12,8 +12,8 @@ class ScreenShakeEffect extends Component {
   void shake(double intensity, double duration) {
     if (duration <= 0) return;
     _intensity = math.max(_intensity, intensity);
-    _duration = duration;
-    _timer = duration;
+    _duration = math.max(_duration, duration);
+    _timer = math.max(_timer, duration); // FIX: non azzerare uno shake già in corso
   }
 
   @override

@@ -1,8 +1,8 @@
 import 'dart:ui';
 
-// Arena (ridotta del 50% rispetto a 1500x1500 = 750x750)
+// Arena 16:9 — larghezza adattata all'aspect ratio dello schermo
 // Tunnel mode usa dimensioni separate per il corridoio lungo
-const double arenaWidth = 750;
+const double arenaWidth = 1334;
 const double arenaHeight = 750;
 const double tunnelArenaWidth = 3000; // Solo per tunnel mode
 const double tunnelArenaHeight = 3000;
@@ -25,14 +25,16 @@ const double bulletLifetime = 2.0;
 // Camera
 const double cameraSmoothing = 0.12;
 
+// Waves
+// Delay tra gruppi di spawn in modalità classica.
+// Cambiare qui a 8.0 / 12.0 per ritoccare il ritmo globale.
+const double classicWaveGroupDelaySeconds = 6.0;
+
 // Grid
 const int gridCols = 50;
 const int gridRows = 50;
 const double gridSpringStiffness = 12.0; // Più rigida = ritorno più veloce (era 3.0)
 const double gridDamping = 0.85; // Meno damping = più rimbalzo elastico (era 0.92)
-
-// Spatial hash
-const double spatialCellSize = 64;
 
 // Particles
 const int maxParticles = 300;

@@ -71,7 +71,7 @@ class ChronoWraithBoss extends BossBase {
     // Shoot
     _shootTimer -= dt;
     if (_shootTimer <= 0) {
-      _shootTimer = 0.5 - currentPhase * 0.1;
+      _shootTimer = (0.5 - currentPhase * 0.1).clamp(0.1, 0.5); // FIX C9c: evita timer negativo/zero
       _shoot();
     }
 
@@ -138,6 +138,15 @@ class ChronoWraithBoss extends BossBase {
     super.onDeath();
   }
 
+  @override
+  void onRemove() {
+    // FIX C9b: Ripristina timeScale se il boss viene rimosso per qualsiasi ragione
+    if (game.timeScale < 1.0 && game.slowMoTimer <= 0) {
+      game.timeScale = 1.0;
+    }
+    super.onRemove();
+  }
+
   void _teleport() {
     // Teleport behind the player
     final behind = playerPosition +
@@ -165,7 +174,9 @@ class ChronoWraithBoss extends BossBase {
     final playerVel = game.moveInput * playerSpeed;
     final timeToReach = position.distanceTo(playerPosition) / 300;
     final predictedPos = playerPosition + playerVel * timeToReach;
-    final predictedDir = (predictedPos - position).normalized();
+    final aimDir = predictedPos - position;
+    if (aimDir.length < 1) return; // FIX C9a: evita NaN se player == boss position
+    final predictedDir = aimDir.normalized();
 
     final bullet = EnemyBullet(
         direction: predictedDir, speed: 300, color: NeonColors.deepPurple);

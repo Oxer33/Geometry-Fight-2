@@ -27,6 +27,9 @@ class WeaverEnemy extends EnemyBase {
         );
 
   @override
+  bool get canFearDodge => true;
+
+  @override
   void updateBehavior(double dt) {
     if (_dodgeCooldown > 0) _dodgeCooldown -= dt;
     if (_dodgeMomentum > 0) _dodgeMomentum -= dt;

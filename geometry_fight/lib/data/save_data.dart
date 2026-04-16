@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:hive/hive.dart';
 
 class SaveData {
@@ -45,26 +46,25 @@ class SaveData {
 
   double get damageMultiplier {
     final level = getUpgradeLevel('firepower');
-    const bonuses = [0.0, 0.15, 0.30, 0.50, 0.70, 1.0];
-    return 1.0 + (level < bonuses.length ? bonuses[level] : 1.0);
+    return 1.0 + level * 0.05; // +5% per livello (max +25% al livello 5)
   }
 
   double get speedMultiplier {
     final level = getUpgradeLevel('speed');
-    return 1.0 + level * 0.10;
+    return 1.0 + level * 0.05; // +5% per livello (max +25% al livello 5)
   }
 
   double get fireRateMultiplier {
     final level = getUpgradeLevel('fire_rate');
-    return 1.0 + level * 0.08;
+    return 1.0 + level * 0.05; // +5% per livello (max +25% al livello 5)
   }
 
-  int get shieldCapacity {
+  /// Durata dello scudo post-morte in secondi (0 = nessuno scudo).
+  /// Livello 1 = 5s, livello 2 = 10s, … livello 5 = 25s.
+  double get postDeathShieldDuration {
     final level = getUpgradeLevel('shield_capacity');
-    return 1 + level;
+    return level * 5.0;
   }
-
-  bool get shieldRegens => getUpgradeLevel('shield_capacity') >= 3;
 
   int get startingLives {
     final level = getUpgradeLevel('starting_lives');
@@ -78,14 +78,12 @@ class SaveData {
 
   double get magnetRange {
     final level = getUpgradeLevel('magnet_range');
-    const ranges = [0.0, 50.0, 150.0, 350.0];
-    return level < ranges.length ? ranges[level] : 350.0;
+    return level * 10.0; // +10px per livello (max +50px al livello 5)
   }
 
   double get xpBoostMultiplier {
     final level = getUpgradeLevel('xp_boost');
-    const boosts = [1.0, 1.2, 1.4, 1.7];
-    return level < boosts.length ? boosts[level] : 1.7;
+    return 1.0 + level * 0.10; // +10% per livello (max +50% al livello 5)
   }
 
   Map<String, dynamic> toJson() => {
@@ -107,15 +105,22 @@ class SaveData {
 
   factory SaveData.fromJson(Map<String, dynamic> json) => SaveData(
         goldGeoms: json['goldGeoms'] ?? 0,
-        upgrades: Map<String, int>.from(json['upgrades'] ?? {}),
+        // FIX C7: conversione robusta per i valori numerici (evita cast int/double da Hive)
+        upgrades: Map<String, int>.from(
+            ((json['upgrades'] ?? {}) as Map).map((k, v) =>
+                MapEntry(k.toString(), (v as num).toInt()))),
         unlockedSkins: List<String>.from(json['unlockedSkins'] ?? ['classic']),
         unlockedTrails: List<String>.from(json['unlockedTrails'] ?? ['normal']),
         unlockedModes: List<String>.from(json['unlockedModes'] ?? ['classic']),
         unlockedWeapons:
             List<String>.from(json['unlockedWeapons'] ?? ['basic']),
-        highscores: Map<String, int>.from(json['highscores'] ?? {}),
+        highscores: Map<String, int>.from(
+            ((json['highscores'] ?? {}) as Map).map((k, v) =>
+                MapEntry(k.toString(), (v as num).toInt()))),
         totalPlaytime: json['totalPlaytime'] ?? 0,
-        stats: Map<String, int>.from(json['stats'] ?? {}),
+        stats: Map<String, int>.from(
+            ((json['stats'] ?? {}) as Map).map((k, v) =>
+                MapEntry(k.toString(), (v as num).toInt()))),
         playedModes: List<String>.from(json['playedModes'] ?? []),
         activeModifiers: List<String>.from(json['activeModifiers'] ?? []),
         activeSkin: json['activeSkin'] ?? 'classic',
@@ -126,18 +131,21 @@ class SaveData {
 
 class SaveManager {
   static late Box _box;
+  static bool _initialized = false; // FIX C6: guard contro LateInitializationError
 
   static Future<void> init() async {
     _box = await Hive.openBox('geometry_fight_save');
+    _initialized = true;
   }
 
   static SaveData load() {
+    if (!_initialized) return SaveData(); // FIX C6: guard se init() non è stato chiamato
     try {
       final json = _box.get('save');
       if (json == null) return SaveData();
       return SaveData.fromJson(Map<String, dynamic>.from(json));
-    } catch (_) {
-      // Dati corrotti: ritorna defaults
+    } catch (e) {
+      debugPrint('SaveManager.load() error: $e'); // FIX C6: log invece di silenzio
       return SaveData();
     }
   }

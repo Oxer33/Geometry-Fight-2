@@ -319,6 +319,13 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
 
     lives--;
     _invincibleTimer = playerInvincibilityDuration;
+
+    // Scudo post-morte dall'upgrade shop: compare solo dopo aver perso una vita
+    final shieldDur = game.saveData.postDeathShieldDuration;
+    if (shieldDur > 0 && lives > 0) {
+      applyShield(999, duration: shieldDur);
+    }
+
     game.onPlayerHit();
 
     if (lives <= 0) {

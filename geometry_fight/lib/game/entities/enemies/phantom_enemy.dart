@@ -77,13 +77,28 @@ class PhantomEnemy extends EnemyBase {
 
   @override
   void render(Canvas canvas) {
-    // Override render to apply opacity — senza blur
-    final glowPaint = Paint()
-      ..color = neonColor.withValues(alpha: 0.15 * _opacity);
-    renderShape(canvas, glowPaint, 1.6);
+    // FIX H5: super.render() non veniva chiamato → HP bar e spawn-flash assenti
+    if (_opacity <= 0) return;
 
-    final mainPaint = Paint()..color = neonColor.withValues(alpha: _opacity);
-    renderShape(canvas, mainPaint, 1.0);
+    // Applica spawn-invuln flash manualmente (riproduce logica di EnemyBase.render)
+    if (isSpawnInvulnerable) {
+      final flashOff = ((spawnInvulnTimer * 12).toInt() % 2 == 0);
+      if (flashOff) return;
+    }
+
+    if (_opacity >= 1.0) {
+      super.render(canvas); // Rendering completo con HP bar
+      return;
+    }
+
+    // Rendering con opacità parziale tramite saveLayer
+    final rect = Rect.fromLTWH(0, 0, size.x, size.y + 10); // +10 per HP bar
+    canvas.saveLayer(
+      rect,
+      Paint()..color = Color.fromARGB((_opacity * 255).round(), 255, 255, 255),
+    );
+    super.render(canvas);
+    canvas.restore();
   }
 
   @override

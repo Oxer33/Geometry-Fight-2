@@ -52,15 +52,17 @@ class InfernoBoss extends BossBase {
     _trails.add(_FlameTrail(position: position.clone(), lifetime: 3.0));
     // Aggiorna e rimuovi trails
     for (int i = _trails.length - 1; i >= 0; i--) {
-      _trails[i].lifetime -= dt;
-      if (_trails[i].lifetime <= 0) {
+      final trail = _trails[i];
+      trail.lifetime -= dt;
+      if (trail.damageTimer > 0) trail.damageTimer -= dt; // FIX H9: decrementa cooldown
+      if (trail.lifetime <= 0) {
         _trails.removeAt(i);
       } else {
-        // Danno al player dalle scie
-        final dist = game.player.position.distanceTo(_trails[i].position);
-        if (dist < 15) {
+        // Danno al player dalle scie — con cooldown per evitare 60 hit/sec
+        final dist = game.player.position.distanceTo(trail.position);
+        if (dist < 15 && trail.damageTimer <= 0) { // FIX H9: cooldown
           game.player.takeDamage();
-          _trails.removeAt(i);
+          trail.damageTimer = 0.5; // 0.5 secondi tra hit per la stessa particella
         }
       }
     }
@@ -151,6 +153,7 @@ class InfernoBoss extends BossBase {
 class _FlameTrail {
   Vector2 position;
   double lifetime;
+  double damageTimer = 0; // FIX H9: cooldown per evitare 60 hit/sec
   _FlameTrail({required this.position, required this.lifetime});
 }
 

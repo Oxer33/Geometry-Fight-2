@@ -30,6 +30,16 @@ class LeechEnemy extends EnemyBase {
     super.onDeath();
   }
 
+  @override
+  void onRemove() {
+    // FIX H6: ripristina velocità player se rimosso senza passare da onDeath()
+    // (es. killSilently(), despawn tunnel, o altri percorsi che bypassano onDeath)
+    if (_attached) {
+      _detach();
+    }
+    super.onRemove();
+  }
+
   void _detach() {
     _attached = false;
     _attachedCount = (_attachedCount - 1).clamp(0, 100);

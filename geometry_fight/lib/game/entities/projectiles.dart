@@ -18,7 +18,7 @@ class PlayerBullet extends PositionComponent
   final int maxBounces;
   final bool pierce;
 
-  // _bounces mantenuto per compatibilità con maxBounces parameter
+  int _bounces = 0;
   double _lifetime = bulletLifetime;
   late Vector2 _velocity;
 
@@ -55,20 +55,43 @@ class PlayerBullet extends PositionComponent
 
     position += _velocity * realDt;
 
-    // Distruggi quando esce dall'arena
+    // Distruggi / rimbalza quando tocca un muro
     if (game.isTunnelMode) {
-      // Tunnel: despawn se troppo lontano dal player O dietro la camera
+      // Tunnel: distruggi se tocca i muri sinusoidali o va dietro la camera
       final cameraLeft = game.camera.viewfinder.position.x - (game.size.x > 0 ? game.size.x / 2 : 400) - 200;
-      if (position.x < cameraLeft || (position - game.player.position).length > 1200) {
+      if (position.x < cameraLeft) {
+        removeFromParent();
+        return;
+      }
+      final (topWall, bottomWall) = game.tunnelWallsAtX(position.x);
+      if (position.y <= topWall || position.y >= bottomWall) {
         removeFromParent();
         return;
       }
     } else {
-      if (position.x < -20 || position.x > arenaWidth + 20 ||
-          position.y < -20 || position.y > arenaHeight + 20) {
-        removeFromParent();
-        return;
+      // Arena normale: rimbalza (ricochet) o distruggi esattamente al bordo
+      bool destroyed = false;
+      if (position.x <= 0) {
+        position.x = 0;
+        if (maxBounces > 0 && _bounces < maxBounces) { _velocity.x = _velocity.x.abs(); _bounces++; }
+        else { destroyed = true; }
+      } else if (position.x >= arenaWidth) {
+        position.x = arenaWidth;
+        if (maxBounces > 0 && _bounces < maxBounces) { _velocity.x = -_velocity.x.abs(); _bounces++; }
+        else { destroyed = true; }
       }
+      if (!destroyed) {
+        if (position.y <= 0) {
+          position.y = 0;
+          if (maxBounces > 0 && _bounces < maxBounces) { _velocity.y = _velocity.y.abs(); _bounces++; }
+          else { destroyed = true; }
+        } else if (position.y >= arenaHeight) {
+          position.y = arenaHeight;
+          if (maxBounces > 0 && _bounces < maxBounces) { _velocity.y = -_velocity.y.abs(); _bounces++; }
+          else { destroyed = true; }
+        }
+      }
+      if (destroyed) { removeFromParent(); return; }
     }
 
     _lifetime -= realDt;
@@ -139,15 +162,15 @@ class PlayerBullet extends PositionComponent
     super.onCollisionStart(intersectionPoints, other);
   }
 
-  /// GW:RE2 Fear: quando un proiettile colpisce, nemici deboli vicini fuggono brevemente.
-  /// Solo nemici con 1-2 HP sono suscettibili — nemici forti non si spaventano.
+  /// GW:RE2 Fear: quando un proiettile colpisce, solo i nemici "fear-dodge"
+  /// (attualmente i Weaver verdi) possono fare una micro-schivata.
   /// Max 5 nemici spaventati per impatto per limitare il costo O(n).
   void _applyFearToNearby() {
     const fearRadius = 80.0;
     int fearCount = 0;
     for (final child in game.world.children) {
       if (fearCount >= 5) break; // Limita a 5 per performance
-      if (child is EnemyBase && child.maxHp <= 2) {
+      if (child is EnemyBase && child.canFearDodge) {
         final dist = child.position.distanceTo(position);
         if (dist < fearRadius && dist > 5) {
           child.applyFear(position);
@@ -186,17 +209,19 @@ class EnemyBullet extends PositionComponent
     position += _velocity * dt;
 
     _lifetime -= dt;
-    // Nel tunnel mode: NO limiti statici, solo lifetime e distanza dal player
+    if (_lifetime <= 0) { removeFromParent(); return; }
+
     if (game.isTunnelMode) {
-      if (_lifetime <= 0 || (position - game.player.position).length > 1200) {
+      // Tunnel: distruggi se tocca i muri dinamici o va fuori range
+      final (topWall, bottomWall) = game.tunnelWallsAtX(position.x);
+      if (position.y <= topWall || position.y >= bottomWall ||
+          (position - game.player.position).length > 1200) {
         removeFromParent();
       }
     } else {
-      if (_lifetime <= 0 ||
-          position.x < -50 ||
-          position.x > arenaWidth + 50 ||
-          position.y < -50 ||
-          position.y > arenaHeight + 50) {
+      // Arena: distruggi esattamente al bordo (nessuna penetrazione)
+      if (position.x < 0 || position.x > arenaWidth ||
+          position.y < 0 || position.y > arenaHeight) {
         removeFromParent();
       }
     }
@@ -318,14 +343,16 @@ class PlasmaBullet extends PositionComponent
     _phase += dt * 10;
 
     if (game.isTunnelMode) {
-      // Tunnel: despawn se dietro la camera o troppo lontano dal player
       final cameraLeft = game.camera.viewfinder.position.x - (game.size.x > 0 ? game.size.x / 2 : 400) - 200;
-      if (position.x < cameraLeft || (position - game.player.position).length > 1200) {
+      final (topWall, bottomWall) = game.tunnelWallsAtX(position.x);
+      if (position.x < cameraLeft || position.y <= topWall || position.y >= bottomWall ||
+          (position - game.player.position).length > 1200) {
         removeFromParent();
       }
     } else {
-      if (position.x < -50 || position.x > arenaWidth + 50 ||
-          position.y < -50 || position.y > arenaHeight + 50) {
+      // Arena: distruggi al bordo esatto
+      if (position.x < 0 || position.x > arenaWidth ||
+          position.y < 0 || position.y > arenaHeight) {
         removeFromParent();
       }
     }
@@ -436,7 +463,7 @@ class HomingMissile extends PositionComponent
 
     position += _velocity * dt;
     _lifetime -= dt;
-    if (_lifetime <= 0) removeFromParent();
+    if (_lifetime <= 0) { removeFromParent(); return; }
   }
 
   static final _homingBodyPaint = Paint();

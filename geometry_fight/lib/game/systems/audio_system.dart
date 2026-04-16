@@ -136,9 +136,15 @@ class AudioSystem {
     if (_vibrationEnabled) HapticFeedback.mediumImpact();
   }
 
-  /// Perfect wave (raro)
+  /// Perfect wave (raro) — chiave cooldown separata da playWaveComplete
   static void playPerfectWave() {
-    _playRare('wave_complete.wav');
+    if (!_initialized || _sfxVolume <= 0) return;
+    final now = DateTime.now().millisecondsSinceEpoch;
+    if (now - (_lastPlayTime['perfect_wave'] ?? 0) < _minIntervalMs) return;
+    _lastPlayTime['perfect_wave'] = now;
+    try {
+      FlameAudio.play('wave_complete.wav', volume: _sfxVolume);
+    } catch (_) {}
     if (_vibrationEnabled) HapticFeedback.heavyImpact();
   }
 
