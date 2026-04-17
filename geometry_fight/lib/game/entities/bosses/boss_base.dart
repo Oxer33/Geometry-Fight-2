@@ -118,7 +118,7 @@ abstract class BossBase extends PositionComponent
     final minionTypes = <List<EnemyType>>[
       [EnemyType.drone, EnemyType.drone, EnemyType.swarmDrone],
       [EnemyType.drone, EnemyType.kamikaze, EnemyType.weaver],
-      [EnemyType.kamikaze, EnemyType.weaver, EnemyType.bouncer],
+      [EnemyType.kamikaze, EnemyType.weaver, EnemyType.swarmDrone],
       [EnemyType.splitter, EnemyType.kamikaze, EnemyType.tesla],
     ];
     

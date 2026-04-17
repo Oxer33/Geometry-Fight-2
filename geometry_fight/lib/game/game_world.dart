@@ -16,7 +16,6 @@ import 'entities/enemies/snake_enemy.dart';
 import 'entities/enemies/mine_enemy.dart';
 import 'entities/enemies/spawner_enemy.dart';
 import 'entities/enemies/weaver_enemy.dart';
-import 'entities/enemies/bouncer_enemy.dart';
 import 'entities/enemies/splitter_enemy.dart';
 import 'entities/enemies/shield_enemy.dart';
 import 'entities/enemies/black_hole_enemy.dart';
@@ -518,8 +517,6 @@ class GeometryFightGame extends FlameGame
         enemy = SpawnerEnemy();
       case EnemyType.weaver:
         enemy = WeaverEnemy();
-      case EnemyType.bouncer:
-        enemy = BouncerEnemy();
       case EnemyType.splitter:
         enemy = SplitterEnemy();
       case EnemyType.shieldEnemy:
@@ -762,7 +759,6 @@ class GeometryFightGame extends FlameGame
     if (enemy is SwarmDroneEnemy) return EnemyType.swarmDrone;
     if (enemy is KamikazeEnemy) return EnemyType.kamikaze;
     if (enemy is WeaverEnemy) return EnemyType.weaver;
-    if (enemy is BouncerEnemy) return EnemyType.bouncer;
     if (enemy is MineEnemy) return EnemyType.mine;
     if (enemy is SplitterEnemy) return EnemyType.splitter;
     if (enemy is ShieldEnemy) return EnemyType.shieldEnemy;

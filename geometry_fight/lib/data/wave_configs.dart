@@ -4,7 +4,6 @@ enum EnemyType {
   mine,
   spawner,
   weaver,
-  bouncer,
   splitter,
   shieldEnemy,
   blackHole,
@@ -218,7 +217,7 @@ List<WaveConfig> generateWaveConfigs() {
 
     // ── MOB STUPIDI (massa) ── spawnano subito, riempiono l'arena ──
 
-    // SwarmDrone aggiuntivi in sostituzione del bouncer viola
+    // SwarmDrone extra come filler principale
     spawns.add(WaveSpawn(EnemyType.swarmDrone, (20 + wave * 3).clamp(20, 80), delay: 0.1));
 
     // Gate (bilanciere verde): RARO — compare solo ogni 5 wave, mai più di 2

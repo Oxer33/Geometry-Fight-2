@@ -177,7 +177,7 @@ class PlayerBullet extends PositionComponent
     super.onCollisionStart(intersectionPoints, other);
   }
 
-  /// Reflect the bullet's velocity (used by BouncerEnemy deflection).
+  /// Reflect the bullet's velocity (used by GateEnemy deflection).
   void reflect() {
     _velocity = -_velocity;
   }

@@ -336,10 +336,9 @@ class WaveSystem {
   /// Tipo nemico casuale per il tunnel — 70% stupidi, 30% pericolosi
   EnemyType _randomTunnelEnemyType() {
     final roll = _tunnelRng.nextInt(100);
-    // 70% mob stupidi
+    // 70% mob stupidi — no duplicati con i bucket pericolosi sottostanti
     if (roll < 30) return EnemyType.swarmDrone;
-    if (roll < 50) return EnemyType.drone;
-    if (roll < 65) return EnemyType.kamikaze;
+    if (roll < 65) return EnemyType.drone;
     if (roll < 70) return EnemyType.mine;
     // 30% pericolosi
     if (roll < 76) return EnemyType.kamikaze;
