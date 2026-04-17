@@ -218,8 +218,13 @@ List<WaveConfig> generateWaveConfigs() {
 
     // ── MOB STUPIDI (massa) ── spawnano subito, riempiono l'arena ──
 
-    // Bouncer (Wanderer): random walk, non insegue — SEMPRE presenti, tanti
-    spawns.add(WaveSpawn(EnemyType.bouncer, (30 + wave * 4).clamp(30, 120)));
+    // SwarmDrone aggiuntivi in sostituzione del bouncer viola
+    spawns.add(WaveSpawn(EnemyType.swarmDrone, (20 + wave * 3).clamp(20, 80), delay: 0.1));
+
+    // Gate (bilanciere verde): RARO — compare solo ogni 5 wave, mai più di 2
+    if (wave >= 5 && wave % 5 == 0) {
+      spawns.add(WaveSpawn(EnemyType.gate, (wave ~/ 20).clamp(1, 2), delay: 8));
+    }
 
     // SwarmDrone: seguono vagamente ma sono debolissimi — ondate enormi
     if (wave >= 2) {

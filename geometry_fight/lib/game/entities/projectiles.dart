@@ -96,8 +96,12 @@ class PlayerBullet extends PositionComponent
         }
         if (destroyed) { removeFromParent(); return; }
       } else {
-        // Arma normale: distruggi quando supera 900px dalla posizione di spawn
-        // distanceToSquared evita sqrt — equivalente a distanceTo > 900
+        // Arma normale: distruggi quando tocca i bordi dell'arena o supera 900px
+        if (position.x < 0 || position.x > arenaWidth ||
+            position.y < 0 || position.y > arenaHeight) {
+          removeFromParent();
+          return;
+        }
         if (position.distanceToSquared(_spawnPos) > 810000) {
           removeFromParent();
           return;

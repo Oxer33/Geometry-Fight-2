@@ -176,6 +176,7 @@ class _SplashPainter extends CustomPainter {
     final cy = size.height / 2;
 
     _drawNebula(canvas, size);
+    _drawScrollingBg(canvas, size);
     _drawStars(canvas, size);
 
     if (chaseProgress > 0.05 && chaseProgress < 1.0) {
@@ -224,6 +225,43 @@ class _SplashPainter extends CustomPainter {
     paint.shader = null;
   }
 
+  // === SFONDO SCORREVOLE veloce (strie da destra a sinistra) ===
+  void _drawScrollingBg(Canvas canvas, Size size) {
+    if (chaseProgress < 0.03) return;
+    final intensity = (chaseProgress * 2.0).clamp(0.0, 1.0);
+    final paint = Paint()..strokeCap = StrokeCap.round;
+    final rng = math.Random(33);
+
+    for (int i = 0; i < 60; i++) {
+      final y = rng.nextDouble() * size.height;
+      final baseLen = 20.0 + rng.nextDouble() * 100.0;
+      final speedFactor = 400.0 + rng.nextDouble() * 600.0;
+      final baseX = rng.nextDouble() * size.width * 2;
+      final travel = chaseProgress * speedFactor;
+      final x = ((baseX - travel) % (size.width + baseLen + 50)) - baseLen;
+      final alpha = (0.03 + rng.nextDouble() * 0.06) * intensity;
+      final strokeW = 0.2 + rng.nextDouble() * 0.6;
+      paint.color = Color.fromRGBO(160, 210, 255, alpha);
+      paint.strokeWidth = strokeW;
+      canvas.drawLine(Offset(x, y), Offset(x + baseLen, y), paint);
+    }
+
+    // Strie più luminose (poche, molto veloci)
+    final rng2 = math.Random(77);
+    for (int i = 0; i < 12; i++) {
+      final y = rng2.nextDouble() * size.height;
+      final baseLen = 40.0 + rng2.nextDouble() * 120.0;
+      final speedFactor = 900.0 + rng2.nextDouble() * 500.0;
+      final baseX = rng2.nextDouble() * size.width * 2;
+      final travel = chaseProgress * speedFactor;
+      final x = ((baseX - travel) % (size.width + baseLen + 50)) - baseLen;
+      final alpha = (0.06 + rng2.nextDouble() * 0.08) * intensity;
+      paint.color = Color.fromRGBO(220, 240, 255, alpha);
+      paint.strokeWidth = 0.8;
+      canvas.drawLine(Offset(x, y), Offset(x + baseLen, y), paint);
+    }
+  }
+
   // === STELLE con parallax (3 layer di profondità) ===
   void _drawStars(Canvas canvas, Size size) {
     final random = math.Random(42);
@@ -233,7 +271,7 @@ class _SplashPainter extends CustomPainter {
     for (int i = 0; i < 80; i++) {
       final baseX = random.nextDouble() * size.width;
       final y = random.nextDouble() * size.height;
-      final parallax = bgPhase * 8 + (chaseProgress * 15);
+      final parallax = bgPhase * 20 + (chaseProgress * 200);
       final x = (baseX - parallax) % size.width;
       final s = 0.3 + random.nextDouble() * 0.7;
       final twinkle = 0.2 + 0.5 * ((math.sin(bgPhase * math.pi * 2 * (0.5 + random.nextDouble()) + i) + 1) / 2);
@@ -245,7 +283,7 @@ class _SplashPainter extends CustomPainter {
     for (int i = 0; i < 30; i++) {
       final baseX = random.nextDouble() * size.width;
       final y = random.nextDouble() * size.height;
-      final parallax = bgPhase * 15 + (chaseProgress * 30);
+      final parallax = bgPhase * 40 + (chaseProgress * 500);
       final x = (baseX - parallax) % size.width;
       final s = 0.5 + random.nextDouble() * 1.2;
       final twinkle = 0.3 + 0.7 * ((math.sin(bgPhase * math.pi * 2 * (1 + random.nextDouble()) + i * 3) + 1) / 2);
@@ -257,7 +295,7 @@ class _SplashPainter extends CustomPainter {
     for (int i = 0; i < 8; i++) {
       final baseX = random.nextDouble() * size.width;
       final y = random.nextDouble() * size.height;
-      final parallax = bgPhase * 25 + (chaseProgress * 60);
+      final parallax = bgPhase * 80 + (chaseProgress * 1000);
       final x = (baseX - parallax) % size.width;
       final s = 1.0 + random.nextDouble() * 1.5;
       final twinkle = 0.4 + 0.6 * ((math.sin(bgPhase * math.pi * 2 * (2 + random.nextDouble()) + i * 7) + 1) / 2);

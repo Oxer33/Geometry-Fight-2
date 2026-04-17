@@ -250,8 +250,8 @@ class WaveSystem {
   WaveConfig _generateSurvivalWave(int wave) {
     final spawns = <WaveSpawn>[];
     // Massa stupida (70%) — raddoppiata
-    spawns.add(WaveSpawn(EnemyType.bouncer, (40 + wave * 6).clamp(40, 120)));
-    spawns.add(WaveSpawn(EnemyType.swarmDrone, (30 + wave * 6).clamp(30, 100), delay: 0.3));
+    spawns.add(WaveSpawn(EnemyType.swarmDrone, (50 + wave * 6).clamp(50, 120)));
+    spawns.add(WaveSpawn(EnemyType.drone, (30 + wave * 4).clamp(30, 100), delay: 0.3));
     spawns.add(WaveSpawn(EnemyType.drone, (20 + wave * 4).clamp(20, 60), delay: 0.5));
     // Pericolosi (30%) — raddoppiati
     if (wave >= 2) spawns.add(WaveSpawn(EnemyType.kamikaze, (2 + wave * 2).clamp(2, 24), delay: 1));
@@ -262,6 +262,10 @@ class WaveSystem {
     if (wave >= 10) spawns.add(WaveSpawn(EnemyType.titan, (wave ~/ 5).clamp(1, 4), delay: 4));
     if (wave >= 12) spawns.add(WaveSpawn(EnemyType.glitch, (wave ~/ 3).clamp(1, 8), delay: 3));
     if (wave >= 15) spawns.add(WaveSpawn(EnemyType.blackHole, 2, delay: 5));
+    // Gate (bilanciere verde): rarissimo in survival — solo ogni 8 wave
+    if (wave >= 8 && wave % 8 == 0) {
+      spawns.add(WaveSpawn(EnemyType.gate, 1, delay: 10));
+    }
     return WaveConfig(waveNumber: wave, spawns: spawns);
   }
 
@@ -269,8 +273,8 @@ class WaveSystem {
   WaveConfig _generateTimeAttackWave(int wave) {
     final spawns = <WaveSpawn>[
       // Massa stupida per il punteggio — raddoppiata
-      WaveSpawn(EnemyType.bouncer, (50 + wave * 8).clamp(50, 120)),
-      WaveSpawn(EnemyType.swarmDrone, (40 + wave * 8).clamp(40, 100), delay: 0.2),
+      WaveSpawn(EnemyType.swarmDrone, (60 + wave * 8).clamp(60, 120)),
+      WaveSpawn(EnemyType.drone, (40 + wave * 6).clamp(40, 100), delay: 0.2),
       WaveSpawn(EnemyType.drone, (20 + wave * 4).clamp(20, 50), delay: 0.3),
       // Pericolosi per il challenge — raddoppiati
       WaveSpawn(EnemyType.kamikaze, (4 + wave * 2).clamp(4, 20), delay: 1),
@@ -287,7 +291,7 @@ class WaveSystem {
       WaveSpawn(EnemyType.drone, 6 + wave * 2),
       WaveSpawn(EnemyType.weaver, 2 + wave, delay: 2),
     ];
-    if (wave >= 5) spawns.add(WaveSpawn(EnemyType.bouncer, 2 + wave * 2 ~/ 3, delay: 3));
+    if (wave >= 5) spawns.add(WaveSpawn(EnemyType.weaver, 2 + wave * 2 ~/ 3, delay: 3));
     return WaveConfig(waveNumber: wave, spawns: spawns);
   }
 
@@ -333,9 +337,9 @@ class WaveSystem {
   EnemyType _randomTunnelEnemyType() {
     final roll = _tunnelRng.nextInt(100);
     // 70% mob stupidi
-    if (roll < 30) return EnemyType.bouncer;
-    if (roll < 50) return EnemyType.swarmDrone;
-    if (roll < 65) return EnemyType.drone;
+    if (roll < 30) return EnemyType.swarmDrone;
+    if (roll < 50) return EnemyType.drone;
+    if (roll < 65) return EnemyType.kamikaze;
     if (roll < 70) return EnemyType.mine;
     // 30% pericolosi
     if (roll < 76) return EnemyType.kamikaze;
@@ -372,8 +376,8 @@ class WaveSystem {
       return WaveConfig(
         waveNumber: wave,
         spawns: [
-          WaveSpawn(EnemyType.bouncer, mobCount),
-          WaveSpawn(EnemyType.swarmDrone, mobCount, delay: 0.5),
+          WaveSpawn(EnemyType.swarmDrone, mobCount),
+          WaveSpawn(EnemyType.drone, mobCount, delay: 0.5),
         ],
       );
     } else {
@@ -396,11 +400,11 @@ class WaveSystem {
     // Tipi nemico filtrati per wave: early waves = solo nemici base
     final List<EnemyType> availableTypes;
     if (wave <= 3) {
-      availableTypes = [EnemyType.drone, EnemyType.bouncer, EnemyType.swarmDrone, EnemyType.weaver];
+      availableTypes = [EnemyType.drone, EnemyType.swarmDrone, EnemyType.weaver, EnemyType.kamikaze];
     } else if (wave <= 7) {
-      availableTypes = [EnemyType.drone, EnemyType.bouncer, EnemyType.swarmDrone, EnemyType.weaver, EnemyType.kamikaze, EnemyType.mine, EnemyType.splitter];
+      availableTypes = [EnemyType.drone, EnemyType.swarmDrone, EnemyType.weaver, EnemyType.kamikaze, EnemyType.mine, EnemyType.splitter];
     } else if (wave <= 15) {
-      availableTypes = [EnemyType.drone, EnemyType.bouncer, EnemyType.swarmDrone, EnemyType.weaver, EnemyType.kamikaze, EnemyType.mine, EnemyType.splitter, EnemyType.shieldEnemy, EnemyType.glitch, EnemyType.tesla];
+      availableTypes = [EnemyType.drone, EnemyType.swarmDrone, EnemyType.weaver, EnemyType.kamikaze, EnemyType.mine, EnemyType.splitter, EnemyType.shieldEnemy, EnemyType.glitch, EnemyType.tesla];
     } else {
       availableTypes = EnemyType.values;
     }
@@ -1109,8 +1113,8 @@ class WaveSystem {
     final spawns = <WaveSpawn>[];
 
     // ── MASSA STUPIDA (~70%) — raddoppiata ──
-    spawns.add(WaveSpawn(EnemyType.bouncer, (50 + wave * 4).clamp(50, 120)));
-    spawns.add(WaveSpawn(EnemyType.swarmDrone, (40 + wave * 4).clamp(40, 100), delay: 0.3));
+    spawns.add(WaveSpawn(EnemyType.swarmDrone, (60 + wave * 4).clamp(60, 120)));
+    spawns.add(WaveSpawn(EnemyType.drone, (40 + wave * 4).clamp(40, 100), delay: 0.3));
     spawns.add(WaveSpawn(EnemyType.drone, (24 + wave * 2).clamp(24, 60), delay: 0.5));
     spawns.add(WaveSpawn(EnemyType.mine, (6 + wave * 2 ~/ 3).clamp(6, 24), delay: 1));
 
