@@ -222,9 +222,12 @@ class _SnakeBody extends PositionComponent with CollisionCallbacks {
   @override
   void update(double dt) {
     super.update(dt);
-    // Segui il segment corrispondente del snake (world coords → local rispetto alla head)
+    // Segui il segment corrispondente (world coord → parent-local).
+    // Il parent (SnakeEnemy) ha anchor.center, ma le coord locali dei figli
+    // usano il TOP-LEFT come origine → serve + snake.size/2 per allineare
+    // la hitbox al segmento visualmente renderizzato.
     if (segmentIndex < snake._segments.length) {
-      position = snake._segments[segmentIndex] - snake.position;
+      position = snake._segments[segmentIndex] - snake.position + snake.size / 2;
     }
   }
 

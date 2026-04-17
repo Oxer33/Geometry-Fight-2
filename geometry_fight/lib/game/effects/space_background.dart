@@ -336,20 +336,22 @@ class _DustParticle {
 /// In tunnel mode non disegna nulla (il tunnel ha i suoi muri).
 class ArenaBorder extends PositionComponent
     with HasGameReference<GeometryFightGame> {
+  // Bordo arena bianco fluo — spessore dimezzato rispetto prima (era 32/12/4)
   static final _borderGlowPaint = Paint()
     ..style = PaintingStyle.stroke
-    ..strokeWidth = 32 // glow esterno 4x più spesso
+    ..strokeWidth = 16
     ..color = const Color(0xFFFFFFFF).withValues(alpha: 0.15);
   static final _borderMainPaint = Paint()
     ..style = PaintingStyle.stroke
-    ..strokeWidth = 12 // era ~2-3, ora 4x+
-    ..color = const Color(0xFFFFFFFF); // bianco fluo pieno
+    ..strokeWidth = 6
+    ..color = const Color(0xFFFFFFFF);
   static final _borderInnerPaint = Paint()
     ..style = PaintingStyle.stroke
-    ..strokeWidth = 4
+    ..strokeWidth = 2
     ..color = const Color(0xFFFFFFFF).withValues(alpha: 0.85);
 
-  ArenaBorder() : super(priority: 5); // sopra grid/background, sotto entità
+  // priority -5 = sopra background/grid ma SOTTO entità (player/nemici default 0)
+  ArenaBorder() : super(priority: -5);
 
   @override
   void render(Canvas canvas) {

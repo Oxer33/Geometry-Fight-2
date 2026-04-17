@@ -11,6 +11,9 @@ class KamikazeEnemy extends EnemyBase {
   double _stateTimer = 1.5;
   Vector2? _rushDirection;
   double _flashRate = 2;
+  // Direzione forzata quando il kamikaze è spawnato in formazione dal bordo.
+  // Se settata, _pickCardinalDirection la restituisce invece di targettare il player.
+  Vector2? forcedRushDirection;
 
   KamikazeEnemy()
       : super(
@@ -63,9 +66,16 @@ class KamikazeEnemy extends EnemyBase {
     }
   }
 
-  /// Sceglie la direzione cardinale (su/giù/sx/dx) più vicina al player.
-  /// Il kamikaze si muove SOLO lungo un asse per essere più leggibile e schivabile.
+  /// Se settata `forcedRushDirection` (kamikaze spawnato in formazione dal bordo),
+  /// usa quella direzione SOLO per il primo rush — dopo viene consumata, così i
+  /// charge successivi riprendono a puntare il player (evita che la schiera,
+  /// una volta arrivata al bordo opposto, resti incastrata caricando fuori arena).
   Vector2 _pickCardinalDirection() {
+    if (forcedRushDirection != null) {
+      final dir = forcedRushDirection!.clone();
+      forcedRushDirection = null; // consume: i rush successivi targettano il player
+      return dir;
+    }
     final diff = playerPosition - position;
     // Sceglie l'asse con la distanza maggiore
     if (diff.x.abs() >= diff.y.abs()) {
@@ -112,14 +122,14 @@ class KamikazeEnemy extends EnemyBase {
       // Scia di fuoco durante il rush (senza blur per performance)
       if (_state == KamikazeState.rushing && _rushDirection != null) {
         final trailDir = -_rushDirection!;
-        for (int i = 1; i <= 3; i++) {
-          final trailAlpha = 0.35 - i * 0.1;
-          final trailSize = 2.5 - i * 0.6;
+        for (int i = 1; i <= 4; i++) {
+          final trailAlpha = 0.4 - i * 0.09;
+          final trailSize = 3.0 - i * 0.55;
           if (trailAlpha > 0 && trailSize > 0) {
             final trailPaint = Paint()
-              ..color = const Color(0xFFFF4400).withValues(alpha: trailAlpha);
+              ..color = const Color(0xFFFF6600).withValues(alpha: trailAlpha);
             canvas.drawCircle(
-              Offset(cx + trailDir.x * i * 6, cy + trailDir.y * i * 6),
+              Offset(cx + trailDir.x * i * 7, cy + trailDir.y * i * 7),
               trailSize, trailPaint,
             );
           }
@@ -142,30 +152,72 @@ class KamikazeEnemy extends EnemyBase {
     canvas.translate(cx, cy);
     canvas.rotate(angle);
 
-    // Freccia appuntita (corpo principale)
+    // === CORPO PRINCIPALE — freccia slanciata più aggressiva ===
     final path = Path()
-      ..moveTo(0, -h)
-      ..lineTo(w, h * 0.5)
-      ..lineTo(w * 0.3, h * 0.2)
-      ..lineTo(-w * 0.3, h * 0.2)
-      ..lineTo(-w, h * 0.5)
+      ..moveTo(0, -h * 1.15)                  // punta affilata più lunga
+      ..lineTo(w * 0.55, -h * 0.35)
+      ..lineTo(w, h * 0.55)                   // ala destra
+      ..lineTo(w * 0.45, h * 0.35)
+      ..lineTo(w * 0.25, h * 0.2)
+      ..lineTo(-w * 0.25, h * 0.2)
+      ..lineTo(-w * 0.45, h * 0.35)
+      ..lineTo(-w, h * 0.55)                  // ala sinistra
+      ..lineTo(-w * 0.55, -h * 0.35)
       ..close();
     canvas.drawPath(path, paint);
 
-    // Dettagli interni (solo layer principale)
+    // === SPINE LATERALI (solo layer principale) ===
     if (scale <= 1.01) {
-      // Linea centrale
-      final linePaint = Paint()
-        ..color = paint.color.withValues(alpha: 0.3)
-        ..strokeWidth = 0.5;
-      canvas.drawLine(Offset(0, -h * 0.6), Offset(0, h * 0.3), linePaint);
+      // Spine aggressive sui fianchi — aumentano la sensazione di minaccia
+      final spikePath = Path()
+        ..moveTo(w * 0.55, -h * 0.1)
+        ..lineTo(w * 1.15, -h * 0.25)
+        ..lineTo(w * 0.8, h * 0.1)
+        ..close()
+        ..moveTo(-w * 0.55, -h * 0.1)
+        ..lineTo(-w * 1.15, -h * 0.25)
+        ..lineTo(-w * 0.8, h * 0.1)
+        ..close();
+      final spikePaint = Paint()..color = paint.color;
+      canvas.drawPath(spikePath, spikePaint);
 
-      // Nucleo incandescente durante charging/rushing (senza blur)
+      // Doppio propulsore posteriore (due esaustori)
+      final exhaustColor = _state == KamikazeState.rushing
+          ? const Color(0xFFFF8800)
+          : const Color(0xFFFF4400);
+      final exhaustAlpha = _state == KamikazeState.rushing ? 0.9 : 0.5;
+      final exhaustPaint = Paint()
+        ..color = exhaustColor.withValues(alpha: exhaustAlpha);
+      canvas.drawCircle(Offset(-w * 0.45, h * 0.4), 1.6, exhaustPaint);
+      canvas.drawCircle(Offset(w * 0.45, h * 0.4), 1.6, exhaustPaint);
+
+      // Linea centrale di rinforzo (chiglia)
+      final linePaint = Paint()
+        ..color = paint.color.withValues(alpha: 0.35)
+        ..strokeWidth = 0.6;
+      canvas.drawLine(Offset(0, -h * 0.9), Offset(0, h * 0.35), linePaint);
+
+      // Dettaglio ala — linee interne
+      canvas.drawLine(Offset(w * 0.35, h * 0.1), Offset(w * 0.75, h * 0.35), linePaint);
+      canvas.drawLine(Offset(-w * 0.35, h * 0.1), Offset(-w * 0.75, h * 0.35), linePaint);
+
+      // Nucleo pulsante — più evidente durante charging/rushing
       if (_state == KamikazeState.charging || _state == KamikazeState.rushing) {
-        final glowAlpha = _state == KamikazeState.rushing ? 0.8 : 0.4;
-        final corePaint = Paint()
-          ..color = const Color(0xFFFF6600).withValues(alpha: glowAlpha);
-        canvas.drawCircle(Offset(0, -h * 0.2), 3, corePaint);
+        final glowAlpha = _state == KamikazeState.rushing ? 0.9 : 0.5;
+        final pulseScale = _state == KamikazeState.charging
+            ? 1.0 + math.sin(idlePhase * _flashRate * 2) * 0.25
+            : 1.0;
+        final coreOuterPaint = Paint()
+          ..color = const Color(0xFFFF4400).withValues(alpha: glowAlpha * 0.5);
+        canvas.drawCircle(Offset(0, -h * 0.15), 4 * pulseScale, coreOuterPaint);
+        final coreInnerPaint = Paint()
+          ..color = const Color(0xFFFFAA00).withValues(alpha: glowAlpha);
+        canvas.drawCircle(Offset(0, -h * 0.15), 2 * pulseScale, coreInnerPaint);
+      } else {
+        // Occhio rosso minaccioso in idle
+        final eyePaint = Paint()
+          ..color = const Color(0xFFFF2200).withValues(alpha: 0.7);
+        canvas.drawCircle(Offset(0, -h * 0.15), 1.5, eyePaint);
       }
     }
 

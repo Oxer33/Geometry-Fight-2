@@ -24,15 +24,18 @@ class GateEnemy extends PositionComponent
   double _phase = 0;
   late Vector2 _moveDir;
   final double _speed = 60;
-  final double _gateWidth = 50.0;
-  final double _explosionRadius = 80.0;
+  // +50% rispetto a prima (era 50): bilanciere più grande e leggibile
+  final double _gateWidth = 75.0;
+  // Esplosione 1/3 rispetto a prima (era 80): più chirurgica, non copre mezza arena
+  final double _explosionRadius = 27.0;
   final Color neonColor = const Color(0xFFFF6600);
 
   // Cooldown anti-spam: impedisce trigger multipli ravvicinati
   double _cooldown = 4.0;
   double _lifetime = 30.0;
 
-  GateEnemy() : super(size: Vector2(60, 60), anchor: Anchor.center) {
+  // +50% rispetto a prima (era 60): coerente con _gateWidth
+  GateEnemy() : super(size: Vector2(90, 90), anchor: Anchor.center) {
     final r = math.Random();
     final angle = r.nextDouble() * math.pi * 2;
     _moveDir = Vector2(math.cos(angle), math.sin(angle));
@@ -47,11 +50,10 @@ class GateEnemy extends PositionComponent
 
   @override
   Future<void> onLoad() async {
-    // Hitbox piccoli solo sulle due endpoint sfere (per reflect bullets).
-    // Posizione iniziale verrà riallineata in update() ogni frame.
-    _sphereHitbox1 = CircleHitbox(radius: 10, anchor: Anchor.center)
+    // Hitbox +50% rispetto a prima (radius era 10): coerente col nuovo size.
+    _sphereHitbox1 = CircleHitbox(radius: 15, anchor: Anchor.center)
       ..position = size / 2;
-    _sphereHitbox2 = CircleHitbox(radius: 10, anchor: Anchor.center)
+    _sphereHitbox2 = CircleHitbox(radius: 15, anchor: Anchor.center)
       ..position = size / 2;
     add(_sphereHitbox1);
     add(_sphereHitbox2);
@@ -132,8 +134,8 @@ class GateEnemy extends PositionComponent
       final d2 = playerPos.distanceTo(sphere2);
 
       // ZONA 1 — Endpoint (sfere arancioni): player tocca → muore, gate sopravvive.
-      // Raggio generoso (18px) perché la sfera visiva è 6px + pulse glow.
-      if (d1 < 18 || d2 < 18) {
+      // Raggio +50% (era 18): coerente col gate più grande.
+      if (d1 < 27 || d2 < 27) {
         if (!game.player.isInvincible) {
           game.player.takeDamage();
         }
@@ -144,8 +146,9 @@ class GateEnemy extends PositionComponent
       // ZONA 2 — Wire bianco centrale: distanza punto-segmento piccola
       // (player è sulla linea tra le due sfere, lontano dagli endpoint).
       // Gate esplode, player illeso (reward del risk/reward).
+      // Raggio wire +50% (era 10): gate visivamente più grande.
       final distToWire = _pointToSegmentDistance(playerPos, sphere1, sphere2);
-      if (distToWire < 10) {
+      if (distToWire < 15) {
         _triggerExplosion();
       }
     }
@@ -154,13 +157,23 @@ class GateEnemy extends PositionComponent
   void _triggerExplosion() {
     if (_exploded) return;
     _exploded = true;
-    // BOOM! Uccidi tutti i nemici nel raggio (raggio danno potenziato)
-    final killRadius = _explosionRadius * 1.5; // 120 px
+
+    // Calcola posizioni assolute delle due sfere endpoint (epicentri esplosioni).
+    final perpAngle = math.atan2(_moveDir.y, _moveDir.x) + math.pi / 2;
+    final halfW = _gateWidth / 2;
+    final sphereOffset = Vector2(math.cos(perpAngle) * halfW, math.sin(perpAngle) * halfW);
+    final sphere1 = position + sphereOffset;
+    final sphere2 = position - sphereOffset;
+
+    // BOOM! Uccidi tutti i nemici nel raggio di UNA delle due esplosioni
+    // (raggio ridotto di 1/3 rispetto a prima).
+    final killRadius = _explosionRadius * 1.5; // 40 px per sfera
     final enemies = game.world.children.whereType<EnemyBase>().toList();
     int killCount = 0;
     for (final enemy in enemies) {
-      final dist = enemy.position.distanceTo(position);
-      if (dist < killRadius) {
+      final d1 = enemy.position.distanceTo(sphere1);
+      final d2 = enemy.position.distanceTo(sphere2);
+      if (d1 < killRadius || d2 < killRadius) {
         enemy.takeDamage(999);
         killCount++;
       }
@@ -169,19 +182,27 @@ class GateEnemy extends PositionComponent
     // Danneggia anche i boss
     final bosses = game.world.children.whereType<BossBase>().toList();
     for (final boss in bosses) {
-      final dist = boss.position.distanceTo(position);
-      if (dist < killRadius) {
+      final d1 = boss.position.distanceTo(sphere1);
+      final d2 = boss.position.distanceTo(sphere2);
+      if (d1 < killRadius || d2 < killRadius) {
         boss.takeDamage(20);
       }
     }
 
-    // Effetti visivi MOLTO più evidenti — 3 esplosioni sovrapposte di colore diverso
-    game.spawnExplosion(position, const Color(0xFFFFFFFF), radius: _explosionRadius * 2.2, particleCount: 90);
-    game.spawnExplosion(position, neonColor, radius: _explosionRadius * 1.6, particleCount: 60);
-    game.spawnExplosion(position, const Color(0xFFFF3030), radius: _explosionRadius * 1.1, particleCount: 40);
-    game.triggerScreenShake(15, 0.8);
+    // Due esplosioni con epicentri sulle sfere endpoint (una per sponda).
+    // Ciascuna è composta da 3 layer di colore per l'effetto "blooming".
+    for (final epicenter in [sphere1, sphere2]) {
+      game.spawnExplosion(epicenter, const Color(0xFFFFFFFF), radius: _explosionRadius * 2.2, particleCount: 30);
+      game.spawnExplosion(epicenter, neonColor,              radius: _explosionRadius * 1.6, particleCount: 20);
+      game.spawnExplosion(epicenter, const Color(0xFFFF3030), radius: _explosionRadius * 1.1, particleCount: 14);
+    }
+
+    // Shake ridotto (esplosione più piccola)
+    game.triggerScreenShake(10, 0.5);
     if (!game.isTunnelMode) {
-      game.grid.applyForce(position, _explosionRadius * 3, 3000);
+      // Forza grid spinta da entrambi gli epicentri
+      game.grid.applyForce(sphere1, _explosionRadius * 3, 1500);
+      game.grid.applyForce(sphere2, _explosionRadius * 3, 1500);
     }
 
     // Bonus punti per gate kill
@@ -213,10 +234,10 @@ class GateEnemy extends PositionComponent
     final s1x = math.cos(perpAngle) * halfW;
     final s1y = math.sin(perpAngle) * halfW;
 
-    // Glow linea: bianco con pulsing
+    // Glow linea: bianco con pulsing (+50% spessore)
     final pulse = 0.4 + math.sin(_phase * 4) * 0.35;
     _glowPaint.color = const Color(0xFFFFFFFF).withValues(alpha: 0.3);
-    _glowPaint.strokeWidth = 6;
+    _glowPaint.strokeWidth = 9;
     _glowPaint.style = PaintingStyle.stroke;
     _glowPaint.maskFilter = null;
     canvas.drawLine(
@@ -225,9 +246,9 @@ class GateEnemy extends PositionComponent
       _glowPaint,
     );
 
-    // Linea principale: bianco fluo
+    // Linea principale: bianco fluo (+50% spessore)
     _linePaint.color = const Color(0xFFFFFFFF).withValues(alpha: 0.8);
-    _linePaint.strokeWidth = 2;
+    _linePaint.strokeWidth = 3;
     _linePaint.style = PaintingStyle.stroke;
     canvas.drawLine(
       Offset(cx + s1x, cy + s1y),
@@ -235,24 +256,24 @@ class GateEnemy extends PositionComponent
       _linePaint,
     );
 
-    // Sfera 1: arancio fosforescente con pulsing rapido
+    // Sfera 1: arancio fosforescente con pulsing rapido (+50% raggio)
     _spherePaint.color = neonColor.withValues(alpha: pulse);
     _spherePaint.style = PaintingStyle.fill;
-    canvas.drawCircle(Offset(cx + s1x, cy + s1y), 6, _spherePaint);
+    canvas.drawCircle(Offset(cx + s1x, cy + s1y), 9, _spherePaint);
 
     // Sfera 2
-    canvas.drawCircle(Offset(cx - s1x, cy - s1y), 6, _spherePaint);
+    canvas.drawCircle(Offset(cx - s1x, cy - s1y), 9, _spherePaint);
 
-    // Nucleo sfere (bianco)
+    // Nucleo sfere (bianco, +50% raggio)
     _spherePaint.color = const Color(0xFFFFFFFF).withValues(alpha: 0.7);
-    canvas.drawCircle(Offset(cx + s1x, cy + s1y), 2.5, _spherePaint);
-    canvas.drawCircle(Offset(cx - s1x, cy - s1y), 2.5, _spherePaint);
+    canvas.drawCircle(Offset(cx + s1x, cy + s1y), 3.75, _spherePaint);
+    canvas.drawCircle(Offset(cx - s1x, cy - s1y), 3.75, _spherePaint);
 
-    // Particelle lungo la linea (energia)
+    // Particelle lungo la linea (energia, +50% raggio)
     final particlePos = math.sin(_phase * 2) * 0.5 + 0.5;
     final px = cx + s1x * (1 - 2 * particlePos);
     final py = cy + s1y * (1 - 2 * particlePos);
     _spherePaint.color = const Color(0xFFFFFFFF).withValues(alpha: 0.6);
-    canvas.drawCircle(Offset(px, py), 2, _spherePaint);
+    canvas.drawCircle(Offset(px, py), 3, _spherePaint);
   }
 }

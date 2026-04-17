@@ -14,18 +14,18 @@ class TunnelRenderer extends PositionComponent
   double _obstacleSpawnTimer = 5.0;
   static final _random = math.Random();
 
-  // Cached static Paints — muri tunnel 4x spessi bianco fluo
+  // Cached static Paints — muri tunnel bianco fluo (spessore dimezzato rispetto pre)
   static final _wallGlowPaint = Paint()
     ..style = PaintingStyle.stroke
-    ..strokeWidth = 40;
+    ..strokeWidth = 20;
   static final _wallMainPaint = Paint()
     ..color = const Color(0xFFFFFFFF)
     ..style = PaintingStyle.stroke
-    ..strokeWidth = 10;
+    ..strokeWidth = 5;
   static final _wallInnerPaint = Paint()
     ..color = const Color(0xFFFFFFFF).withValues(alpha: 0.85)
     ..style = PaintingStyle.stroke
-    ..strokeWidth = 4;
+    ..strokeWidth = 2;
   static final _obsGlowPaint = Paint();
   static final _obsBarrierPaint = Paint();
   static final _obsBorderPaint = Paint()
