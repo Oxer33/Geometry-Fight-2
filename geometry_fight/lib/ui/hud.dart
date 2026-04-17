@@ -682,10 +682,18 @@ class _PowerUpBar extends StatelessWidget {
     }
     if (player.weaponTimer > 0) {
       items.add(_NeonPowerUpIndicator(
-        label: 'WEAPON',
+        label: 'SPREAD SHOT',
         icon: Icons.gps_fixed,
         color: const Color(0xFFFF8800),
         remaining: player.weaponTimer / 15,
+      ));
+    }
+    if (player.firePowerTimer > 0) {
+      items.add(_NeonPowerUpIndicator(
+        label: 'FIRE POWER',
+        icon: Icons.local_fire_department,
+        color: const Color(0xFFFF3300),
+        remaining: player.firePowerTimer / 20,
       ));
     }
 

@@ -11,6 +11,7 @@ import 'projectiles.dart';
 enum WeaponType {
   basic,
   spread,
+  spreadFan,
   laser,
   plasma,
   ricochet,
@@ -41,9 +42,11 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
   double overdriveTimer = 0;
   double magnetTimer = 0;
   double timeSlowTimer = 0;
+  double firePowerTimer = 0;
   bool get hasRapidFire => rapidFireTimer > 0;
   bool get hasOverdrive => overdriveTimer > 0;
   bool get hasMagnet => magnetTimer > 0;
+  bool get hasFirePower => firePowerTimer > 0;
 
   // Visual
   double _thrusterPhase = 0;
@@ -97,7 +100,7 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
     // Movement (usa realDt per non essere rallentato dallo slow-mo)
     final moveDir = game.moveInput;
     if (moveDir.length > 0) {
-      final actualSpeed = speed * (hasOverdrive ? 1.25 : 1.0) *
+      final actualSpeed = speed * (hasOverdrive ? 1.15 : 1.0) *
           game.saveData.speedMultiplier;
       position += moveDir * actualSpeed * realDt;
     }
@@ -144,6 +147,7 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
     if (rapidFireTimer > 0) rapidFireTimer -= realDt;
     if (overdriveTimer > 0) overdriveTimer -= realDt;
     if (magnetTimer > 0) magnetTimer -= realDt;
+    if (firePowerTimer > 0) firePowerTimer -= realDt;
     if (timeSlowTimer > 0) {
       timeSlowTimer -= realDt;
       if (timeSlowTimer <= 0) {
@@ -209,18 +213,27 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
     _fireTimer = fireInterval;
 
     final dir = direction.normalized();
-    final damageMultiplier =
+    double damageMultiplier =
         game.saveData.damageMultiplier * (hasOverdrive ? 3.0 : 1.0);
+    if (hasFirePower) damageMultiplier *= 2.0;
     final pierce = hasOverdrive;
+    final basicColor = hasFirePower ? const Color(0xFFFF3300) : NeonColors.bulletYellow;
 
     switch (weapon) {
       case WeaponType.basic:
         // Due file parallele di proiettili
         final perp = Vector2(-dir.y, dir.x) * 6; // 6px di distanza
-        _spawnBullet(dir, damageMultiplier, NeonColors.bulletYellow, offset: perp, pierce: pierce);
-        _spawnBullet(dir, damageMultiplier, NeonColors.bulletYellow, offset: -perp, pierce: pierce);
+        _spawnBullet(dir, damageMultiplier, basicColor, offset: perp, pierce: pierce);
+        _spawnBullet(dir, damageMultiplier, basicColor, offset: -perp, pierce: pierce);
       case WeaponType.spread:
-        // 9 proiettili con angolo totale 20° (±10°) — 0.175 rad = 10°
+        // 5 proiettili a ventaglio (shop weapon)
+        for (final angle in [-0.12, -0.06, 0.0, 0.06, 0.12]) {
+          final rotDir = _rotateVector(dir, angle);
+          _spawnBullet(rotDir, damageMultiplier * 0.85, NeonColors.spreadOrange,
+              speed: bulletSpeed * 1.1, pierce: pierce);
+        }
+      case WeaponType.spreadFan:
+        // 9 proiettili con angolo totale 20° (±10°) — powerup drop
         for (final angle in [-0.175, -0.13125, -0.0875, -0.04375, 0.0, 0.04375, 0.0875, 0.13125, 0.175]) {
           final rotDir = _rotateVector(dir, angle);
           _spawnBullet(rotDir, damageMultiplier * 0.7, NeonColors.spreadOrange,

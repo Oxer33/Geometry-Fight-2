@@ -21,7 +21,7 @@ class PlayerBullet extends PositionComponent
   int _bounces = 0;
   double _lifetime = bulletLifetime;
   late Vector2 _velocity;
-  late Vector2 _spawnPos;
+  double _distanceTravelled = 0;
 
   // Trail
   final List<Vector2> _trail = [];
@@ -39,7 +39,6 @@ class PlayerBullet extends PositionComponent
   @override
   Future<void> onLoad() async {
     _velocity = direction.normalized() * speed;
-    _spawnPos = game.player.position.clone();
     // Hitbox circolare per proiettili rotondi
     add(CircleHitbox(radius: 3, anchor: Anchor.center)
       ..position = size / 2);
@@ -56,6 +55,7 @@ class PlayerBullet extends PositionComponent
     if (_trail.length > _maxTrailLength) _trail.removeLast();
 
     position += _velocity * realDt;
+    _distanceTravelled += _velocity.length * realDt;
 
     // Distruggi / rimbalza quando tocca un muro
     if (game.isTunnelMode) {
@@ -96,13 +96,13 @@ class PlayerBullet extends PositionComponent
         }
         if (destroyed) { removeFromParent(); return; }
       } else {
-        // Arma normale: distruggi quando tocca i bordi dell'arena o supera 900px
+        // Arma normale: distruggi quando tocca i bordi dell'arena o dopo 900px percorsi (anche dopo reflect)
         if (position.x < 0 || position.x > arenaWidth ||
             position.y < 0 || position.y > arenaHeight) {
           removeFromParent();
           return;
         }
-        if (position.distanceToSquared(_spawnPos) > 810000) {
+        if (_distanceTravelled > 900) {
           removeFromParent();
           return;
         }

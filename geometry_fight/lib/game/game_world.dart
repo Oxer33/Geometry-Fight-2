@@ -499,9 +499,9 @@ class GeometryFightGame extends FlameGame
   // Limite massimo nemici attivi — ottimizzato per 150+ con blur rimossi dai mob di massa
   static const int _maxActiveEnemies = 150;
 
-  void spawnEnemy(EnemyType type, [Vector2? position]) {
+  EnemyBase? spawnEnemy(EnemyType type, [Vector2? position]) {
     // Limita nemici attivi per evitare scatti di performance
-    if (enemyCount >= _maxActiveEnemies) return;
+    if (enemyCount >= _maxActiveEnemies) return null;
 
     final pos = position ?? _randomSpawnPosition();
     EnemyBase enemy;
@@ -568,7 +568,7 @@ class GeometryFightGame extends FlameGame
         final gate = GateEnemy();
         gate.position = pos;
         world.add(gate);
-        return;
+        return null;
     }
 
     // Applica moltiplicatori di difficoltà a HP e velocità
@@ -579,6 +579,7 @@ class GeometryFightGame extends FlameGame
 
     enemy.position = pos;
     world.add(enemy);
+    return enemy;
   }
 
   void spawnBoss(BossType type) {

@@ -17,6 +17,7 @@ enum PowerUpType {
   smartBomb,
   scoreMultiplier,
   extraLife,
+  firePower,
 }
 
 /// Rarità dei power-up: influenza probabilità di spawn e visual
@@ -42,6 +43,7 @@ class PowerUpRarityConfig {
     // Rare
     PowerUpRarityConfig(PowerUpType.spreadShot, PowerUpRarity.rare, 14),
     PowerUpRarityConfig(PowerUpType.smartBomb, PowerUpRarity.rare, 12),
+    PowerUpRarityConfig(PowerUpType.firePower, PowerUpRarity.rare, 12),
     // Epic
     PowerUpRarityConfig(PowerUpType.shield, PowerUpRarity.epic, 8),
     PowerUpRarityConfig(PowerUpType.timeSlow, PowerUpRarity.epic, 8),
@@ -101,6 +103,8 @@ class PowerUp extends PositionComponent
         return NeonColors.gold;
       case PowerUpType.extraLife:
         return const Color(0xFFFF4466);
+      case PowerUpType.firePower:
+        return const Color(0xFFFF3300);
     }
   }
 
@@ -149,7 +153,7 @@ class PowerUp extends PositionComponent
       case PowerUpType.rapidFire:
         player.rapidFireTimer = powerUpDuration;
       case PowerUpType.spreadShot:
-        player.temporaryWeapon = WeaponType.spread;
+        player.temporaryWeapon = WeaponType.spreadFan;
         player.weaponTimer = powerUpDuration;
       case PowerUpType.shield:
         // Scudo salvavita: dura 60s, assorbe 1 colpo
@@ -157,7 +161,7 @@ class PowerUp extends PositionComponent
       case PowerUpType.magnet:
         player.magnetTimer = powerUpDuration;
       case PowerUpType.timeSlow:
-        player.timeSlowTimer = powerUpDuration;
+        player.timeSlowTimer = 10.0;
         player.game.timeScale = 0.4;
       case PowerUpType.overdrive:
         player.overdriveTimer = powerUpDuration;
@@ -170,6 +174,8 @@ class PowerUp extends PositionComponent
       case PowerUpType.extraLife:
         player.lives++;
         AudioSystem.playExtraLife();
+      case PowerUpType.firePower:
+        player.firePowerTimer = 20.0;
     }
   }
 

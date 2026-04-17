@@ -29,7 +29,7 @@ class GateEnemy extends PositionComponent
   final Color neonColor = const Color(0xFFFF6600);
 
   // Cooldown anti-spam: impedisce trigger multipli ravvicinati
-  double _cooldown = 0.5;
+  double _cooldown = 4.0;
   double _lifetime = 30.0;
 
   GateEnemy() : super(size: Vector2(60, 60), anchor: Anchor.center) {
@@ -100,12 +100,12 @@ class GateEnemy extends PositionComponent
       final d1 = playerPos.distanceTo(sphere1);
       final d2 = playerPos.distanceTo(sphere2);
 
-      // Se il player TOCCA una sfera → MUORE (risk!) + esplosione
+      // Se il player TOCCA una sfera → MUORE (risk!), gate sopravvive
       if (d1 < 10 || d2 < 10) {
         if (!game.player.isInvincible) {
           game.player.takeDamage();
         }
-        _triggerExplosion();
+        _cooldown = 0.3; // anti-spam, gate sopravvive
         return;
       }
 
@@ -160,6 +160,11 @@ class GateEnemy extends PositionComponent
 
   @override
   void render(Canvas canvas) {
+    // Warning blink durante cooldown (spawn grace period)
+    if (_cooldown > 0) {
+      final flashOff = ((_cooldown * 6).toInt() % 2 == 0);
+      if (flashOff) return;
+    }
     final cx = size.x / 2;
     final cy = size.y / 2;
     final perpAngle = math.atan2(_moveDir.y, _moveDir.x) + math.pi / 2;

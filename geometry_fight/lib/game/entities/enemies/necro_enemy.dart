@@ -48,8 +48,10 @@ class NecroEnemy extends EnemyBase {
     for (int i = _pendingRes.length - 1; i >= 0; i--) {
       _pendingRes[i].timer -= dt;
       if (_pendingRes[i].timer <= 0) {
-        // Resuscita il nemico
-        game.spawnEnemy(_pendingRes[i].type, _pendingRes[i].position);
+        // Resuscita il nemico — in-game spawn, no warning di 4s
+        final resurrected =
+            game.spawnEnemy(_pendingRes[i].type, _pendingRes[i].position);
+        resurrected?.clearSpawnInvulnerability();
         _pendingRes.removeAt(i);
       }
     }

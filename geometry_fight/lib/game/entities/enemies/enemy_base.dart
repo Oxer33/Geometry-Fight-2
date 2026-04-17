@@ -19,7 +19,8 @@ abstract class EnemyBase extends PositionComponent
   bool _isDead = false; // FIX C1: guard contro double-death
 
   // Spawn invulnerability (come GW:RE2 — nemici appaiono con effetto materializzazione)
-  double _spawnInvulnTimer = 0.8; // 0.8s invulnerabile allo spawn
+  // 4s warning: nemico lampeggia, non si muove, non danneggia player, non subisce danno
+  double _spawnInvulnTimer = 4.0;
   bool get isSpawnInvulnerable => _spawnInvulnTimer > 0;
   double get spawnInvulnTimer => _spawnInvulnTimer; // FIX H5: accesso da PhantomEnemy
   /// Azzera invulnerabilità spawn (per nemici generati in-game, non spawnati)
@@ -65,11 +66,14 @@ abstract class EnemyBase extends PositionComponent
       }
     }
 
-    // Fear: fuggi nella direzione opposta brevemente
-    if (_fearTimer > 0 && _fearDirection != null) {
-      position += _fearDirection! * speed * 2.5 * dt;
-    } else {
-      updateBehavior(dt);
+    // Durante il warning di spawn (4s) il nemico sta fermo: niente fear, niente behavior
+    if (_spawnInvulnTimer <= 0) {
+      // Fear: fuggi nella direzione opposta brevemente
+      if (_fearTimer > 0 && _fearDirection != null) {
+        position += _fearDirection! * speed * 2.5 * dt;
+      } else {
+        updateBehavior(dt);
+      }
     }
 
     // Clamp to arena DOPO il movimento (fear + updateBehavior) per evitare jitter
@@ -172,7 +176,7 @@ abstract class EnemyBase extends PositionComponent
     // === SPAWN INVULNERABILITY — effetto materializzazione (come GW:RE2) ===
     // Skip rendering nei frame "off" del flash (NO saveLayer — troppo costoso con 100+ nemici)
     if (_spawnInvulnTimer > 0) {
-      final flashOff = ((_spawnInvulnTimer * 12).toInt() % 2 == 0);
+      final flashOff = ((_spawnInvulnTimer * 6).toInt() % 2 == 0);
       if (flashOff) return; // Non renderizza questo frame → effetto flash
     }
 
