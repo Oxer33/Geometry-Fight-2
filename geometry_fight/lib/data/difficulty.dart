@@ -48,7 +48,7 @@ const Map<Difficulty, DifficultyConfig> difficultyConfigs = {
     enemySpeedMultiplier: 0.8,
     enemyCountMultiplier: 0.7,
     spawnDelayMultiplier: 1.3,
-    powerUpDropRate: 0.10,
+    powerUpDropRate: 0.005, // /20: era 0.10
     geomDropMultiplier: 1.5,
     geomValueMultiplier: 1.0, // ogni geom = +1x
     scoreMultiplier: 0.5,
@@ -62,7 +62,7 @@ const Map<Difficulty, DifficultyConfig> difficultyConfigs = {
     enemySpeedMultiplier: 1.0,
     enemyCountMultiplier: 1.0,
     spawnDelayMultiplier: 1.0,
-    powerUpDropRate: 0.05,
+    powerUpDropRate: 0.0025, // /20: era 0.05
     geomDropMultiplier: 1.0,
     geomValueMultiplier: 1.0, // ogni geom = +1x
     scoreMultiplier: 1.0,
@@ -76,7 +76,7 @@ const Map<Difficulty, DifficultyConfig> difficultyConfigs = {
     enemySpeedMultiplier: 1.25,
     enemyCountMultiplier: 1.3,
     spawnDelayMultiplier: 0.8,
-    powerUpDropRate: 0.03,
+    powerUpDropRate: 0.0015, // /20: era 0.03
     geomDropMultiplier: 1.5,
     geomValueMultiplier: 1.25, // ogni geom = +1.25x
     scoreMultiplier: 2.0,
@@ -90,7 +90,7 @@ const Map<Difficulty, DifficultyConfig> difficultyConfigs = {
     enemySpeedMultiplier: 1.5,
     enemyCountMultiplier: 1.6,
     spawnDelayMultiplier: 0.6,
-    powerUpDropRate: 0.02,
+    powerUpDropRate: 0.001, // /20: era 0.02
     geomDropMultiplier: 2.0,
     geomValueMultiplier: 1.5, // ogni geom = +1.5x
     scoreMultiplier: 4.0,

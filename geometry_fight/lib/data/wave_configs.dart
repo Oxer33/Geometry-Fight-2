@@ -255,9 +255,9 @@ List<WaveConfig> generateWaveConfigs() {
       spawns.add(WaveSpawn(EnemyType.snake, 50, delay: 3));
     }
 
-    // Splitter: si divide alla morte
+    // Splitter: si divide alla morte — ridotto drasticamente (spawn-chain amplifica)
     if (wave >= 6) {
-      spawns.add(WaveSpawn(EnemyType.splitter, 50, delay: 3));
+      spawns.add(WaveSpawn(EnemyType.splitter, 12, delay: 3));
     }
 
     // Shield: carica e ha scudo
@@ -270,8 +270,8 @@ List<WaveConfig> generateWaveConfigs() {
       spawns.add(WaveSpawn(EnemyType.spawner, (wave ~/ 6).clamp(2, 8), delay: 4));
     }
 
-    // Black Hole: raro ma devastante — mai più di 4 per wave
-    if (wave >= 9 && wave % 4 == 0) {
+    // Black Hole: raro ma devastante — primo spawn GARANTITO a wave 9, poi ogni 4
+    if (wave >= 9 && (wave == 9 || wave % 4 == 0)) {
       spawns.add(WaveSpawn(EnemyType.blackHole, (wave ~/ 15).clamp(1, 4), delay: 5));
     }
 

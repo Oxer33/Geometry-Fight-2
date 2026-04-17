@@ -6,7 +6,8 @@ import '../entities/powerups.dart';
 
 class PowerUpSystem {
   final GeometryFightGame game;
-  double _spawnTimer = 20;
+  // Spawn timer iniziale più lungo (era 20)
+  double _spawnTimer = 60;
   final _random = math.Random();
 
   PowerUpSystem(this.game);
@@ -14,7 +15,9 @@ class PowerUpSystem {
   void update(double dt) {
     _spawnTimer -= dt;
     if (_spawnTimer <= 0) {
-      _spawnTimer = 15 + _random.nextDouble() * 15;
+      // Timer-based spawn: era 15-30s, ora 60-120s (4x meno frequente).
+      // I drop da kill sono già /20 via powerUpDropRate; il timer resta safety net.
+      _spawnTimer = 60 + _random.nextDouble() * 60;
       _spawnRandomInArena();
     }
   }

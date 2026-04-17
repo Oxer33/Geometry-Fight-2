@@ -226,16 +226,20 @@ class _SplashPainter extends CustomPainter {
   }
 
   // === SFONDO SCORREVOLE veloce (strie da destra a sinistra) ===
+  // 3x particelle, 2x velocità base, variate per parallasse
   void _drawScrollingBg(Canvas canvas, Size size) {
     if (chaseProgress < 0.03) return;
     final intensity = (chaseProgress * 2.0).clamp(0.0, 1.0);
     final paint = Paint()..strokeCap = StrokeCap.round;
     final rng = math.Random(33);
 
-    for (int i = 0; i < 60; i++) {
+    // Strie lente: 60 → 180
+    for (int i = 0; i < 180; i++) {
       final y = rng.nextDouble() * size.height;
       final baseLen = 20.0 + rng.nextDouble() * 100.0;
-      final speedFactor = 400.0 + rng.nextDouble() * 600.0;
+      // Velocità variata con moltiplicatore individuale per parallasse
+      final speedMul = 0.6 + rng.nextDouble() * 1.8;
+      final speedFactor = (400.0 + rng.nextDouble() * 600.0) * 2.0 * speedMul;
       final baseX = rng.nextDouble() * size.width * 2;
       final travel = chaseProgress * speedFactor;
       final x = ((baseX - travel) % (size.width + baseLen + 50)) - baseLen;
@@ -246,12 +250,13 @@ class _SplashPainter extends CustomPainter {
       canvas.drawLine(Offset(x, y), Offset(x + baseLen, y), paint);
     }
 
-    // Strie più luminose (poche, molto veloci)
+    // Strie più luminose (veloci): 12 → 36
     final rng2 = math.Random(77);
-    for (int i = 0; i < 12; i++) {
+    for (int i = 0; i < 36; i++) {
       final y = rng2.nextDouble() * size.height;
       final baseLen = 40.0 + rng2.nextDouble() * 120.0;
-      final speedFactor = 900.0 + rng2.nextDouble() * 500.0;
+      final speedMul = 0.8 + rng2.nextDouble() * 2.2;
+      final speedFactor = (900.0 + rng2.nextDouble() * 500.0) * 2.0 * speedMul;
       final baseX = rng2.nextDouble() * size.width * 2;
       final travel = chaseProgress * speedFactor;
       final x = ((baseX - travel) % (size.width + baseLen + 50)) - baseLen;
@@ -263,15 +268,17 @@ class _SplashPainter extends CustomPainter {
   }
 
   // === STELLE con parallax (3 layer di profondità) ===
+  // 3x particelle, 2x velocità base, variate per parallasse
   void _drawStars(Canvas canvas, Size size) {
     final random = math.Random(42);
     final paint = Paint();
 
-    // Layer lontano: piccole, molte, lente
-    for (int i = 0; i < 80; i++) {
+    // Layer lontano: 80 → 240, velocità base x2 con variazione individuale
+    for (int i = 0; i < 240; i++) {
       final baseX = random.nextDouble() * size.width;
       final y = random.nextDouble() * size.height;
-      final parallax = bgPhase * 20 + (chaseProgress * 200);
+      final speedMul = 0.5 + random.nextDouble() * 1.5;
+      final parallax = bgPhase * 40 * speedMul + (chaseProgress * 400 * speedMul);
       final x = (baseX - parallax) % size.width;
       final s = 0.3 + random.nextDouble() * 0.7;
       final twinkle = 0.2 + 0.5 * ((math.sin(bgPhase * math.pi * 2 * (0.5 + random.nextDouble()) + i) + 1) / 2);
@@ -279,11 +286,12 @@ class _SplashPainter extends CustomPainter {
       canvas.drawCircle(Offset(x, y), s, paint);
     }
 
-    // Layer medio: medie, moderate
-    for (int i = 0; i < 30; i++) {
+    // Layer medio: 30 → 90
+    for (int i = 0; i < 90; i++) {
       final baseX = random.nextDouble() * size.width;
       final y = random.nextDouble() * size.height;
-      final parallax = bgPhase * 40 + (chaseProgress * 500);
+      final speedMul = 0.6 + random.nextDouble() * 1.8;
+      final parallax = bgPhase * 80 * speedMul + (chaseProgress * 1000 * speedMul);
       final x = (baseX - parallax) % size.width;
       final s = 0.5 + random.nextDouble() * 1.2;
       final twinkle = 0.3 + 0.7 * ((math.sin(bgPhase * math.pi * 2 * (1 + random.nextDouble()) + i * 3) + 1) / 2);
@@ -291,11 +299,12 @@ class _SplashPainter extends CustomPainter {
       canvas.drawCircle(Offset(x, y), s, paint);
     }
 
-    // Layer vicino: grandi, poche, veloci
-    for (int i = 0; i < 8; i++) {
+    // Layer vicino: 8 → 24, velocità massima variata per profondità
+    for (int i = 0; i < 24; i++) {
       final baseX = random.nextDouble() * size.width;
       final y = random.nextDouble() * size.height;
-      final parallax = bgPhase * 80 + (chaseProgress * 1000);
+      final speedMul = 0.7 + random.nextDouble() * 2.3;
+      final parallax = bgPhase * 160 * speedMul + (chaseProgress * 2000 * speedMul);
       final x = (baseX - parallax) % size.width;
       final s = 1.0 + random.nextDouble() * 1.5;
       final twinkle = 0.4 + 0.6 * ((math.sin(bgPhase * math.pi * 2 * (2 + random.nextDouble()) + i * 7) + 1) / 2);
@@ -369,17 +378,23 @@ class _SplashPainter extends CustomPainter {
       );
     }
 
-    // === PROIETTILI multipli con raffica ===
+    // === PROIETTILI — colpo singolo (1 bullet per tempo di fuoco, emerge dal muso) ===
     if (t > 0.1 && t < 0.95) {
-      for (int i = 0; i < 7; i++) {
-        final fireTime = 0.10 + i * 0.11;
+      const shotCount = 5;
+      const shotInterval = 0.15; // Spaziati bene — chiaramente singoli
+      for (int i = 0; i < shotCount; i++) {
+        final fireTime = 0.10 + i * shotInterval;
         if (t > fireTime) {
-          final bulletAge = (t - fireTime) / 0.10;
+          final bulletAge = (t - fireTime) / 0.12;
           if (bulletAge < 1.0) {
             final fst = (fireTime - shipDelay).clamp(0.0, 1.0);
-            final fromX = size.width * (-0.15 + fst * 0.75);
-            final fromY = cy + math.sin(fst * math.pi * 5) * size.height * 0.13
+            // Origine dal muso della navicella (offset +16*s forward)
+            const noseOffset = 16.0 * 1.2;
+            final shipCenterX = size.width * (-0.15 + fst * 0.75);
+            final shipCenterY = cy + math.sin(fst * math.pi * 5) * size.height * 0.13
                 + math.cos(fst * math.pi * 3) * size.height * 0.05;
+            final fromX = shipCenterX + noseOffset;
+            final fromY = shipCenterY;
             final toX = size.width * (-0.15 + fireTime * 0.75);
             final toY = cy + math.sin(fireTime * math.pi * 5) * size.height * 0.13
                 + math.cos(fireTime * math.pi * 3) * size.height * 0.05;
@@ -388,7 +403,7 @@ class _SplashPainter extends CustomPainter {
 
             // Trail proiettile
             final trailPaint = Paint()
-              ..color = const Color(0xFFFFE500).withValues(alpha: 0.25)
+              ..color = const Color(0xFFFFE500).withValues(alpha: 0.3)
               ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
             final dx = (toX - fromX);
             final dy = (toY - fromY);
@@ -398,14 +413,14 @@ class _SplashPainter extends CustomPainter {
               final ny = dy / dist;
               canvas.drawLine(
                 Offset(bx, by),
-                Offset(bx - nx * 8, by - ny * 8),
+                Offset(bx - nx * 10, by - ny * 10),
                 trailPaint,
               );
             }
 
-            // Proiettile
+            // Proiettile singolo (più grande, centrale)
             canvas.drawCircle(
-              Offset(bx, by), 2.5,
+              Offset(bx, by), 3.0,
               Paint()
                 ..color = const Color(0xFFFFE500)
                 ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2),

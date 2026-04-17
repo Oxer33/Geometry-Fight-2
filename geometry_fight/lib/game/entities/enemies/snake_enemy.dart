@@ -1,7 +1,9 @@
 import 'dart:math' as math;
 import 'dart:ui';
+import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
 import '../../../data/constants.dart';
+import '../projectiles.dart';
 import 'enemy_base.dart';
 
 class SnakeEnemy extends EnemyBase {
@@ -9,10 +11,12 @@ class SnakeEnemy extends EnemyBase {
   final List<Vector2> _segments = [];
   final List<Vector2> _segmentVelocities = [];
   final bool isFragment;
-  // Sine wave homing (come GW originale)
+  // Sine wave homing (come GW originale), ampiezza aumentata per moto più "strisciante"
   double _sinePhase = 0;
-  static const double _sineAmplitude = 60.0; // px
-  static const double _sineFrequency = 0.8; // Hz
+  static const double _sineAmplitude = 90.0; // px (era 60)
+  static const double _sineFrequency = 1.1; // Hz (era 0.8)
+  // Colore testa: rosso fluo — unico punto dove prende danno
+  static const Color _headColor = Color(0xFFFF2030);
 
   SnakeEnemy({this.segmentCount = 8, this.isFragment = false})
       : super(
@@ -33,6 +37,11 @@ class SnakeEnemy extends EnemyBase {
     for (int i = 0; i < segmentCount; i++) {
       _segments.add(position - Vector2(0, i * 14.0));
       _segmentVelocities.add(Vector2.zero());
+    }
+    // Body segments (index 1..N-1): bloccano i proiettili ma non fanno danno al snake.
+    // Solo la testa (segment 0) prende danno dal CircleHitbox di EnemyBase.
+    for (int i = 1; i < segmentCount; i++) {
+      add(_SnakeBody(this, i));
     }
   }
 
@@ -128,29 +137,45 @@ class SnakeEnemy extends EnemyBase {
     }
 
     // === SEGMENTI con gradiente colore ===
+    // Testa (i == 0) = ROSSO FLUO (unico punto vulnerabile)
+    // Corpo (i >= 1) = verde sfumato (blocca proiettili, non prende danno)
     for (int i = _segments.length - 1; i >= 0; i--) {
       final seg = _segments[i] - position;
       final progress = i / _segments.length; // 0=testa, 1=coda
-      final radius = (6 - i * 0.3).clamp(3.0, 6.0) * scale;
+      final isHead = i == 0;
+      // Testa più grande per essere riconoscibile come target
+      final radius = (isHead ? 8.0 : (6 - i * 0.3).clamp(3.0, 6.0)) * scale;
       final segAlpha = (1.0 - progress * 0.5);
 
-      // Segmento con colore che sfuma verso il turchese
-      final segColor = Color.lerp(
-            paint.color,
-            paint.color.withValues(alpha: 0.4),
-            progress,
-          ) ??
-          paint.color;
+      final Color segColor;
+      if (isHead) {
+        segColor = _headColor;
+      } else {
+        segColor = Color.lerp(
+              paint.color,
+              paint.color.withValues(alpha: 0.4),
+              progress,
+            ) ??
+            paint.color;
+      }
       final segPaint = Paint()..color = segColor.withValues(alpha: segAlpha);
       canvas.drawCircle(Offset(cx + seg.x, cy + seg.y), radius, segPaint);
 
-      // Nucleo pulsante per ogni segmento (solo layer principale)
-      if (scale <= 1.01 && i % 2 == 0) {
-        final pulse = 0.3 + math.sin(idlePhase * 4 + i * 0.5) * 0.2;
-        final corePaint = Paint()
-          ..color = const Color(0xFFFFFFFF).withValues(alpha: pulse);
-        canvas.drawCircle(
-            Offset(cx + seg.x, cy + seg.y), radius * 0.35, corePaint);
+      // Nucleo pulsante: bianco sui body, più intenso sulla testa rossa
+      if (scale <= 1.01) {
+        if (isHead) {
+          final pulse = 0.6 + math.sin(idlePhase * 8) * 0.3;
+          final corePaint = Paint()
+            ..color = const Color(0xFFFFFFFF).withValues(alpha: pulse);
+          canvas.drawCircle(
+              Offset(cx + seg.x, cy + seg.y), radius * 0.5, corePaint);
+        } else if (i % 2 == 0) {
+          final pulse = 0.3 + math.sin(idlePhase * 4 + i * 0.5) * 0.2;
+          final corePaint = Paint()
+            ..color = const Color(0xFFFFFFFF).withValues(alpha: pulse);
+          canvas.drawCircle(
+              Offset(cx + seg.x, cy + seg.y), radius * 0.35, corePaint);
+        }
       }
     }
 
@@ -176,6 +201,39 @@ class SnakeEnemy extends EnemyBase {
         ..color = const Color(0xFFFFFFFF).withValues(alpha: 0.8);
       canvas.drawCircle(eyeL, 1.2, eyePaint);
       canvas.drawCircle(eyeR, 1.2, eyePaint);
+    }
+  }
+}
+
+/// Body segment del serpente — blocca i proiettili (bullet rimosso senza danno)
+/// ma non fa nulla al snake (solo la testa è vulnerabile).
+class _SnakeBody extends PositionComponent with CollisionCallbacks {
+  final SnakeEnemy snake;
+  final int segmentIndex;
+
+  _SnakeBody(this.snake, this.segmentIndex)
+      : super(size: Vector2(12, 12), anchor: Anchor.center);
+
+  @override
+  Future<void> onLoad() async {
+    add(CircleHitbox(radius: 5, anchor: Anchor.center)..position = size / 2);
+  }
+
+  @override
+  void update(double dt) {
+    super.update(dt);
+    // Segui il segment corrispondente del snake (world coords → local rispetto alla head)
+    if (segmentIndex < snake._segments.length) {
+      position = snake._segments[segmentIndex] - snake.position;
+    }
+  }
+
+  @override
+  void onCollisionStart(Set<Vector2> intersectionPoints, PositionComponent other) {
+    super.onCollisionStart(intersectionPoints, other);
+    if (other is PlayerBullet) {
+      // Blocca il proiettile senza infliggere danno al serpente
+      other.removeFromParent();
     }
   }
 }

@@ -21,6 +21,9 @@ abstract class EnemyBase extends PositionComponent
   // Spawn invulnerability (come GW:RE2 — nemici appaiono con effetto materializzazione)
   // 4s warning: nemico lampeggia, non si muove, non danneggia player, non subisce danno
   double _spawnInvulnTimer = 4.0;
+  // Fase accumulata per flash incrementale: avanza con freqHz*dt così la frequenza
+  // può variare nel tempo (lento all'inizio, rapido verso la fine del warning)
+  double _blinkPhase = 0;
   bool get isSpawnInvulnerable => _spawnInvulnTimer > 0;
   double get spawnInvulnTimer => _spawnInvulnTimer; // FIX H5: accesso da PhantomEnemy
   /// Azzera invulnerabilità spawn (per nemici generati in-game, non spawnati)
@@ -54,7 +57,14 @@ abstract class EnemyBase extends PositionComponent
     _idlePhase += dt;
     if (_flashTimer > 0) _flashTimer -= dt;
     if (_spawnPulse > 0) _spawnPulse -= dt;
-    if (_spawnInvulnTimer > 0) _spawnInvulnTimer -= dt;
+    if (_spawnInvulnTimer > 0) {
+      // Flash frequency incrementale: 1 Hz all'inizio → 12 Hz a fine warning
+      // Curva quadratica: accelera verso la fine per effetto "imminenza"
+      final progress = 1.0 - (_spawnInvulnTimer / 4.0).clamp(0.0, 1.0);
+      final freqHz = 1.0 + progress * progress * 11.0; // 1..12 Hz
+      _blinkPhase += freqHz * dt;
+      _spawnInvulnTimer -= dt;
+    }
     if (_fearTimer > 0) _fearTimer -= dt;
 
     // Tunnel mode: despawn nemici dietro la camera
@@ -175,9 +185,11 @@ abstract class EnemyBase extends PositionComponent
 
     // === SPAWN INVULNERABILITY — effetto materializzazione (come GW:RE2) ===
     // Skip rendering nei frame "off" del flash (NO saveLayer — troppo costoso con 100+ nemici)
+    // Frequenza del flash cresce 1→12 Hz lungo il warning (vedi update): _blinkPhase
+    // accumula cicli, quindi floor()%2 alterna on/off con cadenza variabile.
     if (_spawnInvulnTimer > 0) {
-      final flashOff = ((_spawnInvulnTimer * 6).toInt() % 2 == 0);
-      if (flashOff) return; // Non renderizza questo frame → effetto flash
+      final showFrame = _blinkPhase.floor() % 2 == 0;
+      if (!showFrame) return; // Non renderizza → frame "off" del flash
     }
 
     // === GLOW (senza blur per performance — solo colore più grande e trasparente) ===

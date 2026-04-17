@@ -17,6 +17,7 @@ class PlayerBullet extends PositionComponent
   final Color color;
   final int maxBounces;
   final bool pierce;
+  final double sizeMultiplier;
 
   int _bounces = 0;
   double _lifetime = bulletLifetime;
@@ -34,13 +35,14 @@ class PlayerBullet extends PositionComponent
     this.color = NeonColors.bulletYellow,
     this.maxBounces = 2,
     this.pierce = false,
-  }) : super(size: Vector2(6, 6), anchor: Anchor.center);
+    this.sizeMultiplier = 1.0,
+  }) : super(size: Vector2(6 * sizeMultiplier, 6 * sizeMultiplier), anchor: Anchor.center);
 
   @override
   Future<void> onLoad() async {
     _velocity = direction.normalized() * speed;
     // Hitbox circolare per proiettili rotondi
-    add(CircleHitbox(radius: 3, anchor: Anchor.center)
+    add(CircleHitbox(radius: 3 * sizeMultiplier, anchor: Anchor.center)
       ..position = size / 2);
   }
 
@@ -133,20 +135,20 @@ class PlayerBullet extends PositionComponent
       _trailPaint.color = color.withValues(alpha: alpha * 0.3);
       final offset = _trail[i] - position;
       canvas.drawCircle(
-        Offset(cx + offset.x, cy + offset.y), 1.5, _trailPaint,
+        Offset(cx + offset.x, cy + offset.y), 1.5 * sizeMultiplier, _trailPaint,
       );
     }
 
     // Glow esterno
     _glowPaint.color = color.withValues(alpha: 0.35);
-    canvas.drawCircle(Offset(cx, cy), 4, _glowPaint);
+    canvas.drawCircle(Offset(cx, cy), 4 * sizeMultiplier, _glowPaint);
 
     // Proiettile principale (cerchio pieno)
     _bodyPaint.color = color;
-    canvas.drawCircle(Offset(cx, cy), 3, _bodyPaint);
+    canvas.drawCircle(Offset(cx, cy), 3 * sizeMultiplier, _bodyPaint);
 
     // Centro luminoso bianco
-    canvas.drawCircle(Offset(cx, cy), 1.2, _corePaint);
+    canvas.drawCircle(Offset(cx, cy), 1.2 * sizeMultiplier, _corePaint);
   }
 
   @override

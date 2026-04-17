@@ -96,12 +96,17 @@ class ExplosionEffect extends PositionComponent {
     }
   }
 
+  // Durata totale dei tre shockwave ring (tutti — epic e standard)
+  static const double _ringDuration = 0.45;
+  // Colore rosso fluo fisso per i ring (indipendente dal colore dell'esplosione)
+  static const Color _ringColor = Color(0xFFFF0040);
+
   @override
   void update(double dt) {
     super.update(dt);
     _flashTimer -= dt;
     _age += dt;
-    if (epic) _ringTimer = _age;
+    _ringTimer = _age;
 
     bool allDead = true;
     for (final p in _particles) {
@@ -113,7 +118,7 @@ class ExplosionEffect extends PositionComponent {
       }
     }
 
-    final ringsDone = !epic || _ringTimer > 0.6;
+    final ringsDone = _ringTimer > _ringDuration + 0.15;
     if (allDead && ringsDone) removeFromParent();
   }
 
@@ -122,34 +127,36 @@ class ExplosionEffect extends PositionComponent {
     final cx = size.x / 2;
     final cy = size.y / 2;
 
-    // === SHOCKWAVE RINGS (solo epic) ===
-    if (epic && _ringTimer < 0.5) {
+    // === 3 SHOCKWAVE RING ROSSO FLUO — si espandono rapidamente, no fill ===
+    // Leggermente sfasati tra loro per effetto "onda multipla".
+    if (_ringTimer < _ringDuration + 0.1) {
+      final maxR = radius * (epic ? 2.0 : 1.6);
+      _ringPaint.style = PaintingStyle.stroke;
+      _ringPaint.maskFilter = null;
       for (int i = 0; i < 3; i++) {
-        final delay = i * 0.06;
-        final t = (_ringTimer - delay).clamp(0.0, 0.5);
+        final delay = i * 0.05;
+        final t = (_ringTimer - delay).clamp(0.0, _ringDuration);
         if (t <= 0) continue;
-        final ringR = t / 0.5 * radius * 1.8;
-        final ringAlpha = (1.0 - t / 0.5) * 0.6;
-        _ringPaint.color = color.withValues(alpha: ringAlpha);
-        _ringPaint.strokeWidth = (3.0 - i * 0.8).clamp(0.5, 3.0);
-        _ringPaint.maskFilter = null;
+        final progress = t / _ringDuration;
+        // Scala raggio diverso per ogni ring così sono leggermente distanti tra loro
+        final ringR = progress * maxR * (1.0 - i * 0.12);
+        final ringAlpha = (1.0 - progress).clamp(0.0, 1.0);
+        _ringPaint.color = _ringColor.withValues(alpha: ringAlpha);
+        _ringPaint.strokeWidth = (5.0 - i * 0.8).clamp(2.0, 5.0);
         canvas.drawCircle(Offset(cx, cy), ringR, _ringPaint);
       }
     }
 
-    // === FLASH CENTRALE ===
-    if (_flashTimer > 0) {
+    // === FLASH CENTRALE (solo epic — mantiene l'impatto dei boss) ===
+    if (epic && _flashTimer > 0) {
       final flashAlpha = (_flashTimer / 0.12).clamp(0.0, 1.0);
-      // Glow colorato — senza blur, cerchio più grande con alpha bassa
       _flashPaint.color = color.withValues(alpha: flashAlpha * 0.25);
       _flashPaint.maskFilter = null;
-      canvas.drawCircle(Offset(cx, cy), radius * (epic ? 1.2 : 0.8), _flashPaint);
-      // Core colorato
+      canvas.drawCircle(Offset(cx, cy), radius * 1.2, _flashPaint);
       _flashPaint.color = color.withValues(alpha: flashAlpha * 0.5);
-      canvas.drawCircle(Offset(cx, cy), radius * (epic ? 0.8 : 0.5), _flashPaint);
-      // Core bianco
+      canvas.drawCircle(Offset(cx, cy), radius * 0.8, _flashPaint);
       _flashPaint.color = const Color(0xFFFFFFFF).withValues(alpha: flashAlpha * 0.8);
-      canvas.drawCircle(Offset(cx, cy), radius * (epic ? 0.4 : 0.25), _flashPaint);
+      canvas.drawCircle(Offset(cx, cy), radius * 0.4, _flashPaint);
     }
 
     // === PARTICELLE ===

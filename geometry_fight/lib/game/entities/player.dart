@@ -278,6 +278,7 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
       color: color,
       maxBounces: maxBounces,
       pierce: pierce,
+      sizeMultiplier: hasFirePower ? 2.0 : 1.0,
     );
     bullet.position = position + (offset ?? Vector2.zero());
     game.world.add(bullet);

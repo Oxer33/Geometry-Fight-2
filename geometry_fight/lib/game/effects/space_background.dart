@@ -330,3 +330,34 @@ class _DustParticle {
     required this.color,
   });
 }
+
+/// Bordo dell'arena classica: rettangolo 4x più spesso + bianco fluo.
+/// Mountato in game_world con priority basso per non coprire entità.
+/// In tunnel mode non disegna nulla (il tunnel ha i suoi muri).
+class ArenaBorder extends PositionComponent
+    with HasGameReference<GeometryFightGame> {
+  static final _borderGlowPaint = Paint()
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 32 // glow esterno 4x più spesso
+    ..color = const Color(0xFFFFFFFF).withValues(alpha: 0.15);
+  static final _borderMainPaint = Paint()
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 12 // era ~2-3, ora 4x+
+    ..color = const Color(0xFFFFFFFF); // bianco fluo pieno
+  static final _borderInnerPaint = Paint()
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 4
+    ..color = const Color(0xFFFFFFFF).withValues(alpha: 0.85);
+
+  ArenaBorder() : super(priority: 5); // sopra grid/background, sotto entità
+
+  @override
+  void render(Canvas canvas) {
+    // Non disegnare il bordo in tunnel mode (il tunnel ha i suoi muri)
+    if (game.isTunnelMode) return;
+    final rect = Rect.fromLTWH(0, 0, arenaWidth, arenaHeight);
+    canvas.drawRect(rect, _borderGlowPaint);
+    canvas.drawRect(rect, _borderMainPaint);
+    canvas.drawRect(rect, _borderInnerPaint);
+  }
+}

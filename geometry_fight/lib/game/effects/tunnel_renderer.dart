@@ -14,18 +14,18 @@ class TunnelRenderer extends PositionComponent
   double _obstacleSpawnTimer = 5.0;
   static final _random = math.Random();
 
-  // Cached static Paints
+  // Cached static Paints — muri tunnel 4x spessi bianco fluo
   static final _wallGlowPaint = Paint()
     ..style = PaintingStyle.stroke
-    ..strokeWidth = 10;
+    ..strokeWidth = 40;
   static final _wallMainPaint = Paint()
-    ..color = const Color(0xFF00FFFF).withValues(alpha: 0.6)
+    ..color = const Color(0xFFFFFFFF)
     ..style = PaintingStyle.stroke
-    ..strokeWidth = 2.5;
+    ..strokeWidth = 10;
   static final _wallInnerPaint = Paint()
-    ..color = const Color(0xFF0088AA).withValues(alpha: 0.15)
+    ..color = const Color(0xFFFFFFFF).withValues(alpha: 0.85)
     ..style = PaintingStyle.stroke
-    ..strokeWidth = 1;
+    ..strokeWidth = 4;
   static final _obsGlowPaint = Paint();
   static final _obsBarrierPaint = Paint();
   static final _obsBorderPaint = Paint()
@@ -169,8 +169,8 @@ class TunnelRenderer extends PositionComponent
       else { bottomPath.lineTo(x, by); }
     }
 
-    // Glow esterno dei muri — senza blur, linea più spessa con alpha bassa
-    _wallGlowPaint.color = const Color(0xFF00FFFF).withValues(alpha: 0.12);
+    // Glow esterno dei muri — bianco fluo spesso
+    _wallGlowPaint.color = const Color(0xFFFFFFFF).withValues(alpha: 0.15);
     canvas.drawPath(topPath, _wallGlowPaint);
     canvas.drawPath(bottomPath, _wallGlowPaint);
 

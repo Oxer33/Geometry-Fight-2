@@ -8,14 +8,9 @@ enum SplitterSize { large, medium, small }
 
 class SplitterEnemy extends EnemyBase {
   final SplitterSize splitterSize;
-  // Orbital homing per mini-splitter (medium/small)
-  double _orbitAngle;
-  Vector2 _orbitCenter = Vector2.zero();
-  double _orbitExpand = 0; // quanto l'orbita si allarga nel tempo
 
   SplitterEnemy({this.splitterSize = SplitterSize.large})
-      : _orbitAngle = math.Random().nextDouble() * math.pi * 2,
-        super(
+      : super(
           hp: 1,
           speed: _speedForSize(splitterSize),
           pointValue: _pointsForSize(splitterSize),
@@ -29,9 +24,9 @@ class SplitterEnemy extends EnemyBase {
       case SplitterSize.large:
         return 4;
       case SplitterSize.medium:
-        return 150; // ridotto per bilanciare l'orbita
+        return 120; // homing diretto verso player
       case SplitterSize.small:
-        return 250;
+        return 180; // homing diretto verso player
     }
   }
 
@@ -71,37 +66,14 @@ class SplitterEnemy extends EnemyBase {
   @override
   Future<void> onLoad() async {
     await super.onLoad();
-    _orbitCenter = position.clone();
   }
 
   @override
   void updateBehavior(double dt) {
-    if (splitterSize == SplitterSize.large) {
-      // Large: homing diretto come GW (NON schiva, a differenza del Weaver)
-      final velocity = seekPlayer(speed);
-      position += velocity * dt;
-    } else {
-      // Medium/Small: ORBITAL HOMING (come GW)
-      // Orbitano attorno al punto di spawn mentre derivano verso il player
-      final orbitRadius = (splitterSize == SplitterSize.medium ? 40.0 : 30.0) +
-          _orbitExpand;
-      final angularSpeed =
-          splitterSize == SplitterSize.medium ? 4.5 : 6.0; // rad/s
-      final driftSpeed = splitterSize == SplitterSize.medium ? 30.0 : 40.0;
-
-      _orbitAngle += angularSpeed * dt;
-      _orbitExpand += 8 * dt; // orbita si allarga lentamente
-
-      // Il centro dell'orbita deriva verso il player
-      final toPlayer = (playerPosition - _orbitCenter);
-      if (toPlayer.length > 0) {
-        _orbitCenter += toPlayer.normalized() * driftSpeed * dt;
-      }
-
-      // Posizione = centro orbita + offset orbitale
-      position.x = _orbitCenter.x + math.cos(_orbitAngle) * orbitRadius;
-      position.y = _orbitCenter.y + math.sin(_orbitAngle) * orbitRadius;
-    }
+    // Tutti i splitter (large/medium/small): homing diretto verso il player.
+    // La rotazione visiva (spin) è gestita in renderShape via idlePhase.
+    final velocity = seekPlayer(speed);
+    position += velocity * dt;
   }
 
   @override
@@ -118,9 +90,10 @@ class SplitterEnemy extends EnemyBase {
     }
 
     if (nextSize != null) {
-      for (int i = 0; i < 3; i++) {
+      // Ridotto da 3 a 2 figli per contenere la cascata di triangoli bianchi
+      for (int i = 0; i < 2; i++) {
         final child = SplitterEnemy(splitterSize: nextSize);
-        final angle = i * math.pi * 2 / 3;
+        final angle = i * math.pi + math.pi / 4; // angoli 45° e 225° (opposti)
         child.position =
             position + Vector2(math.cos(angle), math.sin(angle)) * 20;
         // Figli generati in-game: killabili immediatamente (no spawn invulnerability)

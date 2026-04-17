@@ -206,6 +206,9 @@ class GeometryFightGame extends FlameGame
     // Add tunnel renderer per modalità Tunnel
     if (isTunnelMode) {
       world.add(TunnelRenderer());
+    } else {
+      // Bordo arena bianco fluo 4x spesso (solo modalità non-tunnel)
+      world.add(ArenaBorder());
     }
 
     // Add player (applica difficoltà alle vite/bombe iniziali)
@@ -638,44 +641,76 @@ class GeometryFightGame extends FlameGame
 
   Vector2 _randomSpawnPosition() {
     final random = _random;
-    const viewWidth = 800.0;
-    const viewHeight = 600.0;
-    const padding = 200.0;
+    // Range spawn +50% rispetto al viewport per distribuire i mob più ampiamente
+    // ed evitare cluster ammassati attorno al bordo visibile.
+    const viewWidth = 1200.0; // era 800
+    const viewHeight = 900.0; // era 600
+    const padding = 300.0; // era 200
 
     // Nel tunnel mode: nemici spawnano davanti alla camera (fuori schermo a destra)
     if (isTunnelMode) {
       final cameraX = camera.viewfinder.position.x;
       final screenHalfW = size.x / 2;
       return Vector2(
-        cameraX + screenHalfW + 50 + random.nextDouble() * 300, // Appena fuori schermo a destra
-        player.position.y + (random.nextDouble() - 0.5) * tunnelHeight * 0.8,
+        cameraX + screenHalfW + 50 + random.nextDouble() * 450, // range orizz. +50%
+        player.position.y + (random.nextDouble() - 0.5) * tunnelHeight * 0.95,
       );
     }
 
-    // Modalità normali: spawn da tutti e 4 i lati
+    // Modalità normali: spawn da tutti e 4 i lati.
+    // Genera 4 candidati, sceglie quello più lontano dal nemico più vicino
+    // (min-distance maximization) per ridurre cluster visivi.
+    Vector2 best = _rollCandidate(random, viewWidth, viewHeight, padding);
+    double bestMinDist = _minDistanceToExistingEnemy(best);
+    for (int i = 0; i < 3; i++) {
+      final cand = _rollCandidate(random, viewWidth, viewHeight, padding);
+      final d = _minDistanceToExistingEnemy(cand);
+      if (d > bestMinDist) {
+        best = cand;
+        bestMinDist = d;
+      }
+    }
+    return best;
+  }
+
+  Vector2 _rollCandidate(math.Random random, double vw, double vh, double padding) {
     final side = random.nextInt(4);
     switch (side) {
       case 0: // top
         return Vector2(
-          player.position.x + (random.nextDouble() - 0.5) * viewWidth,
-          player.position.y - viewHeight / 2 - padding,
+          player.position.x + (random.nextDouble() - 0.5) * vw,
+          player.position.y - vh / 2 - padding,
         );
       case 1: // right
         return Vector2(
-          player.position.x + viewWidth / 2 + padding,
-          player.position.y + (random.nextDouble() - 0.5) * viewHeight,
+          player.position.x + vw / 2 + padding,
+          player.position.y + (random.nextDouble() - 0.5) * vh,
         );
       case 2: // bottom
         return Vector2(
-          player.position.x + (random.nextDouble() - 0.5) * viewWidth,
-          player.position.y + viewHeight / 2 + padding,
+          player.position.x + (random.nextDouble() - 0.5) * vw,
+          player.position.y + vh / 2 + padding,
         );
       default: // left
         return Vector2(
-          player.position.x - viewWidth / 2 - padding,
-          player.position.y + (random.nextDouble() - 0.5) * viewHeight,
+          player.position.x - vw / 2 - padding,
+          player.position.y + (random.nextDouble() - 0.5) * vh,
         );
     }
+  }
+
+  double _minDistanceToExistingEnemy(Vector2 pos) {
+    double minDist = double.infinity;
+    // Campiona solo i primi 40 nemici per evitare O(N) costoso con 150 attivi
+    int checked = 0;
+    for (final child in world.children) {
+      if (child is EnemyBase) {
+        final d = child.position.distanceToSquared(pos);
+        if (d < minDist) minDist = d;
+        if (++checked >= 40) break;
+      }
+    }
+    return minDist;
   }
 
   void spawnGeom(Vector2 position, int value) {

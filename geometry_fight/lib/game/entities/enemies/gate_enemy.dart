@@ -38,9 +38,23 @@ class GateEnemy extends PositionComponent
     _moveDir = Vector2(math.cos(angle), math.sin(angle));
   }
 
+  // Hitbox solo sulle due sfere endpoint per reflect proiettili.
+  // Il contatto player vs gate è gestito manualmente in update() con distanze
+  // punto-segmento, così da distinguere endpoint (kill player) vs wire (kill gate).
+  late CircleHitbox _sphereHitbox1;
+  late CircleHitbox _sphereHitbox2;
+  bool _exploded = false;
+
   @override
   Future<void> onLoad() async {
-    add(CircleHitbox(radius: 31, anchor: Anchor.center)..position = size / 2);
+    // Hitbox piccoli solo sulle due endpoint sfere (per reflect bullets).
+    // Posizione iniziale verrà riallineata in update() ogni frame.
+    _sphereHitbox1 = CircleHitbox(radius: 10, anchor: Anchor.center)
+      ..position = size / 2;
+    _sphereHitbox2 = CircleHitbox(radius: 10, anchor: Anchor.center)
+      ..position = size / 2;
+    add(_sphereHitbox1);
+    add(_sphereHitbox2);
   }
 
   @override
@@ -49,6 +63,17 @@ class GateEnemy extends PositionComponent
     if (other is PlayerBullet) {
       other.reflect();
     }
+  }
+
+  /// Distanza punto-segmento (per check attraversamento wire).
+  double _pointToSegmentDistance(Vector2 p, Vector2 a, Vector2 b) {
+    final ab = b - a;
+    final lenSq = ab.length2;
+    if (lenSq == 0) return p.distanceTo(a);
+    final ap = p - a;
+    final t = (ap.dot(ab) / lenSq).clamp(0.0, 1.0);
+    final projection = a + ab * t;
+    return p.distanceTo(projection);
   }
 
   @override
@@ -90,18 +115,25 @@ class GateEnemy extends PositionComponent
       }
     }
 
-    // Check interazione player con il Gate (solo se cooldown finito)
-    if (_cooldown <= 0) {
-      final perpAngle = math.atan2(_moveDir.y, _moveDir.x) + math.pi / 2;
-      final halfW = _gateWidth / 2;
-      final sphere1 = position + Vector2(math.cos(perpAngle) * halfW, math.sin(perpAngle) * halfW);
-      final sphere2 = position - Vector2(math.cos(perpAngle) * halfW, math.sin(perpAngle) * halfW);
+    // Aggiorna posizione hitbox sulle sfere (ogni frame, perché il gate ruota
+    // in funzione del moveDir).
+    final perpAngle = math.atan2(_moveDir.y, _moveDir.x) + math.pi / 2;
+    final halfW = _gateWidth / 2;
+    final sphereOffset1 = Vector2(math.cos(perpAngle) * halfW, math.sin(perpAngle) * halfW);
+    _sphereHitbox1.position = size / 2 + sphereOffset1;
+    _sphereHitbox2.position = size / 2 - sphereOffset1;
+
+    // Check interazione player con il Gate (solo se cooldown finito e non già esploso)
+    if (_cooldown <= 0 && !_exploded) {
+      final sphere1 = position + sphereOffset1;
+      final sphere2 = position - sphereOffset1;
       final playerPos = game.player.position;
       final d1 = playerPos.distanceTo(sphere1);
       final d2 = playerPos.distanceTo(sphere2);
 
-      // Se il player TOCCA una sfera → MUORE (risk!), gate sopravvive
-      if (d1 < 10 || d2 < 10) {
+      // ZONA 1 — Endpoint (sfere arancioni): player tocca → muore, gate sopravvive.
+      // Raggio generoso (18px) perché la sfera visiva è 6px + pulse glow.
+      if (d1 < 18 || d2 < 18) {
         if (!game.player.isInvincible) {
           game.player.takeDamage();
         }
@@ -109,21 +141,26 @@ class GateEnemy extends PositionComponent
         return;
       }
 
-      // Se il player passa tra le due sfere → esplosione benefica (reward!)
-      final distToCenter = playerPos.distanceTo(position);
-      if (distToCenter < _gateWidth * 0.8 && d1 > 10 && d2 > 10) {
+      // ZONA 2 — Wire bianco centrale: distanza punto-segmento piccola
+      // (player è sulla linea tra le due sfere, lontano dagli endpoint).
+      // Gate esplode, player illeso (reward del risk/reward).
+      final distToWire = _pointToSegmentDistance(playerPos, sphere1, sphere2);
+      if (distToWire < 10) {
         _triggerExplosion();
       }
     }
   }
 
   void _triggerExplosion() {
-    // BOOM! Uccidi tutti i nemici nel raggio
+    if (_exploded) return;
+    _exploded = true;
+    // BOOM! Uccidi tutti i nemici nel raggio (raggio danno potenziato)
+    final killRadius = _explosionRadius * 1.5; // 120 px
     final enemies = game.world.children.whereType<EnemyBase>().toList();
     int killCount = 0;
     for (final enemy in enemies) {
       final dist = enemy.position.distanceTo(position);
-      if (dist < _explosionRadius) {
+      if (dist < killRadius) {
         enemy.takeDamage(999);
         killCount++;
       }
@@ -133,16 +170,18 @@ class GateEnemy extends PositionComponent
     final bosses = game.world.children.whereType<BossBase>().toList();
     for (final boss in bosses) {
       final dist = boss.position.distanceTo(position);
-      if (dist < _explosionRadius) {
+      if (dist < killRadius) {
         boss.takeDamage(20);
       }
     }
 
-    // Effetti visivi
-    game.spawnExplosion(position, neonColor, radius: _explosionRadius, particleCount: 40);
-    game.triggerScreenShake(6, 0.3);
+    // Effetti visivi MOLTO più evidenti — 3 esplosioni sovrapposte di colore diverso
+    game.spawnExplosion(position, const Color(0xFFFFFFFF), radius: _explosionRadius * 2.2, particleCount: 90);
+    game.spawnExplosion(position, neonColor, radius: _explosionRadius * 1.6, particleCount: 60);
+    game.spawnExplosion(position, const Color(0xFFFF3030), radius: _explosionRadius * 1.1, particleCount: 40);
+    game.triggerScreenShake(15, 0.8);
     if (!game.isTunnelMode) {
-      game.grid.applyForce(position, _explosionRadius * 1.5, 1500);
+      game.grid.applyForce(position, _explosionRadius * 3, 3000);
     }
 
     // Bonus punti per gate kill
