@@ -15,6 +15,19 @@ class KamikazeEnemy extends EnemyBase {
   // Se settata, _pickCardinalDirection la restituisce invece di targettare il player.
   Vector2? forcedRushDirection;
 
+  // Paint cache statica — evita allocazione per frame × N kamikazes.
+  // Il colore/strokeWidth viene mutato su ogni drawCall.
+  static final Paint _ringPaint = Paint()
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 1.5;
+  static final Paint _trailPaint = Paint();
+  static final Paint _spikePaint = Paint();
+  static final Paint _exhaustPaint = Paint();
+  static final Paint _linePaint = Paint()..strokeWidth = 0.6;
+  static final Paint _coreOuterPaint = Paint();
+  static final Paint _coreInnerPaint = Paint();
+  static final Paint _eyePaint = Paint();
+
   KamikazeEnemy()
       : super(
           hp: 1,
@@ -110,11 +123,8 @@ class KamikazeEnemy extends EnemyBase {
           final ringR = 20 - chargeProgress * 12 + i * 8;
           final ringAlpha = chargeProgress * 0.4 - i * 0.1;
           if (ringAlpha > 0) {
-            final ringPaint = Paint()
-              ..color = const Color(0xFFFF4400).withValues(alpha: ringAlpha)
-              ..style = PaintingStyle.stroke
-              ..strokeWidth = 1.5;
-            canvas.drawCircle(Offset(cx, cy), ringR, ringPaint);
+            _ringPaint.color = const Color(0xFFFF4400).withValues(alpha: ringAlpha);
+            canvas.drawCircle(Offset(cx, cy), ringR, _ringPaint);
           }
         }
       }
@@ -126,11 +136,10 @@ class KamikazeEnemy extends EnemyBase {
           final trailAlpha = 0.4 - i * 0.09;
           final trailSize = 3.0 - i * 0.55;
           if (trailAlpha > 0 && trailSize > 0) {
-            final trailPaint = Paint()
-              ..color = const Color(0xFFFF6600).withValues(alpha: trailAlpha);
+            _trailPaint.color = const Color(0xFFFF6600).withValues(alpha: trailAlpha);
             canvas.drawCircle(
               Offset(cx + trailDir.x * i * 7, cy + trailDir.y * i * 7),
-              trailSize, trailPaint,
+              trailSize, _trailPaint,
             );
           }
         }
@@ -178,28 +187,23 @@ class KamikazeEnemy extends EnemyBase {
         ..lineTo(-w * 1.15, -h * 0.25)
         ..lineTo(-w * 0.8, h * 0.1)
         ..close();
-      final spikePaint = Paint()..color = paint.color;
-      canvas.drawPath(spikePath, spikePaint);
+      _spikePaint.color = paint.color;
+      canvas.drawPath(spikePath, _spikePaint);
 
       // Doppio propulsore posteriore (due esaustori)
       final exhaustColor = _state == KamikazeState.rushing
           ? const Color(0xFFFF8800)
           : const Color(0xFFFF4400);
       final exhaustAlpha = _state == KamikazeState.rushing ? 0.9 : 0.5;
-      final exhaustPaint = Paint()
-        ..color = exhaustColor.withValues(alpha: exhaustAlpha);
-      canvas.drawCircle(Offset(-w * 0.45, h * 0.4), 1.6, exhaustPaint);
-      canvas.drawCircle(Offset(w * 0.45, h * 0.4), 1.6, exhaustPaint);
+      _exhaustPaint.color = exhaustColor.withValues(alpha: exhaustAlpha);
+      canvas.drawCircle(Offset(-w * 0.45, h * 0.4), 1.6, _exhaustPaint);
+      canvas.drawCircle(Offset(w * 0.45, h * 0.4), 1.6, _exhaustPaint);
 
-      // Linea centrale di rinforzo (chiglia)
-      final linePaint = Paint()
-        ..color = paint.color.withValues(alpha: 0.35)
-        ..strokeWidth = 0.6;
-      canvas.drawLine(Offset(0, -h * 0.9), Offset(0, h * 0.35), linePaint);
-
-      // Dettaglio ala — linee interne
-      canvas.drawLine(Offset(w * 0.35, h * 0.1), Offset(w * 0.75, h * 0.35), linePaint);
-      canvas.drawLine(Offset(-w * 0.35, h * 0.1), Offset(-w * 0.75, h * 0.35), linePaint);
+      // Linea centrale di rinforzo (chiglia) + dettagli ala
+      _linePaint.color = paint.color.withValues(alpha: 0.35);
+      canvas.drawLine(Offset(0, -h * 0.9), Offset(0, h * 0.35), _linePaint);
+      canvas.drawLine(Offset(w * 0.35, h * 0.1), Offset(w * 0.75, h * 0.35), _linePaint);
+      canvas.drawLine(Offset(-w * 0.35, h * 0.1), Offset(-w * 0.75, h * 0.35), _linePaint);
 
       // Nucleo pulsante — più evidente durante charging/rushing
       if (_state == KamikazeState.charging || _state == KamikazeState.rushing) {
@@ -207,17 +211,14 @@ class KamikazeEnemy extends EnemyBase {
         final pulseScale = _state == KamikazeState.charging
             ? 1.0 + math.sin(idlePhase * _flashRate * 2) * 0.25
             : 1.0;
-        final coreOuterPaint = Paint()
-          ..color = const Color(0xFFFF4400).withValues(alpha: glowAlpha * 0.5);
-        canvas.drawCircle(Offset(0, -h * 0.15), 4 * pulseScale, coreOuterPaint);
-        final coreInnerPaint = Paint()
-          ..color = const Color(0xFFFFAA00).withValues(alpha: glowAlpha);
-        canvas.drawCircle(Offset(0, -h * 0.15), 2 * pulseScale, coreInnerPaint);
+        _coreOuterPaint.color = const Color(0xFFFF4400).withValues(alpha: glowAlpha * 0.5);
+        canvas.drawCircle(Offset(0, -h * 0.15), 4 * pulseScale, _coreOuterPaint);
+        _coreInnerPaint.color = const Color(0xFFFFAA00).withValues(alpha: glowAlpha);
+        canvas.drawCircle(Offset(0, -h * 0.15), 2 * pulseScale, _coreInnerPaint);
       } else {
         // Occhio rosso minaccioso in idle
-        final eyePaint = Paint()
-          ..color = const Color(0xFFFF2200).withValues(alpha: 0.7);
-        canvas.drawCircle(Offset(0, -h * 0.15), 1.5, eyePaint);
+        _eyePaint.color = const Color(0xFFFF2200).withValues(alpha: 0.7);
+        canvas.drawCircle(Offset(0, -h * 0.15), 1.5, _eyePaint);
       }
     }
 
