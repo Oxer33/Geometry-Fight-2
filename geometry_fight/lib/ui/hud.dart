@@ -55,7 +55,7 @@ class _GameHudState extends State<GameHud> {
                 ),
               ),
 
-              // === PANNELLO STATUS (top-right): vite, bombe, geomi ===
+              // === PANNELLO STATUS (top-right): vite/morti, bombe, geomi ===
               Positioned(
                 top: topPad,
                 right: 12,
@@ -64,22 +64,27 @@ class _GameHudState extends State<GameHud> {
                   bombs: game.player.bombs,
                   geoms: game.scoreSystem.geoms,
                   hasShield: game.player.hasShield,
+                  isZenMode: game.isZenMode,
+                  deaths: game.sessionDeaths,
                 ),
               ),
 
               // === WAVE INDICATOR (margine superiore dello schermo) ===
-              Positioned(
-                top: topPad,
-                left: 0,
-                right: 0,
-                child: Center(
-                  child: _WaveIndicator(
-                    wave: game.waveSystem.currentWave,
-                    enemyCount: game.enemyCount,
-                    isBossWave: game.bossCount > 0,
+              // Tunnel mode: non ha wave tradizionali, il contatore confonde
+              // → nascosto come richiesto.
+              if (!game.isTunnelMode)
+                Positioned(
+                  top: topPad,
+                  left: 0,
+                  right: 0,
+                  child: Center(
+                    child: _WaveIndicator(
+                      wave: game.waveSystem.currentWave,
+                      enemyCount: game.enemyCount,
+                      isBossWave: game.bossCount > 0,
+                    ),
                   ),
                 ),
-              ),
 
               // === TIMER TIME ATTACK (sotto wave indicator) ===
               if (game.isTimeAttackMode)
@@ -348,12 +353,16 @@ class _StatusPanel extends StatelessWidget {
   final int bombs;
   final int geoms;
   final bool hasShield;
+  final bool isZenMode;
+  final int deaths;
 
   const _StatusPanel({
     required this.lives,
     required this.bombs,
     required this.geoms,
     required this.hasShield,
+    required this.isZenMode,
+    required this.deaths,
   });
 
   @override
@@ -363,31 +372,69 @@ class _StatusPanel extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.end,
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Vite con icone triangolo (come la nave del player)
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (hasShield)
-                Padding(
-                  padding: const EdgeInsets.only(right: 6),
-                  child: Icon(
-                    Icons.shield,
-                    color: Colors.cyanAccent.withValues(alpha: 0.8),
-                    size: 14,
+          // Zen mode: contatore morti invece di vite.
+          if (isZenMode)
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (hasShield)
+                  Padding(
+                    padding: const EdgeInsets.only(right: 6),
+                    child: Icon(
+                      Icons.shield,
+                      color: Colors.cyanAccent.withValues(alpha: 0.8),
+                      size: 14,
+                    ),
+                  ),
+                Icon(
+                  Icons.favorite_border,
+                  color: const Color(0xFFFF88AA).withValues(alpha: 0.85),
+                  size: 14,
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  '$deaths',
+                  style: TextStyle(
+                    color: const Color(0xFFFF88AA).withValues(alpha: 0.95),
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    fontFamily: 'monospace',
+                    shadows: [
+                      Shadow(
+                        color: const Color(0xFFFF88AA).withValues(alpha: 0.5),
+                        blurRadius: 4,
+                      ),
+                    ],
                   ),
                 ),
-              ...List.generate(
-                lives,
-                (i) => Padding(
-                  padding: const EdgeInsets.only(left: 3),
-                  child: CustomPaint(
-                    size: const Size(12, 14),
-                    painter: _LifeIconPainter(),
+              ],
+            )
+          else
+            // Vite con icone triangolo (come la nave del player)
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (hasShield)
+                  Padding(
+                    padding: const EdgeInsets.only(right: 6),
+                    child: Icon(
+                      Icons.shield,
+                      color: Colors.cyanAccent.withValues(alpha: 0.8),
+                      size: 14,
+                    ),
+                  ),
+                ...List.generate(
+                  lives,
+                  (i) => Padding(
+                    padding: const EdgeInsets.only(left: 3),
+                    child: CustomPaint(
+                      size: const Size(12, 14),
+                      painter: _LifeIconPainter(),
+                    ),
                   ),
                 ),
-              ),
-            ],
-          ),
+              ],
+            ),
           const SizedBox(height: 4),
           // Bombe con icone cerchio rosso
           Row(

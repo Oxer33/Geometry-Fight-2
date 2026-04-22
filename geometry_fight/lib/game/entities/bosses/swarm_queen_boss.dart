@@ -71,19 +71,31 @@ class SwarmQueenBoss extends BossBase {
     }
   }
 
+  // Signature FX paints
+  static final _wingPaint = Paint();
+  static final _wingShimmerPaint = Paint()..style = PaintingStyle.stroke;
+  static final _pollenPaint = Paint();
+  static final _crownPaint = Paint();
+  static final _crownJewelPaint = Paint();
+  static final _cellPaint = Paint()
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 0.8;
+  static final _cellFillPaint = Paint();
+  static final _coreHaloPaint = Paint();
+  static final _corePaint = Paint();
+  static final _droneOrbitPaint = Paint();
+
   @override
   void renderBoss(Canvas canvas, Paint paint, double scale) {
     final cx = size.x / 2;
     final cy = size.y / 2;
     final r = size.x / 2 * scale;
 
-    // Ali membranose (solo layer principale)
+    // ─── ALI MEMBRANOSE CON SHIMMER ───
     if (scale <= 1.01) {
       final wingFlap = math.sin(_wingPhase) * 0.15;
       for (int side = -1; side <= 1; side += 2) {
-        final wingPaint = Paint()
-          ..color = neonColor.withValues(alpha: 0.15)
-          ;
+        _wingPaint.color = neonColor.withValues(alpha: 0.18);
         final wingPath = Path()
           ..moveTo(cx + side * r * 0.4, cy)
           ..quadraticBezierTo(
@@ -92,11 +104,79 @@ class SwarmQueenBoss extends BossBase {
           )
           ..lineTo(cx + side * r * 0.4, cy + r * 0.2)
           ..close();
-        canvas.drawPath(wingPath, wingPaint);
+        canvas.drawPath(wingPath, _wingPaint);
+        _wingShimmerPaint.color = const Color(0xFFFFAACC)
+            .withValues(alpha: 0.35 + math.sin(_wingPhase * 2) * 0.25);
+        _wingShimmerPaint.strokeWidth = 1;
+        canvas.drawPath(wingPath, _wingShimmerPaint);
       }
     }
 
-    // Esagono corpo principale (alveare)
+    // ─── POLLINE (particelle gialle che fluttuano attorno) ───
+    if (scale <= 1.01) {
+      for (int i = 0; i < 10; i++) {
+        final pP = _cellPhase * 0.4 + i * 0.6;
+        final pAngle = pP;
+        final pDist = r * (1.15 + ((pP * 0.25) % 1.0) * 0.5);
+        final pAlpha = (1.0 - ((pP * 0.25) % 1.0)) * 0.7;
+        _pollenPaint.color =
+            const Color(0xFFFFDD88).withValues(alpha: pAlpha);
+        canvas.drawCircle(
+          Offset(cx + math.cos(pAngle) * pDist,
+              cy + math.sin(pAngle) * pDist),
+          1.8,
+          _pollenPaint,
+        );
+      }
+    }
+
+    // ─── MINI DRONI ORBITANTI (4 piccole api-triangoli) ───
+    if (scale <= 1.01) {
+      for (int d = 0; d < 4; d++) {
+        final dAngle = _cellPhase * 0.8 + d * math.pi / 2;
+        final dR = r * 1.3;
+        final dx = cx + math.cos(dAngle) * dR;
+        final dy = cy + math.sin(dAngle) * dR;
+        _droneOrbitPaint.color =
+            const Color(0xFFFF3388).withValues(alpha: 0.85);
+        canvas.save();
+        canvas.translate(dx, dy);
+        canvas.rotate(dAngle + math.pi / 2);
+        final dronePath = Path()
+          ..moveTo(0, -4)
+          ..lineTo(3, 3)
+          ..lineTo(-3, 3)
+          ..close();
+        canvas.drawPath(dronePath, _droneOrbitPaint);
+        canvas.restore();
+      }
+    }
+
+    // ─── CORONA a 5 spuntoni con jewel sulla punta ───
+    if (scale <= 1.01) {
+      _crownPaint.color = const Color(0xFFFFDD44).withValues(alpha: 0.85);
+      for (int i = 0; i < 5; i++) {
+        final cAng = -math.pi / 2 + (i - 2) * 0.35;
+        final cDist = r * 0.85;
+        final tipX = cx + math.cos(cAng) * cDist * 1.25;
+        final tipY = cy + math.sin(cAng) * cDist * 1.25;
+        final baseAL = cAng - 0.1;
+        final baseAR = cAng + 0.1;
+        final crownPath = Path()
+          ..moveTo(tipX, tipY)
+          ..lineTo(cx + math.cos(baseAL) * cDist,
+              cy + math.sin(baseAL) * cDist)
+          ..lineTo(cx + math.cos(baseAR) * cDist,
+              cy + math.sin(baseAR) * cDist)
+          ..close();
+        canvas.drawPath(crownPath, _crownPaint);
+        _crownJewelPaint.color = const Color(0xFFFFFFFF)
+            .withValues(alpha: 0.7 + math.sin(_cellPhase * 4 + i) * 0.3);
+        canvas.drawCircle(Offset(tipX, tipY), 2, _crownJewelPaint);
+      }
+    }
+
+    // Esagono corpo principale
     canvas.save();
     canvas.translate(cx, cy);
     final hexPath = Path();
@@ -113,7 +193,7 @@ class SwarmQueenBoss extends BossBase {
     hexPath.close();
     canvas.drawPath(hexPath, paint);
 
-    // Celle alveare interne
+    // Celle alveare (fill miele + bordo rosa)
     if (scale <= 1.01) {
       for (int i = 0; i < 7; i++) {
         final cAngle = i * math.pi / 3 + _cellPhase * 0.1;
@@ -121,11 +201,6 @@ class SwarmQueenBoss extends BossBase {
         final ccx = cDist * math.cos(cAngle);
         final ccy = cDist * math.sin(cAngle);
         final cellAlpha = 0.15 + math.sin(_cellPhase + i) * 0.1;
-        final cellPaint = Paint()
-          ..color = paint.color.withValues(alpha: cellAlpha)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 0.8;
-        // Mini esagono
         final miniPath = Path();
         for (int j = 0; j < 6; j++) {
           final a = j * math.pi / 3;
@@ -138,16 +213,21 @@ class SwarmQueenBoss extends BossBase {
           }
         }
         miniPath.close();
-        canvas.drawPath(miniPath, cellPaint);
+        _cellFillPaint.color =
+            const Color(0xFFFFDD44).withValues(alpha: cellAlpha * 0.6);
+        canvas.drawPath(miniPath, _cellFillPaint);
+        _cellPaint.color = paint.color.withValues(alpha: cellAlpha);
+        canvas.drawPath(miniPath, _cellPaint);
       }
 
-      // Nucleo pulsante
-      final pulse = 0.5 + math.sin(_cellPhase * 2) * 0.3;
-      canvas.drawCircle(
-        Offset.zero, r * 0.15,
-        Paint()..color = const Color(0xFFFFFFFF).withValues(alpha: pulse)
-          ,
-      );
+      // Core halo + bianco pulsante
+      final pulse = 0.5 + math.sin(_cellPhase * 2) * 0.4;
+      _coreHaloPaint.color =
+          const Color(0xFFFF88BB).withValues(alpha: pulse * 0.5);
+      canvas.drawCircle(Offset.zero, r * 0.22, _coreHaloPaint);
+      _corePaint.color =
+          const Color(0xFFFFFFFF).withValues(alpha: pulse);
+      canvas.drawCircle(Offset.zero, r * 0.14 * pulse, _corePaint);
     }
     canvas.restore();
   }

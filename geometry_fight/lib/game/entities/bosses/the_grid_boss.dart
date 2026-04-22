@@ -19,7 +19,8 @@ class TheGridBoss extends BossBase {
 
   TheGridBoss()
       : super(
-          hp: 500,
+          // +50% HP (era 500, ora 750) — richiesta utente: era troppo squishy.
+          hp: 750,
           bossName: 'THE GRID',
           pointValue: 5000,
           neonColor: NeonColors.white,

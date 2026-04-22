@@ -108,52 +108,107 @@ class NexusPrimeBoss extends BossBase {
     }
   }
 
+  // Signature FX paints
+  static final _portalOuterPaint = Paint()..style = PaintingStyle.stroke;
+  static final _portalInnerPaint = Paint()..style = PaintingStyle.stroke;
+  static final _portalSwirlPaint = Paint()..style = PaintingStyle.stroke;
+  static final _portalCorePaint = Paint();
+  static final _warpLinePaint = Paint()..style = PaintingStyle.stroke;
+  static final _innerHexPaint = Paint()..style = PaintingStyle.stroke;
+  static final _coreHaloPaint = Paint();
+  static final _corePaint = Paint();
+
   @override
   void renderBoss(Canvas canvas, Paint paint, double scale) {
     final cx = size.x / 2;
     final cy = size.y / 2;
     final r = size.x / 2 * scale;
 
-    // Portali (cerchi luminosi nell'arena)
+    // ─── PORTALI: ring + inner ring + swirl + core + warp line attivo ───
     if (scale <= 1.01) {
       for (int i = 0; i < _portalPositions.length; i++) {
         final offset = _portalPositions[i] - position;
-        final portalAlpha = 0.2 + math.sin(_portalPhase + i * 2) * 0.1;
-        final portalPaint = Paint()
-          ..color = neonColor.withValues(alpha: portalAlpha)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 2
-          ;
-        canvas.drawCircle(Offset(cx + offset.x, cy + offset.y), 20, portalPaint);
+        final pCx = cx + offset.x;
+        final pCy = cy + offset.y;
+        final isActive = i == _currentPortal;
+        final portalPulse = 0.6 + math.sin(_portalPhase + i * 2) * 0.4;
+
+        _portalOuterPaint.color = neonColor
+            .withValues(alpha: (isActive ? 0.7 : 0.35) * portalPulse);
+        _portalOuterPaint.strokeWidth = isActive ? 3 : 2;
+        canvas.drawCircle(Offset(pCx, pCy), 24, _portalOuterPaint);
+
+        _portalInnerPaint.color = const Color(0xFFFFFFFF)
+            .withValues(alpha: (isActive ? 0.55 : 0.25) * portalPulse);
+        _portalInnerPaint.strokeWidth = 1.2;
+        canvas.drawCircle(Offset(pCx, pCy), 14, _portalInnerPaint);
+
+        _portalSwirlPaint.color =
+            neonColor.withValues(alpha: 0.45 * portalPulse);
+        _portalSwirlPaint.strokeWidth = 1.2;
+        canvas.save();
+        canvas.translate(pCx, pCy);
+        canvas.rotate(_portalPhase * 2 + i);
+        for (int a = 0; a < 3; a++) {
+          canvas.drawArc(
+            Rect.fromCircle(center: Offset.zero, radius: 18),
+            a * math.pi * 2 / 3, math.pi * 0.5, false, _portalSwirlPaint,
+          );
+        }
+        canvas.restore();
+
+        _portalCorePaint.color =
+            const Color(0xFFFFFFFF).withValues(alpha: portalPulse);
+        canvas.drawCircle(Offset(pCx, pCy), 3, _portalCorePaint);
+
+        // Warp line dal boss al portale attivo
+        if (isActive) {
+          _warpLinePaint.color = neonColor
+              .withValues(alpha: 0.3 + math.sin(_portalPhase * 4) * 0.2);
+          _warpLinePaint.strokeWidth = 0.8;
+          canvas.drawLine(Offset(cx, cy), Offset(pCx, pCy), _warpLinePaint);
+        }
       }
     }
 
-    // Esagono esterno
+    // Esagono esterno rotante
     canvas.save();
     canvas.translate(cx, cy);
     canvas.rotate(_portalPhase * 0.2);
     _drawHex(canvas, 0, 0, r * 0.9, paint);
     canvas.restore();
 
-    // Esagono interno (rotazione opposta)
+    // Esagono interno contro-rotante
     canvas.save();
     canvas.translate(cx, cy);
     canvas.rotate(-_portalPhase * 0.3);
-    final innerPaint = Paint()
-      ..color = paint.color.withValues(alpha: 0.5)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2 * scale;
-    _drawHex(canvas, 0, 0, r * 0.55, innerPaint);
+    _innerHexPaint.color = paint.color.withValues(alpha: 0.5);
+    _innerHexPaint.strokeWidth = 2 * scale;
+    _drawHex(canvas, 0, 0, r * 0.55, _innerHexPaint);
     canvas.restore();
 
-    // Nucleo energetico
+    // Terzo esagono piccolo (triple-layer nexus)
     if (scale <= 1.01) {
-      final pulse = 0.5 + math.sin(_portalPhase * 2) * 0.3;
-      final corePaint = Paint()
-        ..color = const Color(0xFFFFFFFF).withValues(alpha: pulse)
-        ;
-      canvas.drawCircle(Offset(cx, cy), r * 0.4, Paint()..color = const Color(0xFFFFFFFF).withValues(alpha: pulse * 0.4));
-      canvas.drawCircle(Offset(cx, cy), r * 0.25, corePaint);
+      canvas.save();
+      canvas.translate(cx, cy);
+      canvas.rotate(_portalPhase * 0.5);
+      _innerHexPaint.color = neonColor.withValues(alpha: 0.7);
+      _innerHexPaint.strokeWidth = 1.5;
+      _drawHex(canvas, 0, 0, r * 0.32, _innerHexPaint);
+      canvas.restore();
+    }
+
+    // Nucleo energetico: halo + core bianco triple-strato
+    if (scale <= 1.01) {
+      final pulse = 0.6 + math.sin(_portalPhase * 2) * 0.4;
+      _coreHaloPaint.color = neonColor.withValues(alpha: pulse * 0.5);
+      canvas.drawCircle(Offset(cx, cy), r * 0.45, _coreHaloPaint);
+      _corePaint.color =
+          const Color(0xFFFFFFFF).withValues(alpha: pulse * 0.7);
+      canvas.drawCircle(Offset(cx, cy), r * 0.28, _corePaint);
+      _corePaint.color =
+          const Color(0xFFFFFFFF).withValues(alpha: pulse);
+      canvas.drawCircle(Offset(cx, cy), r * 0.12 * pulse, _corePaint);
     }
   }
 

@@ -174,11 +174,11 @@ const Map<GameMode, GameModeConfig> gameModeConfigs = {
   ),
   GameMode.zenMode: GameModeConfig(
     name: 'ZEN',
-    description: 'Rilassati. Vite infinite, nemici lenti, solo punteggio.',
+    description: 'Come classica ma immortale. Conta le morti, non le vite.',
     icon: '🧘',
     unlockCost: 1000,
-    hasBosses: false,
-    infiniteWaves: true,
+    // Stessa struttura di classica: boss + 100 wave.
+    hasBosses: true,
   ),
   GameMode.tunnel: GameModeConfig(
     name: 'TUNNEL',

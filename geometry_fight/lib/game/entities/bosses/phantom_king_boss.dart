@@ -124,18 +124,52 @@ class PhantomKingBoss extends BossBase {
     ));
   }
 
+  // Signature FX paints
+  static final _ectoplasmPaint = Paint();
+  static final _jewelGlowPaint = Paint();
+  static final _jewelCorePaint = Paint();
+  static final _innerRingPaint = Paint()..style = PaintingStyle.stroke;
+  static final _eyeHaloPaint = Paint();
+  static final _eyePupilPaint = Paint();
+  static final _invisShimmerPaint = Paint()..style = PaintingStyle.stroke;
+
   @override
   void renderBoss(Canvas canvas, Paint paint, double scale) {
     final cx = size.x / 2;
     final cy = size.y / 2;
     final r = size.x / 2 * scale;
 
-    // Invisibilità: quasi trasparente
     if (_isInvisible) {
       paint.color = paint.color.withValues(alpha: 0.08);
+      // Shimmer etereo visibile anche in invisibilità
+      if (scale <= 1.01) {
+        final shimmer = (math.sin(_crownPhase * 4) * 0.5 + 0.5);
+        _invisShimmerPaint.color =
+            neonColor.withValues(alpha: 0.08 + shimmer * 0.12);
+        _invisShimmerPaint.strokeWidth = 1;
+        canvas.drawCircle(Offset(cx, cy), r * 1.1, _invisShimmerPaint);
+      }
     }
 
-    // Corona (pentagono con punte)
+    // ─── ECTOPLASM wisps attorno al boss ───
+    if (scale <= 1.01 && !_isInvisible) {
+      for (int i = 0; i < 6; i++) {
+        final wp = _crownPhase * 0.9 + i * 1.1;
+        final wAngle = wp;
+        final wDist = r * (1.1 + ((wp * 0.3) % 1.0) * 0.5);
+        final wAlpha = (1.0 - ((wp * 0.3) % 1.0)) * 0.55;
+        _ectoplasmPaint.color =
+            const Color(0xFF88AAFF).withValues(alpha: wAlpha);
+        canvas.drawCircle(
+          Offset(cx + math.cos(wAngle) * wDist,
+              cy + math.sin(wAngle) * wDist),
+          2.5 + (i % 3) * 0.6,
+          _ectoplasmPaint,
+        );
+      }
+    }
+
+    // Corona (pentagono a punte)
     canvas.save();
     canvas.translate(cx, cy);
     canvas.rotate(_crownPhase * 0.3);
@@ -156,21 +190,39 @@ class PhantomKingBoss extends BossBase {
     crownPath.close();
     canvas.drawPath(crownPath, paint);
 
-    // Dettagli interni
+    // ─── JEWELS sulle 5 punte ───
     if (scale <= 1.01 && !_isInvisible) {
-      // Cerchio interno
-      final innerPaint = Paint()
-        ..color = paint.color.withValues(alpha: 0.3)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1;
-      canvas.drawCircle(Offset.zero, r * 0.35, innerPaint);
+      for (int i = 0; i < 5; i++) {
+        final tipAngle = i * math.pi * 2 / 5 - math.pi / 2;
+        final tipR = r * 0.9;
+        final tipX = tipR * math.cos(tipAngle);
+        final tipY = tipR * math.sin(tipAngle);
+        final jewelPulse = 0.6 + math.sin(_crownPhase * 4 + i * 1.2) * 0.4;
+        _jewelGlowPaint.color =
+            const Color(0xFF00FFFF).withValues(alpha: jewelPulse * 0.4);
+        canvas.drawCircle(Offset(tipX, tipY), 5.5, _jewelGlowPaint);
+        _jewelCorePaint.color =
+            const Color(0xFFFFFFFF).withValues(alpha: jewelPulse);
+        canvas.drawCircle(Offset(tipX, tipY), 2, _jewelCorePaint);
+      }
+    }
 
-      // Occhio centrale
-      final eyePaint = Paint()
-        ..color = const Color(0xFFFFFFFF).withValues(alpha: 0.6 + math.sin(_crownPhase * 3) * 0.2)
-        ;
-      canvas.drawCircle(Offset.zero, r * 0.22, Paint()..color = const Color(0xFFFFFFFF).withValues(alpha: 0.3));
-      canvas.drawCircle(Offset.zero, r * 0.15, eyePaint);
+    // Dettagli interni + occhio a 3 strati
+    if (scale <= 1.01 && !_isInvisible) {
+      _innerRingPaint.color = paint.color.withValues(alpha: 0.3);
+      _innerRingPaint.strokeWidth = 1;
+      canvas.drawCircle(Offset.zero, r * 0.35, _innerRingPaint);
+
+      final eyePulse = 0.6 + math.sin(_crownPhase * 3) * 0.3;
+      _eyeHaloPaint.color =
+          const Color(0xFFFFFFFF).withValues(alpha: 0.25 * eyePulse);
+      canvas.drawCircle(Offset.zero, r * 0.28, _eyeHaloPaint);
+      _eyeHaloPaint.color =
+          const Color(0xFF4466FF).withValues(alpha: eyePulse);
+      canvas.drawCircle(Offset.zero, r * 0.18, _eyeHaloPaint);
+      _eyePupilPaint.color =
+          const Color(0xFFFFFFFF).withValues(alpha: eyePulse);
+      canvas.drawCircle(Offset.zero, r * 0.08 * eyePulse, _eyePupilPaint);
     }
     canvas.restore();
   }

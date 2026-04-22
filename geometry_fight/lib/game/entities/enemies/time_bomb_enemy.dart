@@ -49,9 +49,9 @@ class TimeBombEnemy extends EnemyBase {
   }
 
   @override
-  void takeDamage(double amount) {
+  void takeDamage(double amount, {bool isArea = false}) {
     if (!_activated) return; // Immune durante attivazione
-    super.takeDamage(amount);
+    super.takeDamage(amount, isArea: isArea);
   }
 
   void _explode() {

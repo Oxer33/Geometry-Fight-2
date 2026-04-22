@@ -144,52 +144,119 @@ class TheArchitectBoss extends BossBase {
     }
   }
 
+  // Signature FX paints
+  static final _blueprintPaint = Paint()..style = PaintingStyle.stroke;
+  static final _constructionRingPaint = Paint()..style = PaintingStyle.stroke;
+  static final _coreHaloPaint = Paint();
+  static final _corePaint = Paint();
+  static final _beamPaint = Paint()..style = PaintingStyle.stroke;
+  static final _structureGlowPaint = Paint();
+  static final _structureFillPaint = Paint();
+  static final _structurePaint = Paint()
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 2;
+
   @override
   void renderBoss(Canvas canvas, Paint paint, double scale) {
     final cx = size.x / 2;
     final cy = size.y / 2;
 
-    // Main body - geometric construction
+    // ─── BEAMS blueprint dal centro a ogni struttura ───
+    if (scale <= 1.01) {
+      for (final structure in _structures) {
+        final sPos = structure.position - position;
+        final beamAlpha =
+            (structure.lifetime / 15).clamp(0.0, 1.0) * 0.5;
+        _beamPaint.color = NeonColors.electricBlue.withValues(
+            alpha: beamAlpha * (0.6 + math.sin(_phase * 4) * 0.4));
+        _beamPaint.strokeWidth = 1.2;
+        canvas.drawLine(
+            Offset(cx, cy), Offset(cx + sPos.x, cy + sPos.y), _beamPaint);
+      }
+    }
+
+    // ─── CORPO: struttura geometrica multi-strato ───
     canvas.save();
     canvas.translate(cx, cy);
     canvas.rotate(_phase * 0.3);
 
-    // Outer square
     final r = 65 * scale;
+
+    // Blueprint grid (4 righe orizzontali + verticali)
+    if (scale <= 1.01) {
+      _blueprintPaint.color = NeonColors.electricBlue
+          .withValues(alpha: 0.22 + math.sin(_phase * 1.5) * 0.1);
+      _blueprintPaint.strokeWidth = 0.6;
+      const gridN = 4;
+      for (int i = 1; i < gridN; i++) {
+        final off = -r + (r * 2 / gridN) * i;
+        canvas.drawLine(Offset(-r, off), Offset(r, off), _blueprintPaint);
+        canvas.drawLine(Offset(off, -r), Offset(off, r), _blueprintPaint);
+      }
+    }
+
+    // Square esterno
     paint.style = PaintingStyle.stroke;
     paint.strokeWidth = 3;
     canvas.drawRect(
         Rect.fromCenter(center: Offset.zero, width: r * 2, height: r * 2),
         paint);
 
-    // Inner rotated square
+    // Square interno ruotato
     canvas.rotate(math.pi / 4);
     canvas.drawRect(
         Rect.fromCenter(
             center: Offset.zero, width: r * 1.4, height: r * 1.4),
         paint);
+    canvas.rotate(-math.pi / 4);
 
-    // Central circle
+    // Construction ring contro-rotante
+    if (scale <= 1.01) {
+      final ringPulse = 0.3 + math.sin(_phase * 2) * 0.2;
+      _constructionRingPaint.color =
+          NeonColors.electricBlue.withValues(alpha: ringPulse);
+      _constructionRingPaint.strokeWidth = 1.2;
+      canvas.drawArc(
+        Rect.fromCircle(center: Offset.zero, radius: r * 1.15),
+        _phase * -1.2, math.pi * 0.8, false, _constructionRingPaint,
+      );
+      canvas.drawArc(
+        Rect.fromCircle(center: Offset.zero, radius: r * 1.15),
+        _phase * -1.2 + math.pi, math.pi * 0.8, false, _constructionRingPaint,
+      );
+    }
+
+    // Core: halo + fill + nucleo bianco pulsante
     paint.style = PaintingStyle.fill;
+    if (scale <= 1.01) {
+      _coreHaloPaint.color = NeonColors.electricBlue.withValues(alpha: 0.4);
+      canvas.drawCircle(Offset.zero, 30 * scale, _coreHaloPaint);
+    }
     canvas.drawCircle(Offset.zero, 20 * scale, paint);
+    if (scale <= 1.01) {
+      final corePulse = 0.7 + math.sin(_phase * 6) * 0.3;
+      _corePaint.color = const Color(0xFFFFFFFF).withValues(alpha: corePulse);
+      canvas.drawCircle(Offset.zero, 8 * scale * corePulse, _corePaint);
+    }
 
     canvas.restore();
 
-    // Draw structures
+    // ─── STRUTTURE esagonali con glow/fill/core ───
     for (final structure in _structures) {
       final sPos = structure.position - position;
-      final sPaint = Paint()
-        ..color = NeonColors.electricBlue
-            .withValues(alpha: structure.lifetime / 15)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 2;
+      final lifeT = (structure.lifetime / 15).clamp(0.0, 1.0);
+      final pulse = 0.7 + math.sin(_phase * 3 + structure.position.x) * 0.3;
 
-      // Small hexagon
+      _structureGlowPaint.color =
+          NeonColors.electricBlue.withValues(alpha: 0.25 * lifeT * pulse);
+      canvas.drawCircle(
+          Offset(cx + sPos.x, cy + sPos.y), 18, _structureGlowPaint);
+
       final path = Path();
       for (int i = 0; i < 6; i++) {
         final angle = i * math.pi / 3;
-        final x = cx + sPos.x + 10 * math.cos(angle);
-        final y = cy + sPos.y + 10 * math.sin(angle);
+        final x = cx + sPos.x + 12 * math.cos(angle);
+        final y = cy + sPos.y + 12 * math.sin(angle);
         if (i == 0) {
           path.moveTo(x, y);
         } else {
@@ -197,7 +264,18 @@ class TheArchitectBoss extends BossBase {
         }
       }
       path.close();
-      canvas.drawPath(path, sPaint);
+
+      _structureFillPaint.color =
+          NeonColors.electricBlue.withValues(alpha: 0.25 * lifeT);
+      canvas.drawPath(path, _structureFillPaint);
+      _structurePaint.color =
+          NeonColors.electricBlue.withValues(alpha: lifeT);
+      canvas.drawPath(path, _structurePaint);
+
+      _structureFillPaint.color =
+          const Color(0xFFFFFFFF).withValues(alpha: 0.8 * lifeT * pulse);
+      canvas.drawCircle(
+          Offset(cx + sPos.x, cy + sPos.y), 2.5, _structureFillPaint);
     }
   }
 }

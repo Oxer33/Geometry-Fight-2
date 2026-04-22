@@ -92,64 +92,104 @@ class VoidReaperBoss extends BossBase {
     }
   }
 
+  // Paint cache FX
+  static final _zoneFillPaint = Paint();
+  static final _zoneBorderPaint = Paint()..style = PaintingStyle.stroke;
+  static final _zoneVortexPaint = Paint()..style = PaintingStyle.stroke;
+  static final _arcPaint = Paint()..style = PaintingStyle.stroke;
+  static final _tipPaint = Paint();
+  static final _coreHaloPaint = Paint();
+  static final _corePaint = Paint();
+  static final _voidParticlePaint = Paint();
+
   @override
   void renderBoss(Canvas canvas, Paint paint, double scale) {
     final cx = size.x / 2;
     final cy = size.y / 2;
     final r = size.x / 2 * scale;
 
-    // Zone di morte (cerchi viola pulsanti)
+    // ─── DEATH ZONES (vortex viola con spirali interne) ───
     if (scale <= 1.01) {
       for (final zone in _deathZones) {
         final offset = zone.position - position;
-        final zAlpha = (zone.lifetime / 8.0).clamp(0.0, 1.0) * 0.3;
+        final zAlpha = (zone.lifetime / 8.0).clamp(0.0, 1.0);
         final pulse = 1.0 + math.sin(zone.phase) * 0.1;
-        // Riempimento
-        final fillPaint = Paint()
-          ..color = neonColor.withValues(alpha: zAlpha * 0.3);
-        canvas.drawCircle(Offset(cx + offset.x, cy + offset.y), zone.radius * pulse, fillPaint);
-        // Bordo
-        final borderPaint = Paint()
-          ..color = neonColor.withValues(alpha: zAlpha)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 1.5;
-        canvas.drawCircle(Offset(cx + offset.x, cy + offset.y), zone.radius * pulse, borderPaint);
+        final zCx = cx + offset.x;
+        final zCy = cy + offset.y;
+        _zoneFillPaint.color = neonColor.withValues(alpha: zAlpha * 0.25);
+        canvas.drawCircle(
+            Offset(zCx, zCy), zone.radius * pulse, _zoneFillPaint);
+        _zoneBorderPaint.color = neonColor.withValues(alpha: zAlpha * 0.7);
+        _zoneBorderPaint.strokeWidth = 2;
+        canvas.drawCircle(
+            Offset(zCx, zCy), zone.radius * pulse, _zoneBorderPaint);
+        // Vortex interno: 3 archi rotanti
+        _zoneVortexPaint.color =
+            const Color(0xFFCC44FF).withValues(alpha: zAlpha * 0.5);
+        _zoneVortexPaint.strokeWidth = 1.2;
+        canvas.save();
+        canvas.translate(zCx, zCy);
+        canvas.rotate(zone.phase * 1.5);
+        for (int v = 0; v < 3; v++) {
+          final vr = zone.radius * (0.3 + v * 0.25) * pulse;
+          canvas.drawArc(
+              Rect.fromCircle(center: Offset.zero, radius: vr),
+              v * math.pi * 0.7, math.pi * 0.9, false, _zoneVortexPaint);
+        }
+        canvas.restore();
       }
     }
 
-    // Corpo: arco/falce stilizzata
+    // ─── VOID PARTICLES (fumo attorno al corpo) ───
+    if (scale <= 1.01) {
+      for (int i = 0; i < 8; i++) {
+        final vp = _movePhase * 0.7 + i * 0.9;
+        final vAngle = vp % (math.pi * 2);
+        final vDist = r * (1.0 + ((vp * 0.4) % 1.0) * 0.8);
+        final vAlpha = (1.0 - ((vp * 0.4) % 1.0)) * 0.7;
+        _voidParticlePaint.color =
+            const Color(0xFFCC44FF).withValues(alpha: vAlpha);
+        canvas.drawCircle(
+          Offset(cx + math.cos(vAngle) * vDist,
+              cy + math.sin(vAngle) * vDist),
+          2 + (i % 3) * 0.8,
+          _voidParticlePaint,
+        );
+      }
+    }
+
+    // ─── CORPO: FALCE ───
     canvas.save();
     canvas.translate(cx, cy);
     canvas.rotate(_movePhase * 0.5);
-
-    // Arco principale
-    final arcPaint = Paint()
-      ..color = paint.color
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 8 * scale;
+    _arcPaint.color = paint.color;
+    _arcPaint.strokeWidth = 8 * scale;
     canvas.drawArc(
       Rect.fromCircle(center: Offset.zero, radius: r * 0.7),
-      -math.pi * 0.8, math.pi * 1.2, false, arcPaint,
+      -math.pi * 0.8, math.pi * 1.2, false, _arcPaint,
     );
-
-    // Punta della falce
     final tipPath = Path()
-      ..moveTo(r * 0.7 * math.cos(-math.pi * 0.8), r * 0.7 * math.sin(-math.pi * 0.8))
-      ..lineTo(r * 0.9 * math.cos(-math.pi * 0.9), r * 0.9 * math.sin(-math.pi * 0.9))
-      ..lineTo(r * 0.5 * math.cos(-math.pi * 0.7), r * 0.5 * math.sin(-math.pi * 0.7))
+      ..moveTo(r * 0.7 * math.cos(-math.pi * 0.8),
+          r * 0.7 * math.sin(-math.pi * 0.8))
+      ..lineTo(r * 0.9 * math.cos(-math.pi * 0.9),
+          r * 0.9 * math.sin(-math.pi * 0.9))
+      ..lineTo(r * 0.5 * math.cos(-math.pi * 0.7),
+          r * 0.5 * math.sin(-math.pi * 0.7))
       ..close();
-    canvas.drawPath(tipPath, Paint()..color = paint.color);
-
+    _tipPaint.color = paint.color;
+    canvas.drawPath(tipPath, _tipPaint);
     canvas.restore();
 
-    // Nucleo
+    // ─── NUCLEO CROMATICO (halo + occhio viola + pupilla bianca) ───
     if (scale <= 1.01) {
-      final pulse = 0.4 + math.sin(_movePhase * 3) * 0.3;
-      final corePaint = Paint()
-        ..color = const Color(0xFFCC44FF).withValues(alpha: pulse)
-        ;
-      canvas.drawCircle(Offset(cx, cy), r * 0.4, Paint()..color = const Color(0xFFCC44FF).withValues(alpha: pulse * 0.3));
-      canvas.drawCircle(Offset(cx, cy), r * 0.25, corePaint);
+      final pulse = 0.5 + math.sin(_movePhase * 3) * 0.4;
+      _coreHaloPaint.color =
+          const Color(0xFFCC44FF).withValues(alpha: pulse * 0.4);
+      canvas.drawCircle(Offset(cx, cy), r * 0.45, _coreHaloPaint);
+      _corePaint.color = const Color(0xFFCC44FF).withValues(alpha: pulse);
+      canvas.drawCircle(Offset(cx, cy), r * 0.25, _corePaint);
+      _corePaint.color = const Color(0xFFFFFFFF).withValues(alpha: pulse);
+      canvas.drawCircle(Offset(cx, cy), r * 0.08, _corePaint);
     }
   }
 }

@@ -90,28 +90,66 @@ class InfernoBoss extends BossBase {
     }
   }
 
+  // Cache paints — evita alloc/frame sui trail (60 elementi) + FX
+  static final _trailOuterPaint = Paint();
+  static final _trailCorePaint = Paint();
+  static final _heatRingPaint = Paint()..style = PaintingStyle.stroke;
+  static final _coreGlowPaint = Paint();
+  static final _corePaint = Paint();
+  static final _coreWhitePaint = Paint();
+  static final _emberPaint = Paint();
+
   @override
   void renderBoss(Canvas canvas, Paint paint, double scale) {
     final cx = size.x / 2;
     final cy = size.y / 2;
     final r = size.x / 2 * scale;
 
-    // Scie di fuoco
+    // ─── SCIE DI FUOCO (esterno arancione + core giallo) ───
     if (scale <= 1.01) {
       for (final trail in _trails) {
         final offset = trail.position - position;
-        final alpha = (trail.lifetime / 3.0).clamp(0.0, 1.0) * 0.4;
-        final trailR = 6 * (trail.lifetime / 3.0);
+        final lifeT = (trail.lifetime / 3.0).clamp(0.0, 1.0);
+        final trailR = 7 * lifeT;
+        final centerOff = Offset(cx + offset.x, cy + offset.y);
+        _trailOuterPaint.color = neonColor.withValues(alpha: lifeT * 0.35);
+        canvas.drawCircle(centerOff, trailR * 1.4, _trailOuterPaint);
+        _trailCorePaint.color =
+            const Color(0xFFFFDD00).withValues(alpha: lifeT * 0.65);
+        canvas.drawCircle(centerOff, trailR * 0.7, _trailCorePaint);
+      }
+    }
+
+    // ─── HEAT DISTORTION RINGS (onde calore pulsanti) ───
+    if (scale <= 1.01) {
+      final heatPulse = 0.5 + math.sin(_flamePhase * 0.4) * 0.5;
+      for (int i = 0; i < 3; i++) {
+        final ringR = r * (1.3 + i * 0.3 + heatPulse * 0.15);
+        _heatRingPaint.color = const Color(0xFFFF6600)
+            .withValues(alpha: (0.18 - i * 0.05) * heatPulse);
+        _heatRingPaint.strokeWidth = 1.5;
+        canvas.drawCircle(Offset(cx, cy), ringR, _heatRingPaint);
+      }
+    }
+
+    // ─── EMBER PARTICELLE (braci che salgono attorno) ───
+    if (scale <= 1.01) {
+      for (int i = 0; i < 10; i++) {
+        final ePhase = _flamePhase * 0.6 + i * 0.7;
+        final eAngle = ePhase % (math.pi * 2);
+        final eDist = r * (1.15 + ((ePhase * 0.3) % 1.0) * 0.6);
+        final eAlpha = (1.0 - ((ePhase * 0.3) % 1.0)) * 0.9;
+        _emberPaint.color = const Color(0xFFFFAA00).withValues(alpha: eAlpha);
         canvas.drawCircle(
-          Offset(cx + offset.x, cy + offset.y), trailR,
-          Paint()
-            ..color = neonColor.withValues(alpha: alpha)
-            ,
+          Offset(cx + math.cos(eAngle) * eDist,
+              cy + math.sin(eAngle) * eDist),
+          1.5 + (i % 3) * 0.5,
+          _emberPaint,
         );
       }
     }
 
-    // Stella a 5 punte con fiamme
+    // ─── STELLA A 5 PUNTE CON FIAMME ───
     canvas.save();
     canvas.translate(cx, cy);
     canvas.rotate(_flamePhase * 0.1);
@@ -133,18 +171,16 @@ class InfernoBoss extends BossBase {
     canvas.drawPath(starPath, paint);
 
     if (scale <= 1.01) {
-      // Nucleo incandescente
-      final pulse = 0.5 + math.sin(_flamePhase * 0.5) * 0.3;
-      canvas.drawCircle(
-        Offset.zero, r * 0.25,
-        Paint()..color = const Color(0xFFFFDD00).withValues(alpha: pulse)
-          ,
-      );
-      // Centro bianco
-      canvas.drawCircle(
-        Offset.zero, r * 0.1,
-        Paint()..color = const Color(0xFFFFFFFF).withValues(alpha: 0.7),
-      );
+      // Nucleo incandescente a 3 strati (fuoco vero)
+      final pulse = 0.7 + math.sin(_flamePhase * 0.5) * 0.3;
+      _coreGlowPaint.color =
+          const Color(0xFFFF8800).withValues(alpha: pulse * 0.6);
+      canvas.drawCircle(Offset.zero, r * 0.38, _coreGlowPaint);
+      _corePaint.color = const Color(0xFFFFDD00).withValues(alpha: pulse);
+      canvas.drawCircle(Offset.zero, r * 0.25, _corePaint);
+      _coreWhitePaint.color =
+          const Color(0xFFFFFFFF).withValues(alpha: 0.85 * pulse);
+      canvas.drawCircle(Offset.zero, r * 0.11, _coreWhitePaint);
     }
     canvas.restore();
   }

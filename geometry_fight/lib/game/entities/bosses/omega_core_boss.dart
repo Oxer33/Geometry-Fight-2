@@ -157,25 +157,56 @@ class OmegaCoreBoss extends BossBase {
     return HSVColor.fromAHSV(1.0, hue, 0.8, 1.0).toColor();
   }
 
+  // Signature FX paints
+  static final _zoneFillPaint = Paint();
+  static final _zoneBorderPaint = Paint()..style = PaintingStyle.stroke;
+  static final _ring1Paint = Paint()..style = PaintingStyle.stroke;
+  static final _ring2Paint = Paint()..style = PaintingStyle.stroke;
+  static final _prismBeamPaint = Paint()..style = PaintingStyle.stroke;
+  static final _spherePaint = Paint();
+  static final _coreHaloPaint = Paint();
+  static final _coreWhitePaint = Paint();
+  static final _particlePaint = Paint();
+  static final _phaseDotPaint = Paint();
+
   @override
   void renderBoss(Canvas canvas, Paint paint, double scale) {
     final cx = size.x / 2;
     final cy = size.y / 2;
     final r = size.x / 2 * scale;
+    final cur = _getCurrentColor();
 
-    // Zone di morte visibili
+    // Zone di morte (doppio layer)
     if (scale <= 1.01) {
       for (final zone in _deathZones) {
         final offset = zone.position - position;
-        final zonePaint = Paint()
-          ..color = const Color(0xFFFF2200).withValues(alpha: 0.2)
-          ;
-        canvas.drawCircle(Offset(cx + offset.x, cy + offset.y), 50, zonePaint);
-        final borderPaint = Paint()
-          ..color = const Color(0xFFFF2200).withValues(alpha: 0.4)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 1;
-        canvas.drawCircle(Offset(cx + offset.x, cy + offset.y), 50, borderPaint);
+        _zoneFillPaint.color =
+            const Color(0xFFFF2200).withValues(alpha: 0.2);
+        canvas.drawCircle(
+            Offset(cx + offset.x, cy + offset.y), 50, _zoneFillPaint);
+        _zoneBorderPaint.color =
+            const Color(0xFFFF2200).withValues(alpha: 0.4);
+        _zoneBorderPaint.strokeWidth = 1.2;
+        canvas.drawCircle(
+            Offset(cx + offset.x, cy + offset.y), 50, _zoneBorderPaint);
+      }
+    }
+
+    // ─── PRISM BEAM SPIKES: 8 raggi cromatici dal centro (signature) ───
+    if (scale <= 1.01) {
+      _prismBeamPaint.strokeWidth = 1.5;
+      for (int i = 0; i < 8; i++) {
+        final bAngle = _phase * 0.7 + i * math.pi / 4;
+        final bLen = r * (1.1 + math.sin(_phase * 2 + i) * 0.2);
+        final hue = ((_phase * 30) + i * 45) % 360;
+        _prismBeamPaint.color =
+            HSVColor.fromAHSV(0.55, hue, 0.8, 1).toColor();
+        canvas.drawLine(
+          Offset(cx, cy),
+          Offset(cx + math.cos(bAngle) * bLen,
+              cy + math.sin(bAngle) * bLen),
+          _prismBeamPaint,
+        );
       }
     }
 
@@ -183,56 +214,58 @@ class OmegaCoreBoss extends BossBase {
     canvas.save();
     canvas.translate(cx, cy);
     canvas.rotate(_phase * 0.3);
-    final ring1Paint = Paint()
-      ..color = _getCurrentColor().withValues(alpha: scale <= 1.01 ? 0.4 : 0.2)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 3 * scale;
-    canvas.drawCircle(Offset.zero, r * 0.85, ring1Paint);
+    _ring1Paint.color =
+        cur.withValues(alpha: scale <= 1.01 ? 0.4 : 0.2);
+    _ring1Paint.strokeWidth = 3 * scale;
+    canvas.drawCircle(Offset.zero, r * 0.85, _ring1Paint);
     canvas.restore();
 
-    // Anello esterno orbitante 2 (rotazione opposta)
+    // Anello esterno 2 contro-rotante
     canvas.save();
     canvas.translate(cx, cy);
     canvas.rotate(-_phase * 0.2);
-    final ring2Paint = Paint()
-      ..color = _getCurrentColor().withValues(alpha: scale <= 1.01 ? 0.3 : 0.15)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2 * scale;
-    canvas.drawCircle(Offset.zero, r * 0.7, ring2Paint);
+    _ring2Paint.color =
+        cur.withValues(alpha: scale <= 1.01 ? 0.3 : 0.15);
+    _ring2Paint.strokeWidth = 2 * scale;
+    canvas.drawCircle(Offset.zero, r * 0.7, _ring2Paint);
     canvas.restore();
 
     // Sfera principale
-    final sphereColor = scale <= 1.01 ? _getCurrentColor() : paint.color;
-    final spherePaint = Paint()..color = sphereColor;
-    canvas.drawCircle(Offset(cx, cy), r * 0.5, spherePaint);
+    _spherePaint.color = scale <= 1.01 ? cur : paint.color;
+    canvas.drawCircle(Offset(cx, cy), r * 0.5, _spherePaint);
 
-    // Dettagli interni
+    // Dettagli interni + core multi-strato
     if (scale <= 1.01) {
-      // Nucleo bianco pulsante
-      final pulse = 0.5 + math.sin(_phase * 2) * 0.3;
-      final corePaint = Paint()
-        ..color = const Color(0xFFFFFFFF).withValues(alpha: pulse)
-        ;
-      canvas.drawCircle(Offset(cx, cy), r * 0.4, Paint()..color = const Color(0xFFFFFFFF).withValues(alpha: pulse * 0.3));
-      canvas.drawCircle(Offset(cx, cy), r * 0.25, corePaint);
+      final pulse = 0.5 + math.sin(_phase * 2) * 0.4;
+      _coreHaloPaint.color =
+          const Color(0xFFFFFFFF).withValues(alpha: pulse * 0.35);
+      canvas.drawCircle(Offset(cx, cy), r * 0.42, _coreHaloPaint);
+      _coreWhitePaint.color =
+          const Color(0xFFFFFFFF).withValues(alpha: pulse);
+      canvas.drawCircle(
+          Offset(cx, cy), r * 0.25 * (0.9 + pulse * 0.2), _coreWhitePaint);
+      _coreWhitePaint.color =
+          const Color(0xFFFFFFFF).withValues(alpha: (pulse * 1.2).clamp(0, 1));
+      canvas.drawCircle(Offset(cx, cy), r * 0.08, _coreWhitePaint);
 
-      // Particelle orbitanti
+      // Particelle orbitanti con core bianco
       for (int i = 0; i < 6; i++) {
         final pAngle = _phase * 1.5 + i * math.pi / 3;
-        final pR = r * 0.65;
+        final pR = r * (0.63 + math.sin(_phase * 3 + i) * 0.06);
         final px = cx + pR * math.cos(pAngle);
         final py = cy + pR * math.sin(pAngle);
-        final pPaint = Paint()
-          ..color = _getCurrentColor().withValues(alpha: 0.6)
-          ;
-        canvas.drawCircle(Offset(px, py), 3, pPaint);
+        _particlePaint.color = cur.withValues(alpha: 0.7);
+        canvas.drawCircle(Offset(px, py), 3.5, _particlePaint);
+        _particlePaint.color = const Color(0xFFFFFFFF).withValues(alpha: 0.7);
+        canvas.drawCircle(Offset(px, py), 1.2, _particlePaint);
       }
 
-      // Indicatore fase (punti luminosi)
+      // Indicatore fase
       for (int i = 0; i <= currentPhase; i++) {
         final dotX = cx - 10 + i * 7.0;
         final dotY = cy + r * 0.5 + 10;
-        canvas.drawCircle(Offset(dotX, dotY), 2, Paint()..color = _getCurrentColor());
+        _phaseDotPaint.color = cur;
+        canvas.drawCircle(Offset(dotX, dotY), 2, _phaseDotPaint);
       }
     }
   }

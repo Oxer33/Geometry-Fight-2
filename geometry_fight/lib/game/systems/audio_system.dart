@@ -1,6 +1,60 @@
 import 'package:flame_audio/flame_audio.dart';
 import 'package:flutter/services.dart';
 
+/// Pool custom di AudioPlayer in modalità `mediaPlayer` per riprodurre mp3
+/// ad alta frequenza senza allocare un nuovo player ad ogni call.
+///
+/// Perché non usare `AudioPool` di flame_audio: AudioPool usa `lowLatency`
+/// (SoundPool su Android), che droppa silenziosamente gli mp3.
+/// Perché non usare `FlameAudio.play` diretto: ogni call crea un nuovo
+/// AudioPlayer → su game con 100+ kill/min causa lag progressivo.
+///
+/// Implementazione: N player pre-caricati, round-robin. Ogni player
+/// viene riavvolto con `seek(0)` + `resume()` → nessun re-setup di sorgente.
+class _Mp3Pool {
+  final String assetRelPath; // relativo a assets/audio/
+  final List<AudioPlayer> _players;
+  int _next = 0;
+  bool _ready = false;
+
+  _Mp3Pool(this.assetRelPath, {int size = 4})
+      : _players = List.generate(size, (_) => AudioPlayer());
+
+  Future<void> load() async {
+    // `_ready = true` solo se almeno un player ha caricato con successo.
+    // Prima lo flippavamo a true incondizionatamente anche quando tutti i
+    // setSource fallivano silenziosamente → pool "ready" ma muto.
+    int loaded = 0;
+    for (final p in _players) {
+      try {
+        await p.setReleaseMode(ReleaseMode.stop);
+        await p.setSource(AssetSource('audio/$assetRelPath'));
+        loaded++;
+      } catch (_) {}
+    }
+    _ready = loaded > 0;
+  }
+
+  Future<void> play({double volume = 1.0}) async {
+    if (!_ready) return;
+    final p = _players[_next];
+    _next = (_next + 1) % _players.length;
+    try {
+      await p.setVolume(volume);
+      await p.seek(Duration.zero);
+      await p.resume();
+    } catch (_) {}
+  }
+
+  Future<void> dispose() async {
+    for (final p in _players) {
+      try {
+        await p.dispose();
+      } catch (_) {}
+    }
+  }
+}
+
 /// Sistema audio con SFX procedurali + feedback aptico.
 /// Usa AudioPool per suoni frequenti (evita memory leak da AudioPlayer accumulati).
 /// Cooldown per non sovrapporre lo stesso suono troppo rapidamente.
@@ -9,33 +63,98 @@ class AudioSystem {
   static double _sfxVolume = 0.8;
   static bool _initialized = false;
 
-  // Pool per suoni ad alta frequenza (riutilizzano gli AudioPlayer)
+  // Pool per suoni ad alta frequenza WAV (lowLatency mode = SoundPool su Android,
+  // limitato a wav/ogg corti).
   static AudioPool? _shootPool;
-  static AudioPool? _enemyDeathPool;
   static AudioPool? _geomPool;
+
+  // Pool custom per mp3 ad alta frequenza (mob killed). AudioPool non usabile
+  // con mp3 (SoundPool droppa). FlameAudio.play diretto crea AudioPlayer nuovi
+  // ogni call → progressive alloc overhead → lag. Soluzione: 4 player riutilizzati.
+  static _Mp3Pool? _enemyDeathMp3Pool;
+
+  // Pool mp3 anche per eventi "rari ma critici" (player death, game over, boss
+  // killed). Rari in assoluto, ma se si sovrappongono a un cambio di bgm
+  // (es. death → skipToNext istantaneo) creare un AudioPlayer nuovo con
+  // FlameAudio.play causa contention sul MediaPlayer Android → l'uno o
+  // l'altro risulta "buggato". Pool = 1 player riutilizzato = zero alloc.
+  static _Mp3Pool? _playerDeathMp3Pool;
+  static _Mp3Pool? _bossKilledMp3Pool;
+  static _Mp3Pool? _gameOverExplosionMp3Pool;
+
+  // Path constants — tutti gli FX sotto fx/, music sotto bgm/ e intro/.
+  // Centralizzati per facilitare future modifiche.
+  static const _fxShoot = 'fx/shoot.wav';
+  static const _fxEnemyDeath = 'fx/mob_killed.mp3'; // Nuovo: era enemy_death.wav
+  static const _fxBossKilled = 'fx/boss_killed.mp3'; // Nuovo
+  static const _fxPlayerDeath = 'fx/player_death.mp3'; // Nuovo
+  static const _fxGameOverExplosion = 'fx/gameover_explosion.mp3'; // Nuovo
+  static const _fxGeom = 'fx/geom.wav';
+  static const _fxBomb = 'fx/bomb.wav';
+  static const _fxPowerUp = 'fx/powerup.wav';
+  static const _fxPlayerHit = 'fx/player_hit.wav';
+  static const _fxBossSpawn = 'fx/boss_spawn.wav';
+  static const _fxWaveComplete = 'fx/wave_complete.wav';
+  static const _fxGameOver = 'fx/game_over.wav';
+  static const _fxExtraLife = 'fx/extra_life.wav';
 
   // Cooldown: impedisce lo stesso suono di suonare troppo spesso
   static final _lastPlayTime = <String, int>{};
   static const _minIntervalMs = 50; // ms minimo tra due riproduzioni dello stesso suono
 
-  /// Inizializza il sistema audio: crea pool per suoni frequenti e pre-carica il resto
+  // Haptic ha il proprio throttle più lento (~8 Hz): HapticFeedback fa platform
+  // channel call che su Android può causare frame hitch. Limitare riduce lag.
+  static int _lastHapticMs = 0;
+  static const _hapticMinIntervalMs = 120;
+
+  static bool _canHaptic() {
+    if (!_vibrationEnabled) return false;
+    final now = DateTime.now().millisecondsSinceEpoch;
+    if (now - _lastHapticMs < _hapticMinIntervalMs) return false;
+    _lastHapticMs = now;
+    return true;
+  }
+
+  /// Inizializza il sistema audio: crea pool per suoni frequenti WAV e
+  /// pre-carica gli altri (inclusi i nuovi mp3 dell'utente).
   static Future<void> init() async {
     if (_initialized) return;
+    // Attendi la dispose dei vecchi player (se `stopAll()` è stato chiamato
+    // poco prima) per evitare contention sul handle MediaPlayer nativo.
+    if (_disposeInFlight != null) {
+      try { await _disposeInFlight; } catch (_) {}
+      _disposeInFlight = null;
+    }
     try {
-      // Pool per suoni ad alta frequenza (max 4 player simultanei ciascuno)
-      _shootPool = await FlameAudio.createPool('shoot.wav', maxPlayers: 4);
-      _enemyDeathPool = await FlameAudio.createPool('enemy_death.wav', maxPlayers: 4);
-      _geomPool = await FlameAudio.createPool('geom.wav', maxPlayers: 3);
+      // Pool SOLO per WAV ad alta frequenza (max 4 player simultanei).
+      _shootPool = await FlameAudio.createPool(_fxShoot, maxPlayers: 4);
+      _geomPool = await FlameAudio.createPool(_fxGeom, maxPlayers: 3);
 
-      // Pre-carica suoni rari (usati con FlameAudio.play — OK perché rarissimi)
+      // Pool custom per mob_killed.mp3 — 4 player riutilizzati in round-robin.
+      // Evita alloc di AudioPlayer ogni kill (principale causa di lag progressivo).
+      _enemyDeathMp3Pool = _Mp3Pool(_fxEnemyDeath, size: 4);
+      await _enemyDeathMp3Pool!.load();
+
+      // Pool mp3 per eventi critici — 1 player ciascuno. Rari ma devono partire
+      // SEMPRE senza contention col bgm.play concorrente (death → skipToNext).
+      _playerDeathMp3Pool = _Mp3Pool(_fxPlayerDeath, size: 1);
+      _bossKilledMp3Pool = _Mp3Pool(_fxBossKilled, size: 1);
+      _gameOverExplosionMp3Pool = _Mp3Pool(_fxGameOverExplosion, size: 1);
+      await Future.wait([
+        _playerDeathMp3Pool!.load(),
+        _bossKilledMp3Pool!.load(),
+        _gameOverExplosionMp3Pool!.load(),
+      ]);
+
+      // Pre-carica tutti gli altri (wav rari) — usati con FlameAudio.play.
       await FlameAudio.audioCache.loadAll([
-        'bomb.wav',
-        'powerup.wav',
-        'player_hit.wav',
-        'boss_spawn.wav',
-        'wave_complete.wav',
-        'game_over.wav',
-        'extra_life.wav',
+        _fxBomb,
+        _fxPowerUp,
+        _fxPlayerHit,
+        _fxBossSpawn,
+        _fxWaveComplete,
+        _fxGameOver,
+        _fxExtraLife,
       ]);
       _initialized = true;
     } catch (_) {
@@ -84,17 +203,22 @@ class AudioSystem {
     try {
       _shootPool?.start(volume: _sfxVolume * 0.4);
     } catch (_) {}
-    if (_vibrationEnabled) HapticFeedback.selectionClick();
+    if (_canHaptic()) HapticFeedback.selectionClick();
   }
 
-  /// Nemico ucciso — pool (altissima frequenza)
+  /// Nemico ucciso — usa pool mp3 custom (4 AudioPlayer riutilizzati in
+  /// round-robin) per evitare alloc di un nuovo player ad ogni kill, che
+  /// causava lag progressivo con 100+ kill/min.
+  /// Cooldown 50ms gates spam, haptic ha throttle dedicato (~8 Hz).
   static void playEnemyDeath() {
-    if (!_initialized || _sfxVolume <= 0) return;
-    if (!_canPlay('enemy_death')) return;
-    try {
-      _enemyDeathPool?.start(volume: _sfxVolume * 0.6);
-    } catch (_) {}
-    if (_vibrationEnabled) HapticFeedback.lightImpact();
+    if (!_initialized || _sfxVolume <= 0) {
+      if (_canHaptic()) HapticFeedback.lightImpact();
+      return;
+    }
+    if (_canPlay('enemy_death')) {
+      _enemyDeathMp3Pool?.play(volume: _sfxVolume * 0.6);
+    }
+    if (_canHaptic()) HapticFeedback.lightImpact();
   }
 
   /// Geom raccolto — pool (alta frequenza)
@@ -106,33 +230,33 @@ class AudioSystem {
     } catch (_) {}
   }
 
-  /// Esplosione bomba (raro)
+  /// Esplosione bomba (raro) — haptic forte bypassa throttle (evento raro e forte)
   static void playBombExplosion() {
-    _playRare('bomb.wav');
+    _playRare(_fxBomb);
     if (_vibrationEnabled) HapticFeedback.heavyImpact();
   }
 
-  /// Player colpito (raro)
+  /// Player colpito (raro) — haptic forte bypassa throttle
   static void playPlayerHit() {
-    _playRare('player_hit.wav');
+    _playRare(_fxPlayerHit);
     if (_vibrationEnabled) HapticFeedback.mediumImpact();
   }
 
   /// Power-up raccolto (raro)
   static void playPowerUp() {
-    _playRare('powerup.wav');
-    if (_vibrationEnabled) HapticFeedback.selectionClick();
+    _playRare(_fxPowerUp);
+    if (_canHaptic()) HapticFeedback.selectionClick();
   }
 
   /// Boss spawna (raro)
   static void playBossSpawn() {
-    _playRare('boss_spawn.wav');
+    _playRare(_fxBossSpawn);
     if (_vibrationEnabled) HapticFeedback.heavyImpact();
   }
 
   /// Wave completata (raro)
   static void playWaveComplete() {
-    _playRare('wave_complete.wav');
+    _playRare(_fxWaveComplete);
     if (_vibrationEnabled) HapticFeedback.mediumImpact();
   }
 
@@ -143,35 +267,93 @@ class AudioSystem {
     if (now - (_lastPlayTime['perfect_wave'] ?? 0) < _minIntervalMs) return;
     _lastPlayTime['perfect_wave'] = now;
     try {
-      FlameAudio.play('wave_complete.wav', volume: _sfxVolume);
+      FlameAudio.play(_fxWaveComplete, volume: _sfxVolume);
     } catch (_) {}
     if (_vibrationEnabled) HapticFeedback.heavyImpact();
   }
 
-  /// Game over (raro)
+  /// Game over (raro) — esplosione drammatica gameover_explosion.mp3 (pool dedicato)
+  /// + tono game_over.wav legacy in coda. Haptic forte (evento finale).
   static void playGameOver() {
-    _playRare('game_over.wav');
+    if (_initialized && _sfxVolume > 0 && _canPlay(_fxGameOverExplosion)) {
+      // Boost 10% sul volume base ma clamp a 1.0 (audioplayers lo fa
+      // internamente, ma esplicitare evita confusione in debug).
+      _gameOverExplosionMp3Pool?.play(
+          volume: (_sfxVolume * 1.1).clamp(0.0, 1.0));
+    }
+    _playRare(_fxGameOver, volumeScale: 0.6);
+    if (_vibrationEnabled) HapticFeedback.heavyImpact();
+  }
+
+  /// Player death — esplosione dedicata (pool mp3 dedicato). Chiamato ad
+  /// ogni vita persa. Pool evita contention col bgm.play concorrente
+  /// (music swap su skipToNext) che prima causava "audio buggato".
+  static void playPlayerDeath() {
+    if (_initialized && _sfxVolume > 0 && _canPlay(_fxPlayerDeath)) {
+      _playerDeathMp3Pool?.play(volume: _sfxVolume);
+    }
+    if (_vibrationEnabled) HapticFeedback.heavyImpact();
+  }
+
+  /// Boss killed — fanfara di vittoria quando un boss cade.
+  /// Usa pool mp3 dedicato se pronto; altrimenti fallback a `FlameAudio.play`
+  /// diretto → garantisce che l'audio si senta anche durante transizioni di
+  /// stato audio (app resume, stopAll→init in volo) dove `_initialized`
+  /// potrebbe essere false temporaneamente.
+  static void playBossKilled() {
+    if (_sfxVolume > 0 && _canPlay(_fxBossKilled)) {
+      if (_initialized && _bossKilledMp3Pool != null) {
+        _bossKilledMp3Pool!.play(volume: _sfxVolume);
+      } else {
+        // Fallback: boss kill è evento critico, non possiamo perderlo.
+        try {
+          FlameAudio.play(_fxBossKilled, volume: _sfxVolume);
+        } catch (_) {}
+      }
+    }
     if (_vibrationEnabled) HapticFeedback.heavyImpact();
   }
 
   /// Extra life (raro)
   static void playExtraLife() {
-    _playRare('extra_life.wav');
+    _playRare(_fxExtraLife);
     if (_vibrationEnabled) HapticFeedback.mediumImpact();
   }
 
-  /// Ferma tutti i suoni e rilascia risorse
+  /// Ferma tutti i suoni e rilascia risorse.
+  /// Flippa `_initialized=false` sincrono così le call successive ritornano
+  /// subito; la disposizione effettiva dei pool avviene async in background.
+  /// Una `init()` chiamata immediatamente dopo attende la disposizione dei
+  /// vecchi player via `_disposeInFlight` per evitare contention native.
   static void stopAll() {
-    try {
-      _shootPool?.dispose();
-      _enemyDeathPool?.dispose();
-      _geomPool?.dispose();
-      _shootPool = null;
-      _enemyDeathPool = null;
-      _geomPool = null;
-      FlameAudio.audioCache.clearAll();
-      _lastPlayTime.clear();
-      _initialized = false;
-    } catch (_) {}
+    _initialized = false;
+    _lastPlayTime.clear();
+    final toDispose = <Future<void>>[];
+    // Flame pool (AudioPool) non hanno Future da dispose. I nostri _Mp3Pool sì.
+    try { _shootPool?.dispose(); } catch (_) {}
+    try { _geomPool?.dispose(); } catch (_) {}
+    _shootPool = null;
+    _geomPool = null;
+    final pools = [
+      _enemyDeathMp3Pool,
+      _playerDeathMp3Pool,
+      _bossKilledMp3Pool,
+      _gameOverExplosionMp3Pool,
+    ];
+    for (final pool in pools) {
+      if (pool != null) {
+        toDispose.add(pool.dispose().catchError((_) {}));
+      }
+    }
+    _enemyDeathMp3Pool = null;
+    _playerDeathMp3Pool = null;
+    _bossKilledMp3Pool = null;
+    _gameOverExplosionMp3Pool = null;
+    try { FlameAudio.audioCache.clearAll(); } catch (_) {}
+    _disposeInFlight = Future.wait(toDispose);
   }
+
+  /// Attesa sulla dispose dei player precedenti. `init()` await questo
+  /// prima di creare nuovi pool → niente race sul handle MediaPlayer nativo.
+  static Future<void>? _disposeInFlight;
 }

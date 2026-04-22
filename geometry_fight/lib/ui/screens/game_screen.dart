@@ -9,6 +9,7 @@ import '../../data/leaderboard.dart';
 import '../../data/save_data.dart';
 import '../../game/game_world.dart';
 import '../../game/systems/audio_system.dart';
+import '../../game/systems/music_manager.dart';
 import '../hud.dart';
 import '../widgets/animated_builder_widget.dart';
 import '../widgets/virtual_joystick.dart';
@@ -61,8 +62,13 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
   /// Crea una nuova istanza del gioco con tutti i callback configurati.
   /// Usato sia in initState che su Retry per avere uno stato completamente pulito.
   void _initGame() {
-    // Assicura che l'audio sia inizializzato (potrebbe essere stato fermato)
-    AudioSystem.init();
+    // Assicura che l'audio sia inizializzato (potrebbe essere stato fermato).
+    // `unawaited` evita Future scartata + lint warning; l'init completa in
+    // background mentre Flame compila il primo frame (accettabile: SFX
+    // partono silenziosi per ~100-200ms, poi online).
+    unawaited(AudioSystem.init());
+    // Switch dalla musica intro/menu alla musica gameplay (random shuffle bag)
+    unawaited(MusicManager.playBgm());
     _game = GeometryFightGame(
       difficulty: widget.difficulty,
       gameMode: widget.gameMode,
@@ -181,9 +187,16 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
         _game.pauseEngine();
         AudioSystem.stopAll();
       }
+      // Pausa la musica BGM quando l'app va in background (preserva posizione)
+      unawaited(MusicManager.pause());
     } else if (state == AppLifecycleState.resumed) {
-      // Non auto-resume: l'utente deve riprendere manualmente dalla pausa UI
-      // ma almeno riavvia l'audio
+      // Non auto-resume del gioco: l'utente deve riprendere manualmente
+      // dalla pausa UI. Ma:
+      //   - ricarica i pool SFX (`stopAll()` li ha disposed su paused) così
+      //     i suoni di gioco tornano attivi al riprendere del gameplay;
+      //   - riprendi la musica (era in pausa).
+      unawaited(AudioSystem.init());
+      unawaited(MusicManager.resume());
     }
   }
 
@@ -191,11 +204,15 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     // Ferma il motore Flame e l'audio quando si esce dalla schermata
-    // per evitare che suoni/vibrazioni continuino in background
+    // per evitare che suoni/vibrazioni continuino in background.
     _game.pauseEngine();
     _game.onGameOver = null;
     _game.onPause = null;
     AudioSystem.stopAll();
+    // Ferma BGM: al rientro del main menu, `playIntro()` scatterà lì (era
+    // già idempotente). Senza stop esplicito, la musica gameplay continuava
+    // a suonare sopra l'intro del menu.
+    unawaited(MusicManager.stop());
     super.dispose();
   }
 
@@ -221,15 +238,17 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
           GameHud(game: _game),
 
           // === PULSANTE BOMBA (lato destro, sopra il joystick aim) ===
+          // bottom alzato di ~50px così il pollice destro arriva senza ostacolo
+          // dal joystick aim (richiesta utente — bomba prima inarrivabile).
           Positioned(
-            bottom: 90,
+            bottom: 140,
             right: 20,
             child: _BombButton(onPressed: () => _game.bombPressed = true),
           ),
 
           // === PULSANTE PAUSA (lato destro, sopra il tasto bomba) ===
           Positioned(
-            bottom: 165,
+            bottom: 215,
             right: 24,
             child: _PauseButton(onPressed: () {
               if (!_showPause && !_showGameOver) {

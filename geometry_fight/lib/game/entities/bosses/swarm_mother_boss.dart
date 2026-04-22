@@ -128,37 +128,93 @@ class SwarmMotherBoss extends BossBase {
     }
   }
 
+  // Signature FX paints
+  static final _eggClusterPaint = Paint();
+  static final _veinPaint = Paint()..style = PaintingStyle.stroke;
+  static final _spawnBurstPaint = Paint()..style = PaintingStyle.stroke;
+  static final _berserkPaint = Paint();
+  static final _laserGlowPaint = Paint();
+  static final _laserCorePaint = Paint();
+
   @override
   void renderBoss(Canvas canvas, Paint paint, double scale) {
     final cx = size.x / 2;
     final cy = size.y / 2;
 
+    // ─── SPAWN BURST: ring pulsante pre-spawn nemici ───
+    if (scale <= 1.01 && _spawnTimer < 0.4) {
+      final burstT = 1.0 - _spawnTimer.clamp(0.0, 0.4) / 0.4;
+      _spawnBurstPaint.color =
+          NeonColors.orange.withValues(alpha: burstT * 0.6);
+      _spawnBurstPaint.strokeWidth = 2 + burstT * 4;
+      canvas.drawCircle(Offset(cx, cy), 110 * scale * (0.6 + burstT * 0.5),
+          _spawnBurstPaint);
+    }
+
+    // ─── ORBITANTE EGG CLUSTER: 8 uova che ruotano attorno ───
+    if (scale <= 1.01) {
+      for (int i = 0; i < 8; i++) {
+        final eggAngle = _phase * 0.8 + i * math.pi / 4;
+        final eggR = 95 * scale + math.sin(_phase * 2 + i) * 8;
+        final ex = cx + math.cos(eggAngle) * eggR;
+        final ey = cy + math.sin(eggAngle) * eggR;
+        final eggPulse = 0.6 + math.sin(_phase * 3 + i * 0.7) * 0.4;
+        _eggClusterPaint.color =
+            NeonColors.orange.withValues(alpha: 0.8 * eggPulse);
+        canvas.drawCircle(Offset(ex, ey), 4.5, _eggClusterPaint);
+        _eggClusterPaint.color =
+            const Color(0xFFFFFFFF).withValues(alpha: 0.6 * eggPulse);
+        canvas.drawCircle(Offset(ex, ey), 2, _eggClusterPaint);
+      }
+    }
+
     if (_split && _halfOffset != null) {
-      // Draw two halves
-      _drawHalf(canvas, paint, scale, Offset(cx + _halfOffset!.x / 2, cy + _halfOffset!.y / 2));
-      _drawHalf(canvas, paint, scale, Offset(cx - _halfOffset!.x / 2, cy - _halfOffset!.y / 2));
+      _drawHalf(canvas, paint, scale,
+          Offset(cx + _halfOffset!.x / 2, cy + _halfOffset!.y / 2));
+      _drawHalf(canvas, paint, scale,
+          Offset(cx - _halfOffset!.x / 2, cy - _halfOffset!.y / 2));
     } else {
       _drawHexagon(canvas, paint, scale, Offset(cx, cy));
     }
 
-    // Berserk glow
-    if (currentPhase == 3) {
-      final berserkPaint = Paint()
-        ..color = NeonColors.red.withValues(alpha: 0.3 + math.sin(_phase * 10) * 0.2)
-        ;
-      canvas.drawCircle(Offset(cx, cy), 120 * scale, berserkPaint);
+    // ─── VENE ORGANICHE sul corpo (pulsanti dal centro) ───
+    if (scale <= 1.01 && !_split) {
+      _veinPaint.color = const Color(0xFFFF8800)
+          .withValues(alpha: 0.5 + math.sin(_phase * 4) * 0.25);
+      _veinPaint.strokeWidth = 1.5;
+      for (int i = 0; i < 6; i++) {
+        final vAngle = i * math.pi / 3 + _phase * 0.15;
+        final inner = 30 * scale;
+        final outer = 68 * scale + math.sin(_phase * 2 + i) * 8;
+        canvas.drawLine(
+          Offset(cx + math.cos(vAngle) * inner,
+              cy + math.sin(vAngle) * inner),
+          Offset(cx + math.cos(vAngle) * outer,
+              cy + math.sin(vAngle) * outer),
+          _veinPaint,
+        );
+      }
     }
 
-    // Laser
-    if (_laserActive) {
-      final laserPaint = Paint()
-        ..color = NeonColors.laserRed.withValues(alpha: 0.7)
-        ;
+    // ─── BERSERK GLOW fase 3 ───
+    if (currentPhase == 3) {
+      _berserkPaint.color = NeonColors.red
+          .withValues(alpha: 0.3 + math.sin(_phase * 10) * 0.2);
+      canvas.drawCircle(Offset(cx, cy), 120 * scale, _berserkPaint);
+    }
 
+    // ─── LASER doppio layer: glow largo + core bianco ───
+    if (_laserActive) {
       canvas.save();
       canvas.translate(cx, cy);
       canvas.rotate(_laserAngle);
-      canvas.drawRect(Rect.fromLTWH(0, -3, 1500, 6), laserPaint);
+      _laserGlowPaint.color = NeonColors.laserRed.withValues(alpha: 0.35);
+      canvas.drawRect(Rect.fromLTWH(0, -10, 1500, 20), _laserGlowPaint);
+      _laserCorePaint.color = NeonColors.laserRed;
+      canvas.drawRect(Rect.fromLTWH(0, -2, 1500, 4), _laserCorePaint);
+      _laserCorePaint.color =
+          const Color(0xFFFFFFFF).withValues(alpha: 0.7);
+      canvas.drawRect(Rect.fromLTWH(0, -1, 1500, 2), _laserCorePaint);
       canvas.restore();
     }
   }

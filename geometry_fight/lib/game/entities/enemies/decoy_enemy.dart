@@ -34,26 +34,18 @@ class DecoyEnemy extends EnemyBase {
   }
 
   @override
-  void takeDamage(double amount) {
+  void takeDamage(double amount, {bool isArea = false}) {
     if (!_discovered) {
       // Primo colpo: lo scopre, cambia colore
       _discovered = true;
       neonColor = const Color(0xFFFF2200); // Diventa rosso
     }
-    super.takeDamage(amount);
+    super.takeDamage(amount, isArea: isArea);
   }
 
   @override
   void onDeath() {
-    // Se scoperto e distrutto dal player: bonus geomi
-    if (_discovered) {
-      for (int i = 0; i < 5; i++) {
-        game.spawnGeom(position + Vector2(
-          (math.Random().nextDouble() - 0.5) * 20,
-          (math.Random().nextDouble() - 0.5) * 20,
-        ), 2);
-      }
-    }
+    // Drop standard (1 geom) gestito da onEnemyKilled.
     super.onDeath();
   }
 

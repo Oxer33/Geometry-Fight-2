@@ -144,20 +144,49 @@ class EternityEngineBoss extends BossBase {
     return HSVColor.fromAHSV(1.0, hue, 0.8, 1.0).toColor();
   }
 
+  // Signature FX paints
+  static final _ringPaint = Paint()..style = PaintingStyle.stroke;
+  static final _gearToothPaint = Paint();
+  static final _nodePaint = Paint();
+  static final _innerBeamPaint = Paint()..style = PaintingStyle.stroke;
+  static final _crossBeamPaint = Paint()..style = PaintingStyle.stroke;
+  static final _coreGlowPaint = Paint();
+  static final _coreFillPaint = Paint();
+  static final _whiteCorePaint = Paint();
+  static final _orbitPaint = Paint();
+  static final _arcPaint = Paint()..style = PaintingStyle.stroke;
+
   @override
   void renderBoss(Canvas canvas, Paint paint, double scale) {
     final cx = size.x / 2;
     final cy = size.y / 2;
     final r = size.x / 2 * scale;
 
-    // === ANELLO 1 (esterno, sempre visibile) ===
+    // ─── CROSS ENERGY BEAMS (4 raggi cardinali pulsanti) ───
+    if (scale <= 1.01) {
+      _crossBeamPaint.strokeWidth = 1.2;
+      for (int i = 0; i < 4; i++) {
+        final beamAngle = _phase * 0.4 + i * math.pi / 2;
+        final beamPulse = 0.5 + math.sin(_phase * 3 + i) * 0.4;
+        _crossBeamPaint.color =
+            _getPhaseColor(i).withValues(alpha: beamPulse * 0.6);
+        canvas.drawLine(
+          Offset(cx, cy),
+          Offset(cx + math.cos(beamAngle) * r * 1.15,
+              cy + math.sin(beamAngle) * r * 1.15),
+          _crossBeamPaint,
+        );
+      }
+    }
+
+    // === ANELLO 1 ESTERNO ===
     canvas.save();
     canvas.translate(cx, cy);
     canvas.rotate(_ringRotation1);
     _drawRing(canvas, r * 0.9, _getPhaseColor(0), scale, 8);
     canvas.restore();
 
-    // === ANELLO 2 (medio, da fase 1+) ===
+    // === ANELLO 2 MEDIO ===
     if (currentPhase >= 1) {
       canvas.save();
       canvas.translate(cx, cy);
@@ -166,7 +195,7 @@ class EternityEngineBoss extends BossBase {
       canvas.restore();
     }
 
-    // === ANELLO 3 (interno, da fase 2+) ===
+    // === ANELLO 3 INTERNO ===
     if (currentPhase >= 2) {
       canvas.save();
       canvas.translate(cx, cy);
@@ -175,71 +204,100 @@ class EternityEngineBoss extends BossBase {
       canvas.restore();
     }
 
-    // === NUCLEO QUANTISTICO ===
+    // === NUCLEO QUANTISTICO multi-strato ===
     final coreColor = _getPhaseColor(3);
-    // Glow esterno
-    canvas.drawCircle(
-      Offset(cx, cy), r * 0.25,
-      Paint()..color = coreColor.withValues(alpha: 0.15),
-    );
-    // Nucleo solido
-    canvas.drawCircle(Offset(cx, cy), r * 0.18, Paint()..color = coreColor);
-    // Centro bianco
+    _coreGlowPaint.color = coreColor.withValues(alpha: 0.22);
+    canvas.drawCircle(Offset(cx, cy), r * 0.3, _coreGlowPaint);
+    _coreFillPaint.color = coreColor;
+    canvas.drawCircle(Offset(cx, cy), r * 0.18, _coreFillPaint);
+
     if (scale <= 1.01) {
       final pulse = 0.6 + math.sin(_phase * 2) * 0.3;
-      canvas.drawCircle(
-        Offset(cx, cy), r * 0.08,
-        Paint()..color = Color.fromRGBO(255, 255, 255, pulse),
-      );
+      _whiteCorePaint.color = Color.fromRGBO(255, 255, 255, pulse);
+      canvas.drawCircle(Offset(cx, cy), r * 0.08 * (0.9 + pulse * 0.2),
+          _whiteCorePaint);
 
-      // Particelle orbitanti nel nucleo
+      // Quantum orbit: 4 particelle con core bianco
       for (int i = 0; i < 4; i++) {
         final pAngle = _phase * 3 + i * math.pi / 2;
         final pR = r * 0.12;
+        _orbitPaint.color = coreColor.withValues(alpha: 0.9);
         canvas.drawCircle(
-          Offset(cx + pR * math.cos(pAngle), cy + pR * math.sin(pAngle)), 1.5,
-          Paint()..color = const Color(0xFFFFFFFF).withValues(alpha: 0.6),
-        );
+            Offset(cx + pR * math.cos(pAngle), cy + pR * math.sin(pAngle)),
+            2, _orbitPaint);
+        _orbitPaint.color =
+            const Color(0xFFFFFFFF).withValues(alpha: 0.8);
+        canvas.drawCircle(
+            Offset(cx + pR * math.cos(pAngle), cy + pR * math.sin(pAngle)),
+            0.8, _orbitPaint);
       }
 
-      // Indicatore fase (archi luminosi)
+      // Indicatore fase
+      _arcPaint.strokeWidth = 3;
       for (int i = 0; i <= currentPhase; i++) {
         final arcAngle = i * math.pi / 2;
+        _arcPaint.color = _getPhaseColor(i).withValues(alpha: 0.55);
         canvas.drawArc(
           Rect.fromCircle(center: Offset(cx, cy), radius: r * 0.95),
-          arcAngle, 0.3, false,
-          Paint()
-            ..color = _getPhaseColor(i).withValues(alpha: 0.5)
-            ..style = PaintingStyle.stroke
-            ..strokeWidth = 3,
+          arcAngle, 0.3, false, _arcPaint,
         );
       }
     }
   }
 
-  void _drawRing(Canvas canvas, double radius, Color color, double scale, int segments) {
-    final ringPaint = Paint()
-      ..color = color.withValues(alpha: 0.5)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 3 * scale;
+  void _drawRing(Canvas canvas, double radius, Color color, double scale,
+      int segments) {
+    _ringPaint.color = color.withValues(alpha: 0.55);
+    _ringPaint.strokeWidth = 3 * scale;
 
-    // Archi segmentati con gap
+    // Archi segmentati
     for (int i = 0; i < segments; i++) {
       final startAngle = i * math.pi * 2 / segments;
       final sweepAngle = math.pi * 2 / segments * 0.7;
       canvas.drawArc(
         Rect.fromCircle(center: Offset.zero, radius: radius),
-        startAngle, sweepAngle, false, ringPaint,
+        startAngle, sweepAngle, false, _ringPaint,
       );
     }
 
-    // Punti luminosi sugli archi
     if (scale <= 1.01) {
+      // ─── GEAR TEETH sugli anelli (micro-triangoli radiali) ───
+      _gearToothPaint.color = color.withValues(alpha: 0.75);
+      for (int i = 0; i < segments; i++) {
+        final angle = i * math.pi * 2 / segments;
+        final tx = radius * math.cos(angle);
+        final ty = radius * math.sin(angle);
+        canvas.save();
+        canvas.translate(tx, ty);
+        canvas.rotate(angle);
+        final toothPath = Path()
+          ..moveTo(5, -2.5)
+          ..lineTo(5, 2.5)
+          ..lineTo(10, 0)
+          ..close();
+        canvas.drawPath(toothPath, _gearToothPaint);
+        canvas.restore();
+      }
+      // Nodi luminosi bianchi sui vertici
+      _nodePaint.color = const Color(0xFFFFFFFF).withValues(alpha: 0.85);
       for (int i = 0; i < segments; i++) {
         final angle = i * math.pi * 2 / segments;
         canvas.drawCircle(
-          Offset(radius * math.cos(angle), radius * math.sin(angle)), 2,
-          Paint()..color = color.withValues(alpha: 0.7),
+          Offset(radius * math.cos(angle), radius * math.sin(angle)),
+          2.2, _nodePaint,
+        );
+      }
+
+      // Beam sottili tra segmenti consecutivi
+      _innerBeamPaint.color = color.withValues(alpha: 0.25);
+      _innerBeamPaint.strokeWidth = 0.8;
+      for (int i = 0; i < segments; i++) {
+        final a1 = i * math.pi * 2 / segments;
+        final a2 = (i + 1) * math.pi * 2 / segments;
+        canvas.drawLine(
+          Offset(radius * math.cos(a1), radius * math.sin(a1)),
+          Offset(radius * 0.85 * math.cos(a2), radius * 0.85 * math.sin(a2)),
+          _innerBeamPaint,
         );
       }
     }

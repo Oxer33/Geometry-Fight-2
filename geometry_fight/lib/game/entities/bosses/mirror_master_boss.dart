@@ -64,13 +64,52 @@ class MirrorMasterBoss extends BossBase {
     }
   }
 
+  // Signature FX paints
+  static final _shardPaint = Paint();
+  static final _shardStrokePaint = Paint()..style = PaintingStyle.stroke;
+  static final _facePaint = Paint()
+    ..strokeWidth = 2
+    ..style = PaintingStyle.stroke;
+  static final _innerOctPaint = Paint()..style = PaintingStyle.stroke;
+  static final _coreHaloPaint = Paint();
+  static final _coreWhitePaint = Paint();
+  static final _prismaticPaint = Paint()..style = PaintingStyle.stroke;
+
   @override
   void renderBoss(Canvas canvas, Paint paint, double scale) {
     final cx = size.x / 2;
     final cy = size.y / 2;
     final r = size.x / 2 * scale;
 
-    // Ottagono con facce riflettenti
+    // ─── PRISMATIC SHARDS ORBITANTI (6 frammenti) ───
+    if (scale <= 1.01) {
+      for (int i = 0; i < 6; i++) {
+        final sAngle = _mirrorAngle * 0.6 + i * math.pi / 3;
+        final sDist = r * 1.35;
+        final sx = cx + math.cos(sAngle) * sDist;
+        final sy = cy + math.sin(sAngle) * sDist;
+        final shardPulse = 0.6 + math.sin(_mirrorAngle * 3 + i * 1.1) * 0.4;
+        canvas.save();
+        canvas.translate(sx, sy);
+        canvas.rotate(_mirrorAngle * 2 + i);
+        final shardPath = Path()
+          ..moveTo(0, -4)
+          ..lineTo(3, 0)
+          ..lineTo(0, 4)
+          ..lineTo(-3, 0)
+          ..close();
+        _shardPaint.color = const Color(0xFFCCDDFF)
+            .withValues(alpha: 0.5 * shardPulse);
+        canvas.drawPath(shardPath, _shardPaint);
+        _shardStrokePaint.color =
+            const Color(0xFFFFFFFF).withValues(alpha: shardPulse);
+        _shardStrokePaint.strokeWidth = 1;
+        canvas.drawPath(shardPath, _shardStrokePaint);
+        canvas.restore();
+      }
+    }
+
+    // Ottagono principale
     canvas.save();
     canvas.translate(cx, cy);
     canvas.rotate(_mirrorAngle * 0.2);
@@ -90,28 +129,66 @@ class MirrorMasterBoss extends BossBase {
     canvas.drawPath(path, paint);
 
     if (scale <= 1.01) {
-      // Facce riflettenti (linee luminose sulle facce)
+      // Shimmer sulle 8 facce
       for (int i = 0; i < 8; i++) {
         final a1 = i * math.pi / 4;
         final a2 = (i + 1) * math.pi / 4;
         final shimmer = 0.3 + math.sin(_mirrorAngle * 3 + i * 0.8) * 0.3;
-        final facePaint = Paint()
-          ..color = const Color(0xFFFFFFFF).withValues(alpha: shimmer)
-          ..strokeWidth = 2
-          ..style = PaintingStyle.stroke;
+        _facePaint.color =
+            const Color(0xFFFFFFFF).withValues(alpha: shimmer);
         canvas.drawLine(
           Offset(r * 0.85 * math.cos(a1), r * 0.85 * math.sin(a1)),
           Offset(r * 0.85 * math.cos(a2), r * 0.85 * math.sin(a2)),
-          facePaint,
+          _facePaint,
         );
       }
 
-      // Nucleo
-      final pulse = 0.4 + math.sin(_mirrorAngle * 2) * 0.3;
+      // ─── 3 RAGGI CROMATICI dal centro ───
+      for (int p = 0; p < 3; p++) {
+        final pAngle = _mirrorAngle * 2 + p * math.pi * 2 / 3;
+        _prismaticPaint.color = [
+          const Color(0xFFFF4488),
+          const Color(0xFF44FFDD),
+          const Color(0xFFFFDD44),
+        ][p].withValues(alpha: 0.5);
+        _prismaticPaint.strokeWidth = 1.2;
+        canvas.drawLine(
+          Offset.zero,
+          Offset(math.cos(pAngle) * r * 0.75,
+              math.sin(pAngle) * r * 0.75),
+          _prismaticPaint,
+        );
+      }
+
+      // Ottagono interno contro-rotante
+      canvas.rotate(-_mirrorAngle * 0.5);
+      _innerOctPaint.color =
+          const Color(0xFFFFFFFF).withValues(alpha: 0.4);
+      _innerOctPaint.strokeWidth = 1;
+      final innerPath = Path();
+      for (int i = 0; i < 8; i++) {
+        final a = i * math.pi / 4 + math.pi / 8;
+        final x = r * 0.45 * math.cos(a);
+        final y = r * 0.45 * math.sin(a);
+        if (i == 0) {
+          innerPath.moveTo(x, y);
+        } else {
+          innerPath.lineTo(x, y);
+        }
+      }
+      innerPath.close();
+      canvas.drawPath(innerPath, _innerOctPaint);
+      canvas.rotate(_mirrorAngle * 0.5);
+
+      // Core halo + bianco pulsante
+      final pulse = 0.5 + math.sin(_mirrorAngle * 2) * 0.4;
+      _coreHaloPaint.color =
+          const Color(0xFFCCDDFF).withValues(alpha: pulse * 0.5);
+      canvas.drawCircle(Offset.zero, r * 0.32, _coreHaloPaint);
+      _coreWhitePaint.color =
+          const Color(0xFFFFFFFF).withValues(alpha: pulse);
       canvas.drawCircle(
-        Offset.zero, r * 0.25,
-        Paint()..color = const Color(0xFFFFFFFF).withValues(alpha: pulse),
-      );
+          Offset.zero, r * 0.18 * (0.85 + pulse * 0.2), _coreWhitePaint);
     }
     canvas.restore();
   }

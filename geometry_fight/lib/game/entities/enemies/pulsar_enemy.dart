@@ -5,6 +5,9 @@ import '../../../data/constants.dart';
 import 'enemy_base.dart';
 import '../projectiles.dart';
 
+// Random statico condiviso: evita alloc a ogni pulse (~2.5s per pulsar).
+final math.Random _pulsarRng = math.Random();
+
 /// NEW ENEMY: Pulsar - emits periodic energy rings that damage the player
 class PulsarEnemy extends EnemyBase {
   double _pulseTimer = 2.5;
@@ -44,9 +47,13 @@ class PulsarEnemy extends EnemyBase {
       _pulsing = true;
       _pulseRadius = 0;
 
-      // Spawn ring bullets
-      for (int i = 0; i < 12; i++) {
-        final angle = i * math.pi * 2 / 12;
+      // 4 bullets in + (0/90/180/270°) or X (45° offsets) — random ogni pulse.
+      // Meno intenso dell'originale ring a 12: schivabile, ma comunque
+      // costringe il player a non restare fermo.
+      final useX = _pulsarRng.nextBool();
+      final baseOffset = useX ? math.pi / 4 : 0.0;
+      for (int i = 0; i < 4; i++) {
+        final angle = baseOffset + i * math.pi / 2;
         final dir = Vector2(math.cos(angle), math.sin(angle));
         final bullet = EnemyBullet(
           direction: dir,

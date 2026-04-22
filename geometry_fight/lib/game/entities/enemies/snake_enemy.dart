@@ -6,6 +6,17 @@ import '../../../data/constants.dart';
 import '../projectiles.dart';
 import 'enemy_base.dart';
 
+// Random statico condiviso (evita alloc in onLoad per ogni snake).
+final math.Random _snakeRng = math.Random();
+
+// Paint cache riutilizzati — risparmiano migliaia di alloc/sec con molti snake
+// a schermo (8 segmenti × ~5 paint × 60fps × N).
+final Paint _snakeLinePaint = Paint();
+final Paint _snakeSegPaint = Paint();
+final Paint _snakeCorePaint = Paint();
+final Paint _snakeEyePaint = Paint()
+  ..color = const Color(0xFFFFFFFF).withValues(alpha: 0.8);
+
 class SnakeEnemy extends EnemyBase {
   final int segmentCount;
   final List<Vector2> _segments = [];
@@ -34,8 +45,13 @@ class SnakeEnemy extends EnemyBase {
   Future<void> onLoad() async {
     await super.onLoad();
     _segments.clear();
+    // Orientamento iniziale random: prima spawnavano sempre con testa in giu
+    // (segments ordinati verso l'alto) → ora i segments si srotolano in una
+    // direzione casuale, così il serpente entra in scena con pose variate.
+    final initAngle = _snakeRng.nextDouble() * math.pi * 2;
+    final tailDir = Vector2(math.cos(initAngle), math.sin(initAngle));
     for (int i = 0; i < segmentCount; i++) {
-      _segments.add(position - Vector2(0, i * 14.0));
+      _segments.add(position + tailDir * (i * 14.0));
       _segmentVelocities.add(Vector2.zero());
     }
     // Body segments (index 1..N-1): bloccano i proiettili ma non fanno danno al snake.
@@ -97,16 +113,18 @@ class SnakeEnemy extends EnemyBase {
   }
 
   @override
-  void takeDamage(double amount) {
-    if (isSpawnInvulnerable) return; // FIX H13: rispetta spawn invulnerability
-    hp -= amount;
-    if (hp <= 0) {
-      // Quando la testa muore, tutto il verme esplode
+  void takeDamage(double amount, {bool isArea = false}) {
+    // Se la testa sta per morire, prima spawna esplosioni su TUTTI i segmenti
+    // (caratteristico del serpente: muore a pezzi). Poi delega a super così
+    // il flash + HP-bar vanno normalmente tramite EnemyBase.takeDamage.
+    if (isSpawnInvulnerable) return;
+    if (isArea && isImmuneToAreaDamage) return;
+    if (hp - amount <= 0) {
       for (final seg in _segments) {
         game.spawnExplosion(seg, neonColor, radius: 15, particleCount: 3);
       }
-      onDeath();
     }
+    super.takeDamage(amount, isArea: isArea);
   }
 
   @override
@@ -125,13 +143,12 @@ class SnakeEnemy extends EnemyBase {
         final seg1 = _segments[i] - position;
         final seg2 = _segments[i + 1] - position;
         final lineAlpha = (1.0 - i / _segments.length) * 0.3;
-        final linePaint = Paint()
-          ..color = paint.color.withValues(alpha: lineAlpha)
-          ..strokeWidth = (2.5 - i * 0.2).clamp(0.5, 2.5);
+        _snakeLinePaint.color = paint.color.withValues(alpha: lineAlpha);
+        _snakeLinePaint.strokeWidth = (2.5 - i * 0.2).clamp(0.5, 2.5);
         canvas.drawLine(
           Offset(cx + seg1.x, cy + seg1.y),
           Offset(cx + seg2.x, cy + seg2.y),
-          linePaint,
+          _snakeLinePaint,
         );
       }
     }
@@ -158,23 +175,23 @@ class SnakeEnemy extends EnemyBase {
             ) ??
             paint.color;
       }
-      final segPaint = Paint()..color = segColor.withValues(alpha: segAlpha);
-      canvas.drawCircle(Offset(cx + seg.x, cy + seg.y), radius, segPaint);
+      _snakeSegPaint.color = segColor.withValues(alpha: segAlpha);
+      canvas.drawCircle(Offset(cx + seg.x, cy + seg.y), radius, _snakeSegPaint);
 
       // Nucleo pulsante: bianco sui body, più intenso sulla testa rossa
       if (scale <= 1.01) {
         if (isHead) {
           final pulse = 0.6 + math.sin(idlePhase * 8) * 0.3;
-          final corePaint = Paint()
-            ..color = const Color(0xFFFFFFFF).withValues(alpha: pulse);
+          _snakeCorePaint.color =
+              const Color(0xFFFFFFFF).withValues(alpha: pulse);
           canvas.drawCircle(
-              Offset(cx + seg.x, cy + seg.y), radius * 0.5, corePaint);
+              Offset(cx + seg.x, cy + seg.y), radius * 0.5, _snakeCorePaint);
         } else if (i % 2 == 0) {
           final pulse = 0.3 + math.sin(idlePhase * 4 + i * 0.5) * 0.2;
-          final corePaint = Paint()
-            ..color = const Color(0xFFFFFFFF).withValues(alpha: pulse);
+          _snakeCorePaint.color =
+              const Color(0xFFFFFFFF).withValues(alpha: pulse);
           canvas.drawCircle(
-              Offset(cx + seg.x, cy + seg.y), radius * 0.35, corePaint);
+              Offset(cx + seg.x, cy + seg.y), radius * 0.35, _snakeCorePaint);
         }
       }
     }
@@ -197,10 +214,8 @@ class SnakeEnemy extends EnemyBase {
         cx + head.x - perpDir.x * eyeOffset + moveDir.x * 2,
         cy + head.y - perpDir.y * eyeOffset + moveDir.y * 2,
       );
-      final eyePaint = Paint()
-        ..color = const Color(0xFFFFFFFF).withValues(alpha: 0.8);
-      canvas.drawCircle(eyeL, 1.2, eyePaint);
-      canvas.drawCircle(eyeR, 1.2, eyePaint);
+      canvas.drawCircle(eyeL, 1.2, _snakeEyePaint);
+      canvas.drawCircle(eyeR, 1.2, _snakeEyePaint);
     }
   }
 }

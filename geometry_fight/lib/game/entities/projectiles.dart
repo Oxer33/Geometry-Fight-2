@@ -18,6 +18,7 @@ class PlayerBullet extends PositionComponent
   final int maxBounces;
   final bool pierce;
   final double sizeMultiplier;
+  final WeaponType weaponType;
 
   int _bounces = 0;
   double _lifetime = bulletLifetime;
@@ -30,6 +31,7 @@ class PlayerBullet extends PositionComponent
 
   PlayerBullet({
     required this.direction,
+    required this.weaponType, // explicit: evita default "basic" silente che farebbe schivare Weaver
     this.speed = bulletSpeed,
     this.damage = 1,
     this.color = NeonColors.bulletYellow,
@@ -284,10 +286,18 @@ class LaserBeam extends PositionComponent
     with HasGameReference<GeometryFightGame> {
   final Vector2 direction;
   final double damage;
+  final double sizeMultiplier;
   double _lifetime = 0.1;
+  // Cache della direzione normalizzata (immutabile dopo construction).
+  late final Vector2 _dir;
 
-  LaserBeam({required this.direction, this.damage = 1})
-      : super(size: Vector2(3, 800), anchor: Anchor.topCenter);
+  LaserBeam({required this.direction, this.damage = 1, this.sizeMultiplier = 1.0})
+      : super(size: Vector2(3, laserBeamLength), anchor: Anchor.topCenter);
+
+  @override
+  Future<void> onLoad() async {
+    _dir = direction.normalized();
+  }
 
   @override
   void update(double dt) {
@@ -295,25 +305,34 @@ class LaserBeam extends PositionComponent
     _lifetime -= dt;
     if (_lifetime <= 0) removeFromParent();
 
-    // Damage enemies AND bosses along the beam
-    final dir = direction.normalized();
+    // Il laser è ancorato al player: segue la posizione ogni frame
+    // per evitare l'effetto "scatti" quando il player si muove velocemente.
+    // `setFrom` evita alloc di Vector2 ogni frame (60 alloc/sec × N laser).
+    position.setFrom(game.player.position);
+
+    // Damage enemies AND bosses along the beam. Ampiezza hit scala col visual
+    // (sizeMultiplier attivo con Firepower in-game).
+    // Raycast = danno ad AREA → splitter immuni.
+    final dir = _dir;
+    final enemyHitRadius = 20 * sizeMultiplier;
+    final bossHitRadius = 30 * sizeMultiplier;
     for (final child in game.world.children) {
       if (child is EnemyBase) {
         final toEnemy = child.position - position;
         final dot = toEnemy.dot(dir);
-        if (dot > 0 && dot < 800) {
+        if (dot > 0 && dot < laserBeamLength) {
           final perpDist = (toEnemy - dir * dot).length;
-          if (perpDist < 20) {
-            child.takeDamage(damage * dt * 60);
+          if (perpDist < enemyHitRadius) {
+            child.takeDamage(damage * dt * 60, isArea: true);
           }
         }
       }
       if (child is BossBase) {
         final toBoss = child.position - position;
         final dot = toBoss.dot(dir);
-        if (dot > 0 && dot < 800) {
+        if (dot > 0 && dot < laserBeamLength) {
           final perpDist = (toBoss - dir * dot).length;
-          if (perpDist < 30) {
+          if (perpDist < bossHitRadius) {
             child.takeDamage(damage * dt * 60);
           }
         }
@@ -332,10 +351,14 @@ class LaserBeam extends PositionComponent
     canvas.translate(size.x / 2, 0);
     canvas.rotate(angle);
 
-    // Glow (no blur — troppo costoso con beam attivi)
-    canvas.drawRect(Rect.fromCenter(center: Offset.zero, width: 12, height: 800), _laserGlowPaint);
-    // Core
-    canvas.drawRect(Rect.fromCenter(center: Offset.zero, width: 3, height: 800), _laserCorePaint);
+    // Beam emerge dalla prua della nave in avanti (Rect.fromLTWH con y=0).
+    // Prima era Rect.fromCenter su Offset.zero → si estendeva sia davanti
+    // sia dietro al player (−400..+400). Ora 0..800 = solo avanti.
+    // sizeMultiplier x2 con Firepower in-game (core e glow più spessi).
+    final glowW = 12 * sizeMultiplier;
+    final coreW = 3 * sizeMultiplier;
+    canvas.drawRect(Rect.fromLTWH(-glowW / 2, 0, glowW, laserBeamLength), _laserGlowPaint);
+    canvas.drawRect(Rect.fromLTWH(-coreW / 2, 0, coreW, laserBeamLength), _laserCorePaint);
 
     canvas.restore();
   }
@@ -345,17 +368,24 @@ class PlasmaBullet extends PositionComponent
     with HasGameReference<GeometryFightGame>, CollisionCallbacks {
   final Vector2 direction;
   final double damage;
+  final double sizeMultiplier;
 
   late Vector2 _velocity;
   double _phase = 0;
 
-  PlasmaBullet({required this.direction, this.damage = 3})
-      : super(size: Vector2(20, 20), anchor: Anchor.center);
+  PlasmaBullet({required this.direction, this.damage = 3, this.sizeMultiplier = 1.0})
+      : super(size: Vector2(20 * sizeMultiplier, 20 * sizeMultiplier), anchor: Anchor.center);
 
   @override
   Future<void> onLoad() async {
     _velocity = direction.normalized() * 350;
-    add(CircleHitbox());
+    // Hitbox circolare scalata con sizeMultiplier: con Firepower (x2) il
+    // visual cresce ~2.4x e la hitbox default (size/2) tagliava fuori i
+    // nemici vicini al bordo visuale.
+    add(CircleHitbox(
+      radius: 10 * sizeMultiplier,
+      anchor: Anchor.center,
+    )..position = size / 2);
   }
 
   @override
@@ -380,38 +410,75 @@ class PlasmaBullet extends PositionComponent
     }
   }
 
-  static final _plasmaGlowPaint = Paint();
+  static final _plasmaGlowOuter = Paint();
+  static final _plasmaGlowMid = Paint();
+  static final _plasmaGlowInner = Paint();
   static final _plasmaBodyPaint = Paint();
+  static final _plasmaCorePaint = Paint();
 
   @override
   void render(Canvas canvas) {
-    final radius = 10 + math.sin(_phase) * 2;
+    // Palla plasma FLUO + lampeggiante (richiesta utente).
+    // _phase avanza rapidamente → sin oscilla tra ~0 e 1 per il flicker.
+    final pulse = 0.6 + 0.4 * (0.5 + 0.5 * math.sin(_phase * 2.0));
+    final blink = 0.7 + 0.3 * math.sin(_phase * 6.0); // lampeggio veloce
+    final baseRadius = (10 + math.sin(_phase) * 2) * sizeMultiplier;
     final center = Offset(size.x / 2, size.y / 2);
-    // Glow (no blur per performance)
-    _plasmaGlowPaint.color = NeonColors.plasmaViolet.withValues(alpha: 0.4);
-    canvas.drawCircle(center, radius * 1.5, _plasmaGlowPaint);
-    // Core
+
+    // 3 strati di glow concentrici per effetto neon fluo intenso
+    _plasmaGlowOuter.color =
+        NeonColors.plasmaViolet.withValues(alpha: 0.25 * pulse);
+    canvas.drawCircle(center, baseRadius * 2.4, _plasmaGlowOuter);
+
+    _plasmaGlowMid.color =
+        NeonColors.plasmaViolet.withValues(alpha: 0.5 * pulse);
+    canvas.drawCircle(center, baseRadius * 1.8, _plasmaGlowMid);
+
+    _plasmaGlowInner.color =
+        NeonColors.plasmaViolet.withValues(alpha: 0.8 * pulse);
+    canvas.drawCircle(center, baseRadius * 1.3, _plasmaGlowInner);
+
+    // Core viola pieno (blink veloce sopra)
     _plasmaBodyPaint.color = NeonColors.plasmaViolet;
-    canvas.drawCircle(center, radius, _plasmaBodyPaint);
+    canvas.drawCircle(center, baseRadius, _plasmaBodyPaint);
+
+    // Nucleo bianco acceso che lampeggia (fluo extra)
+    _plasmaCorePaint.color = const Color(0xFFFFFFFF).withValues(alpha: blink);
+    canvas.drawCircle(center, baseRadius * 0.45, _plasmaCorePaint);
   }
 
-  void _explode() {
-    // Damage all enemies AND bosses in radius
+  void _explode(PositionComponent? directHit) {
+    // Firepower in-game raddoppia raggio esplosione (80 → 160).
+    final explosionRadius = 80 * sizeMultiplier;
+
+    // FIX: applica SEMPRE il danno al bersaglio colpito direttamente.
+    // Boss grandi (es. TheGridBoss 200x200) hanno il centro a ~100px dal
+    // punto di collisione, fuori dal raggio 80px → l'esplosione AoE
+    // falliva e il boss non prendeva danno.
+    if (directHit is EnemyBase && !directHit.isSpawnInvulnerable) {
+      directHit.takeDamage(damage);
+    } else if (directHit is BossBase) {
+      directHit.takeDamage(damage);
+    }
+
+    // AoE: danneggia tutti gli altri nel raggio (split damage tra bersagli
+    // vicini). Non ri-colpisce il directHit grazie al check `identical`.
+    // AoE = danno ad AREA → splitter immuni (evita cascata split).
     for (final child in game.world.children) {
+      if (identical(child, directHit)) continue;
       if (child is EnemyBase) {
-        final dist = child.position.distanceTo(position);
-        if (dist < 80) {
-          child.takeDamage(damage);
+        if (child.isSpawnInvulnerable) continue;
+        if (child.position.distanceTo(position) < explosionRadius) {
+          child.takeDamage(damage, isArea: true);
         }
-      }
-      if (child is BossBase) {
-        final dist = child.position.distanceTo(position);
-        if (dist < 80) {
+      } else if (child is BossBase) {
+        if (child.position.distanceTo(position) < explosionRadius) {
           child.takeDamage(damage);
         }
       }
     }
-    game.spawnExplosion(position, NeonColors.plasmaViolet, radius: 80);
+    game.spawnExplosion(position, NeonColors.plasmaViolet,
+        radius: explosionRadius);
   }
 
   @override
@@ -420,7 +487,7 @@ class PlasmaBullet extends PositionComponent
     // Passa attraverso nemici in materializzazione
     if (other is EnemyBase && other.isSpawnInvulnerable) return;
     if (other is EnemyBase || other is BossBase) {
-      _explode();
+      _explode(other);
       removeFromParent();
     }
     super.onCollisionStart(intersectionPoints, other);
@@ -431,14 +498,62 @@ class HomingMissile extends PositionComponent
     with HasGameReference<GeometryFightGame>, CollisionCallbacks {
   final Vector2 direction;
   final double damage;
+  final double sizeMultiplier;
+
+  /// Volee id: permette a una salva di 5 missili di selezionare 5 bersagli
+  /// DISTINTI (richiesta utente). Due missili della stessa salva non
+  /// sceglieranno mai lo stesso nemico finché esistono abbastanza nemici.
+  final int volleyId;
+
+  /// Raggio d'esplosione AoE. Il diametro (2 * raggio) deve essere almeno
+  /// 2x la dimensione del missile (richiesta utente): size missile = 16,
+  /// diametro minimo 32 → raggio minimo 16. Qui 48 → diametro 96 → 6x la
+  /// dimensione missile. Ampio ma consistente con la "gravitas" dei missili.
+  static const double baseExplosionRadius = 48.0;
+
+  /// Tracker globale: chi ha preso di mira cosa, per voleeId. Evita che
+  /// due missili della stessa salva convergano sullo stesso nemico.
+  /// key = volleyId, value = set di bersagli già scelti da quella salva.
+  static final Map<int, Set<PositionComponent>> _volleyTargets = {};
+  static int _nextVolleyId = 0;
+  static int nextVolleyId() => _nextVolleyId++;
+
+  /// Contatore globale dei missili attivi. Usato dal player per cap a 20
+  /// (30 con rapidFire). Incrementato in onLoad, decrementato in onRemove.
+  static int _activeCount = 0;
+  static int get activeCount => _activeCount;
+
+  /// Reset stato statico per nuova partita (chiamato da restartGame).
+  /// Azzera contatore attivi, cache bersagli salva e sequenza volleyId.
+  /// Necessario perché i missili rimossi a fine run possono lasciare il
+  /// counter sporco se qualche onRemove non scatta (es. game reset brusco).
+  static void resetStaticState() {
+    _activeCount = 0;
+    _volleyTargets.clear();
+    _nextVolleyId = 0;
+  }
 
   late Vector2 _velocity;
   double _lifetime = 3.0;
+  double _flamePhase = 0;
   PositionComponent? _cachedTarget;
   int _searchCooldown = 0;
 
-  HomingMissile({required this.direction, this.damage = 1.5})
-      : super(size: Vector2(8, 12), anchor: Anchor.center);
+  double get explosionRadius => baseExplosionRadius * sizeMultiplier;
+
+  HomingMissile({
+    required this.direction,
+    required this.volleyId,
+    this.damage = 1.5,
+    this.sizeMultiplier = 1.0,
+  }) : super(
+            size: Vector2(8 * sizeMultiplier, 16 * sizeMultiplier),
+            anchor: Anchor.center) {
+    // Increment sincrono (NON in onLoad async): `player._shoot` legge
+    // `activeCount` subito dopo la salva prima che `onLoad` completi →
+    // con increment async si spawnavano missili oltre il cap.
+    _activeCount++;
+  }
 
   @override
   Future<void> onLoad() async {
@@ -446,31 +561,59 @@ class HomingMissile extends PositionComponent
     add(RectangleHitbox());
   }
 
+  /// Seleziona il bersaglio più vicino NON già scelto da altri missili
+  /// della stessa salva. Se tutti i nemici esistenti sono già "prenotati",
+  /// cade in fallback sul più vicino assoluto (comunque danno utile).
+  /// Limita la ricerca entro `homingTrackRadius` (150px, vedi constants.dart).
+  PositionComponent? _pickDistinctTarget() {
+    final claimed = _volleyTargets.putIfAbsent(volleyId, () => <PositionComponent>{});
+    // Pulisci bersagli rimossi dalla memoria della salva
+    claimed.removeWhere((c) => c.isRemoved);
+
+    PositionComponent? best;
+    double bestDist = homingTrackRadius;
+    PositionComponent? fallback;
+    double fallbackDist = homingTrackRadius;
+
+    for (final child in game.world.children) {
+      PositionComponent? candidate;
+      double? dist;
+      if (child is EnemyBase) {
+        candidate = child;
+        dist = child.position.distanceTo(position);
+      } else if (child is BossBase) {
+        candidate = child;
+        dist = child.position.distanceTo(position);
+      }
+      if (candidate == null || dist == null) continue;
+      if (dist > homingTrackRadius) continue; // Fuori raggio inseguimento
+
+      if (dist < fallbackDist) {
+        fallbackDist = dist;
+        fallback = candidate;
+      }
+      if (!claimed.contains(candidate) && dist < bestDist) {
+        bestDist = dist;
+        best = candidate;
+      }
+    }
+
+    final chosen = best ?? fallback;
+    if (chosen != null) claimed.add(chosen);
+    return chosen;
+  }
+
   @override
   void update(double dt) {
     super.update(dt);
 
-    // Find nearest enemy or boss (throttled: every 5 frames)
+    // Target search throttled: ogni 5 frame, o se target morto/perso.
     _searchCooldown--;
-    if (_searchCooldown <= 0 || _cachedTarget == null || _cachedTarget!.isRemoved) {
+    if (_searchCooldown <= 0 ||
+        _cachedTarget == null ||
+        _cachedTarget!.isRemoved) {
       _searchCooldown = 5;
-      _cachedTarget = null;
-      double nearestDist = double.infinity;
-      for (final child in game.world.children) {
-        if (child is EnemyBase) {
-          final dist = child.position.distanceTo(position);
-          if (dist < nearestDist) {
-            nearestDist = dist;
-            _cachedTarget = child;
-          }
-        } else if (child is BossBase) {
-          final dist = child.position.distanceTo(position);
-          if (dist < nearestDist) {
-            nearestDist = dist;
-            _cachedTarget = child;
-          }
-        }
-      }
+      _cachedTarget = _pickDistinctTarget();
     }
 
     // Steering
@@ -484,24 +627,125 @@ class HomingMissile extends PositionComponent
     }
 
     position += _velocity * dt;
+    _flamePhase += dt * 30;
     _lifetime -= dt;
-    if (_lifetime <= 0) { removeFromParent(); return; }
+    if (_lifetime <= 0) {
+      _releaseVolleyClaim();
+      removeFromParent();
+      return;
+    }
+  }
+
+  void _releaseVolleyClaim() {
+    // Libera il claim sul bersaglio quando il missile sparisce (timeout
+    // o esplosione) così il tracker non cresca indefinitamente.
+    final set = _volleyTargets[volleyId];
+    if (set != null) {
+      if (_cachedTarget != null) set.remove(_cachedTarget);
+      if (set.isEmpty) _volleyTargets.remove(volleyId);
+    }
+  }
+
+  @override
+  void onRemove() {
+    _releaseVolleyClaim();
+    // Decrementa il contatore attivi (cap homing) e clamp a 0 per sicurezza
+    // in caso di double-remove (Flame può chiamare onRemove più volte in
+    // edge cases con restart della partita).
+    if (_activeCount > 0) _activeCount--;
+    super.onRemove();
   }
 
   static final _homingBodyPaint = Paint();
-  static final _homingTrailPaint = Paint();
+  static final _homingFinPaint = Paint();
+  static final _homingNosePaint = Paint();
+  static final _homingFlameOuter = Paint();
+  static final _homingFlameInner = Paint();
+  static final _homingFlameCore = Paint();
+
+  // Path cache: fin + nose dipendono solo da bodyW/bodyH (costanti per
+  // sizeMultiplier). Cachiamo sul primo render per missile e riutilizziamo.
+  // Con 20-30 missili attivi risparmiamo 40-60 Path alloc/frame.
+  Path? _finPath;
+  Path? _nosePath;
+  double _cachedBodyW = -1;
 
   @override
   void render(Canvas canvas) {
-    final center = Offset(size.x / 2, size.y / 2);
+    // Missile renderizzato come silhouette vera: corpo cilindrico, punta
+    // conica, pinne posteriori, scia-fiamma animata. Prima era un banale
+    // rettangolo ciano.
+    final cx = size.x / 2;
+    final cy = size.y / 2;
+    final angle = math.atan2(_velocity.y, _velocity.x) + math.pi / 2;
+    final bodyW = size.x;
+    final bodyH = size.y;
+
+    canvas.save();
+    canvas.translate(cx, cy);
+    canvas.rotate(angle);
+
+    // Fiamma posteriore (dietro al corpo) — flicker veloce
+    final flicker = 1.0 + math.sin(_flamePhase) * 0.25;
+    final flameLen = bodyH * 0.8 * flicker;
+    _homingFlameOuter.color = const Color(0xFFFF2200).withValues(alpha: 0.5);
+    canvas.drawOval(
+      Rect.fromCenter(center: Offset(0, bodyH * 0.55 + flameLen * 0.3),
+          width: bodyW * 1.3, height: flameLen * 1.2),
+      _homingFlameOuter,
+    );
+    _homingFlameInner.color = const Color(0xFFFF8800).withValues(alpha: 0.85);
+    canvas.drawOval(
+      Rect.fromCenter(center: Offset(0, bodyH * 0.52 + flameLen * 0.25),
+          width: bodyW * 0.85, height: flameLen * 0.85),
+      _homingFlameInner,
+    );
+    _homingFlameCore.color = const Color(0xFFFFFFDD);
+    canvas.drawOval(
+      Rect.fromCenter(center: Offset(0, bodyH * 0.5 + flameLen * 0.2),
+          width: bodyW * 0.5, height: flameLen * 0.5),
+      _homingFlameCore,
+    );
+
+    // Pinne + naso: cache lazy per evitare `Path()` alloc ogni frame.
+    // Rebuild solo se bodyW cambia (non succede durante lifetime del missile).
+    if (_cachedBodyW != bodyW) {
+      _cachedBodyW = bodyW;
+      _finPath = Path()
+        ..moveTo(-bodyW * 0.5, bodyH * 0.25)
+        ..lineTo(-bodyW * 1.0, bodyH * 0.55)
+        ..lineTo(-bodyW * 0.5, bodyH * 0.55)
+        ..close()
+        ..moveTo(bodyW * 0.5, bodyH * 0.25)
+        ..lineTo(bodyW * 1.0, bodyH * 0.55)
+        ..lineTo(bodyW * 0.5, bodyH * 0.55)
+        ..close();
+      _nosePath = Path()
+        ..moveTo(-bodyW * 0.5, -bodyH * 0.35)
+        ..lineTo(0, -bodyH * 0.65)
+        ..lineTo(bodyW * 0.5, -bodyH * 0.35)
+        ..close();
+    }
+
+    _homingFinPaint.color = NeonColors.cyan.withValues(alpha: 0.9);
+    canvas.drawPath(_finPath!, _homingFinPaint);
+
+    // Corpo cilindrico (rettangolo arrotondato)
     _homingBodyPaint.color = NeonColors.cyan;
-    canvas.drawRect(
-      Rect.fromCenter(center: center, width: size.x, height: size.y),
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromCenter(center: Offset(0, bodyH * 0.05),
+            width: bodyW, height: bodyH * 0.8),
+        Radius.circular(bodyW * 0.25),
+      ),
       _homingBodyPaint,
     );
-    // Red trail (no blur)
-    _homingTrailPaint.color = NeonColors.red.withValues(alpha: 0.5);
-    canvas.drawCircle(Offset(size.x / 2, size.y + 4), 3, _homingTrailPaint);
+
+    // Punta conica (naso bianco)
+    _homingNosePaint.color = const Color(0xFFE0FFFF);
+    canvas.drawPath(_nosePath!, _homingNosePaint);
+
+    canvas.restore();
   }
 
   @override
@@ -510,16 +754,49 @@ class HomingMissile extends PositionComponent
     if (other is EnemyBase) {
       // Passa attraverso nemici in materializzazione
       if (other.isSpawnInvulnerable) return;
-      other.takeDamage(damage);
-      game.spawnExplosion(position, NeonColors.cyan, radius: 20, particleCount: 8);
-      removeFromParent();
+      _detonate(other);
     }
     if (other is BossBase) {
-      other.takeDamage(damage);
-      game.spawnExplosion(position, NeonColors.cyan, radius: 20, particleCount: 8);
-      removeFromParent();
+      _detonate(other);
     }
     super.onCollisionStart(intersectionPoints, other);
+  }
+
+  void _detonate(PositionComponent target) {
+    // AoE SEMPRE attiva (richiesta utente). Raggio calibrato su
+    // baseExplosionRadius — diametro > 2x dimensione missile, come richiesto.
+    final radius = explosionRadius;
+
+    // Direct hit SEMPRE applica danno (fix per boss grandi come TheGridBoss
+    // dove il centro sta fuori dal raggio AoE). Usa identical() per non
+    // ri-colpire lo stesso target nella pass successiva.
+    if (target is EnemyBase && !target.isSpawnInvulnerable) {
+      target.takeDamage(damage);
+    } else if (target is BossBase) {
+      target.takeDamage(damage);
+    }
+
+    // AoE su tutti gli altri nel raggio (direct target già colpito sopra).
+    // AoE = danno ad AREA → splitter immuni.
+    for (final child in game.world.children) {
+      if (identical(child, target)) continue;
+      if (child is EnemyBase) {
+        if (child.isSpawnInvulnerable) continue;
+        if (child.position.distanceTo(position) < radius) {
+          child.takeDamage(damage, isArea: true);
+        }
+      } else if (child is BossBase) {
+        if (child.position.distanceTo(position) < radius) {
+          child.takeDamage(damage);
+        }
+      }
+    }
+
+    game.spawnExplosion(position, NeonColors.cyan,
+        radius: radius, particleCount: 14);
+    game.spawnExplosion(position, const Color(0xFFFF8800),
+        radius: radius * 0.6, particleCount: 8);
+    removeFromParent();
   }
 }
 
@@ -530,7 +807,7 @@ class OverdriveBeam extends PositionComponent
   double _phase = 0;
 
   OverdriveBeam({required this.direction})
-      : super(size: Vector2(40, 1200), anchor: Anchor.topCenter);
+      : super(size: Vector2(overdriveBeamWidth, overdriveBeamLength), anchor: Anchor.topCenter);
 
   @override
   void update(double dt) {
@@ -539,23 +816,23 @@ class OverdriveBeam extends PositionComponent
     _phase += dt * 20;
     if (_lifetime <= 0) removeFromParent();
 
-    // Kill everything in path (enemies AND bosses)
+    // Kill everything in path (enemies AND bosses) — raycast = danno ad AREA → splitter immuni
     final dir = direction.normalized();
     final toRemove = <EnemyBullet>[];
     for (final child in game.world.children) {
       if (child is EnemyBase) {
         final toEnemy = child.position - position;
         final dot = toEnemy.dot(dir);
-        if (dot > 0 && dot < 1200) {
+        if (dot > 0 && dot < overdriveBeamLength) {
           final perpDist = (toEnemy - dir * dot).length;
           if (perpDist < 30) {
-            child.takeDamage(999);
+            child.takeDamage(999, isArea: true);
           }
         }
       } else if (child is BossBase) {
         final toBoss = child.position - position;
         final dot = toBoss.dot(dir);
-        if (dot > 0 && dot < 1200) {
+        if (dot > 0 && dot < overdriveBeamLength) {
           final perpDist = (toBoss - dir * dot).length;
           if (perpDist < 30) {
             child.takeDamage(10); // Danno boss dall'overdrive
@@ -564,7 +841,7 @@ class OverdriveBeam extends PositionComponent
       } else if (child is EnemyBullet) {
         final toB = child.position - position;
         final dot = toB.dot(dir);
-        if (dot > 0 && dot < 1200) {
+        if (dot > 0 && dot < overdriveBeamLength) {
           final perpDist = (toB - dir * dot).length;
           if (perpDist < 30) {
             toRemove.add(child);
@@ -596,17 +873,17 @@ class OverdriveBeam extends PositionComponent
     // Glow (no blur — overdrive is rare but still saves GPU)
     _odGlowPaint.color = rainbowColor.withValues(alpha: 0.3);
     canvas.drawRect(
-        Rect.fromCenter(center: Offset.zero, width: 60, height: 1200), _odGlowPaint);
+        Rect.fromCenter(center: Offset.zero, width: 60, height: overdriveBeamLength), _odGlowPaint);
 
     // Core - white
     _odCorePaint.color = const Color(0xFFFFFFFF);
     canvas.drawRect(
-        Rect.fromCenter(center: Offset.zero, width: 20, height: 1200), _odCorePaint);
+        Rect.fromCenter(center: Offset.zero, width: 20, height: overdriveBeamLength), _odCorePaint);
 
     // Colored edge
     _odEdgePaint.color = rainbowColor.withValues(alpha: 0.5);
     canvas.drawRect(
-        Rect.fromCenter(center: Offset.zero, width: 40, height: 1200), _odEdgePaint);
+        Rect.fromCenter(center: Offset.zero, width: overdriveBeamWidth, height: overdriveBeamLength), _odEdgePaint);
 
     canvas.restore();
   }

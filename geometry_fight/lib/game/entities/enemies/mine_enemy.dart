@@ -4,6 +4,18 @@ import 'package:flame/components.dart';
 import '../../../data/constants.dart';
 import 'enemy_base.dart';
 
+// Paint cache condivisi da tutte le Mine a schermo.
+final Paint _mineRingPaint = Paint()
+  ..style = PaintingStyle.stroke
+  ..strokeWidth = 1;
+final Paint _mineArcPaint = Paint()
+  ..style = PaintingStyle.stroke
+  ..strokeWidth = 0.8;
+final Paint _mineCircuitPaint = Paint()..strokeWidth = 0.5;
+final Paint _mineInnerRingPaint = Paint()
+  ..style = PaintingStyle.stroke
+  ..strokeWidth = 0.5;
+
 class MineEnemy extends EnemyBase {
   double _detonateTimer = -1;
   bool _detonating = false;
@@ -37,12 +49,12 @@ class MineEnemy extends EnemyBase {
   }
 
   @override
-  void takeDamage(double amount) {
+  void takeDamage(double amount, {bool isArea = false}) {
     if (!_detonating) {
       _detonating = true;
       _detonateTimer = 0.5;
     }
-    super.takeDamage(amount);
+    super.takeDamage(amount, isArea: isArea);
   }
 
   void _explode() {
@@ -77,11 +89,9 @@ class MineEnemy extends EnemyBase {
       for (int ring = 0; ring < 3; ring++) {
         final ringR = 15 + ring * 12.0 + progress * 20;
         final ringAlpha = (0.3 - ring * 0.08) * (1 - progress);
-        final ringPaint = Paint()
-          ..color = const Color(0xFFFF0000).withValues(alpha: ringAlpha)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 1;
-        canvas.drawCircle(Offset(cx, cy), ringR, ringPaint);
+        _mineRingPaint.color =
+            const Color(0xFFFF0000).withValues(alpha: ringAlpha);
+        canvas.drawCircle(Offset(cx, cy), ringR, _mineRingPaint);
       }
     }
 
@@ -114,37 +124,32 @@ class MineEnemy extends EnemyBase {
 
     if (scale <= 1.01) {
       // Archi rotanti di pericolo (2 archi opposti)
-      final arcPaint = Paint()
-        ..color = (_detonating ? const Color(0xFFFF4400) : paint.color).withValues(alpha: 0.25)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 0.8;
+      _mineArcPaint.color = (_detonating
+              ? const Color(0xFFFF4400)
+              : paint.color)
+          .withValues(alpha: 0.25);
       canvas.save();
       canvas.translate(cx, cy);
       canvas.rotate(idlePhase * 1.5);
       final arcRect = Rect.fromCircle(center: Offset.zero, radius: r * 0.7);
-      canvas.drawArc(arcRect, 0, math.pi * 0.6, false, arcPaint);
-      canvas.drawArc(arcRect, math.pi, math.pi * 0.6, false, arcPaint);
+      canvas.drawArc(arcRect, 0, math.pi * 0.6, false, _mineArcPaint);
+      canvas.drawArc(arcRect, math.pi, math.pi * 0.6, false, _mineArcPaint);
       canvas.restore();
 
       // Circuiti interni (4 linee radiali + anello)
-      final circuitPaint = Paint()
-        ..color = paint.color.withValues(alpha: 0.2)
-        ..strokeWidth = 0.5;
+      _mineCircuitPaint.color = paint.color.withValues(alpha: 0.2);
       for (int i = 0; i < 4; i++) {
         final angle = i * math.pi / 2 + idlePhase * 0.5;
         canvas.drawLine(
           Offset(cx, cy),
           Offset(cx + math.cos(angle) * r * 0.6, cy + math.sin(angle) * r * 0.6),
-          circuitPaint,
+          _mineCircuitPaint,
         );
       }
 
       // Anello interno
-      final innerRingPaint = Paint()
-        ..color = paint.color.withValues(alpha: 0.2)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 0.5;
-      canvas.drawCircle(Offset(cx, cy), r * 0.35, innerRingPaint);
+      _mineInnerRingPaint.color = paint.color.withValues(alpha: 0.2);
+      canvas.drawCircle(Offset(cx, cy), r * 0.35, _mineInnerRingPaint);
 
       // Nucleo interno pulsante
       final coreAlpha = _detonating

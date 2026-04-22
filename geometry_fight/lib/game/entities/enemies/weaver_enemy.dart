@@ -2,8 +2,15 @@ import 'dart:math' as math;
 import 'dart:ui';
 import 'package:flame/components.dart';
 import '../../../data/constants.dart';
+import '../player.dart';
 import '../projectiles.dart';
 import 'enemy_base.dart';
+
+// Paint cache condivisi da tutti i Weaver (evita 2 alloc/frame × N).
+final Paint _weaverInnerPaint = Paint()
+  ..style = PaintingStyle.stroke
+  ..strokeWidth = 0.6;
+final Paint _weaverLinePaint = Paint()..strokeWidth = 0.5;
 
 /// WEAVER (Green Scare) - Quadrato verde che insegue il player.
 /// Come in GW: homing + SCHIVA i proiettili che si avvicinano.
@@ -42,17 +49,19 @@ class WeaverEnemy extends EnemyBase {
       position += _currentDodge! * 350 * dt;
     }
 
-    // SCHIVA proiettili — raggio ampio (140px), reazione rapida
+    // SCHIVA solo i proiettili dell'arma BASE — le altre armi non vengono schivate.
     if (_dodgeCooldown <= 0) {
       PlayerBullet? closestBullet;
       double closestDist = 140; // Raggio di rilevamento ampio
+      const imminentDist = 25.0; // Sotto questa soglia: già urgenza max, no miglior candidato possibile
 
       for (final child in game.world.children) {
-        if (child is PlayerBullet) {
+        if (child is PlayerBullet && child.weaponType == WeaponType.basic) {
           final dist = child.position.distanceTo(position);
           if (dist < closestDist) {
             closestDist = dist;
             closestBullet = child;
+            if (dist < imminentDist) break; // perf: evita O(n) quando urgenza max
           }
         }
       }
@@ -112,20 +121,15 @@ class WeaverEnemy extends EnemyBase {
         ..lineTo(cx, cy + h * 0.55)
         ..lineTo(cx - w * 0.55, cy)
         ..close();
-      final innerPaint = Paint()
-        ..color = paint.color.withValues(alpha: 0.3)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 0.6;
-      canvas.drawPath(innerPath, innerPaint);
+      _weaverInnerPaint.color = paint.color.withValues(alpha: 0.3);
+      canvas.drawPath(innerPath, _weaverInnerPaint);
 
       // Pannelli ala
-      final linePaint = Paint()
-        ..color = paint.color.withValues(alpha: 0.2)
-        ..strokeWidth = 0.5;
-      canvas.drawLine(Offset(cx + w * 0.2, cy - h * 0.4), Offset(cx + w * 0.8, cy - h * 0.05), linePaint);
-      canvas.drawLine(Offset(cx - w * 0.2, cy - h * 0.4), Offset(cx - w * 0.8, cy - h * 0.05), linePaint);
-      canvas.drawLine(Offset(cx + w * 0.2, cy + h * 0.4), Offset(cx + w * 0.8, cy + h * 0.05), linePaint);
-      canvas.drawLine(Offset(cx - w * 0.2, cy + h * 0.4), Offset(cx - w * 0.8, cy + h * 0.05), linePaint);
+      _weaverLinePaint.color = paint.color.withValues(alpha: 0.2);
+      canvas.drawLine(Offset(cx + w * 0.2, cy - h * 0.4), Offset(cx + w * 0.8, cy - h * 0.05), _weaverLinePaint);
+      canvas.drawLine(Offset(cx - w * 0.2, cy - h * 0.4), Offset(cx - w * 0.8, cy - h * 0.05), _weaverLinePaint);
+      canvas.drawLine(Offset(cx + w * 0.2, cy + h * 0.4), Offset(cx + w * 0.8, cy + h * 0.05), _weaverLinePaint);
+      canvas.drawLine(Offset(cx - w * 0.2, cy + h * 0.4), Offset(cx - w * 0.8, cy + h * 0.05), _weaverLinePaint);
 
       // Flusso energetico
       final flowProgress = (idlePhase * 2 + _waveOffset) % 1.0;

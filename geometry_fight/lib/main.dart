@@ -1,9 +1,12 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'data/save_data.dart';
+import 'data/crash_reporter.dart';
 import 'game/systems/audio_system.dart';
+import 'game/systems/music_manager.dart';
 import 'data/leaderboard.dart';
 import 'data/achievements.dart';
 import 'data/difficulty.dart';
@@ -18,39 +21,58 @@ import 'ui/screens/stats_screen.dart';
 import 'ui/screens/achievements_screen.dart';
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+  // runZonedGuarded cattura anche errori async non catturati; CrashReporter
+  // copre inoltre FlutterError.onError e PlatformDispatcher.onError.
+  // Obiettivo: capire i crash sporadici del gioco (loggati in
+  // shared_preferences → visibili in Settings → Debug).
+  await runZonedGuarded(() async {
+    WidgetsFlutterBinding.ensureInitialized();
+    await CrashReporter.install();
 
-  // Force landscape and fullscreen
-  await SystemChrome.setPreferredOrientations([
-    DeviceOrientation.landscapeLeft,
-    DeviceOrientation.landscapeRight,
-  ]);
-  await SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
+    // Force landscape and fullscreen
+    await SystemChrome.setPreferredOrientations([
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.landscapeRight,
+    ]);
+    await SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
 
-  // Initialize Hive per save data e leaderboard
-  try {
-    await Hive.initFlutter();
-    await SaveManager.init();
-    await LeaderboardManager.init();
-    await AchievementManager.init();
-  } catch (_) {
-    // Se Hive fallisce (dati corrotti), cancella e riprova
-    await Hive.deleteFromDisk();
-    await Hive.initFlutter();
-    await SaveManager.init();
-    await LeaderboardManager.init();
-    await AchievementManager.init();
-  }
+    // Initialize Hive per save data e leaderboard
+    try {
+      await Hive.initFlutter();
+      await SaveManager.init();
+      await LeaderboardManager.init();
+      await AchievementManager.init();
+    } catch (e, st) {
+      // Primo fallimento: probabile corruzione dati → wipe + retry.
+      CrashReporter.handleZoneError(e, st);
+      try {
+        await Hive.deleteFromDisk();
+        await Hive.initFlutter();
+        await SaveManager.init();
+        await LeaderboardManager.init();
+        await AchievementManager.init();
+      } catch (e2, st2) {
+        // Secondo fallimento: NON swallowiamo. `runZonedGuarded` cattura,
+        // il CrashReporter logga, e l'utente vede un crash esplicito invece
+        // di un save manager null che crasha al primo read.
+        CrashReporter.handleZoneError(e2, st2);
+        rethrow;
+      }
+    }
 
-  // Initialize audio system
-  await AudioSystem.init();
-  // Load SFX volume from prefs
-  final prefs = await SharedPreferences.getInstance();
-  AudioSystem.setSfxVolume(prefs.getDouble('sfx_volume') ?? 0.8);
-  AudioSystem.setBgmVolume(prefs.getDouble('bgm_volume') ?? 0.7);
-  AudioSystem.setVibration(prefs.getBool('vibration') ?? true);
+    // Initialize audio system (SFX) + music manager (BGM)
+    await AudioSystem.init();
+    await MusicManager.init();
+    // Load SFX volume from prefs
+    final prefs = await SharedPreferences.getInstance();
+    AudioSystem.setSfxVolume(prefs.getDouble('sfx_volume') ?? 0.8);
+    AudioSystem.setBgmVolume(prefs.getDouble('bgm_volume') ?? 0.7);
+    AudioSystem.setVibration(prefs.getBool('vibration') ?? true);
+    // Avvia musica intro: una delle 3 tracce intro a random
+    unawaited(MusicManager.playIntro());
 
-  runApp(const GeometryFightApp());
+    runApp(const GeometryFightApp());
+  }, CrashReporter.handleZoneError);
 }
 
 class GeometryFightApp extends StatelessWidget {

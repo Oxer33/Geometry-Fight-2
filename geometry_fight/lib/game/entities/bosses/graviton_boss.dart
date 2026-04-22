@@ -25,6 +25,11 @@ class GravitonBoss extends BossBase {
   static final _borderPaint = Paint()..style = PaintingStyle.stroke;
   static final _corePaint = Paint();
   static final _indicatorPaint = Paint();
+  // Signature FX paints
+  static final _lensingPaint = Paint()..style = PaintingStyle.stroke;
+  static final _filamentPaint = Paint()..style = PaintingStyle.stroke;
+  static final _horizonHaloPaint = Paint();
+  static final _coreGlowPaint = Paint();
 
   GravitonBoss()
       : super(
@@ -141,35 +146,73 @@ class GravitonBoss extends BossBase {
       canvas.restore();
     }
 
-    // Sfera nera centrale
+    // ─── LENSING RINGS: 4 cerchi stroke oro esterni (distorsione spazio) ───
+    if (scale <= 1.01) {
+      for (int i = 0; i < 4; i++) {
+        final ringR = r * (1.3 + i * 0.22);
+        _lensingPaint.color = const Color(0xFFFFD700)
+            .withValues(alpha: (0.2 - i * 0.04) * (0.7 + math.sin(_gravPhase + i) * 0.3));
+        _lensingPaint.strokeWidth = 1;
+        canvas.drawCircle(Offset(cx, cy), ringR, _lensingPaint);
+      }
+    }
+
+    // ─── FILAMENT BEAMS (8 raggi dorati dalla sfera verso l'esterno) ───
+    if (scale <= 1.01) {
+      _filamentPaint.strokeWidth = 1.2;
+      for (int i = 0; i < 8; i++) {
+        final fAngle = _gravPhase * (_isPulling ? 0.8 : -0.8) + i * math.pi / 4;
+        final fPulse = 0.4 + math.sin(_gravPhase * 3 + i * 0.5) * 0.4;
+        final fLen = r * (0.55 + fPulse * 0.6);
+        _filamentPaint.color = const Color(0xFFFFD700)
+            .withValues(alpha: fPulse);
+        canvas.drawLine(
+          Offset(cx + math.cos(fAngle) * r * 0.42,
+              cy + math.sin(fAngle) * r * 0.42),
+          Offset(cx + math.cos(fAngle) * fLen,
+              cy + math.sin(fAngle) * fLen),
+          _filamentPaint,
+        );
+      }
+    }
+
+    // ─── HORIZON HALO: alone dorato/viola dietro la sfera ───
+    if (scale <= 1.01) {
+      _horizonHaloPaint.color = _isPulling
+          ? const Color(0xFF6611CC).withValues(alpha: 0.45)
+          : const Color(0xFFFFD700).withValues(alpha: 0.45);
+      canvas.drawCircle(Offset(cx, cy), r * 0.55, _horizonHaloPaint);
+    }
+
+    // Sfera nera centrale (event horizon)
     _spherePaint.color = const Color(0xFF000011);
     canvas.drawCircle(Offset(cx, cy), r * 0.4, _spherePaint);
     // Bordo dorato
-    _borderPaint.color = const Color(0xFFFFD700).withValues(alpha: 0.6);
+    _borderPaint.color = const Color(0xFFFFD700).withValues(alpha: 0.75);
     _borderPaint.strokeWidth = 2 * scale;
-    canvas.drawCircle(
-      Offset(cx, cy), r * 0.4,
-      _borderPaint,
-    );
+    canvas.drawCircle(Offset(cx, cy), r * 0.4, _borderPaint);
 
-    // Nucleo
+    // ─── CORE multi-strato (glow + core + pupilla) ───
     if (scale <= 1.01) {
-      final pulse = _isPulling ? 0.6 : 0.3;
-      _corePaint.color = const Color(0xFFFFD700).withValues(alpha: pulse);
-      canvas.drawCircle(
-        Offset(cx, cy), r * 0.15,
-        _corePaint,
-      );
+      final pulse = (_isPulling ? 0.7 : 0.4) +
+          math.sin(_gravPhase * 4) * 0.2;
+      _coreGlowPaint.color =
+          const Color(0xFFFFD700).withValues(alpha: pulse * 0.5);
+      canvas.drawCircle(Offset(cx, cy), r * 0.25, _coreGlowPaint);
+      _corePaint.color =
+          const Color(0xFFFFD700).withValues(alpha: pulse);
+      canvas.drawCircle(Offset(cx, cy), r * 0.15 * pulse, _corePaint);
+      // Pupilla bianca
+      _corePaint.color =
+          const Color(0xFFFFFFFF).withValues(alpha: pulse);
+      canvas.drawCircle(Offset(cx, cy), r * 0.06, _corePaint);
 
       // Indicatore pull/push
       final indicatorColor = _isPulling
-          ? const Color(0xFF4400AA)
+          ? const Color(0xFF6611CC)
           : const Color(0xFFFFD700);
       _indicatorPaint.color = indicatorColor;
-      canvas.drawCircle(
-        Offset(cx, cy - r * 0.55), 3,
-        _indicatorPaint,
-      );
+      canvas.drawCircle(Offset(cx, cy - r * 0.55), 3, _indicatorPaint);
     }
   }
 }

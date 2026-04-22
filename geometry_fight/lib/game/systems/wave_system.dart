@@ -4,7 +4,7 @@ import '../../data/constants.dart';
 import '../../data/difficulty.dart';
 import '../../data/wave_configs.dart';
 import '../game_world.dart';
-import '../entities/enemies/kamikaze_enemy.dart';
+import '../entities/enemies/swarm_drone_enemy.dart';
 
 /// 26 formazioni geometriche uniche per il formation spawn system
 /// `borderLine` dispone i nemici lungo un intero bordo dell'arena (dalla sponda
@@ -90,7 +90,7 @@ class WaveSystem {
   void reset() {
     _tunnelSpawnTimer = 0.5;
     _tunnelKillCount = 0;
-    _nextBossAt = 30;
+    _nextBossAt = 60; // Primo boss a 60 kill (era 30)
     _tunnelBossCooldown = 0;
     currentWave = 0;
     _waveActive = false;
@@ -117,7 +117,11 @@ class WaveSystem {
       case GameMode.timeAttack:
         _currentConfig = _generateTimeAttackWave(wave);
       case GameMode.zenMode:
-        _currentConfig = _generateZenWave(wave);
+        // Zen = classic con player immortale. Stessi wave config + boss.
+        _currentConfig = _configs.firstWhere(
+          (c) => c.waveNumber == wave,
+          orElse: () => _generateEndlessWave(wave),
+        );
       case GameMode.tunnel:
         _currentConfig = _generateTunnelWave(wave);
       case GameMode.endlessBoss:
@@ -164,12 +168,16 @@ class WaveSystem {
 
     if (!_waveActive) return;
 
-    // Timer inizia solo quando tutti i gruppi sono spawnati — 30s DOPO l'ultimo spawn
+    // Timer inizia solo quando tutti i gruppi sono spawnati — N s DOPO l'ultimo spawn.
+    // Limite definito da `classicWaveTimeoutSeconds` in constants.dart.
     if (_allSpawned) _waveElapsedTimer += dt;
 
-    // Classic mode: forza avanzamento wave dopo 30s — i nemici rimasti restano vivi!
+    // Classic mode: forza avanzamento wave dopo il timeout — i nemici rimasti restano vivi!
     // Diventa sempre più difficile se non li uccidi.
-    if (_mode == GameMode.classic && _allSpawned && _waveElapsedTimer >= 30.0 && !_bossActive) {
+    if (_mode == GameMode.classic &&
+        _allSpawned &&
+        _waveElapsedTimer >= classicWaveTimeoutSeconds &&
+        !_bossActive) {
       _completeWave();
       return;
     }
@@ -293,50 +301,51 @@ class WaveSystem {
   }
 
   /// Zen Mode: nemici rilassanti ma più numerosi
-  WaveConfig _generateZenWave(int wave) {
-    final spawns = <WaveSpawn>[
-      WaveSpawn(EnemyType.drone, 6 + wave * 2),
-      WaveSpawn(EnemyType.weaver, 2 + wave, delay: 2),
-    ];
-    if (wave >= 5) spawns.add(WaveSpawn(EnemyType.weaver, 2 + wave * 2 ~/ 3, delay: 3));
-    return WaveConfig(waveNumber: wave, spawns: spawns);
-  }
+  // NOTA: `_generateZenWave` rimosso — zen mode ora usa i config classic.
 
   // === TUNNEL MODE: spawn continuo, no wave tradizionali ===
   double _tunnelSpawnTimer = 0.5;
   int _tunnelKillCount = 0; // Per boss ogni N kill
-  int _nextBossAt = 30; // Soglia kill per il prossimo boss
+  int _nextBossAt = 60; // Soglia primo boss (era 30, raddoppiato) — boss successivi a +30 incrementale
   double _tunnelBossCooldown = 0; // Tempo minimo tra boss (s)
   static final _tunnelRng = math.Random();
 
   /// Tunnel: spawn continuo di nemici randomici davanti al player.
-  /// Mantiene sempre 10+ nemici vicini. Boss ogni 30 kill con cooldown 45s.
+  /// Spawn dimezzato rispetto a prima (era troppo caotico): min 10 nemici
+  /// attivi (era 20), batch 2-4 (era 4-8), cap 40 (era 80), timer 2x più lento.
+  /// Boss ogni 30 kill con cooldown 45s.
   void updateTunnel(double dt) {
     _tunnelSpawnTimer -= dt;
     if (_tunnelBossCooldown > 0) _tunnelBossCooldown -= dt;
 
-    // Mantieni almeno 20 nemici attivi — spawna se ce ne sono meno
-    if (_tunnelSpawnTimer <= 0 || game.enemyCount < 20) {
-      _tunnelSpawnTimer = 0.3 + _tunnelRng.nextDouble() * 0.5;
+    // Mantieni almeno 10 nemici attivi (era 20)
+    if (_tunnelSpawnTimer <= 0 || game.enemyCount < 10) {
+      // Timer raddoppiato: 0.6-1.6s invece di 0.3-0.8s
+      _tunnelSpawnTimer = 0.6 + _tunnelRng.nextDouble() * 1.0;
 
-      // Spawna 4-8 nemici randomici ogni tick
-      final count = _scaledSpawnCount(4 + _tunnelRng.nextInt(5));
+      // Batch dimezzato: 2-4 nemici (era 4-8)
+      final count = _scaledSpawnCount(2 + _tunnelRng.nextInt(3));
       for (int i = 0; i < count; i++) {
-        if (game.enemyCount >= 80) break; // Max 80 nel tunnel
+        if (game.enemyCount >= 40) break; // Cap dimezzato (era 80)
         final type = _randomTunnelEnemyType();
         game.spawnEnemy(type);
       }
     }
 
-    // Boss ogni 30 kill — usa _nextBossAt per evitare off-by-one
-    // Cooldown 45s dopo ogni boss ucciso (respiro al player)
+    // Boss ogni 30 kill — usa _nextBossAt per evitare off-by-one.
+    // FIX multi-boss: `world.add` è async (la boss viene aggiunta al prossimo
+    // update), quindi `bossCount == 0` può essere true per qualche frame dopo
+    // lo spawn → potevano partire 3-4 boss in sequenza. Ora settiamo subito
+    // un cooldown di 5s per dare tempo alla boss di materializzarsi.
     if (_tunnelKillCount >= _nextBossAt &&
         game.bossCount == 0 &&
         _tunnelBossCooldown <= 0) {
       final bosses = BossType.values;
-      final bossIdx = (_nextBossAt ~/ 30 - 1) % bosses.length;
+      // Primo boss (at 60) → idx 0. Successivi (+30 kill) → idx +1.
+      final bossIdx = ((_nextBossAt - 60) ~/ 30) % bosses.length;
       game.spawnBoss(bosses[bossIdx]);
       _nextBossAt += 30; // Prossimo boss a +30 kill
+      _tunnelBossCooldown = 5.0; // Cooldown 5s: copre la materializzazione async del boss
     }
   }
 
@@ -554,9 +563,9 @@ class WaveSystem {
   /// In altri modi sceglie casualmente tra le 25 formazioni.
   /// In tunnel mode mantiene lo spawn fuori schermo originale.
   ///
-  /// I kamikaze (triangoli rossi) usano SEMPRE borderLine: spawnano in schiera
-  /// lungo un intero bordo e caricano tutti insieme verso l'interno. Coerente
-  /// col design originale di Geometry Wars.
+  /// I SwarmDrone (mini triangoli cardinali) usano SEMPRE borderLine: spawnano
+  /// in schiera lungo un intero bordo e avanzano tutti insieme perpendicolari
+  /// al bordo. Coerente col design GW (ondate di "arrows" da un lato).
   void _spawnGroupWithFormation(EnemyType type, int count) {
     if (_mode == GameMode.tunnel) {
       for (int i = 0; i < count; i++) {
@@ -565,10 +574,10 @@ class WaveSystem {
       return;
     }
 
-    // Kamikaze: sempre borderLine (design originale) con direzione forzata
-    // verso l'interno dell'arena, così tutta la schiera carica perpendicolare.
-    if (type == EnemyType.kamikaze) {
-      _spawnKamikazeBorderLine(count);
+    // SwarmDrone: sempre borderLine con direzione iniziale forzata verso
+    // l'interno — la schiera marcia come ondata cardinale.
+    if (type == EnemyType.swarmDrone) {
+      _spawnSwarmBorderLine(count);
       return;
     }
 
@@ -602,20 +611,20 @@ class WaveSystem {
     }
   }
 
-  /// Spawna una schiera di kamikaze lungo un intero bordo dell'arena, con
-  /// direzione di rush forzata perpendicolare al bordo (verso l'interno).
-  void _spawnKamikazeBorderLine(int count) {
+  /// Spawna una schiera di SwarmDrone lungo un intero bordo dell'arena, con
+  /// direzione di marcia forzata perpendicolare al bordo (verso l'interno).
+  void _spawnSwarmBorderLine(int count) {
     final side = _BorderSide.values[_formRng.nextInt(4)];
     final positions = _fBorderLine(count, side: side);
-    final rushDir = _borderRushDirection(side);
+    final marchDir = _borderRushDirection(side);
     for (final pos in positions) {
       final clamped = Vector2(
         pos.x.clamp(20.0, arenaWidth - 20.0),
         pos.y.clamp(20.0, arenaHeight - 20.0),
       );
-      final spawned = game.spawnEnemy(EnemyType.kamikaze, clamped);
-      if (spawned is KamikazeEnemy) {
-        spawned.forcedRushDirection = rushDir.clone();
+      final spawned = game.spawnEnemy(EnemyType.swarmDrone, clamped);
+      if (spawned is SwarmDroneEnemy) {
+        spawned.forcedInitialDirection = marchDir.clone();
       }
     }
   }

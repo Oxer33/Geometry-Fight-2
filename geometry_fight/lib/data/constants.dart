@@ -22,13 +22,30 @@ const double baseFireRate = 8; // shots per second
 const int maxBounces = 2;
 const double bulletLifetime = 2.0;
 
+// Weapon tuning
+const double homingTrackRadius = 150.0;  // Raggio inseguimento missili (era 70, +114% richiesta utente)
+const double laserBeamLength = 1200.0;   // Lunghezza raggio laser (50% più lungo del vecchio 800)
+const double overdriveBeamLength = 1200.0;
+const double overdriveBeamWidth = 40.0;
+const double plasmaExplosionRadius = 80.0;
+
+// Boss fight tuning
+const int bossMinionEnemyCap = 15;          // Max nemici attivi prima di skippare spawn minion
+const double bossMinionSpawnInterval = 3.5; // Secondi tra ondate minion base
+
 // Camera
 const double cameraSmoothing = 0.12;
 
 // Waves
 // Delay tra gruppi di spawn in modalità classica.
 // Cambiare qui a 8.0 / 12.0 per ritoccare il ritmo globale.
-const double classicWaveGroupDelaySeconds = 4.0;
+// IMPORTANTE: deve combaciare con `_spawnInvulnTimer` in enemy_base.dart
+// (lampeggio di warning), così il flash finisce esattamente quando arriva
+// il prossimo gruppo.
+const double classicWaveGroupDelaySeconds = 2.5;
+// Timeout massimo per il completamento di una wave classica DOPO l'ultimo
+// spawn: anche se restano nemici vivi, la wave successiva parte comunque.
+const double classicWaveTimeoutSeconds = 20.0;
 
 // Grid
 const int gridCols = 50;

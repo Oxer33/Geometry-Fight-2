@@ -30,7 +30,10 @@ class PhantomEnemy extends EnemyBase {
   void updateBehavior(double dt) {
     _phaseTimer += dt;
 
-    // Phase cycle: visible 2s, fade 0.5s, invisible 1.5s, fade in 0.5s
+    // Phase cycle: visible 2s, fade 0.5s, invisible 1.5s, fade in 0.5s.
+    // `_visible` gate del takeDamage: flippa TRUE appena opacity >= 0.5
+    // (metà fade-in) così il player può colpire il phantom che sta rientrando,
+    // invece di vederlo materializzarsi immune fino a opacity pieno.
     final cycle = _phaseTimer % 4.5;
     if (cycle < 2.0) {
       _visible = true;
@@ -43,7 +46,8 @@ class PhantomEnemy extends EnemyBase {
       _opacity = 0.1;
     } else {
       _opacity = (cycle - 4.0) / 0.5;
-      _visible = false;
+      // Fade-in: bersaglio valido a metà rientro (opacity >= 0.5).
+      _visible = _opacity >= 0.5;
     }
 
     final toPlayer = playerPosition - position;
@@ -70,9 +74,9 @@ class PhantomEnemy extends EnemyBase {
   }
 
   @override
-  void takeDamage(double amount) {
+  void takeDamage(double amount, {bool isArea = false}) {
     if (!_visible) return; // Immune when phased out
-    super.takeDamage(amount);
+    super.takeDamage(amount, isArea: isArea);
   }
 
   @override

@@ -26,8 +26,10 @@ class GateEnemy extends PositionComponent
   final double _speed = 60;
   // +50% rispetto a prima (era 50): bilanciere più grande e leggibile
   final double _gateWidth = 75.0;
-  // Esplosione 1/3 rispetto a prima (era 80): più chirurgica, non copre mezza arena
-  final double _explosionRadius = 27.0;
+  // Esplosione +50% rispetto al precedente 27 (era 80 originale): impatto più
+  // cinematico quando il player attraversa il wire — rimane comunque più
+  // chirurgica dell'originale.
+  final double _explosionRadius = 40.5;
   final Color neonColor = const Color(0xFFFF6600);
 
   // Cooldown anti-spam: impedisce trigger multipli ravvicinati
@@ -166,15 +168,17 @@ class GateEnemy extends PositionComponent
     final sphere2 = position - sphereOffset;
 
     // BOOM! Uccidi tutti i nemici nel raggio di UNA delle due esplosioni
-    // (raggio ridotto di 1/3 rispetto a prima).
-    final killRadius = _explosionRadius * 1.5; // 40 px per sfera
+    // (raggio ridotto di 1/3 rispetto a prima). Moltiplicatore separato
+    // dal raggio visivo per calibrazione indipendente.
+    const killRadiusMultiplier = 1.5;
+    final killRadius = _explosionRadius * killRadiusMultiplier; // ~60 px per sfera
     final enemies = game.world.children.whereType<EnemyBase>().toList();
     int killCount = 0;
     for (final enemy in enemies) {
       final d1 = enemy.position.distanceTo(sphere1);
       final d2 = enemy.position.distanceTo(sphere2);
       if (d1 < killRadius || d2 < killRadius) {
-        enemy.takeDamage(999);
+        enemy.takeDamage(999, isArea: true); // Gate explosion = danno area → splitter immuni
         killCount++;
       }
     }

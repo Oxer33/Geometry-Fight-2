@@ -3,6 +3,18 @@ import 'dart:ui';
 import 'package:flame/components.dart';
 import 'enemy_base.dart';
 
+// Paint cache riutilizzato da tutti i Titan a schermo. Risparmia 4 alloc/frame
+// × N titan.
+final Paint _titanWavePaint = Paint()
+  ..style = PaintingStyle.stroke
+  ..strokeWidth = 3;
+final Paint _titanArmorBorderPaint = Paint()
+  ..style = PaintingStyle.stroke;
+final Paint _titanFillPaint = Paint();
+final Paint _titanCrossPaint = Paint()
+  ..strokeWidth = 1.5
+  ..style = PaintingStyle.stroke;
+
 /// TITAN - Nemico corazzato enorme, lento ma devastante.
 /// Forma: grande esagono con armatura a strati e nucleo pulsante
 /// Colore: bronzo/rame (#CC8844)
@@ -63,9 +75,9 @@ class TitanEnemy extends EnemyBase {
   }
 
   @override
-  void takeDamage(double amount) {
+  void takeDamage(double amount, {bool isArea = false}) {
     // Il Titan subisce danno ridotto (armatura)
-    super.takeDamage(amount * 0.5);
+    super.takeDamage(amount * 0.5, isArea: isArea);
   }
 
   @override
@@ -77,11 +89,8 @@ class TitanEnemy extends EnemyBase {
     // Onda d'urto (se attiva)
     if (_shockwaveActive && _shockwaveRadius > 0) {
       final waveAlpha = 1.0 - (_shockwaveRadius / 150);
-      final wavePaint = Paint()
-        ..color = neonColor.withValues(alpha: waveAlpha * 0.4)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 3;
-      canvas.drawCircle(Offset(cx, cy), _shockwaveRadius, wavePaint);
+      _titanWavePaint.color = neonColor.withValues(alpha: waveAlpha * 0.4);
+      canvas.drawCircle(Offset(cx, cy), _shockwaveRadius, _titanWavePaint);
     }
 
     // Esagono esterno (armatura)
@@ -99,16 +108,13 @@ class TitanEnemy extends EnemyBase {
     armorPath.close();
 
     // Armatura con bordo spesso
-    final armorBorderPaint = Paint()
-      ..color = paint.color
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 3 * scale;
-    canvas.drawPath(armorPath, armorBorderPaint);
+    _titanArmorBorderPaint.color = paint.color;
+    _titanArmorBorderPaint.strokeWidth = 3 * scale;
+    canvas.drawPath(armorPath, _titanArmorBorderPaint);
 
     // Riempimento semi-trasparente
-    final fillPaint = Paint()
-      ..color = paint.color.withValues(alpha: 0.3);
-    canvas.drawPath(armorPath, fillPaint);
+    _titanFillPaint.color = paint.color.withValues(alpha: 0.3);
+    canvas.drawPath(armorPath, _titanFillPaint);
 
     // Nucleo interno pulsante
     final pulseR = r * 0.4 + math.sin(_armorPhase * 3) * 2;
@@ -118,13 +124,10 @@ class TitanEnemy extends EnemyBase {
     canvas.drawCircle(Offset(cx, cy), pulseR, EnemyBase.detailPaint);
 
     // Croce interna (indicatore armatura)
-    final crossPaint = Paint()
-      ..color = paint.color.withValues(alpha: 0.5)
-      ..strokeWidth = 1.5
-      ..style = PaintingStyle.stroke;
+    _titanCrossPaint.color = paint.color.withValues(alpha: 0.5);
     canvas.drawLine(
-      Offset(cx - r * 0.3, cy), Offset(cx + r * 0.3, cy), crossPaint);
+      Offset(cx - r * 0.3, cy), Offset(cx + r * 0.3, cy), _titanCrossPaint);
     canvas.drawLine(
-      Offset(cx, cy - r * 0.3), Offset(cx, cy + r * 0.3), crossPaint);
+      Offset(cx, cy - r * 0.3), Offset(cx, cy + r * 0.3), _titanCrossPaint);
   }
 }

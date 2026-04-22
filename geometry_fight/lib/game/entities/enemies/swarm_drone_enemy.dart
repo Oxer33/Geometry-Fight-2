@@ -5,13 +5,37 @@ import '../../../data/constants.dart';
 import 'enemy_base.dart';
 
 /// SWARM DRONE - Piccolo e debole ma spawna in gruppi enormi.
-/// Forma: triangolino minuscolo
-/// Colore: rosa caldo (#FF3388) → rosso quando enraged
+/// Forma: triangolino affilato (aspetto da mini-caccia)
+/// Colore: rosa-rosso caldo (#FF3388) → rosso acceso quando enraged
 /// Meccanica: si muovono in linea retta (dx/sx o su/giù) e rimbalzano sui muri.
-/// Stile Geometry Wars "grunt": pattern a griglia, non inseguono il player.
+/// Stile Geometry Wars "arrow": pattern cardinale, non inseguono il player.
 /// Se uno viene ucciso gli altri accelerano per 1s ("furia").
+///
+/// Se spawnato dal border-line (wave_system), usa `forcedInitialDirection` per
+/// forzare la marcia perpendicolare al bordo invece di scegliere un asse random.
+/// La direzione viene consumata al primo tick, così il mob dopo un rimbalzo
+/// torna a comportarsi come una SwarmDrone normale.
 class SwarmDroneEnemy extends EnemyBase {
   late Vector2 _moveDir;
+  Vector2? forcedInitialDirection;
+
+  // Paint cache — evita allocazioni per frame × N swarm drones (spawn in centinaia).
+  static final Paint _glowPaint = Paint();
+  static final Paint _trailPaint = Paint();
+  static final Paint _bodyPaint = Paint();
+  static final Paint _edgePaint = Paint()
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 0.6;
+  static final Paint _corePaint = Paint();
+  static final Paint _eyePaint = Paint();
+  static final Paint _thrusterPaint = Paint();
+
+  // Path cache condiviso (trail). Con 50 drone a schermo risparmia ~150 Path
+  // alloc/frame. Reset prima di ogni uso.
+  static final Path _sharedTrailPath = Path();
+
+  // Random statico condiviso (evita alloc per constructor + wall bounce).
+  static final math.Random _rng = math.Random();
 
   SwarmDroneEnemy()
       : super(
@@ -23,14 +47,19 @@ class SwarmDroneEnemy extends EnemyBase {
           size: Vector2(10, 10),
         ) {
     // Direzione iniziale casuale: uno dei 4 assi cardinali
-    final r = math.Random();
-    _moveDir = r.nextBool()
-        ? Vector2(r.nextBool() ? 1 : -1, 0)  // orizzontale
-        : Vector2(0, r.nextBool() ? 1 : -1);  // verticale
+    _moveDir = _rng.nextBool()
+        ? Vector2(_rng.nextBool() ? 1 : -1, 0)  // orizzontale
+        : Vector2(0, _rng.nextBool() ? 1 : -1);  // verticale
   }
 
   @override
   void updateBehavior(double dt) {
+    // Consume la direzione forzata al primo update (se settata dal wave system).
+    if (forcedInitialDirection != null) {
+      _moveDir = forcedInitialDirection!.clone();
+      forcedInitialDirection = null;
+    }
+
     final currentSpeed = isGloballyEnraged ? speed * 1.8 : speed;
 
     position += _moveDir * currentSpeed * dt;
@@ -43,7 +72,7 @@ class SwarmDroneEnemy extends EnemyBase {
         _moveDir.y = -_moveDir.y;
         // Se stava andando in verticale, cambia ad orizzontale
         if (_moveDir.x == 0) {
-          _moveDir = Vector2(math.Random().nextBool() ? 1 : -1, _moveDir.y.sign * 0.3);
+          _moveDir = Vector2(_rng.nextBool() ? 1 : -1, _moveDir.y.sign * 0.3);
           _moveDir.normalize();
         }
         position.y = position.y.clamp(camY - halfH + 10, camY + halfH - 10);
@@ -87,60 +116,76 @@ class SwarmDroneEnemy extends EnemyBase {
     final angle = math.atan2(_moveDir.y, _moveDir.x) + math.pi / 2;
     canvas.rotate(angle);
 
-    final color = isGloballyEnraged
-        ? const Color(0xFFFF0000)
+    final baseColor = isGloballyEnraged
+        ? const Color(0xFFFF0022)
         : paint.color;
-    EnemyBase.detailPaint.color = color;
 
-    // Scia motore (2 trail sfumati dietro)
+    // === HALO ROSSO DIETRO (solo layer principale) ===
+    // Glow alone (no blur) che suggerisce il motore incandescente.
     if (scale <= 1.01) {
-      for (int i = 1; i <= 2; i++) {
-        final trailAlpha = isGloballyEnraged ? 0.3 - i * 0.1 : 0.15 - i * 0.05;
-        if (trailAlpha > 0) {
-          EnemyBase.detailPaint.color = color.withValues(alpha: trailAlpha);
-          final trailPath = Path()
-            ..moveTo(s * 0.3, s * 0.5 + i * 4)
-            ..lineTo(0, s * 0.5 + i * 6)
-            ..lineTo(-s * 0.3, s * 0.5 + i * 4);
-          canvas.drawPath(trailPath, EnemyBase.detailPaint);
-        }
-      }
-      EnemyBase.detailPaint.color = color;
+      _glowPaint.color = baseColor.withValues(alpha: isGloballyEnraged ? 0.35 : 0.22);
+      canvas.drawCircle(Offset(0, s * 0.3), s * 1.1, _glowPaint);
     }
 
-    // Corpo triangolare
+    // === SCIA PROPULSORE (solo layer principale) ===
+    if (scale <= 1.01) {
+      // Due striature a V dietro al corpo, come mini turbine.
+      for (int i = 1; i <= 3; i++) {
+        final trailAlpha = (isGloballyEnraged ? 0.45 : 0.25) - i * 0.08;
+        if (trailAlpha > 0) {
+          _trailPaint.color = baseColor.withValues(alpha: trailAlpha);
+          // Reset + riempi il path condiviso invece di allocarne uno nuovo.
+          _sharedTrailPath.reset();
+          _sharedTrailPath
+            ..moveTo(s * 0.35, s * 0.45 + i * 3.0)
+            ..lineTo(0, s * 0.55 + i * 4.0)
+            ..lineTo(-s * 0.35, s * 0.45 + i * 3.0);
+          canvas.drawPath(_sharedTrailPath, _trailPaint);
+        }
+      }
+    }
+
+    // === CORPO PRINCIPALE — triangolo affilato (più slanciato di prima) ===
+    // Punta più lunga, ali più ravvicinate → aspetto da "freccia".
+    _bodyPaint.color = baseColor;
     final path = Path()
-      ..moveTo(0, -s)
-      ..lineTo(s * 0.7, s * 0.5)
-      ..lineTo(-s * 0.7, s * 0.5)
+      ..moveTo(0, -s * 1.15)          // punta affilata in avanti
+      ..lineTo(s * 0.55, s * 0.15)
+      ..lineTo(s * 0.65, s * 0.55)    // ala destra
+      ..lineTo(0, s * 0.3)            // notch posteriore
+      ..lineTo(-s * 0.65, s * 0.55)   // ala sinistra
+      ..lineTo(-s * 0.55, s * 0.15)
       ..close();
-    canvas.drawPath(path, EnemyBase.detailPaint);
+    canvas.drawPath(path, _bodyPaint);
 
     if (scale <= 1.01) {
-      // Linee ala interne (struttura)
-      EnemyBase.detailPaint.color = color.withValues(alpha: 0.3);
-      EnemyBase.detailPaint.strokeWidth = 0.5;
-      EnemyBase.detailPaint.style = PaintingStyle.stroke;
-      canvas.drawLine(Offset(0, -s * 0.5), Offset(s * 0.4, s * 0.3), EnemyBase.detailPaint);
-      canvas.drawLine(Offset(0, -s * 0.5), Offset(-s * 0.4, s * 0.3), EnemyBase.detailPaint);
-      EnemyBase.detailPaint.style = PaintingStyle.fill;
+      // === BORDO LUMINOSO sul profilo leader ===
+      _edgePaint.color = const Color(0xFFFFFFFF).withValues(alpha: 0.55);
+      canvas.drawLine(Offset(0, -s * 1.15), Offset(s * 0.55, s * 0.15), _edgePaint);
+      canvas.drawLine(Offset(0, -s * 1.15), Offset(-s * 0.55, s * 0.15), _edgePaint);
 
-      // Nucleo centrale
-      final pulse = isGloballyEnraged
-          ? 0.7 + math.sin(idlePhase * 10) * 0.3
-          : 0.3 + math.sin(idlePhase * 5) * 0.2;
+      // === NUCLEO / OCCHIO rosso minaccioso ===
+      final corePulse = isGloballyEnraged
+          ? 0.75 + math.sin(idlePhase * 10) * 0.25
+          : 0.45 + math.sin(idlePhase * 5) * 0.25;
       final coreColor = isGloballyEnraged
           ? const Color(0xFFFF4400)
           : const Color(0xFFFFFFFF);
-      EnemyBase.detailPaint.color = coreColor.withValues(alpha: pulse);
-      canvas.drawCircle(Offset(0, s * 0.05), s * 0.15, EnemyBase.detailPaint);
+      _corePaint.color = coreColor.withValues(alpha: corePulse);
+      canvas.drawCircle(Offset(0, -s * 0.1), s * 0.2, _corePaint);
 
-      // Punti propulsore alla base
-      if (isGloballyEnraged) {
-        EnemyBase.detailPaint.color = const Color(0xFFFF6600).withValues(alpha: 0.5);
-        canvas.drawCircle(Offset(s * 0.25, s * 0.4), 1.0, EnemyBase.detailPaint);
-        canvas.drawCircle(Offset(-s * 0.25, s * 0.4), 1.0, EnemyBase.detailPaint);
-      }
+      // Punto rosso centrale (iride)
+      _eyePaint.color = const Color(0xFFFF2200).withValues(alpha: 0.9);
+      canvas.drawCircle(Offset(0, -s * 0.1), s * 0.09, _eyePaint);
+
+      // === THRUSTERS alla base (due micro-circoli) ===
+      final thrusterAlpha = isGloballyEnraged ? 0.85 : 0.55;
+      final thrusterColor = isGloballyEnraged
+          ? const Color(0xFFFFAA00)
+          : const Color(0xFFFF6600);
+      _thrusterPaint.color = thrusterColor.withValues(alpha: thrusterAlpha);
+      canvas.drawCircle(Offset(s * 0.3, s * 0.35), 0.9, _thrusterPaint);
+      canvas.drawCircle(Offset(-s * 0.3, s * 0.35), 0.9, _thrusterPaint);
     }
 
     canvas.restore();

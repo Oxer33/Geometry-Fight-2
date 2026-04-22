@@ -111,29 +111,76 @@ class TeslaLordBoss extends BossBase {
     }
   }
 
+  // Paint cache FX
+  static final _towerGlowPaint = Paint();
+  static final _towerCorePaint = Paint();
+  static final _towerOutlinePaint = Paint()..style = PaintingStyle.stroke;
+  static final _lightningOuterPaint = Paint()..style = PaintingStyle.stroke;
+  static final _lightningCorePaint = Paint()..style = PaintingStyle.stroke;
+  static final _arcPaint = Paint()..style = PaintingStyle.stroke;
+  static final _coreHaloPaint = Paint();
+  static final _corePaint = Paint();
+  static final _sparkBoltPath = Path();
+
   @override
   void renderBoss(Canvas canvas, Paint paint, double scale) {
     final cx = size.x / 2;
     final cy = size.y / 2;
     final r = size.x / 2 * scale;
 
-    // Torri tesla e fulmini
+    // ─── TORRI TESLA + RETE DI FULMINI ───
     if (scale <= 1.01 && _towerPositions.length >= 2) {
       for (int i = 0; i < _towerPositions.length; i++) {
         final offset = _towerPositions[i] - position;
-        // Torre
-        final towerPaint = Paint()
-          ..color = neonColor.withValues(alpha: 0.5);
-        canvas.drawCircle(Offset(cx + offset.x, cy + offset.y), 8, towerPaint);
+        final tCx = cx + offset.x;
+        final tCy = cy + offset.y;
+        final towerPulse = 0.7 + math.sin(_sparkPhase + i * 1.3) * 0.3;
+        // Glow esterno (alone)
+        _towerGlowPaint.color =
+            neonColor.withValues(alpha: 0.25 * towerPulse);
+        canvas.drawCircle(Offset(tCx, tCy), 18, _towerGlowPaint);
+        // Core bianco pulsante
+        _towerCorePaint.color = const Color(0xFFFFFFFF)
+            .withValues(alpha: 0.85 * towerPulse);
+        canvas.drawCircle(Offset(tCx, tCy), 5, _towerCorePaint);
+        // Outline
+        _towerOutlinePaint.color = neonColor;
+        _towerOutlinePaint.strokeWidth = 1.5;
+        canvas.drawCircle(Offset(tCx, tCy), 9, _towerOutlinePaint);
 
-        // Fulmine alla torre successiva
+        // Fulmine perimetrale alla prossima torre
         final next = _towerPositions[(i + 1) % _towerPositions.length];
         final nextOffset = next - position;
-        _drawLightning(canvas, cx + offset.x, cy + offset.y, cx + nextOffset.x, cy + nextOffset.y);
+        _drawLightning(
+            canvas, tCx, tCy, cx + nextOffset.x, cy + nextOffset.y);
+        // Fulmine centro-torre (rete densa)
+        _drawLightning(canvas, cx, cy, tCx, tCy, intensity: 0.5);
       }
     }
 
-    // Ottagono principale
+    // ─── ELECTRIC FIELD attorno al boss ───
+    if (scale <= 1.01) {
+      final fieldPulse = 0.5 + math.sin(_sparkPhase * 1.2) * 0.5;
+      _arcPaint.color =
+          neonColor.withValues(alpha: 0.2 + fieldPulse * 0.2);
+      _arcPaint.strokeWidth = 1.5;
+      canvas.drawCircle(Offset(cx, cy), r * 1.3, _arcPaint);
+      canvas.save();
+      canvas.translate(cx, cy);
+      canvas.rotate(-_sparkPhase * 0.4);
+      _arcPaint.color =
+          const Color(0xFFFFFFFF).withValues(alpha: 0.15 + fieldPulse * 0.15);
+      _arcPaint.strokeWidth = 1;
+      canvas.drawArc(
+          Rect.fromCircle(center: Offset.zero, radius: r * 1.1),
+          0, math.pi * 0.6, false, _arcPaint);
+      canvas.drawArc(
+          Rect.fromCircle(center: Offset.zero, radius: r * 1.1),
+          math.pi, math.pi * 0.6, false, _arcPaint);
+      canvas.restore();
+    }
+
+    // ─── OTTAGONO PRINCIPALE ───
     canvas.save();
     canvas.translate(cx, cy);
     canvas.rotate(_sparkPhase * 0.03);
@@ -151,47 +198,59 @@ class TeslaLordBoss extends BossBase {
     path.close();
     canvas.drawPath(path, paint);
 
-    // Archi elettrici interni
+    // ─── ARCHI ELETTRICI INTERNI (8 spokes) ───
     if (scale <= 1.01) {
-      for (int i = 0; i < 4; i++) {
-        final angle = i * math.pi / 2 + _sparkPhase * 0.1;
-        final lp = Paint()
-          ..color = neonColor.withValues(alpha: 0.4)
-          ..strokeWidth = 1.5
-          ;
-        canvas.drawLine(Offset.zero, Offset(r * 0.6 * math.cos(angle), r * 0.6 * math.sin(angle)), lp);
+      for (int i = 0; i < 8; i++) {
+        final angle = i * math.pi / 4 + _sparkPhase * 0.1;
+        final intensity = 0.5 + math.sin(_sparkPhase * 2 + i) * 0.5;
+        _arcPaint.color = const Color(0xFFFFFFFF)
+            .withValues(alpha: 0.25 + intensity * 0.4);
+        _arcPaint.strokeWidth = 1.5;
+        canvas.drawLine(Offset.zero,
+            Offset(r * 0.6 * math.cos(angle), r * 0.6 * math.sin(angle)),
+            _arcPaint);
       }
 
-      // Nucleo
-      final pulse = 0.5 + math.sin(_sparkPhase * 0.5) * 0.3;
-      final corePaint = Paint()
-        ..color = const Color(0xFFFFFFFF).withValues(alpha: pulse)
-        ;
-      canvas.drawCircle(Offset.zero, r * 0.35, Paint()..color = const Color(0xFFFFFFFF).withValues(alpha: pulse * 0.3));
-      canvas.drawCircle(Offset.zero, r * 0.2, corePaint);
+      // Nucleo (halo + core)
+      final pulse = 0.6 + math.sin(_sparkPhase * 0.5) * 0.4;
+      _coreHaloPaint.color =
+          const Color(0xFFFFFFFF).withValues(alpha: pulse * 0.4);
+      canvas.drawCircle(Offset.zero, r * 0.4, _coreHaloPaint);
+      _corePaint.color = const Color(0xFFFFFFFF).withValues(alpha: pulse);
+      canvas.drawCircle(Offset.zero, r * 0.2, _corePaint);
     }
     canvas.restore();
   }
 
-  void _drawLightning(Canvas canvas, double x1, double y1, double x2, double y2) {
-    final random = math.Random((_sparkPhase * 5).toInt());
-    final path = Path()..moveTo(x1, y1);
-    final steps = 5;
+  void _drawLightning(Canvas canvas, double x1, double y1, double x2, double y2,
+      {double intensity = 1.0}) {
+    // Seed include sia x1 che y1 così due torri con lo stesso x ma y diverso
+    // (allineate verticalmente) producono jitter pattern diversi → fulmini
+    // visivamente distinti anche quando paralleli.
+    final random = math.Random(
+        (_sparkPhase * 5).toInt() ^ x1.toInt() ^ (y1.toInt() << 8));
+    _sparkBoltPath.reset();
+    _sparkBoltPath.moveTo(x1, y1);
+    const steps = 6;
     for (int i = 1; i < steps; i++) {
       final t = i / steps;
-      path.lineTo(
-        x1 + (x2 - x1) * t + (random.nextDouble() - 0.5) * 20,
-        y1 + (y2 - y1) * t + (random.nextDouble() - 0.5) * 20,
+      _sparkBoltPath.lineTo(
+        x1 + (x2 - x1) * t + (random.nextDouble() - 0.5) * 22,
+        y1 + (y2 - y1) * t + (random.nextDouble() - 0.5) * 22,
       );
     }
-    path.lineTo(x2, y2);
+    _sparkBoltPath.lineTo(x2, y2);
 
-    final lp = Paint()
-      ..color = neonColor.withValues(alpha: 0.5)
-      ..strokeWidth = 2
-      ..style = PaintingStyle.stroke
-      ;
-    canvas.drawPath(path, lp);
+    // Glow esterno colorato
+    _lightningOuterPaint.color =
+        neonColor.withValues(alpha: 0.35 * intensity);
+    _lightningOuterPaint.strokeWidth = 5;
+    canvas.drawPath(_sparkBoltPath, _lightningOuterPaint);
+    // Core bianco brillante
+    _lightningCorePaint.color =
+        const Color(0xFFFFFFFF).withValues(alpha: 0.95 * intensity);
+    _lightningCorePaint.strokeWidth = 1.5;
+    canvas.drawPath(_sparkBoltPath, _lightningCorePaint);
   }
 }
 

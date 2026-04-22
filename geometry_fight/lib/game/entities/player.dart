@@ -55,6 +55,11 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
   double _energyPhase = 0;
   double _shieldPhase = 0;
 
+  // Cache del colore crystal (HSV ciclante): ricomputato solo quando la hue
+  // step avanza (intervalli di 5°) → da 60 HSV/sec per player a ~2/sec.
+  int _crystalHueStep = -1;
+  Color? _crystalColorCache;
+
   // Trail di movimento (scia luminosa)
   final List<Vector2> _trail = [];
   static const int _maxTrailLength = 18;
@@ -205,59 +210,100 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
 
   void _shoot(Vector2 direction) {
     final weapon = temporaryWeapon ?? currentWeapon;
+    // Overdrive powerup: potenzia SOLO la velocità di movimento della nave
+    // (vedi update() line 103). Non incrementa fire rate né danno né pierce
+    // — era un effetto cumulativo che rendeva il powerup troppo forte.
     final fireRateMultiplier = game.saveData.fireRateMultiplier *
-        (hasRapidFire ? 2.5 : 1.0) *
-        (hasOverdrive ? 2.0 : 1.0);
+        (hasRapidFire ? 2.5 : 1.0);
 
     double fireInterval = 1.0 / (baseFireRate * fireRateMultiplier);
     _fireTimer = fireInterval;
 
     final dir = direction.normalized();
-    double damageMultiplier =
-        game.saveData.damageMultiplier * (hasOverdrive ? 3.0 : 1.0);
+    double damageMultiplier = game.saveData.damageMultiplier;
     if (hasFirePower) damageMultiplier *= 2.0;
-    final pierce = hasOverdrive;
+    const pierce = false;
     final basicColor = hasFirePower ? const Color(0xFFFF3300) : NeonColors.bulletYellow;
 
     switch (weapon) {
       case WeaponType.basic:
         // Due file parallele di proiettili
         final perp = Vector2(-dir.y, dir.x) * 6; // 6px di distanza
-        _spawnBullet(dir, damageMultiplier, basicColor, offset: perp, pierce: pierce);
-        _spawnBullet(dir, damageMultiplier, basicColor, offset: -perp, pierce: pierce);
+        _spawnBullet(dir, damageMultiplier, basicColor, offset: perp, pierce: pierce, weaponType: WeaponType.basic);
+        _spawnBullet(dir, damageMultiplier, basicColor, offset: -perp, pierce: pierce, weaponType: WeaponType.basic);
       case WeaponType.spread:
         // 5 proiettili a ventaglio (shop weapon)
         for (final angle in [-0.12, -0.06, 0.0, 0.06, 0.12]) {
           final rotDir = _rotateVector(dir, angle);
           _spawnBullet(rotDir, damageMultiplier * 0.85, NeonColors.spreadOrange,
-              speed: bulletSpeed * 1.1, pierce: pierce);
+              speed: bulletSpeed * 1.1, pierce: pierce, weaponType: WeaponType.spread);
         }
       case WeaponType.spreadFan:
         // 9 proiettili con angolo totale 20° (±10°) — powerup drop
         for (final angle in [-0.175, -0.13125, -0.0875, -0.04375, 0.0, 0.04375, 0.0875, 0.13125, 0.175]) {
           final rotDir = _rotateVector(dir, angle);
           _spawnBullet(rotDir, damageMultiplier * 0.7, NeonColors.spreadOrange,
-              speed: bulletSpeed * 1.2, pierce: pierce);
+              speed: bulletSpeed * 1.2, pierce: pierce, weaponType: WeaponType.spreadFan);
         }
       case WeaponType.laser:
         _spawnLaser(dir, damageMultiplier);
       case WeaponType.plasma:
         _spawnPlasma(dir, damageMultiplier);
-        _fireTimer = 0.4; // Slower fire rate
+        // +50% fire rate: 0.4 → 0.267s tra i colpi. Anche scalato dagli
+        // upgrade shop + rapidFire powerup (entrambi già in fireRateMultiplier).
+        // Overdrive powerup NON accelera il fire rate (solo movimento).
+        _fireTimer = (0.4 / 1.5) / fireRateMultiplier;
       case WeaponType.ricochet:
         _spawnBullet(dir, damageMultiplier, NeonColors.ricochetGreen,
-            maxBounces: 5, pierce: pierce);
+            maxBounces: 5, pierce: pierce, weaponType: WeaponType.ricochet);
       case WeaponType.homing:
-        for (int i = 0; i < 3; i++) {
-          final offset = _rotateVector(dir, (i - 1) * 0.2);
-          _spawnHomingMissile(offset, damageMultiplier);
+        // Base 5 missili. Ventaglio di angoli per coprire più bersagli.
+        // Ogni salva ha un volleyId unico: i missili della stessa salva
+        // cercano bersagli DISTINTI tra loro (richiesta utente).
+        //
+        // Spawn: TUTTI dalla parte anteriore della navicella (stesso punto).
+        // La divergenza avviene DOPO lo spawn grazie al ventaglio di angoli
+        // + target distinti — i missili si allontanano naturalmente.
+        //
+        // Cap attivi: massimo 20 missili in volo simultanei. Con rapidFire
+        // il cap sale a 30 (non 40: rapidFire deve essere meno efficace
+        // su quest'arma del 50% — altrimenti troppi missili in scena).
+        // Se la salva supera il cap, spawna solo quanti ne entrano.
+        const homingCount = 5;
+        final maxActive = hasRapidFire ? 30 : 20;
+        final available = maxActive - HomingMissile.activeCount;
+        final toSpawn = available.clamp(0, homingCount);
+        if (toSpawn > 0) {
+          final volleyId = HomingMissile.nextVolleyId();
+          // Punto di spawn: naso della navicella = posizione player + offset
+          // lungo la direzione di tiro. 22px = davanti al corpo del player
+          // (player size ~30px, ship forward-tip a ~22 dal centro).
+          final nose = position + dir.normalized() * 22;
+          for (int i = 0; i < toSpawn; i++) {
+            final spread = (i - (homingCount - 1) / 2) * 0.15;
+            final rotatedDir = _rotateVector(dir, spread);
+            _spawnHomingMissile(
+              rotatedDir,
+              damageMultiplier,
+              volleyId: volleyId,
+              spawnAt: nose,
+            );
+          }
         }
-        _fireTimer = 0.5;
+        // Fire rate rapidFire dimezzato in efficacia: normalmente rapidFire
+        // dà 2.5x fire rate; qui 1.75x (boost ridotto del 50%: +150% → +75%)
+        // → meno missili accumulati nel tempo, cap più facile da rispettare.
+        // Overdrive powerup NON accelera il fire rate (solo movimento).
+        // Calcolo custom: bypassa `fireRateMultiplier` che ha già 2.5x per
+        // rapidFire, e applica 1.75x qui. Senza rapidFire usa il solo shop mult.
+        final homingMult = game.saveData.fireRateMultiplier *
+            (hasRapidFire ? 1.75 : 1.0);
+        _fireTimer = 0.5 / homingMult;
       case WeaponType.triple:
         // Sparo triplo con angolo ristretto (~12° totali)
         for (final angle in [-0.105, 0.0, 0.105]) {
           final rotDir = _rotateVector(dir, angle);
-          _spawnBullet(rotDir, damageMultiplier, NeonColors.white, pierce: pierce);
+          _spawnBullet(rotDir, damageMultiplier, NeonColors.white, pierce: pierce, weaponType: WeaponType.triple);
         }
         _fireTimer = fireInterval * 0.5;
       case WeaponType.overdrive:
@@ -270,9 +316,11 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
       {double speed = bulletSpeed,
       int maxBounces = maxBounces,
       Vector2? offset,
-      bool pierce = false}) {
+      bool pierce = false,
+      WeaponType weaponType = WeaponType.basic}) {
     final bullet = PlayerBullet(
       direction: dir,
+      weaponType: weaponType,
       speed: speed,
       damage: damage,
       color: color,
@@ -285,20 +333,41 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
   }
 
   void _spawnLaser(Vector2 dir, double damage) {
-    final laser = LaserBeam(direction: dir, damage: damage * 0.5);
+    final laser = LaserBeam(
+      direction: dir,
+      damage: damage * 0.5,
+      sizeMultiplier: hasFirePower ? 2.0 : 1.0,
+    );
     laser.position = position.clone();
     game.world.add(laser);
   }
 
   void _spawnPlasma(Vector2 dir, double damage) {
-    final plasma = PlasmaBullet(direction: dir, damage: damage * 3);
+    final plasma = PlasmaBullet(
+      direction: dir,
+      damage: damage * 3,
+      sizeMultiplier: hasFirePower ? 2.0 : 1.0,
+    );
     plasma.position = position.clone();
     game.world.add(plasma);
   }
 
-  void _spawnHomingMissile(Vector2 dir, double damage) {
-    final missile = HomingMissile(direction: dir, damage: damage * 1.5);
-    missile.position = position.clone();
+  void _spawnHomingMissile(
+    Vector2 dir,
+    double damage, {
+    required int volleyId,
+    required Vector2 spawnAt,
+  }) {
+    // Damage base: damageMultiplier * 2.25 (era 1.5 → +50% richiesta utente).
+    // 2.25 = 1.5 × 1.5 → i missili fanno il 50% in più rispetto al valore
+    // precedente, come richiesto. AoE sempre attiva (logica nel missile).
+    final missile = HomingMissile(
+      direction: dir,
+      damage: damage * 2.25,
+      sizeMultiplier: hasFirePower ? 2.0 : 1.0,
+      volleyId: volleyId,
+    );
+    missile.position = spawnAt.clone();
     game.world.add(missile);
   }
 
@@ -368,10 +437,16 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
     }
 
     // === 3. GLOW ESTERNO DELLA NAVE — senza blur ===
+    // Colore base determinato dallo skin equipaggiato (shop). Overdrive
+    // prevale con arcobaleno animato. `skinId` letto una volta e condiviso.
+    final skinId = game.saveData.activeSkin;
+    final skinColor = _getSkinColor();
     final baseColor = hasOverdrive
         ? _getRainbowColor(_energyPhase)
-        : NeonColors.cyan;
-    paint.color = baseColor.withValues(alpha: 0.12);
+        : skinColor;
+    final ghost = skinId == 'ghost';
+    final glowAlpha = ghost ? 0.06 : 0.12;
+    paint.color = baseColor.withValues(alpha: glowAlpha);
     paint.maskFilter = null;
     _drawShipBody(canvas, paint, 1.7);
 
@@ -379,14 +454,41 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
     _renderThrusters(canvas, cx, cy);
 
     // === 5. CORPO NAVE PRINCIPALE ===
+    // Skin ghost: alpha ridotta (semi-trasparente). Stealth: fill quasi nero
+    // con bordo rosso luminoso. Crystal: base bianca con leggero tint cromatico.
     paint.maskFilter = null;
+    Color bodyColor = baseColor;
+    if (skinId == 'ghost') {
+      bodyColor = baseColor.withValues(alpha: 0.45);
+    } else if (skinId == 'stealth') {
+      bodyColor = const Color(0xFF0A0A0A);
+    } else if (skinId == 'crystal') {
+      // Tint cromatico leggero che cicla lento. `Color.lerp` su due non-null
+      // è garantito non-null ma evitiamo il bang per robustezza.
+      final hue = (_energyPhase * 10) % 360;
+      bodyColor = Color.lerp(
+            const Color(0xFFE8F8FF),
+            HSVColor.fromAHSV(1, hue, 0.4, 1).toColor(),
+            0.3,
+          ) ??
+          const Color(0xFFE8F8FF);
+    }
     if (isInvincible) {
       final blink = ((_invincibleTimer * 12).toInt() % 2 == 0);
-      paint.color = blink ? baseColor : baseColor.withValues(alpha: 0.2);
+      paint.color = blink ? bodyColor : bodyColor.withValues(alpha: 0.2);
     } else {
-      paint.color = baseColor;
+      paint.color = bodyColor;
     }
     _drawShipBody(canvas, paint, 1.0);
+
+    // Bordo rosso luminoso per stealth (si legge sulla fill quasi nera)
+    if (skinId == 'stealth' && !isInvincible) {
+      final edgePaint = Paint()
+        ..color = const Color(0xFFFF2244).withValues(alpha: 0.9)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.2;
+      _drawShipBody(canvas, edgePaint, 1.0);
+    }
 
     // === 6. DETTAGLI INTERNI (cockpit, linee strutturali) ===
     _renderShipDetails(canvas, cx, cy, baseColor);
@@ -403,7 +505,9 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
   static final _trailPaint = Paint();
   static final _detailPaint = Paint();
 
-  /// Scia luminosa dietro la nave durante il movimento
+  /// Scia luminosa dietro la nave durante il movimento.
+  /// Colore deriva dal trail equipaggiato nello shop (activeTrail):
+  /// normal=cyan, fire=arancio, ice=azzurro, plasma=viola, rainbow=HSV ciclico.
   void _renderTrail(Canvas canvas, double cx, double cy) {
     if (_trail.isEmpty) return;
     for (int i = 0; i < _trail.length; i++) {
@@ -412,7 +516,7 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
       final offset = _trail[i] - position;
       final color = hasOverdrive
           ? _getRainbowColor(_energyPhase + i * 0.3)
-          : NeonColors.cyan;
+          : _getTrailColor(i);
       // Soft glow senza blur — cerchio più grande, alpha ridotta
       _trailPaint.color = color.withValues(alpha: alpha * 0.5);
       _trailPaint.maskFilter = null;
@@ -427,6 +531,52 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
         trailSize,
         _trailPaint,
       );
+    }
+  }
+
+  /// Colore skin equipaggiato (shop). Overdrive prevale (arcobaleno).
+  Color _getSkinColor() {
+    switch (game.saveData.activeSkin) {
+      case 'stealth':
+        return const Color(0xFFFF2244);
+      case 'crystal':
+        // Crystal: ciclo cromatico lento → riflessi arcobaleno.
+        // Cache su step di 5° → ricomputo ~72 volte/ciclo invece di 60 fps.
+        final step = ((_energyPhase * 20) / 5).floor() % 72;
+        if (_crystalHueStep != step || _crystalColorCache == null) {
+          _crystalHueStep = step;
+          _crystalColorCache =
+              HSVColor.fromAHSV(1, step * 5.0, 0.5, 1).toColor();
+        }
+        return _crystalColorCache!;
+      case 'ghost':
+        return const Color(0xFF8888CC);
+      case 'omega':
+        return const Color(0xFFFFD700);
+      case 'classic':
+      default:
+        return NeonColors.cyan;
+    }
+  }
+
+  /// Colore scia equipaggiata (shop).
+  Color _getTrailColor(int index) {
+    switch (game.saveData.activeTrail) {
+      case 'fire':
+        // Gradiente rosso→giallo lungo la scia
+        final t = (index / _maxTrailLength).clamp(0.0, 1.0);
+        return Color.lerp(const Color(0xFFFFDD00), const Color(0xFFFF2200), t)!;
+      case 'ice':
+        return const Color(0xFF88DDFF);
+      case 'plasma':
+        return const Color(0xFFCC00FF);
+      case 'rainbow':
+        return HSVColor.fromAHSV(
+                1, ((_energyPhase * 60) + index * 25) % 360, 1, 1)
+            .toColor();
+      case 'normal':
+      default:
+        return NeonColors.cyan;
     }
   }
 
@@ -592,7 +742,15 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
     }
   }
 
-  /// Disegna il corpo della nave: forma a freccia dettagliata con ali
+  // Path cache: ricostruiti solo se `scale` o skin cambia. Il player viene
+  // renderizzato 3 volte per frame (glow + body + stealth-edge) → 3 alloc
+  // Path × 60fps = 180 Path/sec evitate.
+  double _cachedPathScale = -1;
+  bool _cachedPathOmega = false;
+  Path? _cachedShipPath;
+
+  /// Disegna il corpo della nave: forma a freccia dettagliata con ali.
+  /// Omega skin usa una stella a 4 punte (forma unica descritta nello shop).
   void _drawShipBody(Canvas canvas, Paint paint, double scale) {
     final cx = size.x / 2;
     final cy = size.y / 2;
@@ -602,20 +760,41 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
     canvas.rotate(_rotation);
 
     final s = scale;
-    // Forma nave: punta affilata in alto, ali laterali, coda
-    final path = Path()
-      ..moveTo(0, -14 * s)           // Punta
-      ..lineTo(4 * s, -6 * s)       // Lato destro punta
-      ..lineTo(13 * s, 10 * s)      // Ala destra esterna
-      ..lineTo(8 * s, 8 * s)        // Rientro ala destra
-      ..lineTo(5 * s, 14 * s)       // Coda destra
-      ..lineTo(0, 10 * s)           // Centro coda
-      ..lineTo(-5 * s, 14 * s)      // Coda sinistra
-      ..lineTo(-8 * s, 8 * s)       // Rientro ala sinistra
-      ..lineTo(-13 * s, 10 * s)     // Ala sinistra esterna
-      ..lineTo(-4 * s, -6 * s)      // Lato sinistro punta
-      ..close();
-    canvas.drawPath(path, paint);
+    final isOmega = game.saveData.activeSkin == 'omega';
+    if (_cachedPathScale != s ||
+        _cachedPathOmega != isOmega ||
+        _cachedShipPath == null) {
+      _cachedPathScale = s;
+      _cachedPathOmega = isOmega;
+      if (isOmega) {
+        // Stella a 4 punte — punta lunga in avanti/dietro, punte corte ai lati
+        _cachedShipPath = Path()
+          ..moveTo(0, -15 * s)
+          ..lineTo(4 * s, -3 * s)
+          ..lineTo(13 * s, 0)
+          ..lineTo(4 * s, 3 * s)
+          ..lineTo(0, 15 * s)
+          ..lineTo(-4 * s, 3 * s)
+          ..lineTo(-13 * s, 0)
+          ..lineTo(-4 * s, -3 * s)
+          ..close();
+      } else {
+        // Forma nave standard: punta affilata in alto, ali laterali, coda
+        _cachedShipPath = Path()
+          ..moveTo(0, -14 * s)
+          ..lineTo(4 * s, -6 * s)
+          ..lineTo(13 * s, 10 * s)
+          ..lineTo(8 * s, 8 * s)
+          ..lineTo(5 * s, 14 * s)
+          ..lineTo(0, 10 * s)
+          ..lineTo(-5 * s, 14 * s)
+          ..lineTo(-8 * s, 8 * s)
+          ..lineTo(-13 * s, 10 * s)
+          ..lineTo(-4 * s, -6 * s)
+          ..close();
+      }
+    }
+    canvas.drawPath(_cachedShipPath!, paint);
 
     canvas.restore();
   }

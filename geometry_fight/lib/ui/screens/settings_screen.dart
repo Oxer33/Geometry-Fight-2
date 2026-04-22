@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../data/achievements.dart';
+import '../../data/crash_reporter.dart';
 import '../../data/leaderboard.dart';
 import '../../data/save_data.dart';
 import '../../game/systems/audio_system.dart';
+import '../../game/systems/music_manager.dart';
 
 class SettingsScreen extends StatefulWidget {
   final VoidCallback onBack;
@@ -67,6 +70,118 @@ class _SettingsScreenState extends State<SettingsScreen>
     AudioSystem.setSfxVolume(_sfxVolume);
     AudioSystem.setBgmVolume(_bgmVolume);
     AudioSystem.setVibration(_vibration);
+    // Live update del player BGM (slider music = effetto immediato)
+    MusicManager.setVolume(_bgmVolume);
+  }
+
+  /// Mostra i crash log raccolti da CrashReporter. L'utente può copiarli
+  /// per condividerli o cancellarli dopo aver risolto il problema.
+  void _showCrashLogs() {
+    final logs = CrashReporter.getLogs();
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF0A0A0A),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: BorderSide(color: Colors.redAccent.withValues(alpha: 0.3)),
+        ),
+        title: Row(
+          children: [
+            const Icon(Icons.report_problem_rounded,
+                color: Colors.redAccent, size: 20),
+            const SizedBox(width: 8),
+            Text(
+              'CRASH LOGS (${logs.length})',
+              style: const TextStyle(
+                color: Colors.redAccent,
+                fontFamily: 'monospace',
+                fontSize: 14,
+              ),
+            ),
+          ],
+        ),
+        content: SizedBox(
+          width: double.maxFinite,
+          height: 340,
+          child: logs.isEmpty
+              ? const Center(
+                  child: Text(
+                    'Nessun crash registrato.\nSe il gioco crasha, apparirà qui.',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Colors.white54,
+                      fontFamily: 'monospace',
+                      fontSize: 12,
+                    ),
+                  ),
+                )
+              : ListView.separated(
+                  itemCount: logs.length,
+                  separatorBuilder: (_, i) =>
+                      const Divider(color: Colors.white12, height: 12),
+                  itemBuilder: (_, i) {
+                    // Più recenti in cima
+                    final entry = logs[logs.length - 1 - i];
+                    return Text(
+                      entry,
+                      style: const TextStyle(
+                        color: Colors.white70,
+                        fontFamily: 'monospace',
+                        fontSize: 10,
+                      ),
+                    );
+                  },
+                ),
+        ),
+        actions: [
+          if (logs.isNotEmpty)
+            TextButton.icon(
+              icon: const Icon(Icons.copy_rounded,
+                  color: Colors.cyanAccent, size: 16),
+              label: const Text(
+                'COPIA',
+                style: TextStyle(
+                    color: Colors.cyanAccent, fontFamily: 'monospace'),
+              ),
+              onPressed: () async {
+                await Clipboard.setData(
+                    ClipboardData(text: logs.join('\n\n')));
+                if (!ctx.mounted) return;
+                ScaffoldMessenger.of(ctx).showSnackBar(
+                  const SnackBar(
+                    content: Text('Logs copiati',
+                        style: TextStyle(fontFamily: 'monospace')),
+                    backgroundColor: Colors.cyanAccent,
+                    duration: Duration(seconds: 1),
+                  ),
+                );
+              },
+            ),
+          if (logs.isNotEmpty)
+            TextButton.icon(
+              icon: const Icon(Icons.delete_outline,
+                  color: Colors.redAccent, size: 16),
+              label: const Text(
+                'CANCELLA',
+                style: TextStyle(
+                    color: Colors.redAccent, fontFamily: 'monospace'),
+              ),
+              onPressed: () async {
+                await CrashReporter.clear();
+                if (!ctx.mounted) return;
+                Navigator.pop(ctx);
+              },
+            ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('CHIUDI',
+                style: TextStyle(
+                    color: Colors.white54, fontFamily: 'monospace')),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -225,6 +340,15 @@ class _SettingsScreenState extends State<SettingsScreen>
                             ),
                           );
                         },
+                      ),
+                      const SizedBox(height: 12),
+                      _buildTestButton(
+                        label: 'CRASH LOGS',
+                        icon: Icons.report_problem_rounded,
+                        color: Colors.redAccent,
+                        entrance: entrance,
+                        delay: 0.55,
+                        onTap: _showCrashLogs,
                       ),
                     ],
                   ),

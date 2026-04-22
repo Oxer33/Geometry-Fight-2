@@ -146,41 +146,97 @@ class SingularityBoss extends BossBase {
     }
   }
 
+  // Paint cache FX
+  static final _darkPaint = Paint()..color = const Color(0xFF050505);
+  static final _greenGlowPaint = Paint();
+  static final _accretionPaint = Paint()..style = PaintingStyle.stroke;
+  static final _lensingPaint = Paint()..style = PaintingStyle.stroke;
+  static final _edgePaint = Paint()..style = PaintingStyle.stroke;
+  static final _pullPaint = Paint()..style = PaintingStyle.stroke;
+  static final _innerCorePaint = Paint();
+
   @override
   void renderBoss(Canvas canvas, Paint paint, double scale) {
     final cx = size.x / 2;
     final cy = size.y / 2;
     final r = 55 * scale;
 
-    // Dark sphere
-    final darkPaint = Paint()..color = const Color(0xFF111111);
-    canvas.drawCircle(Offset(cx, cy), r, darkPaint);
+    // ─── GREEN RADIOACTIVE GLOW (alone esterno pulsante) ───
+    final glowIntensity = 0.4 + math.sin(_phase * 2) * 0.15;
+    _greenGlowPaint.color =
+        NeonColors.green.withValues(alpha: glowIntensity);
+    canvas.drawCircle(Offset(cx, cy), r * 1.7, _greenGlowPaint);
 
-    // Green radioactive glow
-    final glowIntensity = 0.3 + math.sin(_phase * 2) * 0.1;
-    final greenGlow = Paint()
-      ..color = NeonColors.green.withValues(alpha: glowIntensity)
-      ;
-    canvas.drawCircle(Offset(cx, cy), r * 1.6, greenGlow);
-
-    // Edge ring
-    paint.style = PaintingStyle.stroke;
-    paint.strokeWidth = 3 * scale;
-    canvas.drawCircle(Offset(cx, cy), r, paint);
-
-    // Pull indicator
-    if (_pulling) {
-      final pullPaint = Paint()
-        ..color = NeonColors.purple.withValues(alpha: 0.4)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 2;
-      for (int ring = 0; ring < 3; ring++) {
-        final ringR = r + 20 + ring * 30 + (_pullDuration * 50);
-        pullPaint.color = NeonColors.purple.withValues(alpha: 0.3 - ring * 0.1);
-        canvas.drawCircle(Offset(cx, cy), ringR, pullPaint);
+    // ─── LENSING RINGS (distorsione gravitazionale — 4 stroke) ───
+    if (scale <= 1.01) {
+      for (int i = 0; i < 4; i++) {
+        final ringR = r * (1.25 + i * 0.18);
+        final ringAlpha = 0.25 - i * 0.05;
+        _lensingPaint.color = const Color(0xFF88FFBB)
+            .withValues(alpha: ringAlpha);
+        _lensingPaint.strokeWidth = 1.0;
+        canvas.drawCircle(Offset(cx, cy), ringR, _lensingPaint);
       }
     }
 
-    paint.style = PaintingStyle.fill;
+    // ─── ACCRETION DISK (3 bracci a spirale rotanti) ───
+    if (scale <= 1.01) {
+      canvas.save();
+      canvas.translate(cx, cy);
+      canvas.rotate(_phase * 0.8);
+      for (int arm = 0; arm < 3; arm++) {
+        final armOffset = arm * math.pi * 2 / 3;
+        final armPath = Path();
+        const segCount = 24;
+        for (int s = 0; s <= segCount; s++) {
+          final t = s / segCount;
+          final spiralR = r * (0.9 + t * 0.9);
+          final spiralAngle =
+              armOffset + t * math.pi * 3.5 + _phase * 0.4;
+          final sx = spiralR * math.cos(spiralAngle);
+          final sy = spiralR * math.sin(spiralAngle);
+          if (s == 0) {
+            armPath.moveTo(sx, sy);
+          } else {
+            armPath.lineTo(sx, sy);
+          }
+        }
+        _accretionPaint.color = const Color(0xFF00FF88)
+            .withValues(alpha: 0.35 + math.sin(_phase * 2 + arm) * 0.15);
+        _accretionPaint.strokeWidth = 2;
+        canvas.drawPath(armPath, _accretionPaint);
+      }
+      canvas.restore();
+    }
+
+    // ─── EVENT HORIZON (sfera nera assorbente) ───
+    canvas.drawCircle(Offset(cx, cy), r, _darkPaint);
+
+    // ─── BORDO NEON DEL CORPO ───
+    _edgePaint.color = paint.color;
+    _edgePaint.strokeWidth = 3 * scale;
+    canvas.drawCircle(Offset(cx, cy), r, _edgePaint);
+
+    // ─── INNER CORE (occhio verde pulsante) ───
+    if (scale <= 1.01) {
+      final corePulse = 0.4 + math.sin(_phase * 5) * 0.3;
+      _innerCorePaint.color =
+          const Color(0xFF00FF88).withValues(alpha: corePulse);
+      canvas.drawCircle(Offset(cx, cy), r * 0.25 * corePulse, _innerCorePaint);
+      _innerCorePaint.color =
+          const Color(0xFFFFFFFF).withValues(alpha: corePulse);
+      canvas.drawCircle(Offset(cx, cy), r * 0.08, _innerCorePaint);
+    }
+
+    // ─── PULL INDICATOR (ring viola espansivi) ───
+    if (_pulling) {
+      for (int ring = 0; ring < 3; ring++) {
+        final ringR = r + 20 + ring * 30 + (_pullDuration * 50);
+        _pullPaint.color =
+            NeonColors.purple.withValues(alpha: 0.35 - ring * 0.1);
+        _pullPaint.strokeWidth = 2;
+        canvas.drawCircle(Offset(cx, cy), ringR, _pullPaint);
+      }
+    }
   }
 }

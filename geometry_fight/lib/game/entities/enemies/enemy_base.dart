@@ -17,10 +17,16 @@ abstract class EnemyBase extends PositionComponent
   double _spawnPulse = 0.4; // Pulse ring on spawn
   double _idlePhase = 0;
   bool _isDead = false; // FIX C1: guard contro double-death
+  // Tunnel mode: true appena il nemico entra nel viewport visibile.
+  // Gate per right-escape: evita che mob freschi spawnati oltre dx vengano
+  // immediatamente "killati" (con punti) prima che il player li veda.
+  bool _hasBecomeVisible = false;
 
   // Spawn invulnerability (come GW:RE2 — nemici appaiono con effetto materializzazione)
-  // 4s warning: nemico lampeggia, non si muove, non danneggia player, non subisce danno
-  double _spawnInvulnTimer = 4.0;
+  // 2.5s warning: nemico lampeggia, non si muove, non danneggia player, non subisce danno.
+  // DEVE combaciare con `classicWaveGroupDelaySeconds` (constants.dart) — il blink
+  // termina esattamente quando arriva il prossimo gruppo di spawn.
+  double _spawnInvulnTimer = 2.5;
   // Fase accumulata per flash incrementale: avanza con freqHz*dt così la frequenza
   // può variare nel tempo (lento all'inizio, rapido verso la fine del warning)
   double _blinkPhase = 0;
@@ -33,6 +39,11 @@ abstract class EnemyBase extends PositionComponent
   double _fearTimer = 0;
   Vector2? _fearDirection;
   bool get canFearDodge => false;
+
+  /// Immunità danno ad area: bomba, plasma explosion, laser raycast, overdrive,
+  /// shockwave morte player, buco nero. Usato dai Splitter per evitare cascata
+  /// di divisioni simultanee che fa crashare il gioco.
+  bool get isImmuneToAreaDamage => false;
 
   EnemyBase({
     required this.hp,
@@ -60,23 +71,43 @@ abstract class EnemyBase extends PositionComponent
     if (_spawnInvulnTimer > 0) {
       // Flash frequency incrementale: 1 Hz all'inizio → 12 Hz a fine warning
       // Curva quadratica: accelera verso la fine per effetto "imminenza"
-      final progress = 1.0 - (_spawnInvulnTimer / 4.0).clamp(0.0, 1.0);
+      final progress = 1.0 - (_spawnInvulnTimer / 2.5).clamp(0.0, 1.0);
       final freqHz = 1.0 + progress * progress * 11.0; // 1..12 Hz
       _blinkPhase += freqHz * dt;
       _spawnInvulnTimer -= dt;
     }
     if (_fearTimer > 0) _fearTimer -= dt;
 
-    // Tunnel mode: despawn nemici dietro la camera
+    // Tunnel mode: despawn dietro o oltre la camera.
     if (game.isTunnelMode) {
-      final cameraLeft = game.camera.viewfinder.position.x - game.size.x / 2 - 200;
+      final cameraX = game.camera.viewfinder.position.x;
+      final halfW = game.size.x / 2;
+      final cameraLeft = cameraX - halfW - 200;
+      // Marca visibile se dentro viewport (offset 50px buffer).
+      if (!_hasBecomeVisible && position.x < cameraX + halfW - 50) {
+        _hasBecomeVisible = true;
+      }
+      // Dietro la camera (sx): rimozione silenziosa, nessun punto.
       if (position.x < cameraLeft) {
         removeFromParent();
         return;
       }
+      // Oltre la camera (dx): mob sfuggito al player → come se killato.
+      // Gate su `_hasBecomeVisible` → mob appena spawnati oltre dx che
+      // non hanno MAI attraversato il viewport non ricevono punti.
+      final cameraRightEscape = cameraX + halfW + 500;
+      if (position.x > cameraRightEscape) {
+        if (_hasBecomeVisible) {
+          onDeath();
+        } else {
+          // Non mai stato visibile → despawn silenzioso, no reward.
+          removeFromParent();
+        }
+        return;
+      }
     }
 
-    // Durante il warning di spawn (4s) il nemico sta fermo: niente fear, niente behavior
+    // Durante il warning di spawn (2.5s) il nemico sta fermo: niente fear, niente behavior
     if (_spawnInvulnTimer <= 0) {
       // Fear: fuggi nella direzione opposta brevemente
       if (_fearTimer > 0 && _fearDirection != null) {
@@ -100,9 +131,16 @@ abstract class EnemyBase extends PositionComponent
 
   void updateBehavior(double dt);
 
-  void takeDamage(double amount) {
+  /// ATTENZIONE per chi estende: SE si fa override di `takeDamage`,
+  /// propagare SEMPRE `isArea` a `super.takeDamage(amount, isArea: isArea)`.
+  /// Se si gestisce `hp` inline senza super, replicare il check:
+  ///   `if (isArea && isImmuneToAreaDamage) return;`
+  /// Altrimenti la cascata di split dei Splitter torna a crashare il gioco.
+  void takeDamage(double amount, {bool isArea = false}) {
     // Invulnerabile durante spawn (materializzazione come GW:RE2)
     if (_spawnInvulnTimer > 0) return;
+    // Immunità danno ad area (es. Splitter — evita cascata split simultanea)
+    if (isArea && isImmuneToAreaDamage) return;
 
     hp -= amount;
     _flashTimer = 0.1;
@@ -139,7 +177,13 @@ abstract class EnemyBase extends PositionComponent
 
   /// Kill silenzioso: rimuove il nemico con esplosione visiva ma SENZA
   /// dare punti, geom, kill count o drop. Usato per la shockwave alla morte.
+  /// Rispetta isImmuneToAreaDamage: Splitter sopravvivono alla shockwave.
+  /// Guard su `_isDead`: se due sistemi invocano `killSilently` nello stesso
+  /// frame (es. bomba + gate explosion), evita doppia esplosione visiva.
   void killSilently() {
+    if (isImmuneToAreaDamage) return;
+    if (_isDead) return;
+    _isDead = true;
     game.spawnExplosion(position, neonColor, radius: size.x * 0.5, particleCount: 3);
     removeFromParent();
   }
@@ -148,7 +192,8 @@ abstract class EnemyBase extends PositionComponent
 
   Vector2 seekPlayer(double maxSpeed) {
     final dir = (playerPosition - position);
-    if (dir.length > 0) {
+    // length² evita la sqrt di `.length` — threshold 0.0001 = 0.01px di distanza.
+    if (dir.length2 > 0.0001) {
       dir.normalize();
       return dir * maxSpeed;
     }

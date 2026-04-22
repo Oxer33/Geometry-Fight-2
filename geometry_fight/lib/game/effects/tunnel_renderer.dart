@@ -59,6 +59,11 @@ class TunnelRenderer extends PositionComponent
     super.update(dt);
     if (!game.isTunnelMode) return;
 
+    // Clamp player ai muri del tunnel — ERA dentro render() (violava
+    // update/render split → jitter + race con update del player). Ora
+    // in update() dove è lecito mutare lo stato di gioco.
+    _checkWallCollision();
+
     // Spawn ostacoli periodicamente
     _obstacleSpawnTimer -= dt;
     if (_obstacleSpawnTimer <= 0 && game.bossCount == 0) {
@@ -114,18 +119,36 @@ class TunnelRenderer extends PositionComponent
     final aheadX = cameraX + _screenHalfW + 100 + _random.nextDouble() * 300;
     final bounds = _boundsAtX(aheadX);
     final tunnelSpan = bounds.bottom - bounds.top;
-    // Mantieni sempre un corridoio giocabile: ostacolo <= 42% dell'altezza locale.
-    final maxObsHeight = (tunnelSpan * 0.42).clamp(40.0, tunnelSpan * 0.49);
-    final obsHeight = (tunnelSpan * (0.18 + _random.nextDouble() * 0.2))
-        .clamp(30.0, maxObsHeight);
+    // Base 20% dello span + 3% per boss ucciso (da `game.tunnelObstacleScale`).
+    // Jitter ±3% per variazione; cap hard a 45% span per non chiudere tunnel.
+    final baseScale = game.tunnelObstacleScale;
+    final obsHeight =
+        (tunnelSpan * (baseScale + (_random.nextDouble() - 0.5) * 0.06))
+            .clamp(25.0, tunnelSpan * 0.45);
+    // Se un ostacolo esiste già a X ravvicinato, forza stesso lato:
+    // garantisce un passaggio libero sul lato opposto.
+    const sameSideRange = 160.0;
+    bool? forcedSide;
+    for (final existing in _obstacles) {
+      if ((existing.x - aheadX).abs() < sameSideRange) {
+        forcedSide = existing.isTop;
+        break;
+      }
+    }
     _obstacles.add(_TunnelObstacle(
       x: aheadX,
-      isTop: _random.nextBool(),
+      isTop: forcedSide ?? _random.nextBool(),
       width: 30 + _random.nextDouble() * 40,
       height: obsHeight,
       lifetime: 12.0,
     ));
   }
+
+  // Scrolling particle bg (stile splash screen): parallax + strie.
+  // Count dimezzato + size ridotto rispetto a splash per non affollare.
+  // Pattern deterministico via seed costanti dentro `_renderScrollingBg`.
+  static final Paint _bgStarPaint = Paint();
+  static final Paint _bgStriePaint = Paint()..strokeCap = StrokeCap.round;
 
   @override
   void render(Canvas canvas) {
@@ -140,6 +163,9 @@ class TunnelRenderer extends PositionComponent
     final topWallY = centerY - tunnelH / 2;
     final bottomWallY = centerY + tunnelH / 2;
 
+    // === PARTICELLE BG SCROLLING (stile splash screen) ===
+    _renderScrollingBg(canvas, cameraX, viewWidth);
+
     // === MURI DEL TUNNEL (ondeggianti) ===
     _renderTunnelWalls(canvas, startX, endX, topWallY, bottomWallY);
 
@@ -150,10 +176,67 @@ class TunnelRenderer extends PositionComponent
     _renderSpeedLines(canvas, startX, endX, topWallY, bottomWallY);
   }
 
+  /// Particelle bg stile splash: strie + stelle parallax scorrevoli.
+  /// Count dimezzato (splash: 180+36 strie + 240+90+24 stelle → qui ~50 tot)
+  /// e size ridotto per non distrarre dal gameplay.
+  void _renderScrollingBg(Canvas canvas, double cameraX, double viewWidth) {
+    final sizeY = game.size.y > 0 ? game.size.y : 600;
+    final cameraY = game.camera.viewfinder.position.y;
+    final topY = cameraY - sizeY / 2;
+    // Uso `cameraX` come "scroll" globale: le particelle scorrono verso sx
+    // mentre la camera avanza verso dx.
+
+    // ─── STRIE (20 strie orizzontali a velocità variate) ───
+    final strieRng = math.Random(77);
+    for (int i = 0; i < 20; i++) {
+      final yOffset = strieRng.nextDouble() * sizeY;
+      final baseLen = 15.0 + strieRng.nextDouble() * 60;
+      final speedMul = 0.8 + strieRng.nextDouble() * 2.0;
+      final baseWorldX = strieRng.nextDouble() * viewWidth * 3;
+      // Posizione in world: baseWorldX spostata a sx di cameraX * speedMul.
+      final period = viewWidth * 2 + baseLen;
+      final worldX = ((baseWorldX - cameraX * speedMul) % period + period) % period;
+      final screenX = cameraX - viewWidth + worldX;
+      final alpha = 0.04 + strieRng.nextDouble() * 0.06;
+      _bgStriePaint.color = Color.fromRGBO(180, 210, 255, alpha);
+      _bgStriePaint.strokeWidth = 0.3 + strieRng.nextDouble() * 0.4;
+      canvas.drawLine(
+        Offset(screenX, topY + yOffset),
+        Offset(screenX + baseLen, topY + yOffset),
+        _bgStriePaint,
+      );
+    }
+
+    // ─── STELLE (25 totali, 3 layer profondità) ───
+    final starRng = math.Random(42);
+    for (int i = 0; i < 25; i++) {
+      final baseWorldX = starRng.nextDouble() * viewWidth * 3;
+      final yOffset = starRng.nextDouble() * sizeY;
+      // Layer profondità: determina velocità + size + alpha
+      final layer = i % 3; // 0=lontano, 1=medio, 2=vicino
+      final speedMul = [0.3, 0.7, 1.4][layer];
+      final starSize = [0.4, 0.7, 1.1][layer];
+      final alpha = [0.25, 0.45, 0.65][layer];
+
+      final period = viewWidth * 2 + 10;
+      final worldX = ((baseWorldX - cameraX * speedMul) % period + period) % period;
+      final screenX = cameraX - viewWidth + worldX;
+
+      _bgStarPaint.color = Color.fromRGBO(200, 220, 255, alpha);
+      canvas.drawCircle(Offset(screenX, topY + yOffset), starSize, _bgStarPaint);
+    }
+  }
+
+  // Path cache riutilizzati: 4 Path × 60fps = 240 alloc/sec risparmiate.
+  static final Path _topWallPath = Path();
+  static final Path _bottomWallPath = Path();
+  static final Path _topInnerPath = Path();
+  static final Path _bottomInnerPath = Path();
+
   void _renderTunnelWalls(Canvas canvas, double startX, double endX,
       double topY, double bottomY) {
-    final topPath = Path();
-    final bottomPath = Path();
+    final topPath = _topWallPath..reset();
+    final bottomPath = _bottomWallPath..reset();
     bool firstTop = true, firstBottom = true;
 
     for (double x = startX; x <= endX; x += 6) {
@@ -179,8 +262,8 @@ class TunnelRenderer extends PositionComponent
     canvas.drawPath(bottomPath, _wallMainPaint);
 
     // Seconda linea parallasse (interna)
-    final topInner = Path();
-    final bottomInner = Path();
+    final topInner = _topInnerPath..reset();
+    final bottomInner = _bottomInnerPath..reset();
     bool ft = true, fb = true;
     for (double x = startX; x <= endX; x += 10) {
       final offset = game.tunnelCenterOffsetAt(x);
@@ -194,9 +277,8 @@ class TunnelRenderer extends PositionComponent
     }
     canvas.drawPath(topInner, _wallInnerPaint);
     canvas.drawPath(bottomInner, _wallInnerPaint);
-
-    // Check collisione player con muri del tunnel
-    _checkWallCollision();
+    // NOTA: il wall clamp del player è ora in update() per rispettare lo
+    // split update/render e evitare jitter.
   }
 
   /// Controlla se il player tocca i muri del tunnel e causa danno

@@ -201,63 +201,100 @@ class ChronoWraithBoss extends BossBase {
   static final _arcPaint = Paint()
     ..style = PaintingStyle.stroke
     ..strokeWidth = 2;
+  // Signature FX paints
+  static final _clockTickPaint = Paint()..style = PaintingStyle.stroke;
+  static final _clockHandPaint = Paint()..style = PaintingStyle.stroke;
+  static final _irisPaint = Paint();
+  static final _pupilPaint = Paint();
+  static final _warpSpiralPaint = Paint()..style = PaintingStyle.stroke;
+  static final _teleportRingPaint = Paint()..style = PaintingStyle.stroke;
 
   @override
   void renderBoss(Canvas canvas, Paint paint, double scale) {
     final cx = size.x / 2;
     final cy = size.y / 2;
 
-    // Draw afterimages
+    // ─── PRE-TELEPORT RING (appare 0.5s prima del teleport) ───
+    if (scale <= 1.01 && _teleportTimer < 0.5 && _teleportTimer > 0) {
+      final warnT = 1.0 - _teleportTimer.clamp(0.0, 0.5) / 0.5;
+      _teleportRingPaint.color =
+          NeonColors.deepPurple.withValues(alpha: warnT * 0.7);
+      _teleportRingPaint.strokeWidth = 2 + warnT * 3;
+      canvas.drawCircle(Offset(cx, cy), 70 * scale * (1.0 - warnT * 0.3),
+          _teleportRingPaint);
+    }
+
+    // Afterimages
     for (final ai in _afterimages) {
       final offset = ai.position - position;
       _aiPaint.color = neonColor.withValues(alpha: ai.opacity * 0.3);
       _drawWraithShape(
-          canvas, _aiPaint, scale * 0.9, Offset(cx + offset.x, cy + offset.y));
+          canvas, _aiPaint, scale * 0.9, Offset(cx + offset.x, cy + offset.y),
+          drawClockface: false);
     }
 
-    // Main body
-    _drawWraithShape(canvas, paint, scale, Offset(cx, cy));
+    // Corpo principale con clockface
+    _drawWraithShape(canvas, paint, scale, Offset(cx, cy),
+        drawClockface: scale <= 1.01);
 
-    // Time warp visual
+    // ─── TIME WARP: vortex viola + spirale rotante ───
     if (_timeWarping) {
-      // Larger circle at lower alpha instead of blur
       _warpPaint.color = NeonColors.deepPurple.withValues(alpha: 0.1);
       canvas.drawCircle(Offset(cx, cy), 130 * scale, _warpPaint);
       _warpPaint.color = NeonColors.deepPurple.withValues(alpha: 0.15);
       canvas.drawCircle(Offset(cx, cy), 100 * scale, _warpPaint);
 
-      // Clock-like rotating arcs
+      // Spirale 2-arm che risucchia
+      _warpSpiralPaint.color = const Color(0xFFFFFFFF).withValues(alpha: 0.45);
+      _warpSpiralPaint.strokeWidth = 1.3;
+      canvas.save();
+      canvas.translate(cx, cy);
+      for (int arm = 0; arm < 2; arm++) {
+        final spiralPath = Path();
+        const segs = 18;
+        for (int s = 0; s <= segs; s++) {
+          final t = s / segs;
+          final sR = 20 + t * 100 * scale;
+          final sA = arm * math.pi + t * math.pi * 2.5 + _phase * 3;
+          final sx = math.cos(sA) * sR;
+          final sy = math.sin(sA) * sR;
+          if (s == 0) {
+            spiralPath.moveTo(sx, sy);
+          } else {
+            spiralPath.lineTo(sx, sy);
+          }
+        }
+        canvas.drawPath(spiralPath, _warpSpiralPaint);
+      }
+      canvas.restore();
+
+      // Clock-hand rotanti veloci
       _arcPaint.color = NeonColors.white.withValues(alpha: 0.4);
       canvas.save();
       canvas.translate(cx, cy);
       canvas.rotate(_phase * 3);
       canvas.drawArc(
         Rect.fromCircle(center: Offset.zero, radius: 80 * scale),
-        0,
-        math.pi / 3,
-        false,
-        _arcPaint,
+        0, math.pi / 3, false, _arcPaint,
       );
       canvas.drawArc(
         Rect.fromCircle(center: Offset.zero, radius: 80 * scale),
-        math.pi,
-        math.pi / 3,
-        false,
-        _arcPaint,
+        math.pi, math.pi / 3, false, _arcPaint,
       );
       canvas.restore();
     }
   }
 
   void _drawWraithShape(
-      Canvas canvas, Paint paint, double scale, Offset center) {
+      Canvas canvas, Paint paint, double scale, Offset center,
+      {bool drawClockface = false}) {
     final r = 50 * scale;
 
     canvas.save();
     canvas.translate(center.dx, center.dy);
     canvas.rotate(_phase * 0.8);
 
-    // Ghostly shape with flowing edges
+    // Corpo spettrale con bordi fluttuanti
     final path = Path();
     for (int i = 0; i < 12; i++) {
       final angle = i * math.pi * 2 / 12;
@@ -273,14 +310,58 @@ class ChronoWraithBoss extends BossBase {
     path.close();
     canvas.drawPath(path, paint);
 
-    // Inner eye-like structure
+    // Inner stroke ring
     paint.style = PaintingStyle.stroke;
     paint.strokeWidth = 2 * scale;
     canvas.drawCircle(Offset.zero, r * 0.4, paint);
 
-    // Dot in center
+    // ─── CLOCKFACE (12 tick) + lancette — signature FX ───
+    if (drawClockface) {
+      _clockTickPaint.color = NeonColors.white.withValues(alpha: 0.55);
+      _clockTickPaint.strokeWidth = 1.5 * scale;
+      for (int t = 0; t < 12; t++) {
+        final tAng = t * math.pi / 6;
+        final inner = r * 0.7;
+        final outer = r * (t % 3 == 0 ? 0.88 : 0.82);
+        canvas.drawLine(
+          Offset(math.cos(tAng) * inner, math.sin(tAng) * inner),
+          Offset(math.cos(tAng) * outer, math.sin(tAng) * outer),
+          _clockTickPaint,
+        );
+      }
+      // Lancetta minuti (rotazione veloce)
+      _clockHandPaint.color = NeonColors.white.withValues(alpha: 0.85);
+      _clockHandPaint.strokeWidth = 2 * scale;
+      final minAng = _phase * 1.3;
+      canvas.drawLine(
+        Offset.zero,
+        Offset(math.cos(minAng) * r * 0.55, math.sin(minAng) * r * 0.55),
+        _clockHandPaint,
+      );
+      // Lancetta ore (lenta)
+      _clockHandPaint.color = NeonColors.deepPurple.withValues(alpha: 0.85);
+      _clockHandPaint.strokeWidth = 2.5 * scale;
+      final hourAng = _phase * 0.3;
+      canvas.drawLine(
+        Offset.zero,
+        Offset(math.cos(hourAng) * r * 0.35, math.sin(hourAng) * r * 0.35),
+        _clockHandPaint,
+      );
+    }
+
+    // ─── IRIS + pupilla bianca pulsante ───
     paint.style = PaintingStyle.fill;
-    canvas.drawCircle(Offset.zero, 5 * scale, paint);
+    if (drawClockface) {
+      final irisPulse = 0.6 + math.sin(_phase * 5) * 0.4;
+      _irisPaint.color =
+          const Color(0xFF6611AA).withValues(alpha: irisPulse);
+      canvas.drawCircle(Offset.zero, 8 * scale * irisPulse, _irisPaint);
+      _pupilPaint.color =
+          const Color(0xFFFFFFFF).withValues(alpha: irisPulse);
+      canvas.drawCircle(Offset.zero, 3.5 * scale, _pupilPaint);
+    } else {
+      canvas.drawCircle(Offset.zero, 5 * scale, paint);
+    }
 
     canvas.restore();
   }

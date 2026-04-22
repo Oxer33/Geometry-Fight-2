@@ -1,3 +1,4 @@
+import 'dart:async' show unawaited;
 import 'dart:math' as math;
 import 'package:flame/components.dart';
 import 'package:flame/events.dart';
@@ -58,6 +59,7 @@ import 'entities/bosses/graviton_boss.dart';
 import 'entities/bosses/inferno_boss.dart';
 import 'entities/bosses/eternity_engine_boss.dart';
 import 'entities/geom.dart';
+import 'entities/projectiles.dart';
 import 'effects/grid_distortion.dart';
 import 'effects/screen_shake.dart';
 import 'effects/explosion.dart';
@@ -67,6 +69,7 @@ import 'systems/wave_system.dart';
 import 'systems/score_system.dart';
 import 'systems/powerup_system.dart';
 import 'systems/audio_system.dart';
+import 'systems/music_manager.dart';
 
 enum GameState { playing, paused, gameOver, bossIntro, waveIntro }
 
@@ -155,7 +158,12 @@ class GeometryFightGame extends FlameGame
   // Game stats for current session
   int sessionGeoms = 0;
   int sessionKills = 0;
+  // Contatore morti — usato in zen mode (player immortale).
+  int sessionDeaths = 0;
   double _sessionTimeSec = 0;
+
+  /// Helper: true se zen mode (player immortale, deaths count, no game over).
+  bool get isZenMode => gameMode == GameMode.zenMode;
 
   // Perfect Wave tracking
   bool _hitThisWave = false;
@@ -165,12 +173,28 @@ class GeometryFightGame extends FlameGame
   // Screen flash rosso quando colpito
   double hitFlashTimer = 0;
 
-  // Tunnel mode: arena dinamica con scrolling automatico
-  double tunnelHeight = 600; // Altezza corridoio (si allarga per boss)
-  double tunnelTargetHeight = 600;
+  // Tunnel mode: arena dinamica con scrolling automatico.
+  // Altezza ridotta del 30% rispetto al valore originale (600 → 420) per
+  // aumentare la pressione sul player — meno spazio per manovrare.
+  double tunnelHeight = 420; // Altezza corridoio (si allarga per boss)
+  double tunnelTargetHeight = 420;
   bool get isTunnelMode => gameMode == GameMode.tunnel;
   double tunnelScrollSpeed = 100; // Velocità scroll camera (px/s, cresce nel tempo)
   double _tunnelCameraX = 0; // Posizione X della camera (avanza indipendentemente dal player)
+  // Dopo morte boss: 5s di grace period con tunnel pieno, poi 5s di shrink
+  // graduale per un totale di 10s. `_tunnelBossShrinkDelay` gestisce il
+  // grace; `_tunnelShrinkProgress` gestisce il lerp progressivo (0→1).
+  double _tunnelBossShrinkDelay = 0;
+  double _tunnelShrinkProgress = 1.0; // 1.0 = pieno, 0.0 = ristretto
+  double _tunnelShrinkStartHeight = 420; // altezza all'inizio dello shrink
+
+  /// Contatore boss uccisi in modalità tunnel: usato per scalare l'altezza
+  /// degli ostacoli (muri rossi) +3% per ogni boss ucciso.
+  int tunnelBossesKilled = 0;
+
+  /// Scala altezza ostacoli (muri rossi) nel tunnel.
+  /// Base: 20% dello span tunnel. +3% per ogni boss ucciso.
+  double get tunnelObstacleScale => 0.20 + tunnelBossesKilled * 0.03;
 
   // Callbacks for UI
   void Function()? onGameOver;
@@ -184,6 +208,15 @@ class GeometryFightGame extends FlameGame
   @override
   Future<void> onLoad() async {
     await super.onLoad();
+
+    // Reset stato statico HomingMissile (volley counters, activeCount).
+    // Senza questo, se il player esce mid-game (quit da pausa, app kill
+    // durante volo missili), il counter resta sporco e il nuovo game cappa
+    // i missili a valori random → "spara pochissimi missili".
+    HomingMissile.resetStaticState();
+    // Reset altri stati statici per sicurezza (idempotenti).
+    SwarmDroneEnemy.resetGlobalEnrage();
+    LeechEnemy.resetAttachedCount();
 
     // Load save data
     saveData = SaveManager.load();
@@ -246,6 +279,10 @@ class GeometryFightGame extends FlameGame
 
     // Reset grid distortion cap ogni frame
     _gridDistortionCount = 0;
+
+    // Reset budget globale split per frame: max N splitter si dividono
+    // simultaneamente → cascata controllata quando laser/AoE ne investe molti.
+    SplitterEnemy.resetFrameBudget();
 
     // Apply time scale
     final scaledDt = dt * timeScale;
@@ -368,10 +405,32 @@ class GeometryFightGame extends FlameGame
       }
     }
 
-    // Tunnel mode: aggiorna altezza corridoio (lerp verso il target)
+    // Tunnel mode: aggiorna altezza corridoio.
+    // Sequenza post-boss: 5s grace (tunnel pieno) → 5s shrink graduale.
+    //   Boss alive          → target 1800, lerp rapido
+    //   Boss morto + grace  → target 1800, lerp rapido (resta allargato)
+    //   Boss morto + shrink → interpola linearmente da 1800 a 420 su 5s
     if (isTunnelMode) {
-      tunnelTargetHeight = bossCount > 0 ? 1800 : 600; // Allarga per boss fight
-      tunnelHeight += (tunnelTargetHeight - tunnelHeight) * 2.0 * dt;
+      if (_tunnelBossShrinkDelay > 0) _tunnelBossShrinkDelay -= dt;
+      final tunnelExpanded = bossCount > 0 || _tunnelBossShrinkDelay > 0;
+      if (tunnelExpanded) {
+        // Pieno: target 1800, lerp rapido. Reset shrink state per prossimo ciclo.
+        tunnelTargetHeight = 1800;
+        tunnelHeight += (tunnelTargetHeight - tunnelHeight) * 2.0 * dt;
+        _tunnelShrinkProgress = 1.0;
+        _tunnelShrinkStartHeight = tunnelHeight;
+      } else if (_tunnelShrinkProgress > 0.0) {
+        // Shrink graduale su 5s (1.0 → 0.0 in 5s = 0.2/s).
+        _tunnelShrinkProgress -= dt / 5.0;
+        if (_tunnelShrinkProgress < 0.0) _tunnelShrinkProgress = 0.0;
+        // Linear interpolation tra altezza iniziale shrink e 420.
+        tunnelHeight = 420 + (_tunnelShrinkStartHeight - 420) * _tunnelShrinkProgress;
+        tunnelTargetHeight = tunnelHeight;
+      } else {
+        // Stato normale post-shrink: target fisso 420.
+        tunnelTargetHeight = 420;
+        tunnelHeight += (tunnelTargetHeight - tunnelHeight) * 2.0 * dt;
+      }
 
       // Camera avanza automaticamente verso destra (side-scroller)
       // Accelera lentamente nel tempo: da 100 a ~200 px/s in ~5 minuti
@@ -581,6 +640,12 @@ class GeometryFightGame extends FlameGame
     enemy.speed = (enemy.speed * diffConfig.enemySpeedMultiplier * 0.8);
 
     enemy.position = pos;
+    // Tunnel mode: i mob compaiono OLTRE il margine destro (vedi
+    // `_randomSpawnPosition`), quindi lo spawn invuln flash è invisibile e
+    // crea solo rallentamenti al primo appearance. Clear per skip.
+    if (isTunnelMode) {
+      enemy.clearSpawnInvulnerability();
+    }
     world.add(enemy);
     return enemy;
   }
@@ -761,15 +826,25 @@ class GeometryFightGame extends FlameGame
       waveSystem.onTunnelKill();
     }
 
-    // Drop geoms (scalato per difficoltà)
-    final geomDrops =
-        (enemy.geomValue * diffConfig.geomDropMultiplier).round().clamp(1, 30);
-    for (int i = 0; i < geomDrops; i++) {
-      final offset = Vector2(
-        (_random.nextDouble() - 0.5) * 30,
-        (_random.nextDouble() - 0.5) * 30,
-      );
-      spawnGeom(enemy.position + offset, 1);
+    // Drop geoms — conteggio FISSO, NON scalato dalla difficoltà.
+    // La difficoltà cambia solo i punti (scoreMultiplier), non la quantità
+    // di geom che dropppano (richiesta utente: "i geom droppati devono restare
+    // uguali ma cambiano i punteggi dati dai nemici").
+    //
+    // Regole:
+    // - Splitter large/medium: NIENTE geom (solo i small droppano → evita
+    //   cascata di geom quando un large si spezza in 2 medium → 4 small).
+    // - BlackHole: 1 geom viola (value 5), stesso tier di un boss per kill.
+    // - Altri: 1 geom cyan (value 1).
+    bool shouldDropGeoms = true;
+    int geomUnitValue = 1;
+    if (enemy is SplitterEnemy && enemy.splitterSize != SplitterSize.small) {
+      shouldDropGeoms = false;
+    } else if (enemy is BlackHoleEnemy) {
+      geomUnitValue = 5;
+    }
+    if (shouldDropGeoms) {
+      spawnGeom(enemy.position, geomUnitValue);
     }
 
     // Chance to drop power-up (influenzata dalla difficoltà)
@@ -777,13 +852,14 @@ class GeometryFightGame extends FlameGame
       spawnPowerUp(enemy.position);
     }
 
-    // Notifica Necro nemici vicini della morte (per resurrezione)
-    // Escludi il nemico stesso (se è un Necro che muore) e non resuscitare Necro
+    // Notifica Necro nemici vicini della morte (per resurrezione).
+    // Usa cached list invece di iterare world.children (O(N_all) → O(N_necro)).
+    // Con molti proiettili/esplosioni il loop costava parecchio per kill.
     final enemyType = _getEnemyType(enemy);
-    if (enemyType != EnemyType.necro && _cachedNecroCount > 0) {
-      for (final child in world.children) {
-        if (child is NecroEnemy && child != enemy) {
-          child.onNearbyEnemyDeath(enemyType, enemy.position);
+    if (enemyType != EnemyType.necro && _cachedNecros.isNotEmpty) {
+      for (final necro in _cachedNecros) {
+        if (necro != enemy && !necro.isRemoved) {
+          necro.onNearbyEnemyDeath(enemyType, enemy.position);
         }
       }
     }
@@ -823,12 +899,23 @@ class GeometryFightGame extends FlameGame
   }
 
   void onBossKilled(BossBase boss) {
+    // FX fanfara boss killed (asset dedicato dell'utente)
+    AudioSystem.playBossKilled();
+
     scoreSystem.addKill(boss.pointValue * 10, boss.position);
     sessionBossKills++;
 
-    // Drop lots of geoms (scalato per difficoltà)
-    final bossGeomDrops =
-        (50 * diffConfig.geomDropMultiplier).round().clamp(30, 120);
+    // Tunnel: ritarda il restringimento di 5s (grace period per raccogliere
+    // drop) + 5s di shrink graduale = 10s totali dal boss death al tunnel
+    // completamente ristretto. Incrementa anche il counter per ostacoli +3%.
+    if (isTunnelMode) {
+      _tunnelBossShrinkDelay = 5.0;
+      tunnelBossesKilled++;
+    }
+
+    // Drop fisso di 10 geom viola (value 5) — reward leggibile per boss kill,
+    // niente più "pioggia" di 30-120 geomi che lagga e svilisce la purple.
+    const bossGeomDrops = 10;
     for (int i = 0; i < bossGeomDrops; i++) {
       final offset = Vector2(
         (_random.nextDouble() - 0.5) * 100,
@@ -841,7 +928,17 @@ class GeometryFightGame extends FlameGame
   }
 
   void onPlayerHit() {
-    AudioSystem.playPlayerHit();
+    // FX esplosione player (mp3 dell'utente) — ogni vita persa.
+    AudioSystem.playPlayerDeath();
+
+    // Skip a nuova canzone SOLO se non è la morte finale. Su final death
+    // (`lives <= 0`) `onPlayerDeath` gestisce lo stop permanente della
+    // musica; fare skipToNext qui scatenerebbe race con MusicManager.stop()
+    // → la musica potrebbe ripartire dopo lo stop previsto.
+    if (player.lives > 0) {
+      unawaited(MusicManager.skipToNext());
+    }
+
     scoreSystem.resetMultiplier();
     _hitThisWave = true; // Questa wave non è più "perfect"
 
@@ -967,14 +1064,20 @@ class GeometryFightGame extends FlameGame
   }
 
   void onPlayerDeath() {
-    // Zen mode: vite infinite - respawn immediato
-    if (gameMode == GameMode.zenMode) {
-      player.lives = 1; // Ripristina 1 vita
+    // Zen mode: player immortale. Conta le morti, ripristina lives al valore
+    // iniziale della difficoltà, niente game over.
+    if (isZenMode) {
+      sessionDeaths++;
+      player.lives = diffConfig.startingLives + (saveData.startingLives - 3);
       return;
     }
 
     if (player.lives <= 0) {
       gameState = GameState.gameOver;
+      // FX gameover_explosion.mp3 (drammatico finale).
+      // La musica deve fermarsi DEFINITIVAMENTE su game over (richiesta utente).
+      AudioSystem.playGameOver();
+      unawaited(MusicManager.stop());
       saveSessionData();
       pauseEngine(); // Ferma il loop Flame: niente più update/render/audio
       onGameOver?.call();
@@ -1063,12 +1166,14 @@ class GeometryFightGame extends FlameGame
     activateSlowMo(0.3, 0.5);
 
     // Uccidi TUTTI i nemici nell'area dell'esplosione (raggio = visual)
+    // Bomba = danno AREA → splitter immuni (evita cascata di divisioni
+    // simultanee che può crashare il frame).
     const bombRadius = 800.0;
     final enemies = world.children.whereType<EnemyBase>().toList();
     for (final enemy in enemies) {
       final dist = enemy.position.distanceTo(player.position);
       if (dist < bombRadius) {
-        enemy.takeDamage(999);
+        enemy.takeDamage(999, isArea: true);
       }
     }
 
@@ -1112,10 +1217,12 @@ class GeometryFightGame extends FlameGame
     if (gameState == GameState.playing) {
       gameState = GameState.paused;
       pauseEngine();
+      unawaited(MusicManager.pause());
       onPause?.call();
     } else if (gameState == GameState.paused) {
       gameState = GameState.playing;
       resumeEngine();
+      unawaited(MusicManager.resume());
     }
   }
 
@@ -1132,6 +1239,7 @@ class GeometryFightGame extends FlameGame
     _slowMoTimer = 0;
     sessionGeoms = 0;
     sessionKills = 0;
+    sessionDeaths = 0;
     sessionBombs = 0;
     sessionBossKills = 0;
     sessionPowerUps = 0;
@@ -1143,9 +1251,14 @@ class GeometryFightGame extends FlameGame
     showPerfectWave = false;
     hitFlashTimer = 0;
     timeAttackTimer = 180;
-    tunnelHeight = 600;
+    tunnelHeight = 420;
+    tunnelTargetHeight = 420;
     tunnelScrollSpeed = 100;
     _tunnelCameraX = 0;
+    _tunnelBossShrinkDelay = 0;
+    _tunnelShrinkProgress = 0.0;
+    _tunnelShrinkStartHeight = 420;
+    tunnelBossesKilled = 0;
     _chaosTimer = 10.0;
     _bombExplosionTimers = null;
     _bombExplosionPos = null;
@@ -1153,6 +1266,8 @@ class GeometryFightGame extends FlameGame
     _deathExplosionPos = null;
     SwarmDroneEnemy.resetGlobalEnrage();
     LeechEnemy.resetAttachedCount();
+    HomingMissile.resetStaticState();
+    SplitterEnemy.resetFrameBudget();
     scoreSystem.reset();
     scoreSystem.geomValueMultiplier = diffConfig.geomValueMultiplier;
     scoreSystem.scoreMultiplier = diffConfig.scoreMultiplier;
@@ -1197,7 +1312,9 @@ class GeometryFightGame extends FlameGame
   // Cache conteggi nemici/boss — aggiornati una volta per frame in update()
   int _cachedEnemyCount = 0;
   int _cachedBossCount = 0;
-  int _cachedNecroCount = 0; // Early-exit per O(n²) NecroEnemy loop in onEnemyKilled
+  // Lista cached dei Necro per iterare in onEnemyKilled senza walk world.children.
+  // Early-exit per O(n²) NecroEnemy loop quando il player uccide molti nemici.
+  final List<NecroEnemy> _cachedNecros = <NecroEnemy>[];
   BossBase? _cachedActiveBoss;
   double _countCacheTimer = 0;
 
@@ -1214,12 +1331,12 @@ class GeometryFightGame extends FlameGame
     _countCacheTimer = 3; // Aggiorna ogni 3 frame (~20 volte/sec a 60fps)
     int enemies = 0;
     int bosses = 0;
-    int necros = 0;
+    _cachedNecros.clear();
     BossBase? firstBoss;
     for (final child in world.children) {
       if (child is NecroEnemy) {
         enemies++;
-        necros++;
+        _cachedNecros.add(child);
       } else if (child is EnemyBase) {
         enemies++;
       } else if (child is BossBase) {
@@ -1229,7 +1346,6 @@ class GeometryFightGame extends FlameGame
     }
     _cachedEnemyCount = enemies;
     _cachedBossCount = bosses;
-    _cachedNecroCount = necros;
     _cachedActiveBoss = firstBoss;
   }
 }

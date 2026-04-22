@@ -1,6 +1,8 @@
+import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../../data/save_data.dart';
+import '../../game/systems/music_manager.dart';
 import '../widgets/animated_builder_widget.dart';
 
 /// Menu principale con effetti neon cinematografici.
@@ -55,6 +57,10 @@ class _MainMenuScreenState extends State<MainMenuScreen>
   void initState() {
     super.initState();
     _saveData = SaveManager.load();
+
+    // Garantisce che la musica intro stia suonando ogni volta che si torna
+    // al main menu (es. dopo game over). Idempotente se già in modalità intro.
+    unawaited(MusicManager.playIntro());
 
     _bgController = AnimationController(
       vsync: this, duration: const Duration(seconds: 20),

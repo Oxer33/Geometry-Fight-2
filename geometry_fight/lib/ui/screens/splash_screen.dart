@@ -161,6 +161,68 @@ class _SplashPainter extends CustomPainter {
   final bool showExplosion;
   final double explosionPhase;
 
+  // Paint cache statici — evitano migliaia di alloc/sec durante la splash.
+  // Il chase-scene renderizza 18 trail nave × 2 layer × 60fps = 2160 alloc,
+  // più 5 bullet × 4 trail × 60fps = 1200 alloc. Riutilizziamo un Paint per
+  // famiglia con `.color =` per update inline.
+  static final Paint _droneTrailPaint = Paint();
+  static final Paint _shipTrailGlowPaint = Paint();
+  static final Paint _shipTrailCorePaint = Paint();
+  static final Paint _bulletTrailPaint = Paint();
+  static final Paint _bulletGlowPaint = Paint();
+  static final Paint _bulletBodyPaint = Paint();
+  static final Paint _bulletCorePaint = Paint();
+  static final Paint _muzzleGlowPaint = Paint()
+    ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
+  static final Paint _muzzleCorePaint = Paint();
+  static final Paint _impactGlowPaint = Paint()
+    ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10);
+  static final Paint _impactCorePaint = Paint();
+
+  // Ship paint cache (10 Paint allocs/frame → 0)
+  static final Paint _shipGlowPaint = Paint()
+    ..color = const Color(0xFF00FFFF).withValues(alpha: 0.25)
+    ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 12);
+  static final Paint _shipBodyPaint = Paint()
+    ..color = const Color(0xFF00FFFF);
+  static final Paint _shipStrokePaint = Paint()
+    ..color = const Color(0xFFFFFFFF).withValues(alpha: 0.35)
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 1.0;
+  static final Paint _cockpitHaloPaint = Paint();
+  static final Paint _cockpitWhitePaint = Paint();
+  static final Paint _cockpitCyanPaint = Paint();
+  static final Paint _shipLinePaint = Paint()
+    ..color = const Color(0xFF00FFFF).withValues(alpha: 0.35)
+    ..strokeWidth = 0.6
+    ..style = PaintingStyle.stroke;
+  static final Paint _wingRedGlowPaint = Paint();
+  static final Paint _wingRedCorePaint = Paint();
+  static final Paint _wingGreenGlowPaint = Paint();
+  static final Paint _wingGreenCorePaint = Paint();
+
+  // Flame paint cache (6 allocs/frame → 0)
+  static final Paint _flameOuterPaint = Paint()
+    ..color = const Color(0xFFFF2200).withValues(alpha: 0.25)
+    ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
+  static final Paint _flameMidPaint = Paint()
+    ..color = const Color(0xFFFF6600).withValues(alpha: 0.75);
+  static final Paint _flameCorePaint = Paint()
+    ..color = const Color(0xFFFFFFFF).withValues(alpha: 0.9);
+
+  // Drone paint cache (6+ allocs/frame → 0)
+  static final Paint _droneGlowPaint = Paint();
+  static final Paint _droneFillPaint = Paint();
+  static final Paint _droneStrokePaint = Paint()
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 2.0;
+  static final Paint _droneInnerPaint = Paint()
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 1.0;
+  static final Paint _droneVertexPaint = Paint();
+  static final Paint _droneCoreHaloPaint = Paint();
+  static final Paint _droneCorePaint = Paint();
+
   _SplashPainter({
     required this.chaseProgress,
     required this.bgPhase,
@@ -346,94 +408,142 @@ class _SplashPainter extends CustomPainter {
     final shipY = cy + math.sin(shipT * math.pi * 5) * size.height * 0.13
         + math.cos(shipT * math.pi * 3) * size.height * 0.05;
 
+    // Angolo di mira: la nave si orienta verso il drone, come in gioco.
+    // Convenzione `_rotation = atan2(aim.y, aim.x) + π/2`. Guard su vettore
+    // nullo (ship/drone stessa posizione nei primi frame): aim di fallback
+    // a destra (0 rad pre-offset) così la nave NON punta verso il basso
+    // quando atan2(0,0) = 0.
+    final dxAim = droneX - shipX;
+    final dyAim = droneY - shipY;
+    final aimAngle = (dxAim * dxAim + dyAim * dyAim < 0.01)
+        ? math.pi / 2 // muso a destra (default chase direction)
+        : math.atan2(dyAim, dxAim) + math.pi / 2;
+
     // === SCIA DRONE (rosa, particelle sfumate) ===
+    // Skip sample non-ancora-storici (come per la ship trail).
     for (int i = 1; i <= 12; i++) {
-      final dt2 = (t - i * 0.01).clamp(0.0, 1.0);
+      final raw = t - i * 0.01;
+      if (raw <= 0) break;
+      final dt2 = raw.clamp(0.0, 1.0);
       final dtx = size.width * (-0.15 + dt2 * 0.75);
       final dty = cy + math.sin(dt2 * math.pi * 5) * size.height * 0.13
           + math.cos(dt2 * math.pi * 3) * size.height * 0.05;
       final a = (1 - i / 12.0) * 0.25;
       final s = (1 - i / 12.0) * 4;
-      canvas.drawCircle(
-        Offset(dtx, dty), s,
-        Paint()
-          ..color = Color.fromRGBO(255, 0, 170, a)
-          ..maskFilter = MaskFilter.blur(BlurStyle.normal, s),
-      );
+      // MaskFilter varia col raggio → NON cacheable statico. Assegniamo
+      // per-iterazione ma sul Paint condiviso invece di alloc un nuovo Paint.
+      _droneTrailPaint.color = Color.fromRGBO(255, 0, 170, a);
+      _droneTrailPaint.maskFilter = MaskFilter.blur(BlurStyle.normal, s);
+      canvas.drawCircle(Offset(dtx, dty), s, _droneTrailPaint);
     }
 
-    // === SCIA NAVICELLA (cyan, lunga e luminosa) ===
+    // === SCIA NAVICELLA (cyan — simile al trail del Player in gioco) ===
+    // Due layer per ogni punto: soft glow esterno + core luminoso come
+    // `Player._renderTrail`. Skip i sample non ancora "storici" (st == 0)
+    // quando shipT è prossimo a 0: altrimenti 18 cerchi si sovrappongono
+    // sullo stesso punto iniziale al primo frame.
     for (int i = 1; i <= 18; i++) {
-      final st = (shipT - i * 0.008).clamp(0.0, 1.0);
+      final rawSt = shipT - i * 0.008;
+      if (rawSt <= 0) break; // tutti i sample successivi sarebbero clampati
+      final st = rawSt.clamp(0.0, 1.0);
       final stx = size.width * (-0.15 + st * 0.75);
       final sty = cy + math.sin(st * math.pi * 5) * size.height * 0.13
           + math.cos(st * math.pi * 3) * size.height * 0.05;
-      final a = (1 - i / 18.0) * 0.35;
-      final s = (1 - i / 18.0) * 5;
-      canvas.drawCircle(
-        Offset(stx, sty), s,
-        Paint()
-          ..color = Color.fromRGBO(0, 255, 255, a)
-          ..maskFilter = MaskFilter.blur(BlurStyle.normal, s + 1),
-      );
+      final a = (1 - i / 18.0) * 0.4;
+      final s = (1 - i / 18.0) * 3.5;
+      _shipTrailGlowPaint.color =
+          const Color(0xFF00FFFF).withValues(alpha: a * 0.4);
+      canvas.drawCircle(Offset(stx, sty), s * 1.8, _shipTrailGlowPaint);
+      _shipTrailCorePaint.color =
+          const Color(0xFF00FFFF).withValues(alpha: a);
+      canvas.drawCircle(Offset(stx, sty), s, _shipTrailCorePaint);
     }
 
-    // === PROIETTILI — colpo singolo (1 bullet per tempo di fuoco, emerge dal muso) ===
+    // === PROIETTILI stile in-game `PlayerBullet` (giallo neon + trail) ===
     if (t > 0.1 && t < 0.95) {
       const shotCount = 5;
-      const shotInterval = 0.15; // Spaziati bene — chiaramente singoli
+      const shotInterval = 0.15;
+      const bulletColor = Color(0xFFFFE500); // NeonColors.bulletYellow
       for (int i = 0; i < shotCount; i++) {
         final fireTime = 0.10 + i * shotInterval;
         if (t > fireTime) {
           final bulletAge = (t - fireTime) / 0.12;
-          if (bulletAge < 1.0) {
+          // Cutoff a 0.55: bullet sparisce subito dopo l'impact flash
+          // (0.4..0.55). Prima restava disegnato sul target per il 45%
+          // residuo della vita con il clamp, sembrando "incastrato".
+          if (bulletAge < 0.55) {
             final fst = (fireTime - shipDelay).clamp(0.0, 1.0);
-            // Origine dal muso della navicella (offset +16*s forward)
-            const noseOffset = 16.0 * 1.2;
             final shipCenterX = size.width * (-0.15 + fst * 0.75);
             final shipCenterY = cy + math.sin(fst * math.pi * 5) * size.height * 0.13
                 + math.cos(fst * math.pi * 3) * size.height * 0.05;
-            final fromX = shipCenterX + noseOffset;
-            final fromY = shipCenterY;
+            // Bersaglio al momento dello sparo
             final toX = size.width * (-0.15 + fireTime * 0.75);
             final toY = cy + math.sin(fireTime * math.pi * 5) * size.height * 0.13
                 + math.cos(fireTime * math.pi * 3) * size.height * 0.05;
-            final bx = fromX + (toX - fromX) * bulletAge * 2.5;
-            final by = fromY + (toY - fromY) * bulletAge * 2.5;
+            // Origine: muso della nave ruotato verso il bersaglio.
+            // Il muso in local è a (0,-14*s) → ruotando di aimAngle-π/2
+            // diventa direzione di mira * 14*1.2 ≈ 16.8 px dal centro.
+            final shotAim =
+                math.atan2(toY - shipCenterY, toX - shipCenterX);
+            const noseOffset = 14.0 * 1.2;
+            final fromX = shipCenterX + math.cos(shotAim) * noseOffset;
+            final fromY = shipCenterY + math.sin(shotAim) * noseOffset;
+            // Progress clamp a 1.0 → bullet si ferma sul drone invece di
+            // oltrepassarlo (evita il bullet che attraversa il nemico prima
+            // del flash di impatto a age 0.55).
+            final bulletProgress = (bulletAge * 2.5).clamp(0.0, 1.0);
+            final bx = fromX + (toX - fromX) * bulletProgress;
+            final by = fromY + (toY - fromY) * bulletProgress;
 
-            // Trail proiettile
-            final trailPaint = Paint()
-              ..color = const Color(0xFFFFE500).withValues(alpha: 0.3)
-              ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
-            final dx = (toX - fromX);
-            final dy = (toY - fromY);
+            // Trail giallo (cerchietti dietro il bullet) usando paint cached.
+            final dx = toX - fromX;
+            final dy = toY - fromY;
             final dist = math.sqrt(dx * dx + dy * dy);
             if (dist > 0) {
               final nx = dx / dist;
               final ny = dy / dist;
-              canvas.drawLine(
-                Offset(bx, by),
-                Offset(bx - nx * 10, by - ny * 10),
-                trailPaint,
-              );
+              for (int ti = 1; ti <= 4; ti++) {
+                final tAlpha = (1 - ti / 4) * 0.3;
+                _bulletTrailPaint.color =
+                    bulletColor.withValues(alpha: tAlpha);
+                canvas.drawCircle(
+                  Offset(bx - nx * ti * 3, by - ny * ti * 3),
+                  1.5 * (1 - ti / 4.5),
+                  _bulletTrailPaint,
+                );
+              }
             }
 
-            // Proiettile singolo (più grande, centrale)
-            canvas.drawCircle(
-              Offset(bx, by), 3.0,
-              Paint()
-                ..color = const Color(0xFFFFE500)
-                ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2),
-            );
+            // Glow + corpo + core del bullet (paint cached)
+            _bulletGlowPaint.color = bulletColor.withValues(alpha: 0.35);
+            canvas.drawCircle(Offset(bx, by), 4.5, _bulletGlowPaint);
+            _bulletBodyPaint.color = bulletColor;
+            canvas.drawCircle(Offset(bx, by), 3.0, _bulletBodyPaint);
+            _bulletCorePaint.color =
+                const Color(0xFFFFFFFF).withValues(alpha: 0.8);
+            canvas.drawCircle(Offset(bx, by), 1.2, _bulletCorePaint);
 
-            // Impatto flash
+            // Muzzle flash al nose della nave appena sparato
+            if (bulletAge < 0.15) {
+              final flashAlpha = (1 - bulletAge / 0.15) * 0.7;
+              _muzzleGlowPaint.color =
+                  bulletColor.withValues(alpha: flashAlpha * 0.5);
+              canvas.drawCircle(Offset(fromX, fromY), 8, _muzzleGlowPaint);
+              _muzzleCorePaint.color =
+                  const Color(0xFFFFFFFF).withValues(alpha: flashAlpha);
+              canvas.drawCircle(Offset(fromX, fromY), 4, _muzzleCorePaint);
+            }
+
+            // Impatto flash sul drone
             if (bulletAge > 0.4 && bulletAge < 0.55) {
+              _impactGlowPaint.color =
+                  const Color(0xFFFFFFFF).withValues(alpha: 0.35);
               canvas.drawCircle(
-                Offset(droneX, droneY), 18,
-                Paint()
-                  ..color = const Color(0xFFFFFFFF).withValues(alpha: 0.3)
-                  ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10),
-              );
+                  Offset(droneX, droneY), 18, _impactGlowPaint);
+              _impactCorePaint.color =
+                  bulletColor.withValues(alpha: 0.6);
+              canvas.drawCircle(
+                  Offset(droneX, droneY), 10, _impactCorePaint);
             }
           }
         }
@@ -461,10 +571,12 @@ class _SplashPainter extends CustomPainter {
       }
     }
 
-    // === NAVICELLA ===
-    _drawShip(canvas, shipX, shipY, shipT);
+    // === NAVICELLA (in-game graphics, ruota verso il drone) ===
+    _drawShip(canvas, shipX, shipY, shipT, aimAngle);
   }
 
+  /// Drone nemico stile in-game: rombo con bordo neon stroke (come gli
+  /// EnemyBase), glow esterno senza blur pesante, nucleo pulsante bianco.
   void _drawDrone(Canvas canvas, double x, double y, double t, bool damaged) {
     final r = 14.0;
     final rot = t * 18;
@@ -472,109 +584,175 @@ class _SplashPainter extends CustomPainter {
     canvas.translate(x, y);
     canvas.rotate(rot);
 
-    final path = Path()
-      ..moveTo(0, -r)..lineTo(r, 0)..lineTo(0, r)..lineTo(-r, 0)..close();
+    final bodyColor = damaged
+        ? const Color(0xFFFF6633)
+        : const Color(0xFFFF00AA);
 
-    // Glow esterno
-    canvas.drawPath(path, Paint()
-      ..color = Color.fromRGBO(255, 0, 170, damaged ? 0.15 : 0.3)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 12));
+    // ─── GLOW ESTERNO (senza blur: cerchio più grande, alpha basso) ───
+    final glowPath = Path()
+      ..moveTo(0, -r * 1.4)
+      ..lineTo(r * 1.4, 0)
+      ..lineTo(0, r * 1.4)
+      ..lineTo(-r * 1.4, 0)
+      ..close();
+    _droneGlowPaint.color = bodyColor.withValues(alpha: 0.25);
+    canvas.drawPath(glowPath, _droneGlowPaint);
 
-    // Corpo
-    canvas.drawPath(path, Paint()
-      ..color = damaged
-          ? Color.fromRGBO(255, 100, 50, 0.8)
-          : const Color(0xFFFF00AA));
+    // ─── CORPO (stroke neon come EnemyBase in gioco) ───
+    final bodyPath = Path()
+      ..moveTo(0, -r)
+      ..lineTo(r, 0)
+      ..lineTo(0, r)
+      ..lineTo(-r, 0)
+      ..close();
+    // Fill interno trasparente
+    _droneFillPaint.color = bodyColor.withValues(alpha: 0.35);
+    canvas.drawPath(bodyPath, _droneFillPaint);
+    // Bordo neon brillante (stile GW enemy)
+    _droneStrokePaint.color = bodyColor;
+    canvas.drawPath(bodyPath, _droneStrokePaint);
 
-    // Rombo interno
-    final ir = r * 0.45;
+    // ─── ROMBO INTERNO (decorativo) ───
+    final ir = r * 0.5;
     final innerPath = Path()
-      ..moveTo(0, -ir)..lineTo(ir, 0)..lineTo(0, ir)..lineTo(-ir, 0)..close();
-    canvas.drawPath(innerPath, Paint()
-      ..color = const Color(0xFFFF00AA).withValues(alpha: 0.3)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 0.8);
+      ..moveTo(0, -ir)
+      ..lineTo(ir, 0)
+      ..lineTo(0, ir)
+      ..lineTo(-ir, 0)
+      ..close();
+    _droneInnerPaint.color = bodyColor.withValues(alpha: 0.6);
+    canvas.drawPath(innerPath, _droneInnerPaint);
 
-    // Nucleo
-    canvas.drawCircle(Offset.zero, r * 0.15, Paint()
-      ..color = Color.fromRGBO(255, 255, 255, 0.5 + math.sin(t * 20) * 0.3));
+    // ─── 4 PUNTI SUI VERTICI ───
+    final vertexPulse = 0.5 + math.sin(t * 30) * 0.5;
+    _droneVertexPaint.color = bodyColor.withValues(alpha: vertexPulse);
+    for (int i = 0; i < 4; i++) {
+      final angle = i * math.pi / 2;
+      final vx = math.cos(angle) * r * 0.95;
+      final vy = math.sin(angle) * r * 0.95;
+      canvas.drawCircle(Offset(vx, vy), 1.8, _droneVertexPaint);
+    }
+
+    // ─── NUCLEO bianco pulsante ───
+    final corePulse = 0.6 + math.sin(t * 20) * 0.4;
+    _droneCoreHaloPaint.color =
+        const Color(0xFFFFFFFF).withValues(alpha: corePulse * 0.3);
+    canvas.drawCircle(Offset.zero, r * 0.3, _droneCoreHaloPaint);
+    _droneCorePaint.color =
+        const Color(0xFFFFFFFF).withValues(alpha: corePulse);
+    canvas.drawCircle(Offset.zero, r * 0.15, _droneCorePaint);
 
     canvas.restore();
   }
 
-  void _drawShip(Canvas canvas, double x, double y, double t) {
+  /// Disegna la navicella con la SAME grafica di gioco (`Player._drawShipBody`
+  /// standard + thrusters + cockpit + wing-tip lights), ruotata verso il
+  /// bersaglio — stesso meccanismo del `_rotation` in `Player.update`.
+  void _drawShip(Canvas canvas, double x, double y, double t, double aimAngle) {
     canvas.save();
     canvas.translate(x, y);
-    final wobble = math.sin(t * math.pi * 5) * 0.15;
-    canvas.rotate(wobble);
+    // Rotazione verso il bersaglio + micro-wobble per vivacità
+    final wobble = math.sin(t * math.pi * 5) * 0.08;
+    canvas.rotate(aimAngle + wobble);
 
-    const s = 1.2; // Leggermente più grande
+    // ─── THRUSTERS (disegnati PRIMA del corpo → fiamma dietro) ───
+    final thrustPulse = 0.6 + math.sin(t * 30) * 0.4;
+    _drawShipFlame(canvas, -5, 13, thrustPulse);
+    _drawShipFlame(canvas, 5, 13, thrustPulse);
+
+    // ─── CORPO NAVE (stesso Path di `Player._drawShipBody` standard) ───
+    const s = 1.35; // Leggermente più grande per risaltare nel splash
     final shipPath = Path()
-      ..moveTo(16 * s, 0)
-      ..lineTo(6 * s, -4 * s)
-      ..lineTo(-10 * s, -13 * s)
-      ..lineTo(-8 * s, -8 * s)
-      ..lineTo(-14 * s, -5 * s)
-      ..lineTo(-10 * s, 0)
-      ..lineTo(-14 * s, 5 * s)
-      ..lineTo(-8 * s, 8 * s)
-      ..lineTo(-10 * s, 13 * s)
-      ..lineTo(6 * s, 4 * s)
+      ..moveTo(0, -14 * s)           // Punta
+      ..lineTo(4 * s, -6 * s)        // Lato destro punta
+      ..lineTo(13 * s, 10 * s)       // Ala destra esterna
+      ..lineTo(8 * s, 8 * s)         // Rientro ala destra
+      ..lineTo(5 * s, 14 * s)        // Coda destra
+      ..lineTo(0, 10 * s)            // Centro coda
+      ..lineTo(-5 * s, 14 * s)       // Coda sinistra
+      ..lineTo(-8 * s, 8 * s)        // Rientro ala sinistra
+      ..lineTo(-13 * s, 10 * s)      // Ala sinistra esterna
+      ..lineTo(-4 * s, -6 * s)       // Lato sinistro punta
       ..close();
 
-    // Glow esterno
-    canvas.drawPath(shipPath, Paint()
-      ..color = const Color(0xFF00FFFF).withValues(alpha: 0.25)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 15));
+    // Glow esterno (come `Player.render` layer 3 — `_drawShipBody(1.7)`)
+    canvas.drawPath(shipPath, _shipGlowPaint);
 
-    // Corpo
-    canvas.drawPath(shipPath, Paint()..color = const Color(0xFF00FFFF));
+    // Corpo principale (cyan pieno)
+    canvas.drawPath(shipPath, _shipBodyPaint);
 
-    // Bordo luminoso
-    canvas.drawPath(shipPath, Paint()
-      ..color = const Color(0xFFFFFFFF).withValues(alpha: 0.3)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 0.8);
+    // Bordo luminoso bianco sottile
+    canvas.drawPath(shipPath, _shipStrokePaint);
 
-    // Cockpit
-    canvas.drawCircle(const Offset(6, 0), 2.5, Paint()
-      ..color = const Color(0xFFFFFFFF).withValues(alpha: 0.8));
+    // ─── COCKPIT (stesso stile di `Player._renderShipDetails`) ───
+    final cockpitGlow = 0.6 + math.sin(t * 10) * 0.2;
+    _cockpitHaloPaint.color =
+        const Color(0xFFFFFFFF).withValues(alpha: cockpitGlow * 0.5);
+    canvas.drawCircle(Offset(0, -4 * s), 5, _cockpitHaloPaint);
+    _cockpitWhitePaint.color =
+        const Color(0xFFFFFFFF).withValues(alpha: cockpitGlow);
+    canvas.drawCircle(Offset(0, -4 * s), 3, _cockpitWhitePaint);
+    _cockpitCyanPaint.color =
+        const Color(0xFF00FFFF).withValues(alpha: 0.9);
+    canvas.drawCircle(Offset(0, -4 * s), 2, _cockpitCyanPaint);
 
-    // Thruster animati (fiamma più grande e dinamica)
-    final thrustBase = 4 + math.sin(t * 60) * 2;
-    final thrustLen = 6 + math.sin(t * 45) * 3;
-    // Fiamme
-    final flamePath1 = Path()
-      ..moveTo(-14 * s, -4 * s)
-      ..lineTo(-14 * s - thrustLen, -4 * s + 1)
-      ..lineTo(-14 * s - thrustLen * 0.7, -4 * s - 1)
-      ..close();
-    final flamePath2 = Path()
-      ..moveTo(-14 * s, 4 * s)
-      ..lineTo(-14 * s - thrustLen, 4 * s - 1)
-      ..lineTo(-14 * s - thrustLen * 0.7, 4 * s + 1)
-      ..close();
-    final flamePaint = Paint()
-      ..color = const Color(0xFFFF6600).withValues(alpha: 0.8)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
-    canvas.drawPath(flamePath1, flamePaint);
-    canvas.drawPath(flamePath2, flamePaint);
+    // Linee strutturali (stesse di `Player._renderShipDetails`)
+    canvas.drawLine(
+        Offset(-2 * s, 0), Offset(-10 * s, 10 * s), _shipLinePaint);
+    canvas.drawLine(
+        Offset(2 * s, 0), Offset(10 * s, 10 * s), _shipLinePaint);
+    canvas.drawLine(
+        Offset(0, -8 * s), Offset(0, 8 * s), _shipLinePaint);
 
-    // Nucleo fiamma (bianco)
-    canvas.drawCircle(Offset(-14 * s, -4 * s), thrustBase * 0.4, Paint()
-      ..color = const Color(0xFFFFCC00).withValues(alpha: 0.6)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2));
-    canvas.drawCircle(Offset(-14 * s, 4 * s), thrustBase * 0.4, Paint()
-      ..color = const Color(0xFFFFCC00).withValues(alpha: 0.6)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2));
-
-    // Wing-tip lights
-    canvas.drawCircle(const Offset(-12, -15), 1.5, Paint()
-      ..color = Color.fromRGBO(255, 50, 50, 0.6 + math.sin(t * 8) * 0.3));
-    canvas.drawCircle(const Offset(-12, 15), 1.5, Paint()
-      ..color = Color.fromRGBO(50, 255, 100, 0.6 + math.sin(t * 8) * 0.3));
+    // ─── WING-TIP LIGHTS (rossa a sx, verde a dx — come in gioco) ───
+    final wingPulse = 0.5 + math.sin(t * 15) * 0.5;
+    _wingRedGlowPaint.color =
+        Color.fromRGBO(255, 50, 50, wingPulse * 0.3);
+    canvas.drawCircle(Offset(-12 * s, 10 * s), 4, _wingRedGlowPaint);
+    _wingRedCorePaint.color =
+        Color.fromRGBO(255, 50, 50, wingPulse * 0.9);
+    canvas.drawCircle(Offset(-12 * s, 10 * s), 2, _wingRedCorePaint);
+    _wingGreenGlowPaint.color =
+        Color.fromRGBO(50, 255, 100, wingPulse * 0.3);
+    canvas.drawCircle(Offset(12 * s, 10 * s), 4, _wingGreenGlowPaint);
+    _wingGreenCorePaint.color =
+        Color.fromRGBO(50, 255, 100, wingPulse * 0.9);
+    canvas.drawCircle(Offset(12 * s, 10 * s), 2, _wingGreenCorePaint);
 
     canvas.restore();
+  }
+
+  /// Fiamma thruster: replica di `Player._drawFlame` (paint cache statici).
+  void _drawShipFlame(Canvas canvas, double x, double y, double pulse) {
+    final length = 10 + pulse * 6;
+    const width = 4.0;
+    // Strato esterno rosso scuro
+    canvas.drawOval(
+      Rect.fromCenter(
+        center: Offset(x, y + length * 0.6),
+        width: width * 2.2,
+        height: length * 1.3,
+      ),
+      _flameOuterPaint,
+    );
+    // Arancione brillante
+    canvas.drawOval(
+      Rect.fromCenter(
+        center: Offset(x, y + length * 0.5),
+        width: width,
+        height: length * 0.7,
+      ),
+      _flameMidPaint,
+    );
+    // Core bianco
+    canvas.drawOval(
+      Rect.fromCenter(
+        center: Offset(x, y + length * 0.3),
+        width: width * 0.6,
+        height: length * 0.5,
+      ),
+      _flameCorePaint,
+    );
   }
 
   void _drawExplosion(Canvas canvas, double cx, double cy, Size size) {

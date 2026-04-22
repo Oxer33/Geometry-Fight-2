@@ -140,7 +140,7 @@ class ShieldEnemy extends EnemyBase {
   }
 
   @override
-  void takeDamage(double amount) {
+  void takeDamage(double amount, {bool isArea = false}) {
     // Lo scudo assorbe i danni durante approach e charging (scudo avanti)
     if (shieldHp > 0 && _state != _ShieldState.recovering) {
       shieldHp -= amount;
@@ -148,7 +148,7 @@ class ShieldEnemy extends EnemyBase {
       return;
     }
 
-    super.takeDamage(amount);
+    super.takeDamage(amount, isArea: isArea);
   }
 
   @override

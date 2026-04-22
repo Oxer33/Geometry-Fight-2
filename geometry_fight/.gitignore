@@ -43,3 +43,6 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Release APK (build artifact, >100MB eccede GitHub limit)
+*.apk

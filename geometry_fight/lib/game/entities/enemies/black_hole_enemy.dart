@@ -14,6 +14,10 @@ class BlackHoleEnemy extends EnemyBase {
   int _absorbedCount = 0;
   bool _dead = false;
   bool _activated = false;
+  // Flag: true quando il black hole muore per "absorbimento eccessivo".
+  // Consolida le due vecchie death path (proton burst + onDeath da bullet)
+  // in un unico flusso via `onDeath()`, evitando double-fire di onEnemyKilled.
+  bool _protonsPending = false;
 
   static const int _protonThreshold = 7;
 
@@ -29,20 +33,22 @@ class BlackHoleEnemy extends EnemyBase {
         );
 
   @override
-  void takeDamage(double amount) {
+  void takeDamage(double amount, {bool isArea = false}) {
     if (_dead) return;
     // Il primo colpo attiva il black hole
     if (!_activated) {
       _activated = true;
     }
     // Danno reale — ci vogliono 3-5 secondi per ucciderlo
-    super.takeDamage(amount);
+    super.takeDamage(amount, isArea: isArea);
   }
 
   @override
   void updateBehavior(double dt) {
-    // Rotation speed doubles when activated
-    _rotAngle += dt * (_activated ? 4 : 2);
+    // Dormant: statico. Attivo: ruota aggressivo.
+    // Era `_activated ? 4 : 2` → sempre in movimento. Ora ruota solo dopo il
+    // primo colpo, così si capisce che la gravità non è ancora attiva.
+    _rotAngle += dt * (_activated ? 4 : 0);
 
     if (!_activated) return;
 
@@ -68,45 +74,12 @@ class BlackHoleEnemy extends EnemyBase {
       _absorbedCount++;
     }
 
-    // Proton explosion after absorbing enough enemies
-    if (_absorbedCount >= _protonThreshold) {
-      _explodeIntoProtons();
+    // Proton explosion after absorbing enough enemies — delega a `onDeath`
+    // (entry point unico) per evitare doppia chiamata di `onEnemyKilled`.
+    if (_absorbedCount >= _protonThreshold && !_dead) {
+      _protonsPending = true;
+      onDeath();
     }
-  }
-
-  void _explodeIntoProtons() {
-    if (_dead) return;
-    _dead = true;
-    final protonCount = 8 + _absorbedCount;
-    for (int i = 0; i < protonCount; i++) {
-      final angle = i * math.pi * 2 / protonCount;
-      final dir = Vector2(math.cos(angle), math.sin(angle));
-      final proton = ProtonEnemy(direction: dir);
-      proton.position = position + dir * 20;
-      game.world.add(proton);
-    }
-
-    // Shockwave: uccidi nemici vicini (non altri black hole) e respingi player
-    for (final child in List.from(game.world.children)) {
-      if (child is EnemyBase && child != this && child is! BlackHoleEnemy) {
-        if (child.position.distanceTo(position) < 200) {
-          child.killSilently();
-        }
-      }
-    }
-    final toPlayer = game.player.position - position;
-    if (toPlayer.length > 0 && toPlayer.length < 300) {
-      game.player.position += toPlayer.normalized() * 400 * (1.0 - toPlayer.length / 300);
-    }
-
-    game.spawnExplosion(position, NeonColors.red, radius: 150, particleCount: 30, epic: true);
-    game.triggerScreenShake(8, 0.4);
-    if (!game.isTunnelMode) {
-      game.grid.applyForce(position, 300, 2500);
-    }
-
-    game.onEnemyKilled(this);
-    removeFromParent();
   }
 
   @override
@@ -114,9 +87,22 @@ class BlackHoleEnemy extends EnemyBase {
     if (_dead) return;
     _dead = true;
 
-    // Esplosione alla morte: uccide nemici vicini (esclusi altri black hole) e respinge player
+    // Se dovuto a absorbimento eccessivo: spawn protoni prima della shockwave
+    if (_protonsPending) {
+      final protonCount = 8 + _absorbedCount;
+      for (int i = 0; i < protonCount; i++) {
+        final angle = i * math.pi * 2 / protonCount;
+        final dir = Vector2(math.cos(angle), math.sin(angle));
+        final proton = ProtonEnemy(direction: dir);
+        proton.position = position + dir * 20;
+        game.world.add(proton);
+      }
+    }
+
+    // Shockwave condivisa: uccide nemici vicini + respinge player + FX
     _deathExplosion();
 
+    // super.onDeath() di EnemyBase: gestisce _isDead, onEnemyKilled, removeFromParent
     super.onDeath();
   }
 
@@ -150,10 +136,18 @@ class BlackHoleEnemy extends EnemyBase {
     }
   }
 
-  /// Colore che cicla nello spettro HSV — molto appariscente
+  /// Colore che cicla nello spettro HSV — molto appariscente.
+  /// Cache per bucket di 6° (60 bucket): ogni renderShape chiama 25+ volte
+  /// → con la cache ricomputiamo solo al bucket-step invece che ogni call.
+  static final Map<int, Color> _chromaCache = <int, Color>{};
   Color _chromaColor(double hueOffset) {
-    final hue = (_rotAngle * 40 + hueOffset) % 360;
-    return HSVColor.fromAHSV(1.0, hue, 1.0, 1.0).toColor();
+    final rawHue = (_rotAngle * 40 + hueOffset) % 360;
+    final bucket = (rawHue / 6).floor() % 60; // 60 bucket totali
+    final cached = _chromaCache[bucket];
+    if (cached != null) return cached;
+    final color = HSVColor.fromAHSV(1.0, bucket * 6.0, 1.0, 1.0).toColor();
+    _chromaCache[bucket] = color;
+    return color;
   }
 
   @override
@@ -163,12 +157,16 @@ class BlackHoleEnemy extends EnemyBase {
     final r = 18 * scale;
     final active = _activated;
     final pulse = math.sin(_rotAngle * 3);
+    // Flash strobe quando attivo: on/off veloce sulle alpha dei layer esterni,
+    // così il black hole "lampeggia" (richiesta user). Dormant = 1.0 fisso.
+    final flashStrobe = active ? (math.sin(_rotAngle * 18) > 0 ? 1.0 : 0.35) : 1.0;
 
     // === ALONE CROMATICO ESTERNO (molto grande e luminoso) ===
     // 3 strati sovrapposti con hue sfasato → effetto arcobaleno rotante
     for (int layer = 0; layer < 3; layer++) {
       final layerR = r * (2.8 - layer * 0.4);
-      final alpha = active ? (0.20 - layer * 0.05 + pulse * 0.05) : (0.08 - layer * 0.02);
+      final baseAlpha = active ? (0.20 - layer * 0.05 + pulse * 0.05) : (0.08 - layer * 0.02);
+      final alpha = baseAlpha * flashStrobe;
       final c = _chromaColor(layer * 120.0);
       EnemyBase.detailPaint.color = c.withValues(alpha: alpha.clamp(0.0, 1.0));
       canvas.drawCircle(Offset(cx, cy), layerR, EnemyBase.detailPaint);
