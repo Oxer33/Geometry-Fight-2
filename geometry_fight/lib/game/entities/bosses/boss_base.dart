@@ -220,19 +220,18 @@ abstract class BossBase extends PositionComponent
 
   void onDeath() {
     game.onBossKilled(this);
-    // Morte drammatica: slow-mo + 2 epic explosions (shake auto-triggered
-    // dal game_world) + 1 non-epic per i dettagli colorati. Evita lo shake
-    // esplicito: ogni `epic: true` aggiunge già shake(4, 0.15) nel game_world
-    // → 2 epic + 1 esplicito = triple shake troppo violento su boss rush.
+    // Morte drammatica con budget particellare contenuto.
+    // Prima: 40+50+30 = 120 particelle in un frame → lag visibile dopo
+    // il primo boss kill. Ora: 20+25+15 = 60 tot. Solo 1 explosion `epic`
+    // (gli epic triggerano shake aggiuntivo + grid distortion) → frame
+    // cost sostenibile anche su boss rush.
     game.activateSlowMo(0.5, 0.25);
     game.spawnExplosion(position, const Color(0xFFFFFFFF),
-        radius: 320, particleCount: 40, epic: true);
+        radius: 320, particleCount: 20, epic: true);
     game.spawnExplosion(position, neonColor,
-        radius: 260, particleCount: 50, epic: true);
+        radius: 260, particleCount: 25);
     game.spawnExplosion(position, const Color(0xFFFF8800),
-        radius: 180, particleCount: 30);
-    // Un singolo shake forte "finale" — gli epic ne hanno già aggiunti 2
-    // piccoli (4, 0.15 × 2), questo dà il "boom" culminante.
+        radius: 180, particleCount: 15);
     game.triggerScreenShake(10, 0.5);
     removeFromParent();
   }

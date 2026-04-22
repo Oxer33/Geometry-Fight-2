@@ -275,40 +275,51 @@ class AudioSystem {
   /// Game over (raro) — esplosione drammatica gameover_explosion.mp3 (pool dedicato)
   /// + tono game_over.wav legacy in coda. Haptic forte (evento finale).
   static void playGameOver() {
-    if (_initialized && _sfxVolume > 0 && _canPlay(_fxGameOverExplosion)) {
-      // Boost 10% sul volume base ma clamp a 1.0 (audioplayers lo fa
-      // internamente, ma esplicitare evita confusione in debug).
-      _gameOverExplosionMp3Pool?.play(
-          volume: (_sfxVolume * 1.1).clamp(0.0, 1.0));
+    if (_sfxVolume > 0 && _canPlay(_fxGameOverExplosion)) {
+      final boosted = (_sfxVolume * 1.1).clamp(0.0, 1.0);
+      try {
+        FlameAudio.play(_fxGameOverExplosion, volume: boosted);
+      } catch (_) {
+        if (_initialized && _gameOverExplosionMp3Pool != null) {
+          _gameOverExplosionMp3Pool!.play(volume: boosted);
+        }
+      }
     }
     _playRare(_fxGameOver, volumeScale: 0.6);
     if (_vibrationEnabled) HapticFeedback.heavyImpact();
   }
 
-  /// Player death — esplosione dedicata (pool mp3 dedicato). Chiamato ad
-  /// ogni vita persa. Pool evita contention col bgm.play concorrente
-  /// (music swap su skipToNext) che prima causava "audio buggato".
+  /// Player death — direct play (raro evento per vita persa).
+  /// Stesso pattern di `playBossKilled`: pool custom ha silent-fail su
+  /// MediaPlayer contention, direct play zero contention.
   static void playPlayerDeath() {
-    if (_initialized && _sfxVolume > 0 && _canPlay(_fxPlayerDeath)) {
-      _playerDeathMp3Pool?.play(volume: _sfxVolume);
+    if (_sfxVolume > 0 && _canPlay(_fxPlayerDeath)) {
+      try {
+        FlameAudio.play(_fxPlayerDeath, volume: _sfxVolume);
+      } catch (_) {
+        if (_initialized && _playerDeathMp3Pool != null) {
+          _playerDeathMp3Pool!.play(volume: _sfxVolume);
+        }
+      }
     }
     if (_vibrationEnabled) HapticFeedback.heavyImpact();
   }
 
   /// Boss killed — fanfara di vittoria quando un boss cade.
-  /// Usa pool mp3 dedicato se pronto; altrimenti fallback a `FlameAudio.play`
-  /// diretto → garantisce che l'audio si senta anche durante transizioni di
-  /// stato audio (app resume, stopAll→init in volo) dove `_initialized`
-  /// potrebbe essere false temporaneamente.
+  /// PRIMARY: `FlameAudio.play` diretto (boss death è evento raro, ~1-2
+  /// volte per boss fight; no benefit dal pool che serve solo per eventi
+  /// ad alta frequenza). Il pool custom aveva silent-fail su Android
+  /// MediaPlayer contention (seek/resume su player condiviso con BGM).
+  /// Direct play crea un AudioPlayer fresco, zero contention.
   static void playBossKilled() {
     if (_sfxVolume > 0 && _canPlay(_fxBossKilled)) {
-      if (_initialized && _bossKilledMp3Pool != null) {
-        _bossKilledMp3Pool!.play(volume: _sfxVolume);
-      } else {
-        // Fallback: boss kill è evento critico, non possiamo perderlo.
-        try {
-          FlameAudio.play(_fxBossKilled, volume: _sfxVolume);
-        } catch (_) {}
+      try {
+        FlameAudio.play(_fxBossKilled, volume: _sfxVolume);
+      } catch (e) {
+        // Fallback su pool se direct play fallisce (asset cache issue).
+        if (_initialized && _bossKilledMp3Pool != null) {
+          _bossKilledMp3Pool!.play(volume: _sfxVolume);
+        }
       }
     }
     if (_vibrationEnabled) HapticFeedback.heavyImpact();

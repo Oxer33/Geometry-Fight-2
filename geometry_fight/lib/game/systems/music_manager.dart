@@ -246,10 +246,13 @@ class MusicManager {
     _lastPlayed = relativePath;
     try {
       // Attendi eventuale stop() in volo: se stop.bgm.stop() termina DOPO
-      // play.bgm.play(), cancella la nuova sorgente → silenzio. Aspettiamo
-      // che il vecchio stop completi prima di chiamare play.
+      // play.bgm.play(), cancella la nuova sorgente → silenzio. Timeout 2s
+      // per evitare deadlock se bgm.stop() si blocca su Android MediaPlayer.
       if (_stopInFlight != null) {
-        try { await _stopInFlight; } catch (_) {}
+        try {
+          await _stopInFlight!.timeout(const Duration(seconds: 2));
+        } catch (_) {}
+        _stopInFlight = null; // clear comunque per non bloccare play futuri
       }
       // NOTE: NO stop() esplicito prima del play. audioplayers `play()`
       // swappa la sorgente atomicamente, senza emettere onPlayerComplete
@@ -283,21 +286,30 @@ class MusicManager {
   static void _onTrackComplete() {
     final now = DateTime.now().millisecondsSinceEpoch;
     if (now - _lastManualPlayMs < 500) return;
-    // unawaited + try/catch: `_playFromXBag` è async, il listener sync.
-    // Senza guard, errori async vengono silenziosamente ingoiati dallo
-    // scheduler di microtasks.
+    // Retry fino a 2 volte se il play fallisce → evita "music muta"
+    // dopo track end quando MediaPlayer è in stato degenerato.
     Future<void> next() async {
-      switch (_mode) {
-        case _Mode.bgm:
-          await _playFromBgmBag();
-        case _Mode.intro:
-          await _playFromIntroBag();
-        case _Mode.idle:
-          break;
+      for (int attempt = 0; attempt < 2; attempt++) {
+        try {
+          switch (_mode) {
+            case _Mode.bgm:
+              await _playFromBgmBag();
+              return;
+            case _Mode.intro:
+              await _playFromIntroBag();
+              return;
+            case _Mode.idle:
+              return;
+          }
+        } catch (e) {
+          debugPrint('MusicManager onTrackComplete attempt $attempt: $e');
+          // Breve delay prima del retry
+          await Future.delayed(const Duration(milliseconds: 250));
+        }
       }
     }
     unawaited(next().catchError((Object e, StackTrace st) {
-      debugPrint('MusicManager onTrackComplete error: $e\n$st');
+      debugPrint('MusicManager onTrackComplete giving up: $e\n$st');
     }));
   }
 
