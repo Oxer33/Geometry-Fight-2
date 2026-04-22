@@ -156,6 +156,12 @@ class MirrorMasterBoss extends BossBase {
   static final _coreHaloPaint = Paint();
   static final _coreWhitePaint = Paint();
   static final _prismaticPaint = Paint()..style = PaintingStyle.stroke;
+  // Floor mirrors (cached paints — evita alloc/frame × N specchi).
+  static final _mirrorGlowPaint = Paint();
+  static final _mirrorBodyPaint = Paint();
+  static final _mirrorBorderPaint = Paint()
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 1.5;
 
   @override
   void renderBoss(Canvas canvas, Paint paint, double scale) {
@@ -286,22 +292,18 @@ class MirrorMasterBoss extends BossBase {
         canvas.save();
         canvas.translate(mx, my);
         canvas.rotate(m.angle);
-        // Glow alone
-        final glowPaint = Paint()
-          ..color = const Color(0xFFFF88FF).withValues(alpha: 0.3 + hpRatio * 0.3);
+        _mirrorGlowPaint.color =
+            const Color(0xFFFF88FF).withValues(alpha: 0.3 + hpRatio * 0.3);
         canvas.drawRect(
-            const Rect.fromLTWH(-34, -8, 68, 16), glowPaint);
-        // Specchio body (più chiaro quando HP alto)
-        final bodyPaint = Paint()
-          ..color = Color.lerp(const Color(0xFF886699),
-              const Color(0xFFCCDDFF), hpRatio)!;
-        canvas.drawRect(const Rect.fromLTWH(-30, -5, 60, 10), bodyPaint);
-        // Bordo bianco
-        final borderPaint = Paint()
-          ..color = const Color(0xFFFFFFFF).withValues(alpha: 0.9)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 1.5;
-        canvas.drawRect(const Rect.fromLTWH(-30, -5, 60, 10), borderPaint);
+            const Rect.fromLTWH(-34, -8, 68, 16), _mirrorGlowPaint);
+        _mirrorBodyPaint.color = Color.lerp(const Color(0xFF886699),
+            const Color(0xFFCCDDFF), hpRatio)!;
+        canvas.drawRect(
+            const Rect.fromLTWH(-30, -5, 60, 10), _mirrorBodyPaint);
+        _mirrorBorderPaint.color =
+            const Color(0xFFFFFFFF).withValues(alpha: 0.9);
+        canvas.drawRect(
+            const Rect.fromLTWH(-30, -5, 60, 10), _mirrorBorderPaint);
         canvas.restore();
       }
     }

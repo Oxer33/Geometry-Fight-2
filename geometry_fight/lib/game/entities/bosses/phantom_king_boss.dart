@@ -168,6 +168,10 @@ class PhantomKingBoss extends BossBase {
   static final _eyeHaloPaint = Paint();
   static final _eyePupilPaint = Paint();
   static final _invisShimmerPaint = Paint()..style = PaintingStyle.stroke;
+  // Shadow clone (cached paints — evita alloc/frame).
+  static final _shadowBodyPaint = Paint();
+  static final _shadowGlowPaint = Paint();
+  static final _shadowEyePaint = Paint();
 
   @override
   void renderBoss(Canvas canvas, Paint paint, double scale) {
@@ -291,18 +295,15 @@ class PhantomKingBoss extends BossBase {
             innerR * math.cos(innerAngle), innerR * math.sin(innerAngle));
       }
       shadowPath.close();
-      final shadowPaint = Paint()
-        ..color = const Color(0xFF6644AA).withValues(alpha: shadowPulse);
-      canvas.drawPath(shadowPath, shadowPaint);
-      // Glow shadow
-      final shadowGlow = Paint()
-        ..color = const Color(0xFF8877FF).withValues(alpha: shadowPulse * 0.5);
-      canvas.drawCircle(Offset.zero, sr * 0.5, shadowGlow);
-      // Occhio shadow (singolo punto)
-      final shadowEye = Paint()
-        ..color = const Color(0xFFFFFFFF)
-            .withValues(alpha: 0.7 + math.sin(_crownPhase * 6) * 0.3);
-      canvas.drawCircle(Offset.zero, sr * 0.1, shadowEye);
+      _shadowBodyPaint.color =
+          const Color(0xFF6644AA).withValues(alpha: shadowPulse);
+      canvas.drawPath(shadowPath, _shadowBodyPaint);
+      _shadowGlowPaint.color =
+          const Color(0xFF8877FF).withValues(alpha: shadowPulse * 0.5);
+      canvas.drawCircle(Offset.zero, sr * 0.5, _shadowGlowPaint);
+      _shadowEyePaint.color = const Color(0xFFFFFFFF)
+          .withValues(alpha: 0.7 + math.sin(_crownPhase * 6) * 0.3);
+      canvas.drawCircle(Offset.zero, sr * 0.1, _shadowEyePaint);
       canvas.restore();
     }
   }

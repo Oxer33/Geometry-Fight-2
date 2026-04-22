@@ -146,7 +146,7 @@ class NexusPrimeBoss extends BossBase {
     if (_satellites.isEmpty) _spawnSatellites();
 
     // Satelliti orbitano intorno al boss (rotazione lenta opposta al portale).
-    final satAngularSpeed = 1.2;
+    const satAngularSpeed = 1.2;
     for (int i = 0; i < _satellites.length; i++) {
       final s = _satellites[i];
       if (!s.alive) {

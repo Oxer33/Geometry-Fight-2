@@ -1,3 +1,4 @@
+import 'dart:collection';
 import 'dart:math' as math;
 import 'dart:ui';
 import 'package:flame/components.dart';
@@ -37,13 +38,24 @@ class EternityEngineBoss extends BossBase {
   // Rewind mechanic (nuova meccanica richiesta utente):
   // traccia posizioni player nei precedenti 3s → orbi teletrasportati
   // alla posizione passata come zona pericolosa.
-  final List<Vector2> _posHistory = [];
+  // ListQueue: removeFirst O(1) invece di list.removeAt(0) O(N).
+  final ListQueue<Vector2> _posHistory = ListQueue<Vector2>();
   static const int _kHistoryMaxSize = 180; // 3s at 60fps
   double _rewindSpawnTimer = 5.0;
   final List<_RewindOrb> _rewindOrbs = [];
   static const double _kRewindSpawnInterval = 5.0;
   static const double _kRewindOrbitRadius = 70;
   static const double _kRewindHazardRadius = 55;
+  // Cached orb paints (evita alloc/frame × N orbi).
+  static final _orbGlowPaint = Paint();
+  static final _orbCorePaint = Paint();
+  static final _hazardFillPaint = Paint();
+  static final _hazardBorderPaint = Paint()
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 2.2;
+  static final _clockPaint = Paint()
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 1.5;
 
   EternityEngineBoss()
       : super(
@@ -105,9 +117,9 @@ class EternityEngineBoss extends BossBase {
     }
 
     // ─── REWIND ORBS: track player pos history ────────────────────
-    _posHistory.add(playerPosition.clone());
+    _posHistory.addLast(playerPosition.clone());
     if (_posHistory.length > _kHistoryMaxSize) {
-      _posHistory.removeAt(0);
+      _posHistory.removeFirst();
     }
 
     // Spawn 3 rewind orb ogni 5s.
@@ -253,12 +265,13 @@ class EternityEngineBoss extends BossBase {
           final orbitPulse = 0.6 + math.sin(_phase * 3 + orb.orbitAngle) * 0.4;
           final hue = (_phase * 60 + orb.orbitAngle * 40) % 360;
           final orbColor = HSVColor.fromAHSV(1, hue, 0.8, 1).toColor();
-          final glowPaint = Paint()
-            ..color = orbColor.withValues(alpha: 0.45 * orbitPulse);
-          canvas.drawCircle(Offset(ox, oy), 14 * orbitPulse, glowPaint);
-          final corePaint = Paint()
-            ..color = const Color(0xFFFFFFFF).withValues(alpha: orbitPulse);
-          canvas.drawCircle(Offset(ox, oy), 5, corePaint);
+          _orbGlowPaint.color =
+              orbColor.withValues(alpha: 0.45 * orbitPulse);
+          canvas.drawCircle(
+              Offset(ox, oy), 14 * orbitPulse, _orbGlowPaint);
+          _orbCorePaint.color =
+              const Color(0xFFFFFFFF).withValues(alpha: orbitPulse);
+          canvas.drawCircle(Offset(ox, oy), 5, _orbCorePaint);
         } else {
           final isGrace = orb.activationDelay > 0;
           final zoneColor = isGrace
@@ -267,29 +280,24 @@ class EternityEngineBoss extends BossBase {
           final strobe = isGrace
               ? 0.5 + math.sin(_phase * 14) * 0.3
               : 0.7 + math.sin(_phase * 20) * 0.3;
-          final fillPaint = Paint()
-            ..color = zoneColor.withValues(alpha: 0.25 * strobe);
+          _hazardFillPaint.color =
+              zoneColor.withValues(alpha: 0.25 * strobe);
           canvas.drawCircle(
-              Offset(ox, oy), _kRewindHazardRadius, fillPaint);
-          final borderPaint = Paint()
-            ..color = zoneColor.withValues(alpha: 0.8 * strobe)
-            ..style = PaintingStyle.stroke
-            ..strokeWidth = 2.2;
+              Offset(ox, oy), _kRewindHazardRadius, _hazardFillPaint);
+          _hazardBorderPaint.color =
+              zoneColor.withValues(alpha: 0.8 * strobe);
           canvas.drawCircle(
-              Offset(ox, oy), _kRewindHazardRadius, borderPaint);
+              Offset(ox, oy), _kRewindHazardRadius, _hazardBorderPaint);
           // Quadrante temporale (orologio che gira) al centro.
           final clockAngle = (orb.hazardTimer / 2.0) * math.pi * 2;
-          final clockPaint = Paint()
-            ..color =
-                const Color(0xFFFFFFFF).withValues(alpha: 0.9 * strobe)
-            ..style = PaintingStyle.stroke
-            ..strokeWidth = 1.5;
+          _clockPaint.color =
+              const Color(0xFFFFFFFF).withValues(alpha: 0.9 * strobe);
           canvas.drawArc(
             Rect.fromCircle(center: Offset(ox, oy), radius: 8),
             -math.pi / 2,
             clockAngle,
             false,
-            clockPaint,
+            _clockPaint,
           );
         }
       }
