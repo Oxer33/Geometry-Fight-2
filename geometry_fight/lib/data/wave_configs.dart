@@ -51,6 +51,13 @@ enum BossType {
   graviton,
   inferno,
   eternityEngine,
+  // Batch 4 — 4 nuovi boss (richiesta utente: "aggiungere 4 nuovi boss con
+  // meccaniche uniche, FX spettacolari") per coprire i 20 slot boss della
+  // modalità classica (ogni wave multipla di 5).
+  crimsonCrown,    // wave 5   — orbi fuoco + lava mines
+  prismHunter,     // wave 15  — laser sweeping + rainbow bullet hell
+  voidKraken,      // wave 25  — gravity pull + ink cloud + proton spawn
+  astralSentinel,  // wave 35  — poligono laser + star constellation gate
 }
 
 class WaveSpawn {
@@ -73,137 +80,65 @@ class WaveConfig {
   });
 }
 
+// ═══════════════════════════════════════════════════════════════════════
+// BOSS PLACEMENT — richiesta utente: un boss ad ogni wave multipla di 5.
+// 100 waves / 5 = 20 slot boss. 16 boss esistenti + 4 nuovi = 20 esatti.
+// Ordine scelto per escalation di difficoltà (boss più dinamici prima,
+// boss "bullet hell" e finali nelle wave alte).
+// ═══════════════════════════════════════════════════════════════════════
+const Map<int, BossType> _classicBossSchedule = {
+  5: BossType.crimsonCrown,    // NEW — primo boss "tutorial" meccanico
+  10: BossType.theGrid,
+  15: BossType.prismHunter,     // NEW — sweeping laser
+  20: BossType.hydra,
+  25: BossType.voidKraken,      // NEW — gravity pull
+  30: BossType.singularity,
+  35: BossType.astralSentinel,  // NEW — constellation gate
+  40: BossType.swarmMother,
+  45: BossType.theArchitect,
+  50: BossType.chronoWraith,
+  55: BossType.nexusPrime,
+  60: BossType.voidReaper,
+  65: BossType.teslaLord,
+  70: BossType.phantomKing,
+  75: BossType.omegaCore,
+  80: BossType.mirrorMaster,
+  85: BossType.swarmQueen,
+  90: BossType.graviton,
+  95: BossType.inferno,
+  100: BossType.eternityEngine,
+};
+
+// Spawn "entourage" pre-boss per le wave più alte (mob supporto che aiutano
+// a dare varietà durante il boss fight). Wave <55 = arena pulita, boss puro.
+const Map<int, List<WaveSpawn>> _bossEntourageSpawns = {
+  55: [WaveSpawn(EnemyType.tesla, 6), WaveSpawn(EnemyType.orbiter, 8, delay: 2)],
+  60: [WaveSpawn(EnemyType.healer, 4), WaveSpawn(EnemyType.siren, 6, delay: 2)],
+  65: [WaveSpawn(EnemyType.tesla, 10), WaveSpawn(EnemyType.necro, 4, delay: 3)],
+  70: [WaveSpawn(EnemyType.phantom, 8), WaveSpawn(EnemyType.glitch, 6, delay: 2)],
+  75: [WaveSpawn(EnemyType.titan, 6), WaveSpawn(EnemyType.healer, 4, delay: 3)],
+  80: [WaveSpawn(EnemyType.mirror, 8), WaveSpawn(EnemyType.decoy, 10, delay: 2)],
+  85: [WaveSpawn(EnemyType.swarmDrone, 40), WaveSpawn(EnemyType.healer, 4, delay: 3)],
+  90: [WaveSpawn(EnemyType.gravityWell, 4), WaveSpawn(EnemyType.blackHole, 2, delay: 4)],
+  95: [WaveSpawn(EnemyType.kamikaze, 20), WaveSpawn(EnemyType.timeBomb, 6, delay: 3)],
+  100: [
+    WaveSpawn(EnemyType.titan, 8),
+    WaveSpawn(EnemyType.tesla, 10, delay: 2),
+    WaveSpawn(EnemyType.healer, 6, delay: 4)
+  ],
+};
+
 List<WaveConfig> generateWaveConfigs() {
   final configs = <WaveConfig>[];
 
   for (int wave = 1; wave <= 100; wave++) {
-    // Boss waves
-    if (wave == 10) {
+    // Boss wave: ogni wave multipla di 5.
+    final bossType = _classicBossSchedule[wave];
+    if (bossType != null) {
       configs.add(WaveConfig(
         waveNumber: wave,
-        spawns: [],
-        boss: BossType.theGrid,
-      ));
-      continue;
-    }
-    if (wave == 20) {
-      configs.add(WaveConfig(
-        waveNumber: wave,
-        spawns: [],
-        boss: BossType.hydra,
-      ));
-      continue;
-    }
-    if (wave == 30) {
-      configs.add(WaveConfig(
-        waveNumber: wave,
-        spawns: [],
-        boss: BossType.singularity,
-      ));
-      continue;
-    }
-    if (wave == 40) {
-      configs.add(WaveConfig(
-        waveNumber: wave,
-        spawns: [],
-        boss: BossType.swarmMother,
-      ));
-      continue;
-    }
-    if (wave == 45) {
-      configs.add(WaveConfig(
-        waveNumber: wave,
-        spawns: [],
-        boss: BossType.theArchitect,
-      ));
-      continue;
-    }
-    if (wave == 50) {
-      configs.add(WaveConfig(
-        waveNumber: wave,
-        spawns: [],
-        boss: BossType.chronoWraith,
-      ));
-      continue;
-    }
-    if (wave == 55) {
-      configs.add(WaveConfig(
-        waveNumber: wave,
-        spawns: [WaveSpawn(EnemyType.tesla, 6), WaveSpawn(EnemyType.orbiter, 8, delay: 2)],
-        boss: BossType.nexusPrime,
-      ));
-      continue;
-    }
-    if (wave == 60) {
-      configs.add(WaveConfig(
-        waveNumber: wave,
-        spawns: [WaveSpawn(EnemyType.healer, 4), WaveSpawn(EnemyType.siren, 6, delay: 2)],
-        boss: BossType.voidReaper,
-      ));
-      continue;
-    }
-    if (wave == 65) {
-      configs.add(WaveConfig(
-        waveNumber: wave,
-        spawns: [WaveSpawn(EnemyType.tesla, 10), WaveSpawn(EnemyType.necro, 4, delay: 3)],
-        boss: BossType.teslaLord,
-      ));
-      continue;
-    }
-    if (wave == 70) {
-      configs.add(WaveConfig(
-        waveNumber: wave,
-        spawns: [WaveSpawn(EnemyType.phantom, 8), WaveSpawn(EnemyType.glitch, 6, delay: 2)],
-        boss: BossType.phantomKing,
-      ));
-      continue;
-    }
-    if (wave == 75) {
-      configs.add(WaveConfig(
-        waveNumber: wave,
-        spawns: [WaveSpawn(EnemyType.titan, 6), WaveSpawn(EnemyType.healer, 4, delay: 3)],
-        boss: BossType.omegaCore,
-      ));
-      continue;
-    }
-    // Wave 80-100: nuovi boss batch 3
-    if (wave == 80) {
-      configs.add(WaveConfig(
-        waveNumber: wave,
-        spawns: [WaveSpawn(EnemyType.mirror, 8), WaveSpawn(EnemyType.decoy, 10, delay: 2)],
-        boss: BossType.mirrorMaster,
-      ));
-      continue;
-    }
-    if (wave == 85) {
-      configs.add(WaveConfig(
-        waveNumber: wave,
-        spawns: [WaveSpawn(EnemyType.swarmDrone, 40), WaveSpawn(EnemyType.healer, 4, delay: 3)],
-        boss: BossType.swarmQueen,
-      ));
-      continue;
-    }
-    if (wave == 90) {
-      configs.add(WaveConfig(
-        waveNumber: wave,
-        spawns: [WaveSpawn(EnemyType.gravityWell, 4), WaveSpawn(EnemyType.blackHole, 2, delay: 4)],
-        boss: BossType.graviton,
-      ));
-      continue;
-    }
-    if (wave == 95) {
-      configs.add(WaveConfig(
-        waveNumber: wave,
-        spawns: [WaveSpawn(EnemyType.kamikaze, 20), WaveSpawn(EnemyType.timeBomb, 6, delay: 3)],
-        boss: BossType.inferno,
-      ));
-      continue;
-    }
-    if (wave == 100) {
-      configs.add(WaveConfig(
-        waveNumber: wave,
-        spawns: [WaveSpawn(EnemyType.titan, 8), WaveSpawn(EnemyType.tesla, 10, delay: 2), WaveSpawn(EnemyType.healer, 6, delay: 4)],
-        boss: BossType.eternityEngine,
+        spawns: _bossEntourageSpawns[wave] ?? const [],
+        boss: bossType,
       ));
       continue;
     }

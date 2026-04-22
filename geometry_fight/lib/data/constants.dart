@@ -1,9 +1,11 @@
 import 'dart:ui';
 
-// Arena 16:9 — larghezza adattata all'aspect ratio dello schermo
-// Tunnel mode usa dimensioni separate per il corridoio lungo
-const double arenaWidth = 1334;
-const double arenaHeight = 750;
+// Arena 16:9 — larghezza adattata all'aspect ratio dello schermo.
+// Tunnel mode usa dimensioni separate per il corridoio lungo.
+// Arena -30% (richiesta utente): era 1334x750, ora 934x525 per tutte le
+// modalità rettangolari (classic, zen, boss rush, arcade). Tunnel invariato.
+const double arenaWidth = 934;
+const double arenaHeight = 525;
 const double tunnelArenaWidth = 3000; // Solo per tunnel mode
 const double tunnelArenaHeight = 3000;
 

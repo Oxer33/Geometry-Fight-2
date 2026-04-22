@@ -57,6 +57,10 @@ import 'entities/bosses/mirror_master_boss.dart';
 import 'entities/bosses/swarm_queen_boss.dart';
 import 'entities/bosses/graviton_boss.dart';
 import 'entities/bosses/inferno_boss.dart';
+import 'entities/bosses/crimson_crown_boss.dart';
+import 'entities/bosses/prism_hunter_boss.dart';
+import 'entities/bosses/void_kraken_boss.dart';
+import 'entities/bosses/astral_sentinel_boss.dart';
 import 'entities/bosses/eternity_engine_boss.dart';
 import 'entities/geom.dart';
 import 'entities/projectiles.dart';
@@ -693,6 +697,14 @@ class GeometryFightGame extends FlameGame
         boss = InfernoBoss();
       case BossType.eternityEngine:
         boss = EternityEngineBoss();
+      case BossType.crimsonCrown:
+        boss = CrimsonCrownBoss();
+      case BossType.prismHunter:
+        boss = PrismHunterBoss();
+      case BossType.voidKraken:
+        boss = VoidKrakenBoss();
+      case BossType.astralSentinel:
+        boss = AstralSentinelBoss();
     }
 
     // HP dimezzati per tutti i boss (bilanciamento), poi scalati per difficoltà

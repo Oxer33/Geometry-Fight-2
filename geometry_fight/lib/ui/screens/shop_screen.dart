@@ -1637,7 +1637,8 @@ class _WeaponPreviewPainter extends CustomPainter {
       ..color = color.withValues(alpha: 0.3)
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
 
-    final angles = [-0.175, -0.0875, 0.0, 0.0875, 0.175];
+    // Spread in-game: 5 bullets, angoli [-0.12, -0.06, 0, +0.06, +0.12] (player.dart).
+    final angles = [-0.12, -0.06, 0.0, 0.06, 0.12];
     for (int wave = 0; wave < 5; wave++) {
       final waveTime = (time / rate + wave * 1.2) % 8;
       if (waveTime > 3) continue;
