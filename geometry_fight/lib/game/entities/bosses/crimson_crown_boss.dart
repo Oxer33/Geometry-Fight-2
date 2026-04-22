@@ -19,6 +19,10 @@ class CrimsonCrownBoss extends BossBase {
   double _phase = 0;
   double _orbShootTimer = 2.0;
   double _lavaMineTimer = 5.0;
+  // Lava mine wind-up: spawna solo la FX di warning, dopo `_lavaMineWindUp`
+  // secondi parte il burst di bullet. Permette al player di schivare.
+  Vector2? _lavaMineTarget;
+  double _lavaMineWindUp = 0;
 
   static final _orbPaint = Paint();
   static final _orbGlowPaint = Paint();
@@ -45,6 +49,8 @@ class CrimsonCrownBoss extends BossBase {
   @override
   void updateBoss(double dt) {
     _phase += dt;
+    // Wrap _phase per evitare float drift su fight lunghi.
+    if (_phase > math.pi * 20) _phase -= math.pi * 20;
 
     final toPlayer = playerPosition - position;
     if (toPlayer.length > 180) {
@@ -58,9 +64,16 @@ class CrimsonCrownBoss extends BossBase {
         final orbAngle = _phase * 0.8 + i * math.pi * 2 / 6;
         final orbPos = position +
             Vector2(math.cos(orbAngle) * 60, math.sin(orbAngle) * 60);
-        final bdir = currentPhase >= 1
-            ? (playerPosition - orbPos).normalized()
-            : Vector2(math.cos(orbAngle), math.sin(orbAngle));
+        // Homing (fase 1+): guard NaN se player esattamente su orb.
+        Vector2 bdir;
+        if (currentPhase >= 1) {
+          final delta = playerPosition - orbPos;
+          bdir = delta.length > 0.001
+              ? delta.normalized()
+              : Vector2(math.cos(orbAngle), math.sin(orbAngle));
+        } else {
+          bdir = Vector2(math.cos(orbAngle), math.sin(orbAngle));
+        }
         final bullet = EnemyBullet(
             direction: bdir, speed: 260, color: NeonColors.orange);
         bullet.position = orbPos.clone();
@@ -68,21 +81,35 @@ class CrimsonCrownBoss extends BossBase {
       }
     }
 
+    // Lava mine con wind-up di 0.6s: target viene marcato con explosion di
+    // warning, poi parte il burst radiale — player ha tempo di schivare.
     if (currentPhase >= 2) {
-      _lavaMineTimer -= dt;
-      if (_lavaMineTimer <= 0) {
-        _lavaMineTimer = 2.5;
-        final minePos = playerPosition.clone();
-        for (int i = 0; i < 8; i++) {
-          final ang = i * math.pi / 4;
-          final bullet = EnemyBullet(
-              direction: Vector2(math.cos(ang), math.sin(ang)),
-              speed: 40,
-              color: NeonColors.red);
-          bullet.position = minePos.clone();
-          game.world.add(bullet);
+      if (_lavaMineTarget == null) {
+        _lavaMineTimer -= dt;
+        if (_lavaMineTimer <= 0) {
+          _lavaMineTimer = 3.0; // prossimo ciclo dopo detonation
+          _lavaMineTarget = playerPosition.clone();
+          _lavaMineWindUp = 0.6;
+          // FX warning (piccolo — non danneggia).
+          game.spawnExplosion(_lavaMineTarget!, NeonColors.red,
+              radius: 20, particleCount: 5);
         }
-        game.spawnExplosion(minePos, NeonColors.red, radius: 40);
+      } else {
+        _lavaMineWindUp -= dt;
+        if (_lavaMineWindUp <= 0) {
+          final minePos = _lavaMineTarget!;
+          for (int i = 0; i < 8; i++) {
+            final ang = i * math.pi / 4;
+            final bullet = EnemyBullet(
+                direction: Vector2(math.cos(ang), math.sin(ang)),
+                speed: 90, // un po' più veloce visto il warning dato
+                color: NeonColors.red);
+            bullet.position = minePos.clone();
+            game.world.add(bullet);
+          }
+          game.spawnExplosion(minePos, NeonColors.red, radius: 50);
+          _lavaMineTarget = null;
+        }
       }
     }
   }

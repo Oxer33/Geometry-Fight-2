@@ -6,6 +6,16 @@ import '../../../data/wave_configs.dart';
 import 'boss_base.dart';
 import '../projectiles.dart';
 
+// Tuning hover + pull (estratti dopo caveman-review).
+const double _kHoverMaxDist = 260;
+const double _kHoverMinDist = 180;
+const double _kHoverOuterSpeed = 40;
+const double _kHoverInnerSpeed = 30;
+const double _kPullRadius = 280;
+const double _kPullRadiusRage = 340;
+const double _kPullForce = 80;
+const double _kPullForceRage = 120;
+
 /// VOID KRAKEN (wave 25).
 ///
 /// Meccaniche uniche:
@@ -50,18 +60,21 @@ class VoidKrakenBoss extends BossBase {
     _phase += dt;
 
     final toPlayer = playerPosition - position;
-    if (toPlayer.length > 260) {
-      position += toPlayer.normalized() * 40 * dt;
-    } else if (toPlayer.length < 180) {
-      position -= toPlayer.normalized() * 30 * dt;
+    if (toPlayer.length > _kHoverMaxDist) {
+      position += toPlayer.normalized() * _kHoverOuterSpeed * dt;
+    } else if (toPlayer.length < _kHoverMinDist) {
+      position -= toPlayer.normalized() * _kHoverInnerSpeed * dt;
     }
 
-    // Gravity pull sul player
-    final pullRadius = currentPhase >= 2 ? 340.0 : 280.0;
-    final pullForce = currentPhase >= 2 ? 120.0 : 80.0;
-    final toBoss = position - playerPosition;
-    if (toBoss.length < pullRadius && toBoss.length > 20) {
-      game.player.position += toBoss.normalized() * pullForce * dt;
+    // Gravity pull sul player — skip se invincible (iframe post-hit) o morto.
+    // Trascinare player durante iframe viola l'intuizione del giocatore.
+    if (!game.player.isInvincible && game.player.lives > 0) {
+      final pullRadius = currentPhase >= 2 ? _kPullRadiusRage : _kPullRadius;
+      final pullForce = currentPhase >= 2 ? _kPullForceRage : _kPullForce;
+      final toBoss = position - playerPosition;
+      if (toBoss.length < pullRadius && toBoss.length > 20) {
+        game.player.position += toBoss.normalized() * pullForce * dt;
+      }
     }
 
     // Ink cloud
@@ -80,16 +93,21 @@ class VoidKrakenBoss extends BossBase {
       }
     }
 
-    // Proton spawn (fase 1+)
+    // Proton spawn (fase 1+). Rispetta bossMinionEnemyCap per evitare lag
+    // da accumulo (proton × 6 ogni 6s + minion BossBase).
     if (currentPhase >= 1) {
       _protonTimer -= dt;
       if (_protonTimer <= 0) {
         _protonTimer = 6.0;
-        for (int i = 0; i < 6; i++) {
-          final ang = _phase * 0.8 + i * math.pi * 2 / 6;
-          final tipPos = position +
-              Vector2(math.cos(ang) * 90, math.sin(ang) * 90);
-          game.spawnEnemy(EnemyType.proton, tipPos);
+        if (game.enemyCount < bossMinionEnemyCap) {
+          final freeSlots = bossMinionEnemyCap - game.enemyCount;
+          final toSpawn = freeSlots.clamp(0, 6);
+          for (int i = 0; i < toSpawn; i++) {
+            final ang = _phase * 0.8 + i * math.pi * 2 / 6;
+            final tipPos = position +
+                Vector2(math.cos(ang) * 90, math.sin(ang) * 90);
+            game.spawnEnemy(EnemyType.proton, tipPos);
+          }
         }
       }
     }

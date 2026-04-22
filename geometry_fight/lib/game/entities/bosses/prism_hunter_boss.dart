@@ -15,10 +15,17 @@ import '../projectiles.dart';
 ///
 /// FX: prisma cristallino con 3 vertici colorati R/G/B, raggio rotante
 /// indicatore dello sweep, aura arcobaleno in fase 2.
+// Costanti di tuning (tirate dopo caveman-review per budget bullet/s).
+// Sweep a 0.14s = 7 bullet/s (era 0.08=12.5). In fase 2, sweep+refract+rainbow
+// totale ≈ 20 bullet/s, gestibile su device medi.
+const double _kSweepInterval = 0.14;
+const double _kTriAngle1 = math.pi * 2 / 3; // 120°
+const double _kTriAngle2 = math.pi * 4 / 3; // 240°
+
 class PrismHunterBoss extends BossBase {
   double _phase = 0;
   double _sweepAngle = 0;
-  double _sweepShootTimer = 0.08;
+  double _sweepShootTimer = _kSweepInterval;
   double _refractTimer = 1.5;
   double _rainbowTimer = 0.3;
 
@@ -67,7 +74,7 @@ class PrismHunterBoss extends BossBase {
 
     _sweepShootTimer -= dt;
     if (_sweepShootTimer <= 0) {
-      _sweepShootTimer = 0.08;
+      _sweepShootTimer = _kSweepInterval;
       final bdir = Vector2(math.cos(_sweepAngle), math.sin(_sweepAngle));
       final bullet = EnemyBullet(
           direction: bdir, speed: 400, color: const Color(0xFF00FFFF));
@@ -125,10 +132,10 @@ class PrismHunterBoss extends BossBase {
 
     final r = 28 * scale;
     final p1 = Offset(cx + math.cos(rot) * r, cy + math.sin(rot) * r);
-    final p2 = Offset(
-        cx + math.cos(rot + 2.094) * r, cy + math.sin(rot + 2.094) * r);
-    final p3 = Offset(
-        cx + math.cos(rot + 4.189) * r, cy + math.sin(rot + 4.189) * r);
+    final p2 = Offset(cx + math.cos(rot + _kTriAngle1) * r,
+        cy + math.sin(rot + _kTriAngle1) * r);
+    final p3 = Offset(cx + math.cos(rot + _kTriAngle2) * r,
+        cy + math.sin(rot + _kTriAngle2) * r);
     final path = Path()
       ..moveTo(p1.dx, p1.dy)
       ..lineTo(p2.dx, p2.dy)

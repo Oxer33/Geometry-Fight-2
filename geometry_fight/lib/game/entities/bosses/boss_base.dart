@@ -185,9 +185,16 @@ abstract class BossBase extends PositionComponent
         radius: size.x * 0.7, particleCount: 15);
   }
 
+  /// Hook per subclassi: se false disabilita lo spawn periodico di mob di
+  /// supporto dal BossBase. Utile per fasi "rage" che già inondano lo
+  /// schermo (es. HydraBoss rage mode).
+  bool get allowMinionSpawn => true;
+
   /// Spawna nemici di supporto durante il boss fight.
   /// Rispetta il limite bossMinionEnemyCap per evitare lag.
   void _spawnMinions() {
+    // Subclass può disabilitare (es. rage mode con fuoco già saturo).
+    if (!allowMinionSpawn) return;
     // Controlla quanti nemici ci sono già — se troppi, non spawnare
     if (game.enemyCount >= bossMinionEnemyCap) return;
     

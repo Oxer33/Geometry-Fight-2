@@ -7,6 +7,14 @@ import '../../../data/wave_configs.dart';
 import 'boss_base.dart';
 import '../projectiles.dart';
 
+// Hitbox raggio unificato: copre corpo (size 120 → radius 60) + orbita teste
+// (80px offset + 12px testa). 100 = corpo + metà orbita → colpi teste contano.
+const double _kHitboxRadius = 100;
+
+// Rage mode: fire rate radiale. 3 bullet × 1/0.18s ≈ 16.6/s. Non scendere
+// sotto 0.18 senza cap a livello di game (saturerebbe canvas).
+const double _kRageShootInterval = 0.18;
+
 // Random statico condiviso — evita `math.Random()` allocato per head e per
 // attack tick (perf).
 final math.Random _hydraRng = math.Random();
@@ -65,14 +73,21 @@ class HydraBoss extends BossBase {
 
   @override
   Future<void> onLoad() async {
-    // NON chiamo super.onLoad() per sostituire l'hitbox standard.
-    // Hitbox esteso (raggio 100) copre corpo + orbita teste (80px + r testa
-    // 12), così qualsiasi colpo sulle teste registra come hit sul boss.
-    add(CircleHitbox(radius: 100, anchor: Anchor.center)
+    // Chiamo super.onLoad() per non perdere eventuali side-effects futuri
+    // di BossBase.onLoad, poi rimuovo l'hitbox standard e ne aggiungo uno
+    // più grande che copre anche l'orbita delle teste.
+    await super.onLoad();
+    children.whereType<CircleHitbox>().toList().forEach((h) => h.removeFromParent());
+    add(CircleHitbox(radius: _kHitboxRadius, anchor: Anchor.center)
       ..position = size / 2);
     // Parte con 1 testa.
     _syncHeads();
   }
+
+  // Disabilita minion spawn in rage mode: il boss già spara 16 bullet/s
+  // radiali, aggiungere mob saturerebbe il canvas e lagga device medi.
+  @override
+  bool get allowMinionSpawn => !_rageMode;
 
   /// Allinea il numero di teste concrete a `_headCount`.
   void _syncHeads() {
@@ -125,12 +140,9 @@ class HydraBoss extends BossBase {
         game.spawnExplosion(position, NeonColors.green,
             radius: 70, particleCount: 15);
         game.triggerScreenShake(5, 0.25);
-      } else {
-        // Caso teorico di diminuzione non-rage (HP monotono decrescente →
-        // non accade in pratica). Sync difensivo.
-        _headCount = targetCount;
-        _syncHeads();
       }
+      // Caso "diminuzione non-rage" omesso: HP è monotono decrescente,
+      // targetCount < _headCount senza rage non può accadere.
     }
 
     // ─── MOVIMENTO CORPO ───────────────────────────────────────────────
@@ -162,7 +174,7 @@ class HydraBoss extends BossBase {
     if (_rageMode) {
       _rageShootTimer -= dt;
       if (_rageShootTimer <= 0) {
-        _rageShootTimer = 0.18;
+        _rageShootTimer = _kRageShootInterval;
         // 3 raffiche radiali simultanee (tri-stella rotante).
         for (int i = 0; i < 3; i++) {
           final angle = _ragePhase * 5 + i * (math.pi * 2 / 3);
