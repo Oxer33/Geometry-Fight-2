@@ -224,9 +224,8 @@ class _SplashPainter extends CustomPainter {
   static final Paint _muzzleGlowPaint = Paint()
     ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
   static final Paint _muzzleCorePaint = Paint();
-  static final Paint _impactGlowPaint = Paint()
-    ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10);
-  static final Paint _impactCorePaint = Paint();
+  // NOTA: `_impactGlowPaint` + `_impactCorePaint` rimossi — il weaver ora
+  // schiva tutti i proiettili quindi non c'è mai impact flash.
 
   // Ship paint cache (10 Paint allocs/frame → 0)
   static final Paint _shipGlowPaint = Paint()
@@ -445,14 +444,15 @@ class _SplashPainter extends CustomPainter {
     final t = chaseProgress;
     final cy = size.height / 2;
 
-    // === PERCORSO: entrano da sinistra, il weaver scappa con zigzag ampio
-    // + micro-dodge laterali rapidi come Weaver in gioco quando schiva i
-    // proiettili (impulsivi, frequenti). ===
+    // === PERCORSO: weaver scappa con zigzag ampio + dodge laterali
+    // aggressivi (movimenti rapidi come Weaver in gioco quando schiva). ===
     final droneX = size.width * (-0.15 + t * 0.75);
-    // Dodge pulse: oscillazione veloce (32Hz) modulata da burst 2πHz
-    // per non essere costante — pare che reagisca a minacce imminenti.
+    // Dodge aggressivo: 40Hz primario (amp 35) + 70Hz secondario (amp 12)
+    // → movimenti impulsivi, stretti, imprevedibili. Burst modulation per
+    // avere periodi di "calm" e "panic".
     final dodgeBurst = 0.3 + math.sin(t * math.pi * 2) * 0.7;
-    final dodgeY = math.sin(t * 32) * 22 * dodgeBurst;
+    final dodgeY =
+        math.sin(t * 40) * 35 * dodgeBurst + math.sin(t * 70) * 12;
     final droneY = cy + math.sin(t * math.pi * 5) * size.height * 0.13
         + math.cos(t * math.pi * 3) * size.height * 0.05
         + dodgeY;
@@ -475,15 +475,15 @@ class _SplashPainter extends CustomPainter {
         ? math.pi / 2 // muso a destra (default chase direction)
         : math.atan2(dyAim, dxAim) + math.pi / 2;
 
-    // === SCIA WEAVER (verde, particelle sfumate + dodge) ===
-    // Include il dodge offset per seguire fedelmente la traiettoria corrente.
+    // === SCIA WEAVER (verde, dodge aggressivo matching live position) ===
     for (int i = 1; i <= 12; i++) {
       final raw = t - i * 0.01;
       if (raw <= 0) break;
       final dt2 = raw.clamp(0.0, 1.0);
       final dtx = size.width * (-0.15 + dt2 * 0.75);
       final dBurstPast = 0.3 + math.sin(dt2 * math.pi * 2) * 0.7;
-      final dDodgePast = math.sin(dt2 * 32) * 22 * dBurstPast;
+      final dDodgePast =
+          math.sin(dt2 * 40) * 35 * dBurstPast + math.sin(dt2 * 70) * 12;
       final dty = cy + math.sin(dt2 * math.pi * 5) * size.height * 0.13
           + math.cos(dt2 * math.pi * 3) * size.height * 0.05
           + dDodgePast;
@@ -516,91 +516,92 @@ class _SplashPainter extends CustomPainter {
       canvas.drawCircle(Offset(stx, sty), s, _shipTrailCorePaint);
     }
 
-    // === PROIETTILI stile in-game `PlayerBullet` — 4 raffiche × 2 bullets
-    // paralleli (arma base: spawn con perp offset ±6px dalla nave). Total
-    // 8 proiettili. Bullet lifetime esteso: viaggio completo fino al
-    // bersaglio invece di scomparire vicino alla nave. ===
-    if (t > 0.1 && t < 0.95) {
+    // === PROIETTILI stile in-game `PlayerBullet` — 4 raffiche × 2 bullet
+    // paralleli. Velocity COSTANTE lungo aimDir: bullet vola dritto
+    // attraverso lo schermo (fire-and-forget), non lerpa ship→drone. ===
+    if (t > 0.1 && t < 0.99) {
       const volleyCount = 4;
-      const volleyInterval = 0.18; // spaziati su ~0.7s di chase
-      const bulletLifetime = 0.22; // ~220ms visibili (prima 0.12 = 120ms)
+      const volleyInterval = 0.15;
       const bulletColor = Color(0xFFFFE500); // NeonColors.bulletYellow
-      // Perp offset ±6 come in-game `WeaponType.basic`:
-      //   Vector2(-dir.y, dir.x) * 6
       const pairOffset = 6.0;
+      // Velocità bullet: `chaseProgress` unit / sec. 1.0 = attraversa tutto
+      // lo schermo in 1s di chase time. Usiamo 2.0 → bullet veloce, esce
+      // dallo schermo in ~500ms di chase time.
+      final bulletSpeedWorldPerSec = size.width * 2.0;
 
       for (int v = 0; v < volleyCount; v++) {
         final fireTime = 0.10 + v * volleyInterval;
         if (t <= fireTime) continue;
-        final bulletAge = (t - fireTime) / bulletLifetime;
-        if (bulletAge >= 1.0) continue; // bullet scomparso
+        final dtSinceFire = t - fireTime; // in chase-time units (0..1)
 
-        // Ship center al fire time
+        // Ship center al fire time (snapshot)
         final fst = (fireTime - shipDelay).clamp(0.0, 1.0);
         final shipCenterX = size.width * (-0.15 + fst * 0.75);
         final shipCenterY = cy + math.sin(fst * math.pi * 5) * size.height * 0.13
             + math.cos(fst * math.pi * 3) * size.height * 0.05;
-        // Bersaglio (drone position al fire time, incluso dodge)
+        // Snapshot aim verso drone al fire time (include dodge corrente)
         final firedDodgeBurst =
             0.3 + math.sin(fireTime * math.pi * 2) * 0.7;
-        final firedDodgeY = math.sin(fireTime * 32) * 22 * firedDodgeBurst;
+        final firedDodgeY = math.sin(fireTime * 40) * 35 * firedDodgeBurst
+            + math.sin(fireTime * 70) * 12;
         final toX = size.width * (-0.15 + fireTime * 0.75);
         final toY = cy + math.sin(fireTime * math.pi * 5) * size.height * 0.13
             + math.cos(fireTime * math.pi * 3) * size.height * 0.05
             + firedDodgeY;
-        final shotAim = math.atan2(toY - shipCenterY, toX - shipCenterX);
-        final dirX = math.cos(shotAim);
-        final dirY = math.sin(shotAim);
-        // Perpendicular al dir di sparo (lato destro della canna)
+        final aimDx = toX - shipCenterX;
+        final aimDy = toY - shipCenterY;
+        final aimLen = math.sqrt(aimDx * aimDx + aimDy * aimDy);
+        if (aimLen < 0.1) continue;
+        final dirX = aimDx / aimLen;
+        final dirY = aimDy / aimLen;
         final perpX = -dirY;
         final perpY = dirX;
         const noseOffset = 14.0 * 1.2;
-        // Progress bullet: 0→1 su bulletLifetime. Arriva a target a age 0.9,
-        // poi fade-out veloce per scomparire all'impatto.
-        final bulletProgress = (bulletAge / 0.9).clamp(0.0, 1.0);
+        // Distanza percorsa dal bullet: velocity costante × dt.
+        final travel = bulletSpeedWorldPerSec * dtSinceFire;
 
-        // Disegna COPPIA di bullet (±perp offset come basic weapon in gioco)
+        // Disegna COPPIA di bullet paralleli (±perp offset come basic weapon)
         for (int side = -1; side <= 1; side += 2) {
           final offsetX = perpX * pairOffset * side;
           final offsetY = perpY * pairOffset * side;
           final fromX = shipCenterX + dirX * noseOffset + offsetX;
           final fromY = shipCenterY + dirY * noseOffset + offsetY;
-          final targetX = toX + offsetX;
-          final targetY = toY + offsetY;
-          final bx = fromX + (targetX - fromX) * bulletProgress;
-          final by = fromY + (targetY - fromY) * bulletProgress;
+          final bx = fromX + dirX * travel;
+          final by = fromY + dirY * travel;
 
-          // Trail
-          final dx = targetX - fromX;
-          final dy = targetY - fromY;
-          final dist = math.sqrt(dx * dx + dy * dy);
-          if (dist > 0) {
-            final nx = dx / dist;
-            final ny = dy / dist;
-            for (int ti = 1; ti <= 4; ti++) {
-              final tAlpha = (1 - ti / 4) * 0.3;
-              _bulletTrailPaint.color =
-                  bulletColor.withValues(alpha: tAlpha);
-              canvas.drawCircle(
-                Offset(bx - nx * ti * 3, by - ny * ti * 3),
-                1.5 * (1 - ti / 4.5),
-                _bulletTrailPaint,
-              );
-            }
+          // Culling: bullet fuori schermo (+margine) → skip render
+          const margin = 60.0;
+          if (bx < -margin ||
+              bx > size.width + margin ||
+              by < -margin ||
+              by > size.height + margin) {
+            continue;
+          }
+
+          // Trail (cerchietti dietro al bullet lungo -aimDir)
+          for (int ti = 1; ti <= 5; ti++) {
+            final tAlpha = (1 - ti / 5) * 0.35;
+            _bulletTrailPaint.color =
+                bulletColor.withValues(alpha: tAlpha);
+            canvas.drawCircle(
+              Offset(bx - dirX * ti * 4, by - dirY * ti * 4),
+              1.6 * (1 - ti / 5.5),
+              _bulletTrailPaint,
+            );
           }
 
           // Glow + corpo + core del bullet
-          _bulletGlowPaint.color = bulletColor.withValues(alpha: 0.35);
-          canvas.drawCircle(Offset(bx, by), 4.5, _bulletGlowPaint);
+          _bulletGlowPaint.color = bulletColor.withValues(alpha: 0.4);
+          canvas.drawCircle(Offset(bx, by), 5, _bulletGlowPaint);
           _bulletBodyPaint.color = bulletColor;
-          canvas.drawCircle(Offset(bx, by), 3.0, _bulletBodyPaint);
+          canvas.drawCircle(Offset(bx, by), 3.2, _bulletBodyPaint);
           _bulletCorePaint.color =
-              const Color(0xFFFFFFFF).withValues(alpha: 0.8);
-          canvas.drawCircle(Offset(bx, by), 1.2, _bulletCorePaint);
+              const Color(0xFFFFFFFF).withValues(alpha: 0.85);
+          canvas.drawCircle(Offset(bx, by), 1.3, _bulletCorePaint);
 
-          // Muzzle flash al nose (per coppia — entrambi i lati)
-          if (bulletAge < 0.08) {
-            final flashAlpha = (1 - bulletAge / 0.08) * 0.7;
+          // Muzzle flash al nose durante primi 0.05 chase-time del bullet
+          if (dtSinceFire < 0.05) {
+            final flashAlpha = (1 - dtSinceFire / 0.05) * 0.7;
             _muzzleGlowPaint.color =
                 bulletColor.withValues(alpha: flashAlpha * 0.5);
             canvas.drawCircle(Offset(fromX, fromY), 8, _muzzleGlowPaint);
@@ -609,40 +610,12 @@ class _SplashPainter extends CustomPainter {
             canvas.drawCircle(Offset(fromX, fromY), 4, _muzzleCorePaint);
           }
         }
-
-        // Impact flash (una volta per volley, non per bullet)
-        if (bulletAge > 0.85 && bulletAge < 0.95) {
-          _impactGlowPaint.color =
-              const Color(0xFFFFFFFF).withValues(alpha: 0.35);
-          canvas.drawCircle(
-              Offset(droneX, droneY), 18, _impactGlowPaint);
-          _impactCorePaint.color = bulletColor.withValues(alpha: 0.6);
-          canvas.drawCircle(
-              Offset(droneX, droneY), 10, _impactCorePaint);
-        }
       }
     }
 
-    // === DRONE (lampeggia quando colpito) ===
-    final droneHit = t > 0.75;
-    if (!droneHit || ((t * 35).toInt() % 2 == 0)) {
-      _drawDrone(canvas, droneX, droneY, t, droneHit);
-    }
-
-    // Fumo dal drone quando danneggiato
-    if (droneHit) {
-      final random = math.Random(55);
-      for (int i = 0; i < 5; i++) {
-        final smokeAge = ((t - 0.75) * 4 + i * 0.3) % 1.0;
-        final sx = droneX - 5 + random.nextDouble() * 10 - smokeAge * 20;
-        final sy = droneY + random.nextDouble() * 6 - 3;
-        final sa = (1 - smokeAge) * 0.2;
-        canvas.drawCircle(
-          Offset(sx, sy), 2 + smokeAge * 4,
-          Paint()..color = Color.fromRGBO(255, 100, 0, sa),
-        );
-      }
-    }
+    // === WEAVER: schiva TUTTI i proiettili, non viene mai colpito.
+    // Nessun fumo/damage — il mob sopravvive per tutto lo splash. ===
+    _drawDrone(canvas, droneX, droneY, t, false);
 
     // === NAVICELLA (in-game graphics, ruota verso il drone) ===
     _drawShip(canvas, shipX, shipY, shipT, aimAngle);
