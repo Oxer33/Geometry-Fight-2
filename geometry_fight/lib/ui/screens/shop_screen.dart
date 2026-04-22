@@ -239,13 +239,34 @@ class _ShopScreenState extends State<ShopScreen>
 
   Widget _buildWeaponsTab() {
     final weapons = [
-      _WeaponDef('basic', 'Basic Gun', 0, 'Proiettile singolo — affidabile e preciso', NeonColors.bulletYellow, 'parallel'),
-      _WeaponDef('triple', 'Triple Shot', 800, '3 proiettili ravvicinati — fuoco concentrato', NeonColors.white, 'triple'),
-      _WeaponDef('spread', 'Spread Shot', 1000, '5 proiettili a ventaglio — ottimo vs gruppi', NeonColors.spreadOrange, 'fan'),
-      _WeaponDef('ricochet', 'Ricochet', 1200, 'Ventaglio di 3 colpi che rimbalzano sui muri', NeonColors.ricochetGreen, 'bounce'),
-      _WeaponDef('homing', 'Homing', 1500, 'Insegue i nemici — non manca mai', NeonColors.pink, 'homing'),
-      _WeaponDef('plasma', 'Plasma', 2000, 'Colpo lento ma 3x danni — devasta i boss', NeonColors.plasmaViolet, 'plasma'),
-      _WeaponDef('laser', 'Laser', 2500, 'Raggio continuo — taglia tutto ciò che tocca', NeonColors.laserRed, 'beam'),
+      _WeaponDef('basic', 'Basic Gun', 0,
+          'Doppia fila di proiettili gialli paralleli — affidabile e preciso.',
+          NeonColors.bulletYellow, 'parallel',
+          stats: ['DMG: 1', 'RATE: MED', 'RANGE: 900', 'BULLETS: 2']),
+      _WeaponDef('triple', 'Triple Shot', 800,
+          '3 proiettili bianchi ravvicinati — fuoco concentrato.',
+          NeonColors.white, 'triple',
+          stats: ['DMG: 1x3', 'RATE: FAST', 'SPREAD: 12°']),
+      _WeaponDef('spread', 'Spread Shot', 1000,
+          '5 proiettili arancioni a ventaglio stretto — ottimo vs gruppi.',
+          NeonColors.spreadOrange, 'fan',
+          stats: ['DMG: 0.85x5', 'RATE: MED', 'SPREAD: 14°']),
+      _WeaponDef('ricochet', 'Ricochet', 1200,
+          'Ventaglio di 3 colpi verdi ad alto danno che rimbalzano 2 volte sui muri.',
+          NeonColors.ricochetGreen, 'bounce',
+          stats: ['DMG: 0.83x3', 'RATE: MED', 'BOUNCE: 2x', 'SPREAD: 23°']),
+      _WeaponDef('homing', 'Homing', 1500,
+          '5 missili che inseguono bersagli distinti — esplodono al muro.',
+          NeonColors.pink, 'homing',
+          stats: ['DMG: 1.5', 'RATE: SLOW', 'TRACK: 150px', 'BLAST: 48']),
+      _WeaponDef('plasma', 'Plasma', 2000,
+          'Orb viola lento con AoE esplosiva — devasta boss e gruppi.',
+          NeonColors.plasmaViolet, 'plasma',
+          stats: ['DMG: 3.9x', 'RATE: SLOW', 'AOE: 80px']),
+      _WeaponDef('laser', 'Laser', 2500,
+          'Raggio rosso continuo — taglia tutto ciò che tocca.',
+          NeonColors.laserRed, 'beam',
+          stats: ['DMG: 0.5/tick', 'RATE: CONT', 'PIERCE: ∞', 'LEN: 800']),
     ];
 
     return _buildPreviewGrid(
@@ -646,23 +667,16 @@ class _ShopScreenState extends State<ShopScreen>
                               ),
                             ),
                             const SizedBox(height: 12),
-                            // Nome
-                            Text(item.name, style: const TextStyle(
-                              color: Colors.cyanAccent,
-                              fontSize: 16, fontWeight: FontWeight.bold,
-                              fontFamily: 'monospace', letterSpacing: 2,
-                            )),
-                            const SizedBox(height: 4),
-                            Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 12),
-                              child: Text(
-                                item.description,
-                                textAlign: TextAlign.center,
-                                style: TextStyle(
-                                  color: Colors.white.withValues(alpha: 0.4),
-                                  fontSize: 10, fontFamily: 'monospace',
-                                ),
-                              ),
+                            // Description card (richiesta utente).
+                            _InfoCard(
+                              title: item.name,
+                              description: item.description,
+                              accentColor: item is _WeaponDef
+                                  ? (item).color
+                                  : Colors.cyanAccent,
+                              stats: item is _WeaponDef
+                                  ? (item).stats
+                                  : const [],
                             ),
                             const SizedBox(height: 12),
                             _ShopActionButton(
@@ -905,7 +919,129 @@ class _TrailDef extends _ShopItem {
 class _WeaponDef extends _ShopItem {
   final Color color;
   final String pattern;
-  _WeaponDef(super.id, super.name, super.cost, super.description, this.color, this.pattern);
+  /// Stat pills render nella description card sotto la preview.
+  /// Formato consigliato: "LABEL: VALUE" (es. "DMG: 1", "RATE: FAST").
+  final List<String> stats;
+  _WeaponDef(super.id, super.name, super.cost, super.description, this.color,
+      this.pattern,
+      {this.stats = const []});
+}
+
+// ==================== INFO CARD ====================
+
+/// Card con titolo + descrizione + stat pills opzionali.
+/// Usata sotto la preview nello shop (richiesta utente).
+class _InfoCard extends StatelessWidget {
+  final String title;
+  final String description;
+  final Color accentColor;
+  final List<String> stats;
+
+  const _InfoCard({
+    required this.title,
+    required this.description,
+    required this.accentColor,
+    this.stats = const [],
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: accentColor.withValues(alpha: 0.4),
+          width: 1,
+        ),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            accentColor.withValues(alpha: 0.08),
+            Colors.black.withValues(alpha: 0.3),
+          ],
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Titolo (nome arma)
+          Text(
+            title,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: accentColor,
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              fontFamily: 'monospace',
+              letterSpacing: 2,
+            ),
+          ),
+          const SizedBox(height: 6),
+          // Linea separatrice neon
+          Container(
+            height: 1,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Colors.transparent,
+                  accentColor.withValues(alpha: 0.5),
+                  Colors.transparent,
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          // Descrizione
+          Text(
+            description,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.75),
+              fontSize: 10,
+              fontFamily: 'monospace',
+              height: 1.4,
+            ),
+          ),
+          if (stats.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            // Stat pills
+            Wrap(
+              alignment: WrapAlignment.center,
+              spacing: 6,
+              runSpacing: 6,
+              children: stats
+                  .map((s) => Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(4),
+                          color: accentColor.withValues(alpha: 0.12),
+                          border: Border.all(
+                            color: accentColor.withValues(alpha: 0.35),
+                            width: 0.8,
+                          ),
+                        ),
+                        child: Text(
+                          s,
+                          style: TextStyle(
+                            color: accentColor,
+                            fontSize: 9,
+                            fontWeight: FontWeight.w600,
+                            fontFamily: 'monospace',
+                            letterSpacing: 0.8,
+                          ),
+                        ),
+                      ))
+                  .toList(),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
 }
 
 class _ModeDef extends _ShopItem {
@@ -1695,26 +1831,39 @@ class _WeaponPreviewPainter extends CustomPainter {
 
       final idx = ((phase * 30) % points.length).toInt();
 
-      // Trail con sfumatura
-      for (int i = idx; i > idx - 20 && i > 0; i--) {
-        final alpha = (1.0 - (idx - i) / 20) * 0.25;
-        trailPaint.color = color.withValues(alpha: alpha);
-        canvas.drawLine(points[i], points[i - 1], trailPaint);
+      // Trail sfumato come in-game PlayerBullet._trail (8 punti, alpha*0.3).
+      for (int i = idx; i > idx - 8 && i > 0; i--) {
+        final alphaT = (1.0 - (idx - i) / 8) * 0.3;
+        trailPaint.style = PaintingStyle.fill;
+        trailPaint.color = color.withValues(alpha: alphaT);
+        canvas.drawCircle(points[i], 1.5, trailPaint);
       }
 
       // Flash sui punti di rimbalzo
       if (idx > 2 && idx < points.length - 1) {
         final curr = points[idx];
-        if ((curr.dx < 18 || curr.dx > size.width - 18) || (curr.dy < 18 || curr.dy > shipY - 18)) {
-          canvas.drawCircle(curr, 5, Paint()
-            ..color = color.withValues(alpha: 0.2)
-            ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4));
+        if ((curr.dx < 18 || curr.dx > size.width - 18) ||
+            (curr.dy < 18 || curr.dy > shipY - 18)) {
+          canvas.drawCircle(
+              curr,
+              5,
+              Paint()
+                ..color = color.withValues(alpha: 0.3)
+                ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4));
         }
       }
 
+      // Bullet match in-game PlayerBullet.render: glow r=4 alpha 0.35 +
+      // body r=3 + core bianco r=1.2.
       if (idx < points.length) {
+        glowPaint.color = color.withValues(alpha: 0.35);
         canvas.drawCircle(points[idx], 4, glowPaint);
-        canvas.drawCircle(points[idx], 2, bulletPaint);
+        bulletPaint.color = color;
+        canvas.drawCircle(points[idx], 3, bulletPaint);
+        canvas.drawCircle(
+            points[idx],
+            1.2,
+            Paint()..color = const Color(0xFFFFFFFF).withValues(alpha: 0.7));
       }
     }
   }
@@ -1754,27 +1903,105 @@ class _WeaponPreviewPainter extends CustomPainter {
       final by = _bezier(startY, midY, targetY, t);
       final alpha = (1.0 - t * 0.4).clamp(0.0, 1.0);
 
-      // Trail con sfumatura
-      for (int j = 1; j <= 10; j++) {
-        final tt = (t - j * 0.025).clamp(0.0, 1.0);
+      // Trail di fumo bianco+pink (scia post-flame)
+      for (int j = 1; j <= 8; j++) {
+        final tt = (t - j * 0.03).clamp(0.0, 1.0);
         final tx = _bezier(startX, midX, targetX, tt);
         final ty = _bezier(startY, midY, targetY, tt);
-        final ta = alpha * (1.0 - j / 10) * 0.3;
-        canvas.drawCircle(Offset(tx, ty), 1.2, Paint()..color = color.withValues(alpha: ta));
+        final ta = alpha * (1.0 - j / 8) * 0.3;
+        canvas.drawCircle(Offset(tx, ty), 1.0,
+            Paint()..color = color.withValues(alpha: ta));
       }
 
-      // Missile con forma a freccia
-      canvas.drawCircle(Offset(bx, by), 5, Paint()
-        ..color = color.withValues(alpha: alpha * 0.25)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5));
-      canvas.drawCircle(Offset(bx, by), 2.5, Paint()..color = color.withValues(alpha: alpha));
+      // Direzione missile = tangente bezier (derivata).
+      final tt1 = (t + 0.01).clamp(0.0, 1.0);
+      final tanX = _bezier(startX, midX, targetX, tt1) - bx;
+      final tanY = _bezier(startY, midY, targetY, tt1) - by;
+      final angle = math.atan2(tanY, tanX) + math.pi / 2;
+
+      // Missile silhouette — match in-game HomingMissile.render:
+      // flame rosso-arancio (dietro) + corpo cyan rounded + naso bianco + fins.
+      canvas.save();
+      canvas.translate(bx, by);
+      canvas.rotate(angle);
+
+      const bodyW = 4.0;
+      const bodyH = 9.0;
+      final flicker = 1.0 + math.sin(time * 20 + i) * 0.25;
+      final flameLen = bodyH * 0.8 * flicker;
+
+      // Flame 3 strati (outer red, mid orange, core bianco)
+      canvas.drawOval(
+        Rect.fromCenter(
+            center: Offset(0, bodyH * 0.55 + flameLen * 0.3),
+            width: bodyW * 1.3,
+            height: flameLen * 1.2),
+        Paint()
+          ..color = const Color(0xFFFF2200).withValues(alpha: 0.5 * alpha),
+      );
+      canvas.drawOval(
+        Rect.fromCenter(
+            center: Offset(0, bodyH * 0.52 + flameLen * 0.25),
+            width: bodyW * 0.85,
+            height: flameLen * 0.85),
+        Paint()
+          ..color = const Color(0xFFFF8800).withValues(alpha: 0.85 * alpha),
+      );
+      canvas.drawOval(
+        Rect.fromCenter(
+            center: Offset(0, bodyH * 0.5 + flameLen * 0.2),
+            width: bodyW * 0.5,
+            height: flameLen * 0.5),
+        Paint()..color = const Color(0xFFFFFFDD).withValues(alpha: alpha),
+      );
+
+      // Fins (triangoli laterali) — color cyan
+      final finPath = Path()
+        ..moveTo(-bodyW * 0.5, bodyH * 0.25)
+        ..lineTo(-bodyW * 1.0, bodyH * 0.55)
+        ..lineTo(-bodyW * 0.5, bodyH * 0.55)
+        ..close()
+        ..moveTo(bodyW * 0.5, bodyH * 0.25)
+        ..lineTo(bodyW * 1.0, bodyH * 0.55)
+        ..lineTo(bodyW * 0.5, bodyH * 0.55)
+        ..close();
+      canvas.drawPath(
+          finPath, Paint()..color = color.withValues(alpha: 0.9 * alpha));
+
+      // Corpo cyan rounded
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromCenter(
+              center: Offset(0, bodyH * 0.05),
+              width: bodyW,
+              height: bodyH * 0.8),
+          Radius.circular(bodyW * 0.25),
+        ),
+        Paint()..color = color.withValues(alpha: alpha),
+      );
+
+      // Naso bianco (cono)
+      final nosePath = Path()
+        ..moveTo(-bodyW * 0.5, -bodyH * 0.35)
+        ..lineTo(0, -bodyH * 0.65)
+        ..lineTo(bodyW * 0.5, -bodyH * 0.35)
+        ..close();
+      canvas.drawPath(
+          nosePath,
+          Paint()
+            ..color = const Color(0xFFE0FFFF).withValues(alpha: alpha));
+
+      canvas.restore();
 
       // Impatto
       if (t > 0.9) {
         final impactAlpha = (t - 0.9) / 0.1 * 0.4;
-        canvas.drawCircle(Offset(bx, by), 8 * (t - 0.9) / 0.1, Paint()
-          ..color = Colors.white.withValues(alpha: impactAlpha)
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4));
+        canvas.drawCircle(
+            Offset(bx, by),
+            8 * (t - 0.9) / 0.1,
+            Paint()
+              ..color = Colors.white.withValues(alpha: impactAlpha)
+              ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4));
       }
     }
   }
@@ -1826,40 +2053,51 @@ class _WeaponPreviewPainter extends CustomPainter {
   }
 
   void _drawLaserBeam(Canvas canvas, double cx, double shipY) {
-    final pulse = 0.7 + math.sin(time * 8) * 0.3;
-    final beamTop = 20.0;
+    // Match in-game LaserBeam.render: raggio DRITTO statico (nessun scan X).
+    // In-game: glow rect 12px wide + core rect 3px wide. Lifetime 0.1s
+    // rinnovato ogni frame → beam continuo.
+    final pulse = 0.85 + math.sin(time * 8) * 0.15;
+    const beamTop = 20.0;
     final beamH = shipY - 22 - beamTop;
 
-    // Scanning effect (il raggio oscilla leggermente)
-    final scanX = cx + math.sin(time * 1.5) * 8;
-
-    // Glow esterno
+    // Glow esterno (12px come in-game)
     canvas.drawRect(
-      Rect.fromCenter(center: Offset(scanX, beamTop + beamH / 2), width: 18 * pulse, height: beamH),
-      Paint()..color = color.withValues(alpha: 0.08 * pulse)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10));
+      Rect.fromCenter(
+          center: Offset(cx, beamTop + beamH / 2),
+          width: 12 * pulse,
+          height: beamH),
+      Paint()
+        ..color = color.withValues(alpha: 0.4)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8),
+    );
 
-    // Raggio medio
+    // Strato medio
     canvas.drawRect(
-      Rect.fromCenter(center: Offset(scanX, beamTop + beamH / 2), width: 6, height: beamH),
-      Paint()..color = color.withValues(alpha: 0.3 * pulse)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3));
+      Rect.fromCenter(
+          center: Offset(cx, beamTop + beamH / 2), width: 6, height: beamH),
+      Paint()..color = color.withValues(alpha: 0.75 * pulse),
+    );
 
-    // Nucleo
+    // Nucleo 3px (come in-game)
     canvas.drawRect(
-      Rect.fromCenter(center: Offset(scanX, beamTop + beamH / 2), width: 2, height: beamH),
-      Paint()..color = Colors.white.withValues(alpha: 0.6 * pulse));
+      Rect.fromCenter(
+          center: Offset(cx, beamTop + beamH / 2), width: 3, height: beamH),
+      Paint()..color = const Color(0xFFFFFFFF).withValues(alpha: 0.9 * pulse),
+    );
 
-    // Impatto in cima con particelle
-    canvas.drawCircle(Offset(scanX, beamTop), 10 * pulse, Paint()
-      ..color = color.withValues(alpha: 0.3 * pulse)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8));
-    // Scintille dall'impatto
+    // Impatto in cima (flash rosso)
+    canvas.drawCircle(
+        Offset(cx, beamTop),
+        8 * pulse,
+        Paint()
+          ..color = color.withValues(alpha: 0.5 * pulse)
+          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6));
+    // Scintille dall'impatto (cx = centro beam statico, non scan)
     final random = math.Random(12);
     for (int i = 0; i < 4; i++) {
       final sparkAngle = time * 5 + i * math.pi / 2;
       final sparkDist = 5 + random.nextDouble() * 8;
-      final sx = scanX + math.cos(sparkAngle) * sparkDist;
+      final sx = cx + math.cos(sparkAngle) * sparkDist;
       final sy = beamTop + math.sin(sparkAngle).abs() * sparkDist;
       canvas.drawCircle(Offset(sx, sy), 1, Paint()
         ..color = Colors.white.withValues(alpha: 0.3 * pulse));

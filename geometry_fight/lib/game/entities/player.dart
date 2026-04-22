@@ -258,15 +258,17 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
         _fireTimer = (0.4 / 1.5) / fireRateMultiplier;
       case WeaponType.ricochet:
         // Ventaglio di 3 colpi che rimbalzano (richiesta utente).
-        // Angoli: ~23° totali (-0.20, 0, +0.20 rad) — fan chiaro ma non troppo
-        // largo, così i proiettili mantengono utilità vs bersagli singoli.
-        // Danno per colpo: 0.55x (3 colpi → DPS totale 1.65x, ragionevole).
-        // maxBounces ridotto 5→3 per colpo (totale 9 rimbalzi in scena,
-        // era 5 con un singolo proiettile: più spettacolo, meno "muro" di hit).
+        // Angoli: ~23° totali (-0.20, 0, +0.20 rad).
+        // Danno per colpo: 0.825x (era 0.55, +50% richiesta utente).
+        //   → DPS totale 3 × 0.825 = 2.475x per salvo.
+        // maxBounces ridotto 3→2 (~30% meno range, richiesta utente):
+        //   ogni rimbalzo estende la vita utile del colpo; meno rimbalzi
+        //   → meno distanza totale prima del despawn.
         for (final angle in [-0.20, 0.0, 0.20]) {
           final rotDir = _rotateVector(dir, angle);
-          _spawnBullet(rotDir, damageMultiplier * 0.55, NeonColors.ricochetGreen,
-              maxBounces: 3, pierce: pierce, weaponType: WeaponType.ricochet);
+          _spawnBullet(rotDir, damageMultiplier * 0.825,
+              NeonColors.ricochetGreen,
+              maxBounces: 2, pierce: pierce, weaponType: WeaponType.ricochet);
         }
       case WeaponType.homing:
         // Base 5 missili. Ventaglio di angoli per coprire più bersagli.
