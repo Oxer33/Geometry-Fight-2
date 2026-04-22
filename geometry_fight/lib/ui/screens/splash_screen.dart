@@ -112,37 +112,86 @@ class _SplashScreenState extends State<SplashScreen>
               },
             ),
 
-            // SKIP button
+            // SKIP button — neon fluo con HSV rainbow ciclante
             Positioned(
               top: MediaQuery.of(context).padding.top + 12,
               right: 16,
               child: GestureDetector(
                 onTap: widget.onComplete,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.white24, width: 1),
-                    borderRadius: BorderRadius.circular(20),
-                    color: Colors.black.withValues(alpha: 0.3),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        'SKIP',
-                        style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.6),
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          fontFamily: 'monospace',
-                          letterSpacing: 2,
+                child: NeonAnimatedBuilder(
+                  animation: _bgController,
+                  builder: (context, _) {
+                    // Hue ciclante da `_bgController` (10s loop) + shift
+                    // sinusoidale per pulse extra.
+                    final hue = (_bgController.value * 360) % 360;
+                    final pulse = 0.6 + math.sin(_bgController.value * math.pi * 4) * 0.4;
+                    final neonColor =
+                        HSVColor.fromAHSV(1.0, hue, 0.85, 1.0).toColor();
+                    final neonColorShift =
+                        HSVColor.fromAHSV(1.0, (hue + 90) % 360, 0.85, 1.0).toColor();
+                    return Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 18, vertical: 9),
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: neonColor.withValues(alpha: 0.85),
+                          width: 1.5,
                         ),
+                        borderRadius: BorderRadius.circular(22),
+                        gradient: LinearGradient(
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                          colors: [
+                            neonColor.withValues(alpha: 0.18),
+                            Colors.black.withValues(alpha: 0.35),
+                            neonColorShift.withValues(alpha: 0.18),
+                          ],
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: neonColor.withValues(alpha: 0.4 * pulse),
+                            blurRadius: 14,
+                            spreadRadius: 1,
+                          ),
+                          BoxShadow(
+                            color: neonColorShift.withValues(alpha: 0.25 * pulse),
+                            blurRadius: 22,
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: 4),
-                      Icon(Icons.skip_next,
-                          color: Colors.white.withValues(alpha: 0.6), size: 16),
-                    ],
-                  ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'SKIP',
+                            style: TextStyle(
+                              color: neonColor,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w900,
+                              fontFamily: 'monospace',
+                              letterSpacing: 2.5,
+                              shadows: [
+                                Shadow(color: neonColor, blurRadius: 8),
+                                Shadow(
+                                  color: neonColorShift.withValues(alpha: 0.6),
+                                  blurRadius: 16,
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(width: 5),
+                          Icon(
+                            Icons.skip_next,
+                            color: neonColor,
+                            size: 18,
+                            shadows: [
+                              Shadow(color: neonColor, blurRadius: 8),
+                            ],
+                          ),
+                        ],
+                      ),
+                    );
+                  },
                 ),
               ),
             ),
@@ -396,10 +445,17 @@ class _SplashPainter extends CustomPainter {
     final t = chaseProgress;
     final cy = size.height / 2;
 
-    // === PERCORSO: entrano da sinistra, il drone scappa con zigzag ampio ===
+    // === PERCORSO: entrano da sinistra, il weaver scappa con zigzag ampio
+    // + micro-dodge laterali rapidi come Weaver in gioco quando schiva i
+    // proiettili (impulsivi, frequenti). ===
     final droneX = size.width * (-0.15 + t * 0.75);
+    // Dodge pulse: oscillazione veloce (32Hz) modulata da burst 2πHz
+    // per non essere costante — pare che reagisca a minacce imminenti.
+    final dodgeBurst = 0.3 + math.sin(t * math.pi * 2) * 0.7;
+    final dodgeY = math.sin(t * 32) * 22 * dodgeBurst;
     final droneY = cy + math.sin(t * math.pi * 5) * size.height * 0.13
-        + math.cos(t * math.pi * 3) * size.height * 0.05;
+        + math.cos(t * math.pi * 3) * size.height * 0.05
+        + dodgeY;
 
     // La navicella insegue con ritardo
     const shipDelay = 0.1;
@@ -419,20 +475,21 @@ class _SplashPainter extends CustomPainter {
         ? math.pi / 2 // muso a destra (default chase direction)
         : math.atan2(dyAim, dxAim) + math.pi / 2;
 
-    // === SCIA DRONE (rosa, particelle sfumate) ===
-    // Skip sample non-ancora-storici (come per la ship trail).
+    // === SCIA WEAVER (verde, particelle sfumate + dodge) ===
+    // Include il dodge offset per seguire fedelmente la traiettoria corrente.
     for (int i = 1; i <= 12; i++) {
       final raw = t - i * 0.01;
       if (raw <= 0) break;
       final dt2 = raw.clamp(0.0, 1.0);
       final dtx = size.width * (-0.15 + dt2 * 0.75);
+      final dBurstPast = 0.3 + math.sin(dt2 * math.pi * 2) * 0.7;
+      final dDodgePast = math.sin(dt2 * 32) * 22 * dBurstPast;
       final dty = cy + math.sin(dt2 * math.pi * 5) * size.height * 0.13
-          + math.cos(dt2 * math.pi * 3) * size.height * 0.05;
-      final a = (1 - i / 12.0) * 0.25;
-      final s = (1 - i / 12.0) * 4;
-      // MaskFilter varia col raggio → NON cacheable statico. Assegniamo
-      // per-iterazione ma sul Paint condiviso invece di alloc un nuovo Paint.
-      _droneTrailPaint.color = Color.fromRGBO(255, 0, 170, a);
+          + math.cos(dt2 * math.pi * 3) * size.height * 0.05
+          + dDodgePast;
+      final a = (1 - i / 12.0) * 0.22;
+      final s = (1 - i / 12.0) * 3.5;
+      _droneTrailPaint.color = Color.fromRGBO(0, 255, 90, a);
       _droneTrailPaint.maskFilter = MaskFilter.blur(BlurStyle.normal, s);
       canvas.drawCircle(Offset(dtx, dty), s, _droneTrailPaint);
     }
@@ -459,93 +516,109 @@ class _SplashPainter extends CustomPainter {
       canvas.drawCircle(Offset(stx, sty), s, _shipTrailCorePaint);
     }
 
-    // === PROIETTILI stile in-game `PlayerBullet` (giallo neon + trail) ===
+    // === PROIETTILI stile in-game `PlayerBullet` — 4 raffiche × 2 bullets
+    // paralleli (arma base: spawn con perp offset ±6px dalla nave). Total
+    // 8 proiettili. Bullet lifetime esteso: viaggio completo fino al
+    // bersaglio invece di scomparire vicino alla nave. ===
     if (t > 0.1 && t < 0.95) {
-      const shotCount = 5;
-      const shotInterval = 0.15;
+      const volleyCount = 4;
+      const volleyInterval = 0.18; // spaziati su ~0.7s di chase
+      const bulletLifetime = 0.22; // ~220ms visibili (prima 0.12 = 120ms)
       const bulletColor = Color(0xFFFFE500); // NeonColors.bulletYellow
-      for (int i = 0; i < shotCount; i++) {
-        final fireTime = 0.10 + i * shotInterval;
-        if (t > fireTime) {
-          final bulletAge = (t - fireTime) / 0.12;
-          // Cutoff a 0.55: bullet sparisce subito dopo l'impact flash
-          // (0.4..0.55). Prima restava disegnato sul target per il 45%
-          // residuo della vita con il clamp, sembrando "incastrato".
-          if (bulletAge < 0.55) {
-            final fst = (fireTime - shipDelay).clamp(0.0, 1.0);
-            final shipCenterX = size.width * (-0.15 + fst * 0.75);
-            final shipCenterY = cy + math.sin(fst * math.pi * 5) * size.height * 0.13
-                + math.cos(fst * math.pi * 3) * size.height * 0.05;
-            // Bersaglio al momento dello sparo
-            final toX = size.width * (-0.15 + fireTime * 0.75);
-            final toY = cy + math.sin(fireTime * math.pi * 5) * size.height * 0.13
-                + math.cos(fireTime * math.pi * 3) * size.height * 0.05;
-            // Origine: muso della nave ruotato verso il bersaglio.
-            // Il muso in local è a (0,-14*s) → ruotando di aimAngle-π/2
-            // diventa direzione di mira * 14*1.2 ≈ 16.8 px dal centro.
-            final shotAim =
-                math.atan2(toY - shipCenterY, toX - shipCenterX);
-            const noseOffset = 14.0 * 1.2;
-            final fromX = shipCenterX + math.cos(shotAim) * noseOffset;
-            final fromY = shipCenterY + math.sin(shotAim) * noseOffset;
-            // Progress clamp a 1.0 → bullet si ferma sul drone invece di
-            // oltrepassarlo (evita il bullet che attraversa il nemico prima
-            // del flash di impatto a age 0.55).
-            final bulletProgress = (bulletAge * 2.5).clamp(0.0, 1.0);
-            final bx = fromX + (toX - fromX) * bulletProgress;
-            final by = fromY + (toY - fromY) * bulletProgress;
+      // Perp offset ±6 come in-game `WeaponType.basic`:
+      //   Vector2(-dir.y, dir.x) * 6
+      const pairOffset = 6.0;
 
-            // Trail giallo (cerchietti dietro il bullet) usando paint cached.
-            final dx = toX - fromX;
-            final dy = toY - fromY;
-            final dist = math.sqrt(dx * dx + dy * dy);
-            if (dist > 0) {
-              final nx = dx / dist;
-              final ny = dy / dist;
-              for (int ti = 1; ti <= 4; ti++) {
-                final tAlpha = (1 - ti / 4) * 0.3;
-                _bulletTrailPaint.color =
-                    bulletColor.withValues(alpha: tAlpha);
-                canvas.drawCircle(
-                  Offset(bx - nx * ti * 3, by - ny * ti * 3),
-                  1.5 * (1 - ti / 4.5),
-                  _bulletTrailPaint,
-                );
-              }
-            }
+      for (int v = 0; v < volleyCount; v++) {
+        final fireTime = 0.10 + v * volleyInterval;
+        if (t <= fireTime) continue;
+        final bulletAge = (t - fireTime) / bulletLifetime;
+        if (bulletAge >= 1.0) continue; // bullet scomparso
 
-            // Glow + corpo + core del bullet (paint cached)
-            _bulletGlowPaint.color = bulletColor.withValues(alpha: 0.35);
-            canvas.drawCircle(Offset(bx, by), 4.5, _bulletGlowPaint);
-            _bulletBodyPaint.color = bulletColor;
-            canvas.drawCircle(Offset(bx, by), 3.0, _bulletBodyPaint);
-            _bulletCorePaint.color =
-                const Color(0xFFFFFFFF).withValues(alpha: 0.8);
-            canvas.drawCircle(Offset(bx, by), 1.2, _bulletCorePaint);
+        // Ship center al fire time
+        final fst = (fireTime - shipDelay).clamp(0.0, 1.0);
+        final shipCenterX = size.width * (-0.15 + fst * 0.75);
+        final shipCenterY = cy + math.sin(fst * math.pi * 5) * size.height * 0.13
+            + math.cos(fst * math.pi * 3) * size.height * 0.05;
+        // Bersaglio (drone position al fire time, incluso dodge)
+        final firedDodgeBurst =
+            0.3 + math.sin(fireTime * math.pi * 2) * 0.7;
+        final firedDodgeY = math.sin(fireTime * 32) * 22 * firedDodgeBurst;
+        final toX = size.width * (-0.15 + fireTime * 0.75);
+        final toY = cy + math.sin(fireTime * math.pi * 5) * size.height * 0.13
+            + math.cos(fireTime * math.pi * 3) * size.height * 0.05
+            + firedDodgeY;
+        final shotAim = math.atan2(toY - shipCenterY, toX - shipCenterX);
+        final dirX = math.cos(shotAim);
+        final dirY = math.sin(shotAim);
+        // Perpendicular al dir di sparo (lato destro della canna)
+        final perpX = -dirY;
+        final perpY = dirX;
+        const noseOffset = 14.0 * 1.2;
+        // Progress bullet: 0→1 su bulletLifetime. Arriva a target a age 0.9,
+        // poi fade-out veloce per scomparire all'impatto.
+        final bulletProgress = (bulletAge / 0.9).clamp(0.0, 1.0);
 
-            // Muzzle flash al nose della nave appena sparato
-            if (bulletAge < 0.15) {
-              final flashAlpha = (1 - bulletAge / 0.15) * 0.7;
-              _muzzleGlowPaint.color =
-                  bulletColor.withValues(alpha: flashAlpha * 0.5);
-              canvas.drawCircle(Offset(fromX, fromY), 8, _muzzleGlowPaint);
-              _muzzleCorePaint.color =
-                  const Color(0xFFFFFFFF).withValues(alpha: flashAlpha);
-              canvas.drawCircle(Offset(fromX, fromY), 4, _muzzleCorePaint);
-            }
+        // Disegna COPPIA di bullet (±perp offset come basic weapon in gioco)
+        for (int side = -1; side <= 1; side += 2) {
+          final offsetX = perpX * pairOffset * side;
+          final offsetY = perpY * pairOffset * side;
+          final fromX = shipCenterX + dirX * noseOffset + offsetX;
+          final fromY = shipCenterY + dirY * noseOffset + offsetY;
+          final targetX = toX + offsetX;
+          final targetY = toY + offsetY;
+          final bx = fromX + (targetX - fromX) * bulletProgress;
+          final by = fromY + (targetY - fromY) * bulletProgress;
 
-            // Impatto flash sul drone
-            if (bulletAge > 0.4 && bulletAge < 0.55) {
-              _impactGlowPaint.color =
-                  const Color(0xFFFFFFFF).withValues(alpha: 0.35);
+          // Trail
+          final dx = targetX - fromX;
+          final dy = targetY - fromY;
+          final dist = math.sqrt(dx * dx + dy * dy);
+          if (dist > 0) {
+            final nx = dx / dist;
+            final ny = dy / dist;
+            for (int ti = 1; ti <= 4; ti++) {
+              final tAlpha = (1 - ti / 4) * 0.3;
+              _bulletTrailPaint.color =
+                  bulletColor.withValues(alpha: tAlpha);
               canvas.drawCircle(
-                  Offset(droneX, droneY), 18, _impactGlowPaint);
-              _impactCorePaint.color =
-                  bulletColor.withValues(alpha: 0.6);
-              canvas.drawCircle(
-                  Offset(droneX, droneY), 10, _impactCorePaint);
+                Offset(bx - nx * ti * 3, by - ny * ti * 3),
+                1.5 * (1 - ti / 4.5),
+                _bulletTrailPaint,
+              );
             }
           }
+
+          // Glow + corpo + core del bullet
+          _bulletGlowPaint.color = bulletColor.withValues(alpha: 0.35);
+          canvas.drawCircle(Offset(bx, by), 4.5, _bulletGlowPaint);
+          _bulletBodyPaint.color = bulletColor;
+          canvas.drawCircle(Offset(bx, by), 3.0, _bulletBodyPaint);
+          _bulletCorePaint.color =
+              const Color(0xFFFFFFFF).withValues(alpha: 0.8);
+          canvas.drawCircle(Offset(bx, by), 1.2, _bulletCorePaint);
+
+          // Muzzle flash al nose (per coppia — entrambi i lati)
+          if (bulletAge < 0.08) {
+            final flashAlpha = (1 - bulletAge / 0.08) * 0.7;
+            _muzzleGlowPaint.color =
+                bulletColor.withValues(alpha: flashAlpha * 0.5);
+            canvas.drawCircle(Offset(fromX, fromY), 8, _muzzleGlowPaint);
+            _muzzleCorePaint.color =
+                const Color(0xFFFFFFFF).withValues(alpha: flashAlpha);
+            canvas.drawCircle(Offset(fromX, fromY), 4, _muzzleCorePaint);
+          }
+        }
+
+        // Impact flash (una volta per volley, non per bullet)
+        if (bulletAge > 0.85 && bulletAge < 0.95) {
+          _impactGlowPaint.color =
+              const Color(0xFFFFFFFF).withValues(alpha: 0.35);
+          canvas.drawCircle(
+              Offset(droneX, droneY), 18, _impactGlowPaint);
+          _impactCorePaint.color = bulletColor.withValues(alpha: 0.6);
+          canvas.drawCircle(
+              Offset(droneX, droneY), 10, _impactCorePaint);
         }
       }
     }
@@ -575,72 +648,88 @@ class _SplashPainter extends CustomPainter {
     _drawShip(canvas, shipX, shipY, shipT, aimAngle);
   }
 
-  /// Drone nemico stile in-game: rombo con bordo neon stroke (come gli
-  /// EnemyBase), glow esterno senza blur pesante, nucleo pulsante bianco.
+  /// Weaver verde (stile `WeaverEnemy` in gioco): rombo ALLUNGATO vertical
+  /// con bordo neon, flusso energetico interno, nodi sulle 4 punte.
+  /// Orientato orizzontale (punta verso sx = direzione di fuga).
   void _drawDrone(Canvas canvas, double x, double y, double t, bool damaged) {
-    final r = 14.0;
-    final rot = t * 18;
+    // Scala: `w=6, h=12` come WeaverEnemy in gioco × fattore per splash.
+    const w = 8.5; // lato corto (perpendicolare alla fuga)
+    const h = 17.0; // lato lungo (direzione di fuga)
     canvas.save();
     canvas.translate(x, y);
-    canvas.rotate(rot);
+    // Weaver in fuga: orientato verso SX (−X in world) — rotazione π/2
+    // per allungarlo orizzontale.
+    canvas.rotate(math.pi / 2);
 
     final bodyColor = damaged
-        ? const Color(0xFFFF6633)
-        : const Color(0xFFFF00AA);
+        ? const Color(0xFFFF6633) // arancio danno
+        : const Color(0xFF00FF44); // verde neon (NeonColors.green)
 
-    // ─── GLOW ESTERNO (senza blur: cerchio più grande, alpha basso) ───
+    // ─── GLOW ESTERNO (rombo più grande, no blur) ───
     final glowPath = Path()
-      ..moveTo(0, -r * 1.4)
-      ..lineTo(r * 1.4, 0)
-      ..lineTo(0, r * 1.4)
-      ..lineTo(-r * 1.4, 0)
+      ..moveTo(0, -h * 1.25)
+      ..lineTo(w * 1.25, 0)
+      ..lineTo(0, h * 1.25)
+      ..lineTo(-w * 1.25, 0)
       ..close();
-    _droneGlowPaint.color = bodyColor.withValues(alpha: 0.25);
+    _droneGlowPaint.color = bodyColor.withValues(alpha: 0.28);
     canvas.drawPath(glowPath, _droneGlowPaint);
 
-    // ─── CORPO (stroke neon come EnemyBase in gioco) ───
+    // ─── CORPO: rombo allungato (stile weaver) ───
     final bodyPath = Path()
-      ..moveTo(0, -r)
-      ..lineTo(r, 0)
-      ..lineTo(0, r)
-      ..lineTo(-r, 0)
+      ..moveTo(0, -h)
+      ..lineTo(w, 0)
+      ..lineTo(0, h)
+      ..lineTo(-w, 0)
       ..close();
-    // Fill interno trasparente
-    _droneFillPaint.color = bodyColor.withValues(alpha: 0.35);
+    // Fill interno verde trasparente
+    _droneFillPaint.color = bodyColor.withValues(alpha: 0.28);
     canvas.drawPath(bodyPath, _droneFillPaint);
-    // Bordo neon brillante (stile GW enemy)
+    // Bordo neon brillante
     _droneStrokePaint.color = bodyColor;
     canvas.drawPath(bodyPath, _droneStrokePaint);
 
-    // ─── ROMBO INTERNO (decorativo) ───
-    final ir = r * 0.5;
+    // ─── ROMBO INTERNO (scafo) ───
     final innerPath = Path()
-      ..moveTo(0, -ir)
-      ..lineTo(ir, 0)
-      ..lineTo(0, ir)
-      ..lineTo(-ir, 0)
+      ..moveTo(0, -h * 0.55)
+      ..lineTo(w * 0.55, 0)
+      ..lineTo(0, h * 0.55)
+      ..lineTo(-w * 0.55, 0)
       ..close();
-    _droneInnerPaint.color = bodyColor.withValues(alpha: 0.6);
+    _droneInnerPaint.color = bodyColor.withValues(alpha: 0.55);
     canvas.drawPath(innerPath, _droneInnerPaint);
 
-    // ─── 4 PUNTI SUI VERTICI ───
-    final vertexPulse = 0.5 + math.sin(t * 30) * 0.5;
-    _droneVertexPaint.color = bodyColor.withValues(alpha: vertexPulse);
-    for (int i = 0; i < 4; i++) {
-      final angle = i * math.pi / 2;
-      final vx = math.cos(angle) * r * 0.95;
-      final vy = math.sin(angle) * r * 0.95;
-      canvas.drawCircle(Offset(vx, vy), 1.8, _droneVertexPaint);
+    // ─── FLUSSO ENERGETICO: puntino luminoso che scorre lungo l'asse ───
+    final flowProgress = (t * 2) % 1.0;
+    final flowY = -h * 0.8 + flowProgress * h * 1.6;
+    final flowAlpha = 0.5 * (1 - (flowProgress - 0.5).abs() * 2);
+    if (flowAlpha > 0) {
+      _droneCorePaint.color =
+          const Color(0xFFFFFFFF).withValues(alpha: flowAlpha);
+      canvas.drawCircle(Offset(0, flowY), 1.3, _droneCorePaint);
     }
 
-    // ─── NUCLEO bianco pulsante ───
-    final corePulse = 0.6 + math.sin(t * 20) * 0.4;
+    // ─── 4 NODI SUI VERTICI (pulsanti, stile weaver in gioco) ───
+    final vertexPulse = 0.4 + math.sin(t * 20) * 0.4;
+    _droneVertexPaint.color = bodyColor.withValues(alpha: vertexPulse);
+    final vertices = [
+      Offset(0, -h * 0.9),
+      Offset(w * 0.9, 0),
+      Offset(0, h * 0.9),
+      Offset(-w * 0.9, 0),
+    ];
+    for (final v in vertices) {
+      canvas.drawCircle(v, 1.6, _droneVertexPaint);
+    }
+
+    // ─── NUCLEO pulsante centrale ───
+    final corePulse = 0.5 + math.sin(t * 15) * 0.4;
     _droneCoreHaloPaint.color =
-        const Color(0xFFFFFFFF).withValues(alpha: corePulse * 0.3);
-    canvas.drawCircle(Offset.zero, r * 0.3, _droneCoreHaloPaint);
+        const Color(0xFFFFFFFF).withValues(alpha: corePulse * 0.35);
+    canvas.drawCircle(Offset.zero, w * 0.45, _droneCoreHaloPaint);
     _droneCorePaint.color =
         const Color(0xFFFFFFFF).withValues(alpha: corePulse);
-    canvas.drawCircle(Offset.zero, r * 0.15, _droneCorePaint);
+    canvas.drawCircle(Offset.zero, w * 0.22, _droneCorePaint);
 
     canvas.restore();
   }
