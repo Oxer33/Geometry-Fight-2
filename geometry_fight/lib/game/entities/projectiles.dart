@@ -634,6 +634,28 @@ class HomingMissile extends PositionComponent
       removeFromParent();
       return;
     }
+
+    // Border check: missile contro muri → detonazione (AoE only, no target).
+    // Tutte le modalità: arena (4 bordi) + tunnel (muri dinamici + cull sx).
+    if (game.isTunnelMode) {
+      final cameraLeft = game.camera.viewfinder.position.x -
+          (game.size.x > 0 ? game.size.x / 2 : 400) - 200;
+      final (topWall, bottomWall) = game.tunnelWallsAtX(position.x);
+      if (position.x < cameraLeft ||
+          position.y <= topWall ||
+          position.y >= bottomWall) {
+        _detonate(null);
+        return;
+      }
+    } else {
+      if (position.x < 0 ||
+          position.x > arenaWidth ||
+          position.y < 0 ||
+          position.y > arenaHeight) {
+        _detonate(null);
+        return;
+      }
+    }
   }
 
   void _releaseVolleyClaim() {
@@ -762,24 +784,22 @@ class HomingMissile extends PositionComponent
     super.onCollisionStart(intersectionPoints, other);
   }
 
-  void _detonate(PositionComponent target) {
-    // AoE SEMPRE attiva (richiesta utente). Raggio calibrato su
-    // baseExplosionRadius — diametro > 2x dimensione missile, come richiesto.
+  /// `target` nullable: quando la detonazione è border-triggered (muri
+  /// arena/tunnel) non c'è direct hit — solo AoE.
+  void _detonate(PositionComponent? target) {
     final radius = explosionRadius;
 
-    // Direct hit SEMPRE applica danno (fix per boss grandi come TheGridBoss
-    // dove il centro sta fuori dal raggio AoE). Usa identical() per non
-    // ri-colpire lo stesso target nella pass successiva.
+    // Direct hit al bersaglio (se presente).
     if (target is EnemyBase && !target.isSpawnInvulnerable) {
       target.takeDamage(damage);
     } else if (target is BossBase) {
       target.takeDamage(damage);
     }
 
-    // AoE su tutti gli altri nel raggio (direct target già colpito sopra).
-    // AoE = danno ad AREA → splitter immuni.
+    // AoE su tutti gli altri nel raggio. Splitter immuni ad area (tranne
+    // direct hit, escluso via `identical(child, target)`).
     for (final child in game.world.children) {
-      if (identical(child, target)) continue;
+      if (target != null && identical(child, target)) continue;
       if (child is EnemyBase) {
         if (child.isSpawnInvulnerable) continue;
         if (child.position.distanceTo(position) < radius) {
