@@ -1,8 +1,20 @@
 import 'dart:math' as math;
 import 'dart:ui';
 import 'package:flame/components.dart';
+import '../../../data/constants.dart';
 import '../../game_world.dart';
+import '../projectiles.dart';
 import 'boss_base.dart';
+
+/// Specchio fisico sul pavimento (nuova meccanica richiesta utente).
+/// Riflette i proiettili del player verso di lui. Distruttibile — HP visibile.
+class _FloorMirror {
+  Vector2 position = Vector2.zero();
+  double angle = 0;
+  double hp = 25;
+  final double maxHp = 25;
+  bool alive = true;
+}
 
 /// MIRROR MASTER - Boss che riflette i proiettili del player contro di lui.
 /// Forma: ottagono con specchi rotanti sulle facce
@@ -13,6 +25,10 @@ import 'boss_base.dart';
 class MirrorMasterBoss extends BossBase {
   double _mirrorAngle = 0;
   double _attackTimer = 2.5;
+  // Floor mirrors (nuova meccanica richiesta utente): 3 specchi riflettono
+  // i proiettili del player. Distruttibili, HP 25 ciascuno.
+  final List<_FloorMirror> _mirrors = [];
+  bool _mirrorsSpawned = false;
 
   MirrorMasterBoss()
       : super(
@@ -22,6 +38,25 @@ class MirrorMasterBoss extends BossBase {
           neonColor: const Color(0xFFCCDDEE),
           size: Vector2(95, 95),
         );
+
+  void _spawnMirrors() {
+    _mirrors.clear();
+    final cx = game.isTunnelMode
+        ? game.camera.viewfinder.position.x
+        : arenaWidth / 2;
+    final cy = game.isTunnelMode
+        ? game.camera.viewfinder.position.y
+        : arenaHeight / 2;
+    // Triangolo: 3 specchi ai vertici di un triangolo equilatero attorno al centro.
+    const r = 180.0;
+    for (int i = 0; i < 3; i++) {
+      final ang = i * math.pi * 2 / 3 - math.pi / 2;
+      _mirrors.add(_FloorMirror()
+        ..position = Vector2(cx + math.cos(ang) * r, cy + math.sin(ang) * r)
+        ..angle = ang + math.pi / 2);
+    }
+    _mirrorsSpawned = true;
+  }
 
   @override
   int getPhase() {
@@ -34,6 +69,9 @@ class MirrorMasterBoss extends BossBase {
   void updateBoss(double dt) {
     _mirrorAngle += dt * (1.0 + currentPhase * 0.5);
 
+    // Lazy spawn mirrors al primo frame (game.size non disponibile in ctor).
+    if (!_mirrorsSpawned) _spawnMirrors();
+
     // Orbita attorno al player
     final orbitDist = 250 - currentPhase * 40;
     final targetPos = playerPosition + Vector2(
@@ -43,6 +81,50 @@ class MirrorMasterBoss extends BossBase {
     final toTarget = targetPos - position;
     if (toTarget.length > 5) {
       position += toTarget.normalized() * 90 * dt;
+    }
+
+    // ─── MIRRORS: reflect PlayerBullet + phase 2 drift verso player ──
+    for (final m in _mirrors) {
+      if (!m.alive) continue;
+      // Fase 2+: specchi convergono lentamente sul player.
+      if (currentPhase >= 1) {
+        final toPlayer = (playerPosition - m.position);
+        if (toPlayer.length > 40) {
+          m.position += toPlayer.normalized() * 25 * dt;
+          m.angle = math.atan2(toPlayer.y, toPlayer.x) + math.pi / 2;
+        }
+      }
+    }
+
+    // Intercetta PlayerBullet entro 22px → riflette come EnemyBullet
+    // + danno 3 allo specchio. Bullet ad alto damage (plasma) romperà
+    // lo specchio in 3 hit.
+    for (final child in game.world.children) {
+      if (child is PlayerBullet) {
+        for (final m in _mirrors) {
+          if (!m.alive) continue;
+          if (child.position.distanceTo(m.position) < 22) {
+            m.hp -= 3;
+            if (m.hp <= 0) {
+              m.alive = false;
+              game.spawnExplosion(m.position, const Color(0xFFCCDDFF),
+                  radius: 40, particleCount: 12);
+              game.triggerScreenShake(3, 0.15);
+            }
+            // Reflect verso player — EnemyBullet veloce.
+            final dir = (playerPosition - m.position);
+            if (dir.length > 0.001) {
+              final reflected = _MirrorBullet(
+                  direction: dir.normalized(),
+                  color: const Color(0xFFFF88FF));
+              reflected.position = m.position.clone();
+              game.world.add(reflected);
+            }
+            child.removeFromParent();
+            break;
+          }
+        }
+      }
     }
 
     // Attacco
@@ -191,6 +273,38 @@ class MirrorMasterBoss extends BossBase {
           Offset.zero, r * 0.18 * (0.85 + pulse * 0.2), _coreWhitePaint);
     }
     canvas.restore();
+
+    // ─── FLOOR MIRRORS ───────────────────────────────────────────
+    // Render in world coords (offset da boss center).
+    if (scale <= 1.01) {
+      for (final m in _mirrors) {
+        if (!m.alive) continue;
+        final offset = m.position - position;
+        final mx = cx + offset.x;
+        final my = cy + offset.y;
+        final hpRatio = (m.hp / m.maxHp).clamp(0.0, 1.0);
+        canvas.save();
+        canvas.translate(mx, my);
+        canvas.rotate(m.angle);
+        // Glow alone
+        final glowPaint = Paint()
+          ..color = const Color(0xFFFF88FF).withValues(alpha: 0.3 + hpRatio * 0.3);
+        canvas.drawRect(
+            const Rect.fromLTWH(-34, -8, 68, 16), glowPaint);
+        // Specchio body (più chiaro quando HP alto)
+        final bodyPaint = Paint()
+          ..color = Color.lerp(const Color(0xFF886699),
+              const Color(0xFFCCDDFF), hpRatio)!;
+        canvas.drawRect(const Rect.fromLTWH(-30, -5, 60, 10), bodyPaint);
+        // Bordo bianco
+        final borderPaint = Paint()
+          ..color = const Color(0xFFFFFFFF).withValues(alpha: 0.9)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.5;
+        canvas.drawRect(const Rect.fromLTWH(-30, -5, 60, 10), borderPaint);
+        canvas.restore();
+      }
+    }
   }
 }
 

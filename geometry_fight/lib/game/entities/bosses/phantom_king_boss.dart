@@ -20,6 +20,12 @@ class PhantomKingBoss extends BossBase {
   double _cloneTimer = 8.0;
   double _crownPhase = 0;
 
+  // Mirror shadow clone (nuova meccanica richiesta utente):
+  // una silhouette fantasma all'opposto del player rispetto al boss, che
+  // spara indipendentemente → player gestisce 2 bersagli simmetrici.
+  Vector2 _shadowPos = Vector2.zero();
+  double _shadowAttackTimer = 2.5;
+
   PhantomKingBoss()
       : super(
           hp: 1500,
@@ -91,6 +97,36 @@ class PhantomKingBoss extends BossBase {
     if (_cloneTimer <= 0) {
       _cloneTimer = currentPhase == 2 ? 5.0 : 8.0;
       _spawnClone();
+    }
+
+    // ─── MIRROR SHADOW CLONE ──────────────────────────────────────
+    // Posizione: riflesso del player attorno al boss (centro simmetria).
+    // Clampata a arena bounds così lo shadow resta sempre visibile.
+    // Vector2 supporta solo `vec * scalar`, non `scalar * vec` → uso `* 2`.
+    _shadowPos = position * 2 - playerPosition;
+    if (!game.isTunnelMode) {
+      _shadowPos.x = _shadowPos.x.clamp(30.0, arenaWidth - 30.0);
+      _shadowPos.y = _shadowPos.y.clamp(30.0, arenaHeight - 30.0);
+    }
+    _shadowAttackTimer -= dt;
+    if (_shadowAttackTimer <= 0 && !_isInvisible) {
+      _shadowAttackTimer = currentPhase == 2 ? 1.8 : 2.8;
+      _shadowShoot();
+    }
+  }
+
+  void _shadowShoot() {
+    // Shadow spara 3 bullet verso il player, fan stretto.
+    final dir = (playerPosition - _shadowPos);
+    if (dir.length < 0.001) return;
+    final base = math.atan2(dir.y, dir.x);
+    for (int i = -1; i <= 1; i++) {
+      final ang = base + i * 0.15;
+      final bulletDir = Vector2(math.cos(ang), math.sin(ang));
+      final bullet = _PhantomBullet(
+          direction: bulletDir, color: const Color(0xFF8877FF));
+      bullet.position = _shadowPos.clone();
+      game.world.add(bullet);
     }
   }
 
@@ -225,6 +261,50 @@ class PhantomKingBoss extends BossBase {
       canvas.drawCircle(Offset.zero, r * 0.08 * eyePulse, _eyePupilPaint);
     }
     canvas.restore();
+
+    // ─── MIRROR SHADOW CLONE ─────────────────────────────────────
+    // Silhouette fantasma semi-trasparente al mirror del player. Stessa
+    // forma crown del boss, più piccola e blu-viola fosca.
+    if (scale <= 1.01 && !_isInvisible) {
+      final sOffset = _shadowPos - position;
+      final sx = cx + sOffset.x;
+      final sy = cy + sOffset.y;
+      final sr = r * 0.65;
+      final shadowPulse = 0.4 + math.sin(_crownPhase * 4) * 0.2;
+      canvas.save();
+      canvas.translate(sx, sy);
+      canvas.rotate(-_crownPhase * 0.3);
+      final shadowPath = Path();
+      for (int i = 0; i < 5; i++) {
+        final outerAngle = i * math.pi * 2 / 5 - math.pi / 2;
+        final innerAngle = (i + 0.5) * math.pi * 2 / 5 - math.pi / 2;
+        final outerR = sr * 0.9;
+        final innerR = sr * 0.55;
+        if (i == 0) {
+          shadowPath.moveTo(
+              outerR * math.cos(outerAngle), outerR * math.sin(outerAngle));
+        } else {
+          shadowPath.lineTo(
+              outerR * math.cos(outerAngle), outerR * math.sin(outerAngle));
+        }
+        shadowPath.lineTo(
+            innerR * math.cos(innerAngle), innerR * math.sin(innerAngle));
+      }
+      shadowPath.close();
+      final shadowPaint = Paint()
+        ..color = const Color(0xFF6644AA).withValues(alpha: shadowPulse);
+      canvas.drawPath(shadowPath, shadowPaint);
+      // Glow shadow
+      final shadowGlow = Paint()
+        ..color = const Color(0xFF8877FF).withValues(alpha: shadowPulse * 0.5);
+      canvas.drawCircle(Offset.zero, sr * 0.5, shadowGlow);
+      // Occhio shadow (singolo punto)
+      final shadowEye = Paint()
+        ..color = const Color(0xFFFFFFFF)
+            .withValues(alpha: 0.7 + math.sin(_crownPhase * 6) * 0.3);
+      canvas.drawCircle(Offset.zero, sr * 0.1, shadowEye);
+      canvas.restore();
+    }
   }
 }
 

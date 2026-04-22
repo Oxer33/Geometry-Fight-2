@@ -7,6 +7,19 @@ import '../../../data/wave_configs.dart';
 import '../../game_world.dart';
 import 'boss_base.dart';
 
+/// Rewind orb (nuova meccanica richiesta utente).
+/// Fase orbiting: orbita attorno al boss per 3s (visibile, nessun danno).
+/// Fase hazard: teletrasportato alla posizione del player 3s fa → zona
+/// pericolosa stazionaria per 2s che infligge danno se player ci torna.
+class _RewindOrb {
+  Vector2 position = Vector2.zero();
+  double orbitAngle = 0;
+  double timer = 3.0; // 3s orbit, poi hazard
+  double hazardTimer = 0; // 2s hazard
+  bool isHazard = false;
+  double activationDelay = 0.3; // grace post-teleport prima del danno
+}
+
 /// ETERNITY ENGINE - Boss finale definitivo. Macchina cosmica infinita.
 /// Forma: triplo anello concentrico con nucleo quantistico
 /// Colore: arcobaleno rotante con nucleo bianco
@@ -20,6 +33,17 @@ class EternityEngineBoss extends BossBase {
   double _ringRotation1 = 0;
   double _ringRotation2 = 0;
   double _ringRotation3 = 0;
+
+  // Rewind mechanic (nuova meccanica richiesta utente):
+  // traccia posizioni player nei precedenti 3s → orbi teletrasportati
+  // alla posizione passata come zona pericolosa.
+  final List<Vector2> _posHistory = [];
+  static const int _kHistoryMaxSize = 180; // 3s at 60fps
+  double _rewindSpawnTimer = 5.0;
+  final List<_RewindOrb> _rewindOrbs = [];
+  static const double _kRewindSpawnInterval = 5.0;
+  static const double _kRewindOrbitRadius = 70;
+  static const double _kRewindHazardRadius = 55;
 
   EternityEngineBoss()
       : super(
@@ -78,6 +102,61 @@ class EternityEngineBoss extends BossBase {
     // Distorsione griglia costante
     if (!game.isTunnelMode) {
       game.grid.applyForce(position, 150, 80 * dt);
+    }
+
+    // ─── REWIND ORBS: track player pos history ────────────────────
+    _posHistory.add(playerPosition.clone());
+    if (_posHistory.length > _kHistoryMaxSize) {
+      _posHistory.removeAt(0);
+    }
+
+    // Spawn 3 rewind orb ogni 5s.
+    _rewindSpawnTimer -= dt;
+    if (_rewindSpawnTimer <= 0) {
+      _rewindSpawnTimer = _kRewindSpawnInterval;
+      for (int i = 0; i < 3; i++) {
+        _rewindOrbs.add(_RewindOrb()
+          ..position = position.clone()
+          ..orbitAngle = i * math.pi * 2 / 3);
+      }
+    }
+
+    // Update orbs: orbit phase → teleport → hazard → remove.
+    for (int i = _rewindOrbs.length - 1; i >= 0; i--) {
+      final orb = _rewindOrbs[i];
+      if (!orb.isHazard) {
+        // Fase orbita: gira attorno al boss.
+        orb.orbitAngle += dt * 2.5;
+        orb.position = position +
+            Vector2(math.cos(orb.orbitAngle), math.sin(orb.orbitAngle)) *
+                _kRewindOrbitRadius;
+        orb.timer -= dt;
+        if (orb.timer <= 0) {
+          // Teleport a posizione player 3s fa (primo elemento history).
+          orb.isHazard = true;
+          orb.hazardTimer = 2.0;
+          orb.activationDelay = 0.3;
+          if (_posHistory.isNotEmpty) {
+            orb.position = _posHistory.first.clone();
+          }
+        }
+      } else {
+        // Fase hazard: zona statica con danno (dopo grace).
+        orb.hazardTimer -= dt;
+        if (orb.activationDelay > 0) orb.activationDelay -= dt;
+        if (orb.hazardTimer <= 0) {
+          _rewindOrbs.removeAt(i);
+          continue;
+        }
+        // Danno se player entra nel raggio hazard (post-grace).
+        if (orb.activationDelay <= 0 &&
+            game.player.position.distanceTo(orb.position) <
+                _kRewindHazardRadius &&
+            !game.player.isInvincible) {
+          game.player.takeDamage();
+          _rewindOrbs.removeAt(i);
+        }
+      }
     }
 
     // Attacco in base alla fase
@@ -161,6 +240,60 @@ class EternityEngineBoss extends BossBase {
     final cx = size.x / 2;
     final cy = size.y / 2;
     final r = size.x / 2 * scale;
+
+    // ─── REWIND ORBS (nuova meccanica) ─────────────────────────────
+    // Orbit phase: orb arcobaleno attorno al boss.
+    // Hazard phase: zona fissa con warning giallo → rosso letale.
+    if (scale <= 1.01) {
+      for (final orb in _rewindOrbs) {
+        final offset = orb.position - position;
+        final ox = cx + offset.x;
+        final oy = cy + offset.y;
+        if (!orb.isHazard) {
+          final orbitPulse = 0.6 + math.sin(_phase * 3 + orb.orbitAngle) * 0.4;
+          final hue = (_phase * 60 + orb.orbitAngle * 40) % 360;
+          final orbColor = HSVColor.fromAHSV(1, hue, 0.8, 1).toColor();
+          final glowPaint = Paint()
+            ..color = orbColor.withValues(alpha: 0.45 * orbitPulse);
+          canvas.drawCircle(Offset(ox, oy), 14 * orbitPulse, glowPaint);
+          final corePaint = Paint()
+            ..color = const Color(0xFFFFFFFF).withValues(alpha: orbitPulse);
+          canvas.drawCircle(Offset(ox, oy), 5, corePaint);
+        } else {
+          final isGrace = orb.activationDelay > 0;
+          final zoneColor = isGrace
+              ? const Color(0xFFFFEE00)
+              : const Color(0xFFFF2200);
+          final strobe = isGrace
+              ? 0.5 + math.sin(_phase * 14) * 0.3
+              : 0.7 + math.sin(_phase * 20) * 0.3;
+          final fillPaint = Paint()
+            ..color = zoneColor.withValues(alpha: 0.25 * strobe);
+          canvas.drawCircle(
+              Offset(ox, oy), _kRewindHazardRadius, fillPaint);
+          final borderPaint = Paint()
+            ..color = zoneColor.withValues(alpha: 0.8 * strobe)
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 2.2;
+          canvas.drawCircle(
+              Offset(ox, oy), _kRewindHazardRadius, borderPaint);
+          // Quadrante temporale (orologio che gira) al centro.
+          final clockAngle = (orb.hazardTimer / 2.0) * math.pi * 2;
+          final clockPaint = Paint()
+            ..color =
+                const Color(0xFFFFFFFF).withValues(alpha: 0.9 * strobe)
+            ..style = PaintingStyle.stroke
+            ..strokeWidth = 1.5;
+          canvas.drawArc(
+            Rect.fromCircle(center: Offset(ox, oy), radius: 8),
+            -math.pi / 2,
+            clockAngle,
+            false,
+            clockPaint,
+          );
+        }
+      }
+    }
 
     // ─── CROSS ENERGY BEAMS (4 raggi cardinali pulsanti) ───
     if (scale <= 1.01) {

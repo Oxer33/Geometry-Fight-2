@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'dart:ui';
 import 'package:flame/components.dart';
 import '../../../data/wave_configs.dart';
+import '../enemies/swarm_drone_enemy.dart';
 import 'boss_base.dart';
 
 /// SWARM QUEEN - Boss che genera sciami infiniti di SwarmDrone.
@@ -15,6 +16,12 @@ class SwarmQueenBoss extends BossBase {
   double _cellPhase = 0;
   double _wingPhase = 0;
 
+  // Hive-bond shield (nuova meccanica richiesta utente): la queen è
+  // invulnerabile finché ci sono almeno N swarm drone in vita → player
+  // deve ripulire lo sciame per aprire la finestra di danno.
+  static const int _kHiveBondThreshold = 15;
+  int _swarmCount = 0;
+
   SwarmQueenBoss()
       : super(
           hp: 1800,
@@ -23,6 +30,22 @@ class SwarmQueenBoss extends BossBase {
           neonColor: const Color(0xFFFF2288),
           size: Vector2(110, 110),
         );
+
+  bool get _hiveBondActive => _swarmCount >= _kHiveBondThreshold;
+
+  @override
+  void takeDamage(double amount, {bool isArea = false}) {
+    // Hive-bond: blocca danno finché sciame è abbastanza grande.
+    // AoE lascia passare 10% per evitare stallo (player AoE pulisce lo sciame
+    // e intanto scalfisce la queen).
+    if (_hiveBondActive) {
+      if (isArea) {
+        super.takeDamage(amount * 0.1, isArea: true);
+      }
+      return;
+    }
+    super.takeDamage(amount, isArea: isArea);
+  }
 
   @override
   int getPhase() {
@@ -35,6 +58,13 @@ class SwarmQueenBoss extends BossBase {
   void updateBoss(double dt) {
     _cellPhase += dt * 3;
     _wingPhase += dt * 5;
+
+    // Conta swarm drone in vita ogni frame (per hive-bond).
+    int cnt = 0;
+    for (final c in game.world.children) {
+      if (c is SwarmDroneEnemy) cnt++;
+    }
+    _swarmCount = cnt;
 
     // Movimento lento
     final toPlayer = (playerPosition - position);
@@ -90,6 +120,22 @@ class SwarmQueenBoss extends BossBase {
     final cx = size.x / 2;
     final cy = size.y / 2;
     final r = size.x / 2 * scale;
+
+    // ─── HIVE-BOND SHIELD AURA (nuova meccanica) ───
+    // Quando hive-bond attivo, aura viola pulsante attorno alla queen segnala
+    // l'invulnerabilità. Contatore mob visibile come ring interno.
+    if (scale <= 1.01 && _hiveBondActive) {
+      final pulse = 0.5 + math.sin(_cellPhase * 4) * 0.3;
+      final shieldPaint = Paint()
+        ..color = const Color(0xFFFF00AA).withValues(alpha: 0.25 * pulse)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 3;
+      canvas.drawCircle(Offset(cx, cy), r * 1.5, shieldPaint);
+      shieldPaint.color =
+          const Color(0xFFFFAADD).withValues(alpha: 0.5 * pulse);
+      shieldPaint.strokeWidth = 1.5;
+      canvas.drawCircle(Offset(cx, cy), r * 1.35, shieldPaint);
+    }
 
     // ─── ALI MEMBRANOSE CON SHIMMER ───
     if (scale <= 1.01) {

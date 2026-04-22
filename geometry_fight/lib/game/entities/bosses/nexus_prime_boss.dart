@@ -3,7 +3,17 @@ import 'dart:ui';
 import 'package:flame/components.dart';
 import '../../../data/constants.dart';
 import '../../game_world.dart';
+import '../projectiles.dart';
 import 'boss_base.dart';
+
+/// Satellite core che orbita attorno al NexusPrime bloccando i colpi player.
+/// Nuova meccanica (richiesta utente): boss invulnerabile finché i 4 satelliti
+/// sono vivi — player deve prima distruggerli per colpire il core.
+class _NexusSatellite {
+  Vector2 offset = Vector2.zero();
+  bool alive = true;
+  double deathPulse = 0;
+}
 
 /// NEXUS PRIME - Boss che crea portali e si teletrasporta attraverso l'arena.
 /// Forma: doppio esagono concentrico con nucleo energetico
@@ -17,6 +27,14 @@ class NexusPrimeBoss extends BossBase {
   double _portalPhase = 0;
   final List<Vector2> _portalPositions = [];
   int _currentPortal = 0;
+
+  // Shield satellites (nuova meccanica richiesta utente).
+  final List<_NexusSatellite> _satellites = [];
+  static const double _satelliteRadius = 80;
+  static const double _satelliteHitR = 18;
+  // Beam convergente fase 2: i satelliti sparano tutti verso il player insieme.
+  double _convergentTimer = 3.0;
+  double _convergentWindUp = 0;
 
   NexusPrimeBoss()
       : super(
@@ -38,6 +56,59 @@ class NexusPrimeBoss extends BossBase {
   void onPhaseChange(int phase) {
     // Aggiungi portali ad ogni fase
     _createPortals(2 + phase);
+    // Respawn satelliti ad ogni cambio fase (rigenera lo scudo).
+    _spawnSatellites();
+  }
+
+  /// Crea/resetta 4 satelliti orbitanti (tutti alive).
+  void _spawnSatellites() {
+    _satellites.clear();
+    for (int i = 0; i < 4; i++) {
+      final ang = i * math.pi / 2;
+      _satellites.add(_NexusSatellite()
+        ..offset = Vector2(
+          math.cos(ang) * _satelliteRadius,
+          math.sin(ang) * _satelliteRadius,
+        ));
+    }
+  }
+
+  int get _aliveSatellites => _satellites.where((s) => s.alive).length;
+
+  @override
+  void takeDamage(double amount, {bool isArea = false}) {
+    // Scudo: se c'è almeno un satellite vivo, blocca danno diretto.
+    // AoE (plasma/laser/bomba) passa al 50% + danneggia i satelliti.
+    if (_aliveSatellites > 0) {
+      if (isArea) {
+        // 50% del danno passa al boss; il resto si distribuisce fra
+        // satelliti vivi → AoE può rompere lo scudo gradualmente.
+        super.takeDamage(amount * 0.5, isArea: true);
+        final alive = _satellites.where((s) => s.alive).toList();
+        if (alive.isNotEmpty) {
+          final perSat = amount * 0.5 / alive.length;
+          for (final s in alive) {
+            // Soglia unica: ogni satellite ha effettivamente ~1 HP,
+            // AoE forte (plasma) lo rompe in 1-2 hit.
+            if (perSat >= 0.5) {
+              _killSatellite(s);
+            }
+          }
+        }
+      }
+      // Direct hit bloccato (gestito in updateBoss intercetta bullet).
+      return;
+    }
+    super.takeDamage(amount, isArea: isArea);
+  }
+
+  void _killSatellite(_NexusSatellite s) {
+    if (!s.alive) return;
+    s.alive = false;
+    s.deathPulse = 0.6;
+    final worldPos = position + s.offset;
+    game.spawnExplosion(worldPos, neonColor, radius: 35, particleCount: 10);
+    game.triggerScreenShake(3, 0.15);
   }
 
   void _createPortals(int count) {
@@ -71,6 +142,41 @@ class NexusPrimeBoss extends BossBase {
       _createPortals(2);
     }
 
+    // Lazy init satelliti al primo frame utile.
+    if (_satellites.isEmpty) _spawnSatellites();
+
+    // Satelliti orbitano intorno al boss (rotazione lenta opposta al portale).
+    final satAngularSpeed = 1.2;
+    for (int i = 0; i < _satellites.length; i++) {
+      final s = _satellites[i];
+      if (!s.alive) {
+        if (s.deathPulse > 0) s.deathPulse -= dt;
+        continue;
+      }
+      final baseAngle = _portalPhase * satAngularSpeed + i * math.pi / 2;
+      s.offset = Vector2(
+        math.cos(baseAngle) * _satelliteRadius,
+        math.sin(baseAngle) * _satelliteRadius,
+      );
+    }
+
+    // Intercetta PlayerBullet entro _satelliteHitR di ogni satellite vivo.
+    // Il satellite assorbe il bullet (1 hit = kill) → scudo si rompe
+    // progressivamente.
+    for (final child in game.world.children) {
+      if (child is PlayerBullet) {
+        for (final s in _satellites) {
+          if (!s.alive) continue;
+          final worldPos = position + s.offset;
+          if (child.position.distanceTo(worldPos) < _satelliteHitR) {
+            _killSatellite(s);
+            child.removeFromParent();
+            break;
+          }
+        }
+      }
+    }
+
     // Movimento verso il player (lento)
     final toPlayer = (playerPosition - position);
     if (toPlayer.length > 200) {
@@ -94,6 +200,36 @@ class NexusPrimeBoss extends BossBase {
     if (_attackTimer <= 0) {
       _attackTimer = currentPhase == 2 ? 1.0 : 2.0;
       _shootRadial();
+    }
+
+    // Fase 2+: beam convergenti dai satelliti verso il player (se almeno 2 vivi).
+    if (currentPhase >= 1 && _aliveSatellites >= 2) {
+      if (_convergentWindUp > 0) {
+        _convergentWindUp -= dt;
+        if (_convergentWindUp <= 0) {
+          _fireConvergentBeams();
+        }
+      } else {
+        _convergentTimer -= dt;
+        if (_convergentTimer <= 0) {
+          _convergentTimer = currentPhase == 2 ? 4.0 : 6.0;
+          _convergentWindUp = 1.0; // telegraph 1s
+        }
+      }
+    }
+  }
+
+  void _fireConvergentBeams() {
+    final pPos = playerPosition;
+    for (final s in _satellites) {
+      if (!s.alive) continue;
+      final worldPos = position + s.offset;
+      final dir = (pPos - worldPos);
+      if (dir.length < 0.001) continue;
+      final bullet = _BossBullet(
+          direction: dir.normalized(), color: const Color(0xFFFF44FF));
+      bullet.position = worldPos.clone();
+      game.world.add(bullet);
     }
   }
 
@@ -209,6 +345,59 @@ class NexusPrimeBoss extends BossBase {
       _corePaint.color =
           const Color(0xFFFFFFFF).withValues(alpha: pulse);
       canvas.drawCircle(Offset(cx, cy), r * 0.12 * pulse, _corePaint);
+    }
+
+    // ─── SHIELD RING (se almeno 1 satellite vivo) ─────────────────
+    if (scale <= 1.01 && _aliveSatellites > 0) {
+      final shieldAlpha = 0.10 + _aliveSatellites * 0.05;
+      _portalOuterPaint.color =
+          const Color(0xFF00FFFF).withValues(alpha: shieldAlpha);
+      _portalOuterPaint.strokeWidth = 1.5;
+      canvas.drawCircle(Offset(cx, cy), _satelliteRadius, _portalOuterPaint);
+    }
+
+    // ─── SATELLITI ORBITANTI ───────────────────────────────────────
+    if (scale <= 1.01) {
+      for (int i = 0; i < _satellites.length; i++) {
+        final s = _satellites[i];
+        final sx = cx + s.offset.x;
+        final sy = cy + s.offset.y;
+        if (s.alive) {
+          final satPulse = 0.7 + math.sin(_portalPhase * 3 + i) * 0.3;
+          _coreHaloPaint.color = const Color(0xFF00FFFF)
+              .withValues(alpha: 0.45 * satPulse);
+          canvas.drawCircle(Offset(sx, sy), 14, _coreHaloPaint);
+          _corePaint.color = const Color(0xFFFFFFFF).withValues(alpha: 0.9);
+          canvas.drawCircle(Offset(sx, sy), 8, _corePaint);
+          _corePaint.color = const Color(0xFF00FFFF);
+          canvas.drawCircle(Offset(sx, sy), 4, _corePaint);
+        } else if (s.deathPulse > 0) {
+          // Afterglow esplosione
+          final a = s.deathPulse / 0.6;
+          _coreHaloPaint.color =
+              const Color(0xFFFF4400).withValues(alpha: a * 0.5);
+          canvas.drawCircle(Offset(sx, sy), 18 * (1 + (1 - a) * 0.5),
+              _coreHaloPaint);
+        }
+      }
+    }
+
+    // ─── CONVERGENT BEAM TELEGRAPH (fase 2) ───────────────────────
+    if (scale <= 1.01 && _convergentWindUp > 0) {
+      final blinkPhase = (_convergentWindUp * 4) % 1.0;
+      final blinkAlpha = blinkPhase < 0.5 ? 0.7 : 0.25;
+      _warpLinePaint.color =
+          const Color(0xFFFF44FF).withValues(alpha: blinkAlpha);
+      _warpLinePaint.strokeWidth = 1.2;
+      final pPos = playerPosition - position;
+      for (final s in _satellites) {
+        if (!s.alive) continue;
+        canvas.drawLine(
+          Offset(cx + s.offset.x, cy + s.offset.y),
+          Offset(cx + pPos.x, cy + pPos.y),
+          _warpLinePaint,
+        );
+      }
     }
   }
 
