@@ -210,20 +210,23 @@ class MusicManager {
     bag[swapIdx] = tmp;
   }
 
-  static Future<void> _playFromIntroBag() async {
+  /// Ritorna `true` se il play è stato avviato (track consumato dal bag),
+  /// `false` se stale (mutex `_playInFlight` occupato → track riaccodato).
+  /// I caller usano il return per decidere se fare retry.
+  static Future<bool> _playFromIntroBag() async {
     if (_introBag.isEmpty) _refillIntroBag();
     final track = _introBag.removeAt(0);
     final consumed = await _playTrack(track);
-    // Track restituito se play è stato scartato (stale) → riaccoda in testa
-    // al bag invece di perderlo dalla rotazione.
     if (!consumed) _introBag.insert(0, track);
+    return consumed;
   }
 
-  static Future<void> _playFromBgmBag() async {
+  static Future<bool> _playFromBgmBag() async {
     if (_bgmBag.isEmpty) _refillBgmBag();
     final track = _bgmBag.removeAt(0);
     final consumed = await _playTrack(track);
     if (!consumed) _bgmBag.insert(0, track);
+    return consumed;
   }
 
   /// Returns `true` se il track è stato effettivamente consumato (play
@@ -248,11 +251,17 @@ class MusicManager {
       // Attendi eventuale stop() in volo: se stop.bgm.stop() termina DOPO
       // play.bgm.play(), cancella la nuova sorgente → silenzio. Timeout 2s
       // per evitare deadlock se bgm.stop() si blocca su Android MediaPlayer.
-      if (_stopInFlight != null) {
+      // Clear del flag SOLO se non è stato sostituito da un altro stop()
+      // concorrente (identical check): altrimenti lasciamo al caller di stop()
+      // la responsabilità del clear quando il suo await completa.
+      final localStop = _stopInFlight;
+      if (localStop != null) {
         try {
-          await _stopInFlight!.timeout(const Duration(seconds: 2));
+          await localStop.timeout(const Duration(seconds: 2));
         } catch (_) {}
-        _stopInFlight = null; // clear comunque per non bloccare play futuri
+        if (identical(_stopInFlight, localStop)) {
+          _stopInFlight = null;
+        }
       }
       // NOTE: NO stop() esplicito prima del play. audioplayers `play()`
       // swappa la sorgente atomicamente, senza emettere onPlayerComplete
@@ -283,33 +292,50 @@ class MusicManager {
   /// può emettere completion spuri durante source swap (skip manuale),
   /// e senza il guard finiamo con due pesche dal bag in parallelo
   /// (una dal listener, una dal skip) → track finale muta o errata.
+  /// Counter diagnostic di retry esauriti in `_onTrackComplete`.
+  /// Esposto via `onTrackCompleteFailures` per debug UI/telemetry.
+  static int _onTrackCompleteFailures = 0;
+  static int get onTrackCompleteFailures => _onTrackCompleteFailures;
+
   static void _onTrackComplete() {
     final now = DateTime.now().millisecondsSinceEpoch;
     if (now - _lastManualPlayMs < 500) return;
-    // Retry fino a 2 volte se il play fallisce → evita "music muta"
-    // dopo track end quando MediaPlayer è in stato degenerato.
+    // Idle short-circuit: no retry loop quando mode è idle.
+    if (_mode == _Mode.idle) return;
+
+    // Retry fino a 3 volte se il play fallisce o ritorna stale.
+    // Failure modes coperti:
+    //   - Async error da `_playTrack` (MediaPlayer degenerato)
+    //   - Stale (mutex `_playInFlight` occupato) → bag rewinded
+    //   - `_stopInFlight` ancora in volo → timeout 2s dentro _playTrack
     Future<void> next() async {
-      for (int attempt = 0; attempt < 2; attempt++) {
+      for (int attempt = 0; attempt < 3; attempt++) {
         try {
+          bool consumed;
           switch (_mode) {
             case _Mode.bgm:
-              await _playFromBgmBag();
-              return;
+              consumed = await _playFromBgmBag();
             case _Mode.intro:
-              await _playFromIntroBag();
-              return;
+              consumed = await _playFromIntroBag();
             case _Mode.idle:
-              return;
+              return; // mode cambiato a idle durante retry
           }
+          if (consumed) return; // success
+          // Stale: mutex `_playInFlight` occupato. Attesa prima del retry.
+          await Future.delayed(const Duration(milliseconds: 250));
         } catch (e) {
-          debugPrint('MusicManager onTrackComplete attempt $attempt: $e');
-          // Breve delay prima del retry
+          debugPrint('MusicManager onTrackComplete attempt $attempt error: $e');
           await Future.delayed(const Duration(milliseconds: 250));
         }
       }
+      _onTrackCompleteFailures++;
+      debugPrint(
+          'MusicManager onTrackComplete giving up after 3 attempts '
+          '(total failures: $_onTrackCompleteFailures)');
     }
     unawaited(next().catchError((Object e, StackTrace st) {
-      debugPrint('MusicManager onTrackComplete giving up: $e\n$st');
+      _onTrackCompleteFailures++;
+      debugPrint('MusicManager onTrackComplete fatal: $e\n$st');
     }));
   }
 

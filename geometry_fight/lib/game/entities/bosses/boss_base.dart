@@ -45,6 +45,11 @@ abstract class BossBase extends PositionComponent
   /// Hit timer — più lungo di `_flashTimer` (usato per chromatic splitting).
   double _chromaticHitTimer = 0;
 
+  /// Guard contro double-death: se `takeDamage` porta hp<=0 due volte nello
+  /// stesso frame (es. plasma AoE + bullet stesso tick), `onDeath` veniva
+  /// chiamato due volte → score/audio/explosions duplicati.
+  bool _onDeathFired = false;
+
   BossBase({
     required this.hp,
     required this.bossName,
@@ -219,12 +224,18 @@ abstract class BossBase extends PositionComponent
   }
 
   void onDeath() {
+    // Guard double-death: se takeDamage porta hp<=0 due volte nello stesso
+    // frame (plasma AoE + bullet tick), onDeath veniva chiamato due volte
+    // → duplicato score/audio/explosions/geom drops.
+    if (_onDeathFired) return;
+    _onDeathFired = true;
+
     game.onBossKilled(this);
     // Morte drammatica con budget particellare contenuto.
-    // Prima: 40+50+30 = 120 particelle in un frame → lag visibile dopo
-    // il primo boss kill. Ora: 20+25+15 = 60 tot. Solo 1 explosion `epic`
-    // (gli epic triggerano shake aggiuntivo + grid distortion) → frame
-    // cost sostenibile anche su boss rush.
+    // 20+25+15 = 60 particles (era 120 → lag visibile). Solo 1 explosion
+    // `epic` (gli epic triggerano auto-shake(4, 0.15) + grid distortion).
+    // Lo `triggerScreenShake(10, 0.5)` esplicito si SOMMA allo shake del
+    // singolo epic → voluto, dà il "boom" culminante della morte.
     game.activateSlowMo(0.5, 0.25);
     game.spawnExplosion(position, const Color(0xFFFFFFFF),
         radius: 320, particleCount: 20, epic: true);
