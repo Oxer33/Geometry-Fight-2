@@ -2,7 +2,6 @@ import 'dart:math' as math;
 import 'dart:ui';
 import 'package:flame/components.dart';
 import '../../../data/constants.dart';
-import '../player.dart';
 import '../projectiles.dart';
 import 'enemy_base.dart';
 
@@ -49,19 +48,19 @@ class WeaverEnemy extends EnemyBase {
       position += _currentDodge! * 350 * dt;
     }
 
-    // SCHIVA solo i proiettili dell'arma BASE — le altre armi non vengono schivate.
+    // SCHIVA TUTTI i tipi di proiettile (richiesta utente: prima solo basic).
     if (_dodgeCooldown <= 0) {
       PlayerBullet? closestBullet;
-      double closestDist = 140; // Raggio di rilevamento ampio
-      const imminentDist = 25.0; // Sotto questa soglia: già urgenza max, no miglior candidato possibile
+      double closestDist = 140; // Raggio di rilevamento ampio.
+      const imminentDist = 25.0; // Urgenza max → early break (O(n) evitato).
 
       for (final child in game.world.children) {
-        if (child is PlayerBullet && child.weaponType == WeaponType.basic) {
+        if (child is PlayerBullet) {
           final dist = child.position.distanceTo(position);
           if (dist < closestDist) {
             closestDist = dist;
             closestBullet = child;
-            if (dist < imminentDist) break; // perf: evita O(n) quando urgenza max
+            if (dist < imminentDist) break; // perf: urgenza max raggiunta.
           }
         }
       }

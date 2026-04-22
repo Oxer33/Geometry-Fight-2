@@ -242,7 +242,7 @@ class _ShopScreenState extends State<ShopScreen>
       _WeaponDef('basic', 'Basic Gun', 0, 'Proiettile singolo — affidabile e preciso', NeonColors.bulletYellow, 'parallel'),
       _WeaponDef('triple', 'Triple Shot', 800, '3 proiettili ravvicinati — fuoco concentrato', NeonColors.white, 'triple'),
       _WeaponDef('spread', 'Spread Shot', 1000, '5 proiettili a ventaglio — ottimo vs gruppi', NeonColors.spreadOrange, 'fan'),
-      _WeaponDef('ricochet', 'Ricochet', 1200, 'Rimbalza sui muri — colpisce da dietro', NeonColors.ricochetGreen, 'bounce'),
+      _WeaponDef('ricochet', 'Ricochet', 1200, 'Ventaglio di 3 colpi che rimbalzano sui muri', NeonColors.ricochetGreen, 'bounce'),
       _WeaponDef('homing', 'Homing', 1500, 'Insegue i nemici — non manca mai', NeonColors.pink, 'homing'),
       _WeaponDef('plasma', 'Plasma', 2000, 'Colpo lento ma 3x danni — devasta i boss', NeonColors.plasmaViolet, 'plasma'),
       _WeaponDef('laser', 'Laser', 2500, 'Raggio continuo — taglia tutto ciò che tocca', NeonColors.laserRed, 'beam'),
@@ -569,6 +569,11 @@ class _ShopScreenState extends State<ShopScreen>
                             canAfford: _saveData.goldGeoms >= item.cost,
                             onTap: () {
                               if (isActive) return;
+                              // FIX: sincronizza la preview con l'item su cui
+                              // l'utente ha cliccato EQUIP / BUY dalla sidebar.
+                              // Prima: la preview restava sull'item precedente
+                              // mentre l'arma equipaggiata cambiava (mismatch).
+                              setState(() => _selectedPreviewIndex = index);
                               if (owned) {
                                 onSelect(item);
                               } else {
@@ -1666,13 +1671,18 @@ class _WeaponPreviewPainter extends CustomPainter {
       ..strokeWidth = 0.5;
     canvas.drawRect(Rect.fromLTRB(12, 12, size.width - 12, shipY - 12), edgePaint);
 
-    for (int b = 0; b < 2; b++) {
-      final phase = time * 0.8 + b * 2.5;
+    // Ricochet: ventaglio di 3 proiettili che rimbalzano (match in-game).
+    // Angoli -0.20 / 0 / +0.20 rad come nel player (vedi _fireWeapon).
+    const fanAngles = [-0.20, 0.0, 0.20];
+    for (int b = 0; b < fanAngles.length; b++) {
+      final phase = time * 0.8 + b * 1.6;
       final points = <Offset>[];
       var x = cx;
       var y = shipY - 22.0;
-      var dx = (b == 0 ? 1.0 : -1.0) * 40;
-      var dy = -80.0;
+      // Vettore iniziale: verso l'alto ruotato per l'angolo del fan.
+      final baseSpeed = 90.0;
+      var dx = math.sin(fanAngles[b]) * baseSpeed;
+      var dy = -math.cos(fanAngles[b]) * baseSpeed;
 
       for (int step = 0; step < 100; step++) {
         points.add(Offset(x, y));
@@ -1727,15 +1737,17 @@ class _WeaponPreviewPainter extends CustomPainter {
     canvas.drawLine(Offset(targetX - 18, targetY), Offset(targetX + 18, targetY), crossPaint);
     canvas.drawLine(Offset(targetX, targetY - 18), Offset(targetX, targetY + 18), crossPaint);
 
-    // 3 missili
-    for (int i = 0; i < 3; i++) {
-      final phase = (time * 1.2 + i * 0.8) % 3;
+    // 5 missili — match in-game (homingCount = 5 in player.dart).
+    const homingCount = 5;
+    for (int i = 0; i < homingCount; i++) {
+      final phase = (time * 1.2 + i * 0.5) % 3;
       if (phase > 2.5) continue;
 
       final t = (phase / 2.5).clamp(0.0, 1.0);
-      final startX = cx + (i - 1) * 8.0;
+      final offI = i - (homingCount - 1) / 2; // centrato: -2, -1, 0, +1, +2
+      final startX = cx + offI * 6.0;
       final startY = shipY - 22;
-      final midX = startX + (targetX - startX) * 0.3 + (i - 1) * 25;
+      final midX = startX + (targetX - startX) * 0.3 + offI * 18;
       final midY = startY + (targetY - startY) * 0.3 - 35;
       final bx = _bezier(startX, midX, targetX, t);
       final by = _bezier(startY, midY, targetY, t);
@@ -1771,33 +1783,44 @@ class _WeaponPreviewPainter extends CustomPainter {
   }
 
   void _drawPlasmaBolts(Canvas canvas, double cx, double shipY, double rate) {
+    // Palla plasma — match in-game (3 strati glow + body + core bianco flicker).
     for (int i = 0; i < 4; i++) {
       final phase = (time / rate + i * 2.5) % 10;
       final y = shipY - 27 - phase * 32;
       if (y < 8 || y > shipY - 15) continue;
       final alpha = (1.0 - phase / 10).clamp(0.0, 1.0);
+      final pulse = 0.6 + 0.4 * (0.5 + 0.5 * math.sin(time * 5 + i));
+      final blink = 0.7 + 0.3 * math.sin(time * 14 + i * 2);
+      final baseR = 7 + math.sin(time * 3 + i) * 1.2;
 
       // Archi elettrici attorno al plasma
       final arcPaint = Paint()
-        ..color = color.withValues(alpha: alpha * 0.15)
+        ..color = color.withValues(alpha: alpha * 0.2 * pulse)
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 0.5;
-      final arcR = 8 + math.sin(time * 12 + i * 3) * 2;
+        ..strokeWidth = 0.6;
       canvas.drawArc(
-        Rect.fromCircle(center: Offset(cx, y), radius: arcR),
+        Rect.fromCircle(center: Offset(cx, y), radius: baseR * 1.5),
         time * 5 + i, math.pi * 0.8, false, arcPaint,
       );
       canvas.drawArc(
-        Rect.fromCircle(center: Offset(cx, y), radius: arcR),
+        Rect.fromCircle(center: Offset(cx, y), radius: baseR * 1.5),
         time * 5 + i + math.pi, math.pi * 0.8, false, arcPaint,
       );
 
-      // Plasma ball
-      canvas.drawCircle(Offset(cx, y), 10, Paint()
-        ..color = color.withValues(alpha: alpha * 0.15)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10));
-      canvas.drawCircle(Offset(cx, y), 5, Paint()..color = color.withValues(alpha: alpha * 0.5));
-      canvas.drawCircle(Offset(cx, y), 2.5, Paint()..color = Colors.white.withValues(alpha: alpha * 0.7));
+      // 3 strati di glow concentrici (come in-game PlasmaBullet.render).
+      canvas.drawCircle(Offset(cx, y), baseR * 2.4, Paint()
+        ..color = color.withValues(alpha: alpha * 0.25 * pulse)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8));
+      canvas.drawCircle(Offset(cx, y), baseR * 1.8, Paint()
+        ..color = color.withValues(alpha: alpha * 0.5 * pulse)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4));
+      canvas.drawCircle(Offset(cx, y), baseR * 1.3, Paint()
+        ..color = color.withValues(alpha: alpha * 0.8 * pulse));
+      // Body viola pieno
+      canvas.drawCircle(Offset(cx, y), baseR, Paint()..color = color.withValues(alpha: alpha));
+      // Nucleo bianco lampeggiante
+      canvas.drawCircle(Offset(cx, y), baseR * 0.45, Paint()
+        ..color = Colors.white.withValues(alpha: alpha * blink));
     }
   }
 

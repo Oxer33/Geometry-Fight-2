@@ -28,7 +28,8 @@ class MineEnemy extends EnemyBase {
           pointValue: 3,
           geomValue: 2,
           neonColor: NeonColors.gray,
-          size: Vector2(20, 20),
+          // Size 2x (era 20x20, ora 40x40) — richiesta utente più visibili.
+          size: Vector2(40, 40),
         );
 
   @override
@@ -81,13 +82,16 @@ class MineEnemy extends EnemyBase {
   void renderShape(Canvas canvas, Paint paint, double scale) {
     final cx = size.x / 2;
     final cy = size.y / 2;
-    final r = 8 * scale;
+    // FIX: r deve scalare con size (prima hardcoded 8 → mob 8px in hitbox 40px
+    // dopo il raddoppio size). 0.4 mantiene il ratio originale (8/20).
+    final r = size.x * 0.4 * scale;
 
     // Anelli di pericolo concentrici (durante detonazione)
     if (_detonating && scale <= 1.01) {
       final progress = 1.0 - (_detonateTimer / 0.5).clamp(0.0, 1.0);
       for (int ring = 0; ring < 3; ring++) {
-        final ringR = 15 + ring * 12.0 + progress * 20;
+        // Scalati anch'essi con size (base 15 era tarato per size 20).
+        final ringR = (15 + ring * 12.0 + progress * 20) * (size.x / 20);
         final ringAlpha = (0.3 - ring * 0.08) * (1 - progress);
         _mineRingPaint.color =
             const Color(0xFFFF0000).withValues(alpha: ringAlpha);

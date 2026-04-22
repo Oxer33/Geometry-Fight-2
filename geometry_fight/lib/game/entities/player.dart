@@ -20,6 +20,9 @@ enum WeaponType {
   overdrive,
 }
 
+// Plasma: colpo lento con danni base * 3.9 (era 3.0, +30% richiesta utente).
+const double kPlasmaDamageMultiplier = 3.9;
+
 class Player extends PositionComponent with HasGameReference<GeometryFightGame>, CollisionCallbacks {
   int lives = playerStartLives;
   int bombs = playerStartBombs;
@@ -254,8 +257,17 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
         // Overdrive powerup NON accelera il fire rate (solo movimento).
         _fireTimer = (0.4 / 1.5) / fireRateMultiplier;
       case WeaponType.ricochet:
-        _spawnBullet(dir, damageMultiplier, NeonColors.ricochetGreen,
-            maxBounces: 5, pierce: pierce, weaponType: WeaponType.ricochet);
+        // Ventaglio di 3 colpi che rimbalzano (richiesta utente).
+        // Angoli: ~23° totali (-0.20, 0, +0.20 rad) — fan chiaro ma non troppo
+        // largo, così i proiettili mantengono utilità vs bersagli singoli.
+        // Danno per colpo: 0.55x (3 colpi → DPS totale 1.65x, ragionevole).
+        // maxBounces ridotto 5→3 per colpo (totale 9 rimbalzi in scena,
+        // era 5 con un singolo proiettile: più spettacolo, meno "muro" di hit).
+        for (final angle in [-0.20, 0.0, 0.20]) {
+          final rotDir = _rotateVector(dir, angle);
+          _spawnBullet(rotDir, damageMultiplier * 0.55, NeonColors.ricochetGreen,
+              maxBounces: 3, pierce: pierce, weaponType: WeaponType.ricochet);
+        }
       case WeaponType.homing:
         // Base 5 missili. Ventaglio di angoli per coprire più bersagli.
         // Ogni salva ha un volleyId unico: i missili della stessa salva
@@ -345,7 +357,7 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
   void _spawnPlasma(Vector2 dir, double damage) {
     final plasma = PlasmaBullet(
       direction: dir,
-      damage: damage * 3,
+      damage: damage * kPlasmaDamageMultiplier,
       sizeMultiplier: hasFirePower ? 2.0 : 1.0,
     );
     plasma.position = position.clone();
