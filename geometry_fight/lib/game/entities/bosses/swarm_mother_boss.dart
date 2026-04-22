@@ -11,6 +11,9 @@ class SwarmMotherBoss extends BossBase {
   bool _laserActive = false;
   double _laserTimer = 0;
   double _laserCooldown = 8.0;
+  // Wind-up telegraph (richiesta utente): linea dim 1.2s prima del sweep letale.
+  double _laserTelegraphTimer = 0;
+  static const double _kLaserTelegraphDuration = 1.2;
   double _phase = 0;
   bool _split = false;
   Vector2? _halfOffset;
@@ -98,15 +101,26 @@ class SwarmMotherBoss extends BossBase {
       }
     }
 
-    // Laser sweep (phase 2+)
+    // Laser sweep (phase 2+) — wind-up telegraph 1.2s prima del danno.
     if (currentPhase >= 2) {
-      _laserCooldown -= dt;
-      if (!_laserActive && _laserCooldown <= 0) {
-        _laserCooldown = 8.0;
-        _laserActive = true;
-        _laserTimer = 3.0;
-        _laserAngle = math.atan2(
-            playerPosition.y - position.y, playerPosition.x - position.x);
+      // Countdown telegraph → fire.
+      if (_laserTelegraphTimer > 0) {
+        _laserTelegraphTimer -= dt;
+        if (_laserTelegraphTimer <= 0) {
+          _laserActive = true;
+          _laserTimer = 3.0;
+        }
+      }
+
+      // Activate telegraph su cooldown (non parte subito il laser vero).
+      if (!_laserActive && _laserTelegraphTimer <= 0) {
+        _laserCooldown -= dt;
+        if (_laserCooldown <= 0) {
+          _laserCooldown = 8.0;
+          _laserTelegraphTimer = _kLaserTelegraphDuration;
+          _laserAngle = math.atan2(
+              playerPosition.y - position.y, playerPosition.x - position.x);
+        }
       }
 
       if (_laserActive) {
@@ -114,7 +128,7 @@ class SwarmMotherBoss extends BossBase {
         _laserTimer -= dt;
         if (_laserTimer <= 0) _laserActive = false;
 
-        // Damage player
+        // Damage player (solo laser ATTIVO, non durante telegraph).
         final laserDir = Vector2(math.cos(_laserAngle), math.sin(_laserAngle));
         final toPlayer = playerPosition - position;
         final dot = toPlayer.dot(laserDir);
@@ -203,7 +217,25 @@ class SwarmMotherBoss extends BossBase {
       canvas.drawCircle(Offset(cx, cy), 120 * scale, _berserkPaint);
     }
 
-    // ─── LASER doppio layer: glow largo + core bianco ───
+    // ─── LASER TELEGRAPH (wind-up, no danno) ───
+    if (_laserTelegraphTimer > 0) {
+      final blinkPhase = (_laserTelegraphTimer * 4) % 1.0;
+      final blinkAlpha = blinkPhase < 0.5 ? 0.75 : 0.25;
+      canvas.save();
+      canvas.translate(cx, cy);
+      canvas.rotate(_laserAngle);
+      final warnPaint = Paint()
+        ..color = NeonColors.laserRed.withValues(alpha: blinkAlpha * 0.55)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.5;
+      canvas.drawLine(const Offset(0, 0), const Offset(1500, 0), warnPaint);
+      for (double x = 80; x < 1500; x += 120) {
+        canvas.drawLine(Offset(x, -4), Offset(x, 4), warnPaint);
+      }
+      canvas.restore();
+    }
+
+    // ─── LASER ATTIVO (doppio layer: glow + core bianco) ───
     if (_laserActive) {
       canvas.save();
       canvas.translate(cx, cy);

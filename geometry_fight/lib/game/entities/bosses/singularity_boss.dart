@@ -50,19 +50,22 @@ class SingularityBoss extends BossBase {
       _doPulse();
     }
 
-    // Pull attack
+    // Pull attack — forza +50% (150→225) e durata +50% (2.0→3.0s) richiesta utente.
     _pullTimer -= dt;
     if (_pullTimer <= 0 && !_pulling) {
       _pulling = true;
-      _pullDuration = 2.0;
+      _pullDuration = 3.0; // +50% da 2.0
       _pullTimer = 5.0;
     }
 
     if (_pulling) {
-      // Pull player towards boss
+      // Pull player verso il boss. Skip durante iframe post-hit (UX).
       final pullDir = (position - playerPosition);
-      if (pullDir.length > 20) { // FIX C8: guard against NaN when player == boss position
-        game.player.position += pullDir.normalized() * 150 * dt;
+      if (pullDir.length > 20 &&
+          !game.player.isInvincible &&
+          game.player.lives > 0) {
+        // Forza 225 (era 150, +50%).
+        game.player.position += pullDir.normalized() * 225 * dt;
       }
       _pullDuration -= dt;
       if (_pullDuration <= 0) _pulling = false;

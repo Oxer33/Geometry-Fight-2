@@ -105,6 +105,13 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
     final realDt = game.timeScale > 0.01 ? dt / game.timeScale : dt;
     super.update(realDt);
 
+    // Tunnel auto-scroll (richiesta utente): il player segue la camera di
+    // default, così se non tocca lo stick resta al centro schermo invece
+    // di restare indietro appiccicato al bordo sinistro.
+    if (game.isTunnelMode) {
+      position.x += game.tunnelScrollSpeed * realDt;
+    }
+
     // Movement (usa realDt per non essere rallentato dallo slow-mo)
     final moveDir = game.moveInput;
     if (moveDir.length > 0) {

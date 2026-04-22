@@ -59,8 +59,9 @@ class BlackHoleEnemy extends EnemyBase {
         // Black holes cannot absorb other black holes
         if (child is BlackHoleEnemy) continue;
         final toHole = position - child.position;
-        if (toHole.length > 0 && toHole.length < 250) {
-          child.position += toHole.normalized() * 60 * dt;
+        // Raggio +50% (250→375) e forza +50% (60→90) — richiesta utente.
+        if (toHole.length > 0 && toHole.length < 375) {
+          child.position += toHole.normalized() * 90 * dt;
           if (toHole.length < 15) {
             toAbsorb.add(child);
           }

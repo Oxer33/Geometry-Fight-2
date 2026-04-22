@@ -12,6 +12,11 @@ class TunnelRenderer extends PositionComponent
     with HasGameReference<GeometryFightGame> {
   final List<_TunnelObstacle> _obstacles = [];
   double _obstacleSpawnTimer = 5.0;
+  // Post-boss cooldown (richiesta utente): 15s senza spawn muri dopo la
+  // sconfitta di un boss, per dare respiro al player.
+  double _postBossCooldown = 0;
+  int _prevBossCount = 0;
+  static const double _kPostBossCooldown = 15.0;
   static final _random = math.Random();
 
   // Cached static Paints — muri tunnel bianco fluo (spessore dimezzato rispetto pre)
@@ -64,9 +69,19 @@ class TunnelRenderer extends PositionComponent
     // in update() dove è lecito mutare lo stato di gioco.
     _checkWallCollision();
 
-    // Spawn ostacoli periodicamente
+    // Tracking transizione boss → no-boss per attivare cooldown 15s.
+    if (_prevBossCount > 0 && game.bossCount == 0) {
+      _postBossCooldown = _kPostBossCooldown;
+    }
+    _prevBossCount = game.bossCount;
+    if (_postBossCooldown > 0) _postBossCooldown -= dt;
+
+    // Spawn ostacoli periodicamente.
+    // Skip spawn: durante boss fight OR nei 15s successivi alla sconfitta.
     _obstacleSpawnTimer -= dt;
-    if (_obstacleSpawnTimer <= 0 && game.bossCount == 0) {
+    if (_obstacleSpawnTimer <= 0 &&
+        game.bossCount == 0 &&
+        _postBossCooldown <= 0) {
       _obstacleSpawnTimer = 3.0 + _random.nextDouble() * 4.0;
       _spawnObstacle();
     }
@@ -304,28 +319,70 @@ class TunnelRenderer extends PositionComponent
       final alpha = (obs.lifetime / 12.0).clamp(0.0, 1.0);
       final pulse = 0.7 + math.sin(obs.phase) * 0.3;
 
-      // Barriera laser
       final bounds = _boundsAtX(obs.x);
       final topY = bounds.top;
       final bottomY = bounds.bottom;
       final baseY = obs.isTop ? topY : bottomY;
       final endY = obs.isTop ? topY + obs.height : bottomY - obs.height;
+      final rectTop = math.min(baseY, endY);
+      final rectBottom = math.max(baseY, endY);
       final obsRect = Rect.fromLTRB(
-        obs.x - obs.width / 2, math.min(baseY, endY),
-        obs.x + obs.width / 2, math.max(baseY, endY),
+        obs.x - obs.width / 2,
+        rectTop,
+        obs.x + obs.width / 2,
+        rectBottom,
       );
 
-      // Glow — senza blur, rettangolo inflated
-      _obsGlowPaint.color = const Color(0xFFFF2200).withValues(alpha: alpha * 0.15 * pulse);
+      // Glow esterno (rosso scuro diffuso).
+      _obsGlowPaint.color =
+          const Color(0xFFFF0022).withValues(alpha: alpha * 0.18 * pulse);
       _obsGlowPaint.maskFilter = null;
-      canvas.drawRect(obsRect.inflate(4), _obsGlowPaint);
+      canvas.drawRect(obsRect.inflate(6), _obsGlowPaint);
 
-      // Barriera principale
-      _obsBarrierPaint.color = const Color(0xFFFF4400).withValues(alpha: alpha * 0.6 * pulse);
-      canvas.drawRect(obsRect, _obsBarrierPaint);
+      // ─── RED WAVE SEGMENTS (richiesta utente) ────────────────────
+      // Divido l'altezza in 6 segmenti: ogni segmento ha intensità rossa
+      // variabile con sin(phase + segIdx * k) → onda che viaggia lungo
+      // l'ostacolo dall'alto verso il basso.
+      const segments = 6;
+      final totalH = rectBottom - rectTop;
+      final segH = totalH / segments;
+      // Direzione onda: verso l'interno del tunnel (dall'attacco al "punto").
+      final waveDir = obs.isTop ? 1.0 : -1.0;
+      for (int s = 0; s < segments; s++) {
+        final segIdx = obs.isTop ? s : (segments - 1 - s);
+        // wavePos viaggia 0→1 nel tempo, shiftata per segmento.
+        final wavePhase = obs.phase * 1.6 + segIdx * 0.7 * waveDir;
+        final wave = 0.5 + 0.5 * math.sin(wavePhase);
+        // Interpola rosso scuro → rosso brillante → bianco caldo.
+        final r = 255;
+        final g = (wave * 90).round().clamp(0, 160);
+        final b = (wave * 30).round().clamp(0, 60);
+        final segAlpha = (alpha * (0.55 + wave * 0.35) * pulse).clamp(0.0, 1.0);
+        _obsBarrierPaint.color = Color.fromRGBO(r, g, b, segAlpha);
+        final segRect = Rect.fromLTRB(
+          obsRect.left,
+          rectTop + s * segH,
+          obsRect.right,
+          rectTop + (s + 1) * segH + 0.5, // +0.5 per coprire gap antialias
+        );
+        canvas.drawRect(segRect, _obsBarrierPaint);
+      }
 
-      // Bordo luminoso
-      _obsBorderPaint.color = const Color(0xFFFF6600).withValues(alpha: alpha * 0.8);
+      // Highlight cresta onda: striscia bianca che scorre con la phase.
+      final crestPos = (obs.phase * 0.25) % 1.0;
+      final crestY = rectTop + crestPos * totalH;
+      _obsBorderPaint.color = const Color(0xFFFFFFFF)
+          .withValues(alpha: alpha * 0.45 * pulse);
+      _obsBorderPaint.style = PaintingStyle.fill;
+      canvas.drawRect(
+        Rect.fromLTRB(obsRect.left, crestY - 1, obsRect.right, crestY + 1),
+        _obsBorderPaint,
+      );
+
+      // Bordo luminoso esterno.
+      _obsBorderPaint.style = PaintingStyle.stroke;
+      _obsBorderPaint.color =
+          const Color(0xFFFF2244).withValues(alpha: alpha * 0.85);
       canvas.drawRect(obsRect, _obsBorderPaint);
     }
   }

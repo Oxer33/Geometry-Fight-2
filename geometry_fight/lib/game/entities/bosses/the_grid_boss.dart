@@ -14,6 +14,10 @@ class TheGridBoss extends BossBase {
   bool _laserActive = false;
   double _laserTimer = 0;
   double _laserCooldown = 6.0; // Cooldown tra laser sweep
+  // Wind-up telegraph (richiesta utente): laser mostra linea dim per 1.2s
+  // prima di diventare letale → player può schivare.
+  double _laserTelegraphTimer = 0;
+  static const double _kLaserTelegraphDuration = 1.2;
   int _patternIndex = 0;
   double _gridPhase = 0;
 
@@ -77,7 +81,7 @@ class TheGridBoss extends BossBase {
       }
     }
 
-    // Phase 3: Laser sweep
+    // Phase 3: Laser sweep (con wind-up telegraph — richiesta utente)
     if (currentPhase >= 2 && _laserActive) {
       _laserAngle += dt * math.pi * 2 / 3; // Full rotation in 3s
       _laserTimer -= dt;
@@ -85,7 +89,7 @@ class TheGridBoss extends BossBase {
         _laserActive = false;
       }
 
-      // Damage player if in laser path
+      // Damage player if in laser path (solo quando ATTIVO, non wind-up).
       final laserDir = Vector2(math.cos(_laserAngle), math.sin(_laserAngle));
       final toPlayer = playerPosition - position;
       final dot = toPlayer.dot(laserDir);
@@ -97,13 +101,22 @@ class TheGridBoss extends BossBase {
       }
     }
 
-    // Activate laser periodically in phase 3
-    if (currentPhase >= 2 && !_laserActive) {
-      _laserCooldown -= dt;
-      if (_laserCooldown <= 0) {
+    // Wind-up telegraph: angolo bloccato, linea dim visibile, NO danno.
+    if (_laserTelegraphTimer > 0) {
+      _laserTelegraphTimer -= dt;
+      if (_laserTelegraphTimer <= 0) {
+        // Fire: attiva sweep vero.
         _laserActive = true;
         _laserTimer = 3.0;
+      }
+    }
+
+    // Activate laser telegraph periodically in phase 3
+    if (currentPhase >= 2 && !_laserActive && _laserTelegraphTimer <= 0) {
+      _laserCooldown -= dt;
+      if (_laserCooldown <= 0) {
         _laserCooldown = 6.0;
+        _laserTelegraphTimer = _kLaserTelegraphDuration;
         _laserAngle = math.atan2(
             playerPosition.y - position.y, playerPosition.x - position.x);
       }
@@ -219,7 +232,28 @@ class TheGridBoss extends BossBase {
       }
     }
 
-    // Laser beam (fase 2+)
+    // Laser telegraph (wind-up visibile, no danno)
+    if (_laserTelegraphTimer > 0) {
+      // Blink per visibilità (2x per sec → 6 blink in 1.2s window).
+      final blinkPhase = (_laserTelegraphTimer * 4) % 1.0;
+      final blinkAlpha = blinkPhase < 0.5 ? 0.8 : 0.3;
+      final warnPaint = Paint()
+        ..color = NeonColors.laserRed.withValues(alpha: blinkAlpha * 0.55)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.5;
+      canvas.save();
+      canvas.translate(cx, cy);
+      canvas.rotate(_laserAngle);
+      // Linea sottile dim: telegraph
+      canvas.drawLine(const Offset(0, 0), const Offset(1500, 0), warnPaint);
+      // Ticks di avviso lungo la linea
+      for (double x = 80; x < 1500; x += 120) {
+        canvas.drawLine(Offset(x, -4), Offset(x, 4), warnPaint);
+      }
+      canvas.restore();
+    }
+
+    // Laser beam ATTIVO (fase 2+)
     if (_laserActive) {
       final laserPaint = Paint()
         ..color = NeonColors.laserRed.withValues(alpha: 0.6)

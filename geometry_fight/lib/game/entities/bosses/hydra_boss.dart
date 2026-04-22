@@ -11,9 +11,12 @@ import '../projectiles.dart';
 // (80px offset + 12px testa). 100 = corpo + metà orbita → colpi teste contano.
 const double _kHitboxRadius = 100;
 
-// Rage mode: fire rate radiale. 3 bullet × 1/0.18s ≈ 16.6/s. Non scendere
-// sotto 0.18 senza cap a livello di game (saturerebbe canvas).
-const double _kRageShootInterval = 0.18;
+// Rage mode (richiesta utente: "spara molto di piu"):
+// 5 bullet × 1/0.10s = 50 bullet/s radiali (tri-stella rotante + 2 extra).
+// + burst secondario ogni 2s (8 bullet) mirato al player → fase finale intensa.
+const double _kRageShootInterval = 0.10;
+const int _kRageBulletsPerBurst = 5;
+const double _kRageSecondaryInterval = 2.0;
 
 // Random statico condiviso — evita `math.Random()` allocato per head e per
 // attack tick (perf).
@@ -48,6 +51,7 @@ class HydraBoss extends BossBase {
   double _ragePhase = 0;
   bool _rageMode = false;
   double _rageShootTimer = 0;
+  double _rageSecondaryTimer = 0;
 
   // Cached Paint objects to avoid per-frame allocations
   static final _tentaclePaint = Paint()..style = PaintingStyle.stroke;
@@ -90,9 +94,20 @@ class HydraBoss extends BossBase {
   bool get allowMinionSpawn => !_rageMode;
 
   /// Allinea il numero di teste concrete a `_headCount`.
+  /// Pre-posiziona ogni testa al proprio angolo orbita così da essere
+  /// visibile dal primo frame (prima che `updateBoss` riposizioni).
   void _syncHeads() {
     while (_heads.length < _headCount) {
-      _heads.add(_HydraHead());
+      final idx = _heads.length;
+      final head = _HydraHead();
+      // Placeholder orbit: usa headCount target per ripartire l'angolo.
+      final stepAngle = math.pi * 2 / math.max(_headCount, 1);
+      final baseAngle = idx * stepAngle;
+      head.position = Vector2(
+        math.cos(baseAngle) * 80,
+        math.sin(baseAngle) * 80,
+      );
+      _heads.add(head);
     }
     if (_heads.length > _headCount) {
       _heads.removeRange(_headCount, _heads.length);
@@ -170,17 +185,34 @@ class HydraBoss extends BossBase {
       }
     }
 
-    // ─── RAGE MODE: FUOCO CONTINUO ─────────────────────────────────────
+    // ─── RAGE MODE: FUOCO CONTINUO (richiesta utente: "molto di piu") ──
     if (_rageMode) {
+      // Primary: 5 raffiche radiali ogni 0.10s = 50 bullet/s.
       _rageShootTimer -= dt;
       if (_rageShootTimer <= 0) {
         _rageShootTimer = _kRageShootInterval;
-        // 3 raffiche radiali simultanee (tri-stella rotante).
-        for (int i = 0; i < 3; i++) {
-          final angle = _ragePhase * 5 + i * (math.pi * 2 / 3);
+        for (int i = 0; i < _kRageBulletsPerBurst; i++) {
+          final angle = _ragePhase * 5 +
+              i * (math.pi * 2 / _kRageBulletsPerBurst);
           final bdir = Vector2(math.cos(angle), math.sin(angle));
           final bullet = EnemyBullet(
-              direction: bdir, speed: 320, color: NeonColors.red);
+              direction: bdir, speed: 340, color: NeonColors.red);
+          bullet.position = position.clone();
+          game.world.add(bullet);
+        }
+      }
+      // Secondary: burst 8 bullet mirato al player ogni 2s (pressione extra).
+      _rageSecondaryTimer -= dt;
+      if (_rageSecondaryTimer <= 0) {
+        _rageSecondaryTimer = _kRageSecondaryInterval;
+        final baseAngle = math.atan2(
+            playerPosition.y - position.y,
+            playerPosition.x - position.x);
+        for (int i = 0; i < 8; i++) {
+          final ang = baseAngle + (i - 3.5) * 0.12;
+          final bdir = Vector2(math.cos(ang), math.sin(ang));
+          final bullet = EnemyBullet(
+              direction: bdir, speed: 420, color: const Color(0xFFFF6600));
           bullet.position = position.clone();
           game.world.add(bullet);
         }

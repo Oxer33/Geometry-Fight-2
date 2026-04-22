@@ -20,6 +20,12 @@ class OmegaCoreBoss extends BossBase {
   double _spiralAngle = 0;
   double _specialTimer = 6.0;
   final List<_DeathZone> _deathZones = [];
+  // Lightning telegraph (richiesta utente): warning ring 0.8s prima dell'AoE
+  // → player può schivare uscendo dal raggio.
+  double _lightningWindUp = 0;
+  Vector2? _lightningTarget;
+  static const double _kLightningWindUp = 0.8;
+  static const double _kLightningRadius = 200;
 
   OmegaCoreBoss()
       : super(
@@ -89,17 +95,34 @@ class OmegaCoreBoss extends BossBase {
       }
     }
 
-    // Aggiorna zone di morte (con TTL)
+    // Aggiorna zone di morte (con TTL + grace period).
     for (int i = _deathZones.length - 1; i >= 0; i--) {
-      _deathZones[i].lifetime -= dt;
-      if (_deathZones[i].lifetime <= 0) {
+      final zone = _deathZones[i];
+      zone.lifetime -= dt;
+      if (zone.activationDelay > 0) zone.activationDelay -= dt;
+      if (zone.lifetime <= 0) {
         _deathZones.removeAt(i);
         continue;
       }
-      final dist = game.player.position.distanceTo(_deathZones[i].position);
+      // Skip damage fino a fine grace period (player può uscire dal raggio).
+      if (zone.activationDelay > 0) continue;
+      final dist = game.player.position.distanceTo(zone.position);
       if (dist < 50) {
         game.player.takeDamage();
         _deathZones.removeAt(i);
+      }
+    }
+
+    // Lightning wind-up: dopo 0.8s di warning, applica danno se player in raggio.
+    if (_lightningWindUp > 0) {
+      _lightningWindUp -= dt;
+      if (_lightningWindUp <= 0 && _lightningTarget != null) {
+        if (game.player.position.distanceTo(_lightningTarget!) <
+            _kLightningRadius) {
+          game.player.takeDamage();
+          game.triggerScreenShake(5, 0.2);
+        }
+        _lightningTarget = null;
       }
     }
 
@@ -142,11 +165,11 @@ class OmegaCoreBoss extends BossBase {
   }
 
   void _lightningStrike() {
-    // Danno al player se vicino
-    if (distanceToPlayer < 200) {
-      game.player.takeDamage();
-      game.triggerScreenShake(5, 0.2);
-    }
+    // Telegraph: marca posizione boss come epicentro + 0.8s wind-up.
+    // Il danno viene applicato in updateBoss alla fine del windup se player
+    // resta nel raggio. Permette al player di allontanarsi.
+    _lightningTarget = position.clone();
+    _lightningWindUp = _kLightningWindUp;
     if (!game.isTunnelMode) {
       game.grid.applyForce(position, 200, 800);
     }
@@ -176,20 +199,44 @@ class OmegaCoreBoss extends BossBase {
     final r = size.x / 2 * scale;
     final cur = _getCurrentColor();
 
-    // Zone di morte (doppio layer)
+    // Zone di morte (colore giallo durante grace, rosso quando attive).
     if (scale <= 1.01) {
       for (final zone in _deathZones) {
         final offset = zone.position - position;
-        _zoneFillPaint.color =
-            const Color(0xFFFF2200).withValues(alpha: 0.2);
+        final isGrace = zone.activationDelay > 0;
+        final fillColor =
+            isGrace ? const Color(0xFFFFAA00) : const Color(0xFFFF2200);
+        // Pulse più forte durante grace per attirare l'attenzione.
+        final pulse = isGrace
+            ? 0.35 + math.sin(_phase * 14) * 0.2
+            : 0.2;
+        _zoneFillPaint.color = fillColor.withValues(alpha: pulse);
         canvas.drawCircle(
             Offset(cx + offset.x, cy + offset.y), 50, _zoneFillPaint);
         _zoneBorderPaint.color =
-            const Color(0xFFFF2200).withValues(alpha: 0.4);
-        _zoneBorderPaint.strokeWidth = 1.2;
+            fillColor.withValues(alpha: isGrace ? 0.7 : 0.4);
+        _zoneBorderPaint.strokeWidth = isGrace ? 2.0 : 1.2;
         canvas.drawCircle(
             Offset(cx + offset.x, cy + offset.y), 50, _zoneBorderPaint);
       }
+    }
+
+    // Lightning telegraph: warning ring pulsante al boss + fulmini zig-zag
+    // che convergono → player vede in anticipo dove cadrà il fulmine.
+    if (_lightningWindUp > 0 && scale <= 1.01 && _lightningTarget != null) {
+      final offset = _lightningTarget! - position;
+      final warnCenter = Offset(cx + offset.x, cy + offset.y);
+      final tFrac = 1.0 - (_lightningWindUp / _kLightningWindUp).clamp(0.0, 1.0);
+      final pulse = 0.4 + math.sin(_phase * 18) * 0.3;
+      _zoneBorderPaint.color =
+          const Color(0xFFFFEE00).withValues(alpha: pulse);
+      _zoneBorderPaint.strokeWidth = 2.5 + tFrac * 2;
+      canvas.drawCircle(warnCenter, _kLightningRadius, _zoneBorderPaint);
+      // Anello interno che si contrae (indica imminente impatto).
+      _zoneBorderPaint.color =
+          const Color(0xFFFF4400).withValues(alpha: pulse * 0.8);
+      canvas.drawCircle(
+          warnCenter, _kLightningRadius * (1.0 - tFrac), _zoneBorderPaint);
     }
 
     // ─── PRISM BEAM SPIKES: 8 raggi cromatici dal centro (signature) ───
@@ -310,6 +357,9 @@ class _OmegaBullet extends PositionComponent with HasGameReference<GeometryFight
 class _DeathZone {
   final Vector2 position;
   double lifetime;
+  // Grace period (richiesta utente): niente danno nei primi 0.8s dallo
+  // spawn → il player ha tempo di leggere la zona e uscire dal raggio.
+  double activationDelay = 0.8;
 
   _DeathZone({required this.position, required this.lifetime});
 }

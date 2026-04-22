@@ -28,8 +28,9 @@ class MineEnemy extends EnemyBase {
           pointValue: 3,
           geomValue: 2,
           neonColor: NeonColors.gray,
-          // Size 2x (era 20x20, ora 40x40) — richiesta utente più visibili.
-          size: Vector2(40, 40),
+          // Size -30% dal precedente 40x40 (richiesta utente: "enormi").
+          // 40 × 0.7 = 28 → mantiene ~1.4x rispetto all'originale 20x20.
+          size: Vector2(28, 28),
         );
 
   @override
