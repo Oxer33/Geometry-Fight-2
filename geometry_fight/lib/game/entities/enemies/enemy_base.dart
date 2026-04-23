@@ -124,8 +124,12 @@ abstract class EnemyBase extends PositionComponent
       const margin = 6.0;
       position.y = position.y.clamp(topWall + margin, bottomWall - margin);
     } else {
-      position.x = position.x.clamp(5, arenaWidth - 5);
-      position.y = position.y.clamp(5, arenaHeight - 5);
+      // Clamp con half-size: sprite intero dentro il bordo arena (richiesta
+      // utente "bordo arena impenetrabile"). Prima `5` → mezzo mob usciva.
+      final hx = size.x / 2;
+      final hy = size.y / 2;
+      position.x = position.x.clamp(hx, arenaWidth - hx);
+      position.y = position.y.clamp(hy, arenaHeight - hy);
     }
   }
 

@@ -150,8 +150,14 @@ class MusicManager {
   static Future<void>? _stopInFlight;
 
   /// Ferma completamente. Resetta la modalità a idle.
+  /// Fix "menu senza musica": forza reset di `_playInFlight` + increment
+  /// `_playSeq` per invalidare qualsiasi _playTrack in volo. Senza questo,
+  /// un playTrack rimasto stuck con `_playInFlight=true` blocca tutte le
+  /// chiamate successive → playIntro al rientro menu diventa no-op.
   static Future<void> stop() async {
     _mode = _Mode.idle;
+    _playSeq++;
+    _playInFlight = false;
     final stopFuture = FlameAudio.bgm.stop().catchError((Object _) {});
     _stopInFlight = stopFuture;
     try {

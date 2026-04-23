@@ -14,6 +14,7 @@ class _NexusSatellite {
   Vector2 offset = Vector2.zero();
   bool alive = true;
   double deathPulse = 0;
+  double hp = 20; // HP per satellite — laser tick chip progressive.
 }
 
 /// NEXUS PRIME - Boss che crea portali e si teletrasporta attraverso l'arena.
@@ -83,26 +84,24 @@ class NexusPrimeBoss extends BossBase {
 
   @override
   void takeDamage(double amount, {bool isArea = false}) {
-    // Scudo: se c'è almeno un satellite vivo, blocca danno diretto.
-    // AoE (plasma/laser/bomba) passa al 50% + danneggia i satelliti.
+    // Scudo (richiesta utente "non prende danni dal laser"):
+    // - Direct hit bloccato SOLO se satelliti vivi (bullet intercettati in
+    //   updateBoss, qui non dovrebbero arrivare, ma guard difensivo).
+    // - AoE (laser/plasma/bomba) → danno PIENO al boss + chip ai satelliti.
+    //   Prima bloccava 50% → laser molto lento. Ora laser danneggia normale.
     if (_aliveSatellites > 0) {
       if (isArea) {
-        // 50% del danno passa al boss; il resto si distribuisce fra
-        // satelliti vivi → AoE può rompere lo scudo gradualmente.
-        super.takeDamage(amount * 0.5, isArea: true);
+        super.takeDamage(amount, isArea: true);
         final alive = _satellites.where((s) => s.alive).toList();
         if (alive.isNotEmpty) {
-          final perSat = amount * 0.5 / alive.length;
+          final perSat = amount / alive.length;
           for (final s in alive) {
-            // Soglia unica: ogni satellite ha effettivamente ~1 HP,
-            // AoE forte (plasma) lo rompe in 1-2 hit.
-            if (perSat >= 0.5) {
-              _killSatellite(s);
-            }
+            s.hp -= perSat;
+            if (s.hp <= 0) _killSatellite(s);
           }
         }
       }
-      // Direct hit bloccato (gestito in updateBoss intercetta bullet).
+      // Non-AoE bloccato dai satelliti (player deve sparare dritto).
       return;
     }
     super.takeDamage(amount, isArea: isArea);
@@ -167,15 +166,16 @@ class NexusPrimeBoss extends BossBase {
     }
 
     // Intercetta PlayerBullet entro _satelliteHitR di ogni satellite vivo.
-    // Il satellite assorbe il bullet (1 hit = kill) → scudo si rompe
-    // progressivamente.
+    // Il satellite assorbe il bullet e prende damage — richiede più hit per
+    // rompersi (era 1-hit kill, ora HP-based).
     for (final child in game.world.children) {
       if (child is PlayerBullet) {
         for (final s in _satellites) {
           if (!s.alive) continue;
           final worldPos = position + s.offset;
           if (child.position.distanceTo(worldPos) < _satelliteHitR) {
-            _killSatellite(s);
+            s.hp -= child.damage;
+            if (s.hp <= 0) _killSatellite(s);
             child.removeFromParent();
             break;
           }

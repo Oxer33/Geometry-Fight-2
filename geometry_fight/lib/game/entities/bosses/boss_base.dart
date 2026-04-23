@@ -132,15 +132,17 @@ abstract class BossBase extends PositionComponent
 
     // Clamp to arena
     if (game.isTunnelMode) {
-      // TUNNEL BOSS: stile side-scroller — boss ancorato al lato destro dello schermo.
-      // La X è forzata a seguire la camera (lato destro ~60% dello schermo).
-      // Solo il movimento Y è libero (su/giù nel tunnel).
+      // TUNNEL BOSS: side-scroller, ancorato al lato destro dello schermo.
+      // Y libero. X lerp-ato verso target (richiesta utente: entrata smooth
+      // da destra-fuori-schermo invece di snap istantaneo).
       final cam = game.camera.viewfinder.position;
       final halfW = game.size.x > 0 ? game.size.x / 2 : 400.0;
       final halfH = game.size.y > 0 ? game.size.y / 2 : 300.0;
 
-      // X: ancorato al lato destro dello schermo (60% a destra dal centro)
-      position.x = cam.x + halfW * 0.55;
+      // X target: ancorato al lato destro (55% a destra dal centro).
+      final targetX = cam.x + halfW * 0.55;
+      // Lerp 3× per secondo (~smooth ~0.5s d'entrata dal bordo destro).
+      position.x += (targetX - position.x) * 3.0 * effectiveDt;
 
       // Y: segue il player con smoothing + oscillazione sinusoidale per varietà
       final targetY = game.player.position.y;
@@ -212,19 +214,48 @@ abstract class BossBase extends PositionComponent
   final List<EnemyType> _bigWaveQueue = [];
   static const int _kMaxSpawnPerFrame = 6;
 
+  /// Banal mob multiplier (richiesta utente: "più sono mob banali e più ne
+  /// devono spawnare"). 3=banal, 2=medium, 1=strong.
+  static int _mobWeight(EnemyType type) {
+    switch (type) {
+      case EnemyType.drone:
+      case EnemyType.swarmDrone:
+      case EnemyType.kamikaze:
+        return 3;
+      case EnemyType.weaver:
+      case EnemyType.mine:
+      case EnemyType.snake:
+      case EnemyType.pulsar:
+      case EnemyType.splitter:
+      case EnemyType.leech:
+      case EnemyType.mirror:
+      case EnemyType.orbiter:
+      case EnemyType.decoy:
+      case EnemyType.proton:
+        return 2;
+      default:
+        return 1;
+    }
+  }
+
   /// Carica la big wave nella queue. `_drainWaveQueue` la processa su più
   /// frame evitando frame hitch (spawn di 50 mob in 1 frame = stutter).
   void _enqueueColorWave() {
     if (!allowMinionSpawn) return;
     final types = colorMatchedMinions;
     if (types.isEmpty) return;
-    final targetCount = switch (currentPhase) {
+    final baseCount = switch (currentPhase) {
       0 => 10,
       1 => 30,
       _ => 50,
     };
-    // Riempi queue con tipi random così quando drenata spawna mob misti
-    // invece di tutti dello stesso tipo in sequenza.
+    // Scala count per weight medio (banal=3× → target più grosso).
+    int totalWeight = 0;
+    for (final t in types) {
+      totalWeight += _mobWeight(t);
+    }
+    final avgWeight = totalWeight / types.length;
+    final targetCount = (baseCount * avgWeight / 2.0).round();
     for (int i = 0; i < targetCount; i++) {
       _bigWaveQueue.add(types[_bossRandom.nextInt(types.length)]);
     }
@@ -265,8 +296,9 @@ abstract class BossBase extends PositionComponent
           : (topWall + bottomWall) / 2; // fallback center se walls stretti
       return Vector2(sx, sy);
     }
+    // Cluster stretto attorno al boss (richiesta utente "molto vicini").
     final angle = _bossRandom.nextDouble() * math.pi * 2;
-    final dist = 120 + _bossRandom.nextDouble() * 200;
+    final dist = 40 + _bossRandom.nextDouble() * 60;
     final raw = position +
         Vector2(math.cos(angle) * dist, math.sin(angle) * dist);
     return Vector2(
@@ -292,7 +324,8 @@ abstract class BossBase extends PositionComponent
     for (int i = 0; i < baseCount; i++) {
       final type = types[_bossRandom.nextInt(types.length)];
       final angle = _bossRandom.nextDouble() * math.pi * 2;
-      final dist = 100 + _bossRandom.nextDouble() * 150;
+      // Cluster stretto (richiesta utente "molto vicini al boss").
+      final dist = 40 + _bossRandom.nextDouble() * 60;
       final rawPos = position + Vector2(
         math.cos(angle) * dist,
         math.sin(angle) * dist,

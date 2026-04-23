@@ -11,15 +11,16 @@ import '../projectiles.dart';
 // (80px offset + 12px testa). 100 = corpo + metà orbita → colpi teste contano.
 const double _kHitboxRadius = 100;
 
-// Rage mode: ridotto -30% rate (richiesta utente "raffiche enormi, 30%
-// meno proiettili"). 5 bullet × 1/0.14s ≈ 36/s radiali + secondario 5/2s.
-// Era 50/s + 4/s = 54/s; ora ~36/s + 2.5/s = 38/s → -30% rate totale.
-const double _kRageShootInterval = 0.14;
+// Rage mode: ridotto ulteriormente (richiesta utente "spara troppo").
+// 5 bullet × 1/0.35s ≈ 14/s radiali + secondary 3/3s = 1/s. Totale ~15/s
+// (era ~38/s → -60% rate).
+const double _kRageShootInterval = 0.35;
 const int _kRageBulletsPerBurst = 5;
-const int _kRageSecondaryBullets = 5; // era 8 → -37%
-const double _kRageSecondaryInterval = 2.0;
-// Ogni testa spara 1 proiettile ogni 5s (richiesta utente).
-const double _kHeadAttackInterval = 5.0;
+const int _kRageSecondaryBullets = 3;
+const double _kRageSecondaryInterval = 3.0;
+// Base phases: ogni testa spara ogni 3s (era 5s — richiesta "spara poco"
+// nelle altre fasi → più attacchi base).
+const double _kHeadAttackInterval = 3.0;
 
 // Random statico condiviso — evita `math.Random()` allocato per head e per
 // attack tick (perf).

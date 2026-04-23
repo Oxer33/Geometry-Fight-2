@@ -288,7 +288,8 @@ class LaserBeam extends PositionComponent
   final double damage;
   final double sizeMultiplier;
   double _lifetime = 0.1;
-  // Cache della direzione normalizzata (immutabile dopo construction).
+  double _pulsePhase = 0;
+  double _hitPartCooldown = 0;
   late final Vector2 _dir;
 
   LaserBeam({required this.direction, this.damage = 1, this.sizeMultiplier = 1.0})
@@ -303,19 +304,17 @@ class LaserBeam extends PositionComponent
   void update(double dt) {
     super.update(dt);
     _lifetime -= dt;
+    _pulsePhase += dt;
+    if (_hitPartCooldown > 0) _hitPartCooldown -= dt;
     if (_lifetime <= 0) removeFromParent();
 
-    // Il laser è ancorato al player: segue la posizione ogni frame
-    // per evitare l'effetto "scatti" quando il player si muove velocemente.
-    // `setFrom` evita alloc di Vector2 ogni frame (60 alloc/sec × N laser).
     position.setFrom(game.player.position);
 
-    // Damage enemies AND bosses along the beam. Ampiezza hit scala col visual
-    // (sizeMultiplier attivo con Firepower in-game).
-    // Raycast = danno ad AREA → splitter immuni.
     final dir = _dir;
     final enemyHitRadius = 20 * sizeMultiplier;
     final bossHitRadius = 30 * sizeMultiplier;
+    bool didHit = false;
+    Vector2? hitPoint;
     for (final child in game.world.children) {
       if (child is EnemyBase) {
         final toEnemy = child.position - position;
@@ -324,6 +323,8 @@ class LaserBeam extends PositionComponent
           final perpDist = (toEnemy - dir * dot).length;
           if (perpDist < enemyHitRadius) {
             child.takeDamage(damage * dt * 60, isArea: true);
+            didHit = true;
+            hitPoint = child.position;
           }
         }
       }
@@ -334,15 +335,24 @@ class LaserBeam extends PositionComponent
           final perpDist = (toBoss - dir * dot).length;
           if (perpDist < bossHitRadius) {
             child.takeDamage(damage * dt * 60);
+            didHit = true;
+            hitPoint = child.position;
           }
         }
       }
     }
+    // Hit particle rosso (richiesta utente). Throttle 80ms per evitare spam.
+    if (didHit && hitPoint != null && _hitPartCooldown <= 0) {
+      _hitPartCooldown = 0.08;
+      game.spawnExplosion(hitPoint, NeonColors.laserRed,
+          radius: 14, particleCount: 4);
+    }
   }
 
-  static final _laserGlowPaint = Paint()
-    ..color = NeonColors.laserRed.withValues(alpha: 0.4);
-  static final _laserCorePaint = Paint()..color = NeonColors.laserRed;
+  static final _laserGlowPaint = Paint();
+  static final _laserCorePaint = Paint();
+  static final _laserPulsePaint = Paint();
+  static final _laserConePath = Path();
 
   @override
   void render(Canvas canvas) {
@@ -351,14 +361,57 @@ class LaserBeam extends PositionComponent
     canvas.translate(size.x / 2, 0);
     canvas.rotate(angle);
 
-    // Beam emerge dalla prua della nave in avanti (Rect.fromLTWH con y=0).
-    // Prima era Rect.fromCenter su Offset.zero → si estendeva sia davanti
-    // sia dietro al player (−400..+400). Ora 0..800 = solo avanti.
-    // sizeMultiplier x2 con Firepower in-game (core e glow più spessi).
+    // Cono alla base (richiesta utente): piccolo triangolo dalla navicella.
+    const coneLen = 22.0;
+    final coneHalfW = 6 * sizeMultiplier;
+    _laserConePath.reset();
+    _laserConePath.moveTo(-coneHalfW, 0);
+    _laserConePath.lineTo(coneHalfW, 0);
+    _laserConePath.lineTo(coneHalfW * 0.35, coneLen);
+    _laserConePath.lineTo(-coneHalfW * 0.35, coneLen);
+    _laserConePath.close();
+
     final glowW = 12 * sizeMultiplier;
     final coreW = 3 * sizeMultiplier;
-    canvas.drawRect(Rect.fromLTWH(-glowW / 2, 0, glowW, laserBeamLength), _laserGlowPaint);
-    canvas.drawRect(Rect.fromLTWH(-coreW / 2, 0, coreW, laserBeamLength), _laserCorePaint);
+
+    // Beam principale (glow + core dritto dopo il cono).
+    _laserGlowPaint.color = NeonColors.laserRed.withValues(alpha: 0.4);
+    canvas.drawRect(
+        Rect.fromLTWH(-glowW / 2, coneLen, glowW, laserBeamLength - coneLen),
+        _laserGlowPaint);
+    _laserCorePaint.color = NeonColors.laserRed;
+    canvas.drawRect(
+        Rect.fromLTWH(-coreW / 2, coneLen, coreW, laserBeamLength - coneLen),
+        _laserCorePaint);
+
+    // Pulsazioni rosse intense che viaggiano verso avanti (richiesta utente).
+    const pulseCount = 3;
+    const pulseSpeed = 900.0;
+    final pulseLen = laserBeamLength - coneLen;
+    for (int i = 0; i < pulseCount; i++) {
+      final raw =
+          _pulsePhase * pulseSpeed + i * pulseLen / pulseCount;
+      final py = coneLen + (raw % pulseLen);
+      final pulseW = glowW * 1.8;
+      final pulseH = 28 * sizeMultiplier;
+      _laserPulsePaint.color =
+          const Color(0xFFFF4444).withValues(alpha: 0.75);
+      canvas.drawRect(
+          Rect.fromLTWH(-pulseW / 2, py - pulseH / 2, pulseW, pulseH),
+          _laserPulsePaint);
+      _laserPulsePaint.color =
+          const Color(0xFFFFFFFF).withValues(alpha: 0.9);
+      canvas.drawRect(
+          Rect.fromLTWH(-coreW * 2, py - pulseH / 4, coreW * 4, pulseH / 2),
+          _laserPulsePaint);
+    }
+
+    // Cono davanti a tutto (copre base del beam per fusion smooth).
+    _laserGlowPaint.color = NeonColors.laserRed.withValues(alpha: 0.55);
+    canvas.drawPath(_laserConePath, _laserGlowPaint);
+    _laserCorePaint.color =
+        const Color(0xFFFFFFFF).withValues(alpha: 0.8);
+    canvas.drawPath(_laserConePath, _laserCorePaint);
 
     canvas.restore();
   }
