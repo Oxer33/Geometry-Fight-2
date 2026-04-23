@@ -100,9 +100,11 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
 
   @override
   void update(double dt) {
-    // Il player NON è affetto dal slow-motion: compensa il timeScale
-    // Quando timeScale=0.5, dt è già scalato, quindi il player moltiplica per 1/timeScale
-    final realDt = game.timeScale > 0.01 ? dt / game.timeScale : dt;
+    // Il player NON è affetto dal slow-motion: compensa il timeScale.
+    // Clamp divisore a 0.3 min: durante bomb-freeze (timeScale≈0.05) eviterebbe
+    // realDt = 20× dt → step fisico ~333ms che teletrasporta il player fuori arena.
+    final scaledDiv = game.timeScale.clamp(0.3, 1.0);
+    final realDt = dt / scaledDiv;
     super.update(realDt);
 
     // Tunnel auto-scroll (richiesta utente): il player segue la camera di

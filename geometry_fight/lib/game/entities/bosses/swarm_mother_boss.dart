@@ -154,6 +154,10 @@ class SwarmMotherBoss extends BossBase {
   static final _berserkPaint = Paint();
   static final _laserGlowPaint = Paint();
   static final _laserCorePaint = Paint();
+  // Telegraph paint cached (era `new Paint()` per frame nel wind-up).
+  static final _laserWarnPaint = Paint()
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 1.5;
 
   @override
   void renderBoss(Canvas canvas, Paint paint, double scale) {
@@ -229,13 +233,10 @@ class SwarmMotherBoss extends BossBase {
       canvas.save();
       canvas.translate(cx, cy);
       canvas.rotate(_laserAngle);
-      final warnPaint = Paint()
-        ..color = NeonColors.laserRed.withValues(alpha: blinkAlpha * 0.55)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.5;
-      canvas.drawLine(const Offset(0, 0), const Offset(1500, 0), warnPaint);
+      _laserWarnPaint.color = NeonColors.laserRed.withValues(alpha: blinkAlpha * 0.55);
+      canvas.drawLine(const Offset(0, 0), const Offset(1500, 0), _laserWarnPaint);
       for (double x = 80; x < 1500; x += 120) {
-        canvas.drawLine(Offset(x, -4), Offset(x, 4), warnPaint);
+        canvas.drawLine(Offset(x, -4), Offset(x, 4), _laserWarnPaint);
       }
       canvas.restore();
     }

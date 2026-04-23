@@ -21,6 +21,19 @@ class TheGridBoss extends BossBase {
   int _patternIndex = 0;
   double _gridPhase = 0;
 
+  // Rng + Paint caches per evitare alloc per frame.
+  static final math.Random _rng = math.Random();
+  static final Paint _coreGlowPaint = Paint();
+  static final Paint _corePaint = Paint();
+  static final Paint _centerWhitePaint = Paint();
+  static final Paint _cornerPaint = Paint();
+  static final Paint _phaseDotPaint = Paint();
+  static final Paint _warnPaint = Paint()
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 1.5;
+  static final Paint _laserPaint = Paint();
+  static final Paint _laserWhitePaint = Paint();
+
   TheGridBoss()
       : super(
           // +50% HP (era 500, ora 750) — richiesta utente: era troppo squishy.
@@ -50,7 +63,8 @@ class TheGridBoss extends BossBase {
 
     // Move towards player slowly
     final dir = (playerPosition - position);
-    if (dir.length > 0) {
+    // NaN guard: float comparison tighter (0.001) evita normalize inf.
+    if (dir.length > 0.001) {
       position += dir.normalized() * speed * dt;
     }
 
@@ -67,8 +81,8 @@ class TheGridBoss extends BossBase {
     if (_mineTimer <= 0 && currentPhase >= 1) {
       _mineTimer = 4;
       game.spawnEnemy(EnemyType.mine, position + Vector2(
-        (math.Random().nextDouble() - 0.5) * 150,
-        (math.Random().nextDouble() - 0.5) * 150,
+        (_rng.nextDouble() - 0.5) * 150,
+        (_rng.nextDouble() - 0.5) * 150,
       ));
     }
 
@@ -79,8 +93,8 @@ class TheGridBoss extends BossBase {
         _droneTimer = 2;
         for (int i = 0; i < 2; i++) {
           game.spawnEnemy(EnemyType.drone, position + Vector2(
-            (math.Random().nextDouble() - 0.5) * 100,
-            (math.Random().nextDouble() - 0.5) * 100,
+            (_rng.nextDouble() - 0.5) * 100,
+            (_rng.nextDouble() - 0.5) * 100,
           ));
         }
       }
@@ -210,30 +224,27 @@ class TheGridBoss extends BossBase {
     if (scale <= 1.01) {
       // Nucleo centrale pulsante (più grande nelle fasi avanzate)
       final pulseR = s * (0.15 + currentPhase * 0.05) + math.sin(_gridPhase * 3) * 5;
-      final corePaint = Paint()
-        ..color = phaseColor.withValues(alpha: 0.5)
-        ;
-      canvas.drawCircle(Offset(cx, cy), pulseR * 1.5, Paint()..color = phaseColor.withValues(alpha: 0.2));
-      canvas.drawCircle(Offset(cx, cy), pulseR, corePaint);
+      _coreGlowPaint.color = phaseColor.withValues(alpha: 0.2);
+      canvas.drawCircle(Offset(cx, cy), pulseR * 1.5, _coreGlowPaint);
+      _corePaint.color = phaseColor.withValues(alpha: 0.5);
+      canvas.drawCircle(Offset(cx, cy), pulseR, _corePaint);
       // Centro bianco
-      canvas.drawCircle(Offset(cx, cy), pulseR * 0.4,
-        Paint()..color = const Color(0xFFFFFFFF).withValues(alpha: 0.6));
+      _centerWhitePaint.color = const Color(0xFFFFFFFF).withValues(alpha: 0.6);
+      canvas.drawCircle(Offset(cx, cy), pulseR * 0.4, _centerWhitePaint);
 
       // Punti luminosi ai 4 angoli del quadrato
       final cornerGlow = 0.4 + math.sin(_gridPhase * 4) * 0.3;
-      final cornerPaint = Paint()
-        ..color = phaseColor.withValues(alpha: cornerGlow)
-        ;
-      canvas.drawCircle(Offset(cx - s, cy - s), 4, cornerPaint);
-      canvas.drawCircle(Offset(cx + s, cy - s), 4, cornerPaint);
-      canvas.drawCircle(Offset(cx + s, cy + s), 4, cornerPaint);
-      canvas.drawCircle(Offset(cx - s, cy + s), 4, cornerPaint);
+      _cornerPaint.color = phaseColor.withValues(alpha: cornerGlow);
+      canvas.drawCircle(Offset(cx - s, cy - s), 4, _cornerPaint);
+      canvas.drawCircle(Offset(cx + s, cy - s), 4, _cornerPaint);
+      canvas.drawCircle(Offset(cx + s, cy + s), 4, _cornerPaint);
+      canvas.drawCircle(Offset(cx - s, cy + s), 4, _cornerPaint);
 
       // Indicatore fase (punti sotto il boss)
+      _phaseDotPaint.color = phaseColor;
       for (int i = 0; i <= currentPhase; i++) {
         canvas.drawCircle(
-          Offset(cx - 8 + i * 8.0, cy + s + 12), 2,
-          Paint()..color = phaseColor);
+          Offset(cx - 8 + i * 8.0, cy + s + 12), 2, _phaseDotPaint);
       }
     }
 
@@ -242,39 +253,34 @@ class TheGridBoss extends BossBase {
       // Blink per visibilità (2x per sec → 6 blink in 1.2s window).
       final blinkPhase = (_laserTelegraphTimer * 4) % 1.0;
       final blinkAlpha = blinkPhase < 0.5 ? 0.8 : 0.3;
-      final warnPaint = Paint()
-        ..color = NeonColors.laserRed.withValues(alpha: blinkAlpha * 0.55)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.5;
+      _warnPaint.color = NeonColors.laserRed.withValues(alpha: blinkAlpha * 0.55);
       canvas.save();
       canvas.translate(cx, cy);
       canvas.rotate(_laserAngle);
       // Linea sottile dim: telegraph
-      canvas.drawLine(const Offset(0, 0), const Offset(1500, 0), warnPaint);
+      canvas.drawLine(const Offset(0, 0), const Offset(1500, 0), _warnPaint);
       // Ticks di avviso lungo la linea
       for (double x = 80; x < 1500; x += 120) {
-        canvas.drawLine(Offset(x, -4), Offset(x, 4), warnPaint);
+        canvas.drawLine(Offset(x, -4), Offset(x, 4), _warnPaint);
       }
       canvas.restore();
     }
 
     // Laser beam ATTIVO (fase 2+)
     if (_laserActive) {
-      final laserPaint = Paint()
-        ..color = NeonColors.laserRed.withValues(alpha: 0.6)
-        ;
+      _laserPaint.color = NeonColors.laserRed.withValues(alpha: 0.6);
+      _laserPaint.style = PaintingStyle.fill;
       canvas.save();
       canvas.translate(cx, cy);
       canvas.rotate(_laserAngle);
       // Glow laser
-      canvas.drawRect(Rect.fromLTWH(0, -6, 1500, 12), laserPaint);
+      canvas.drawRect(Rect.fromLTWH(0, -6, 1500, 12), _laserPaint);
       // Core laser
-      laserPaint.color = NeonColors.laserRed;
-      laserPaint.maskFilter = null;
-      canvas.drawRect(Rect.fromLTWH(0, -2, 1500, 4), laserPaint);
+      _laserPaint.color = NeonColors.laserRed;
+      canvas.drawRect(Rect.fromLTWH(0, -2, 1500, 4), _laserPaint);
       // Centro bianco del laser
-      canvas.drawRect(Rect.fromLTWH(0, -1, 1500, 2),
-        Paint()..color = const Color(0xFFFFFFFF).withValues(alpha: 0.5));
+      _laserWhitePaint.color = const Color(0xFFFFFFFF).withValues(alpha: 0.5);
+      canvas.drawRect(Rect.fromLTWH(0, -1, 1500, 2), _laserWhitePaint);
       canvas.restore();
     }
   }

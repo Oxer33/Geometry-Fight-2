@@ -42,7 +42,8 @@ class PowerUpSystem {
   }
 
   void reset() {
-    _spawnTimer = 20.0;
+    // Match constructor default (60s) per consistency post-restart.
+    _spawnTimer = 60;
   }
 
   void spawnRandomPowerUp(Vector2 position) {

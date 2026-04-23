@@ -71,6 +71,10 @@ class VoidReaperBoss extends BossBase {
           game.player.takeDamage();
           _deathZones[i].damageTimer = 1.0;
         }
+      } else {
+        // Reset cooldown quando il player è fuori: evita hit istantaneo
+        // alla ri-entrata se l'ultimo tick aveva damageTimer ≈ 0.
+        _deathZones[i].damageTimer = 1.0;
       }
       if (_deathZones[i].lifetime <= 0) {
         _deathZones.removeAt(i);

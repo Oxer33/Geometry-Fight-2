@@ -67,12 +67,15 @@ class GridDistortion extends PositionComponent {
 
   void applyForce(Vector2 center, double radius, double force) {
     final radiusSq = radius * radius;
+    // NaN guard: distSq > 1e-6 (non solo > 0) evita NaN da normalize
+    // quando dx/dy sono ~1e-10 per precision loss.
+    const minDistSq = 1e-6;
     for (final row in _nodes) {
       for (final node in row) {
         final dx = node.position.x - center.x;
         final dy = node.position.y - center.y;
         final distSq = dx * dx + dy * dy;
-        if (distSq < radiusSq && distSq > 0) {
+        if (distSq < radiusSq && distSq > minDistSq) {
           final dist = node.position.distanceTo(center);
           final strength = force * (1.0 - dist / radius);
           final dir = (node.position - center)..normalize();
@@ -85,12 +88,13 @@ class GridDistortion extends PositionComponent {
 
   void applyAttraction(Vector2 center, double radius, double force) {
     final radiusSq = radius * radius;
+    const minDistSq = 1e-6;
     for (final row in _nodes) {
       for (final node in row) {
         final dx = node.position.x - center.x;
         final dy = node.position.y - center.y;
         final distSq = dx * dx + dy * dy;
-        if (distSq < radiusSq && distSq > 0) {
+        if (distSq < radiusSq && distSq > minDistSq) {
           final dist = node.position.distanceTo(center);
           final strength = force * (1.0 - dist / radius);
           final dir = (center - node.position)..normalize();

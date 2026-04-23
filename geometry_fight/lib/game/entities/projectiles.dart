@@ -50,8 +50,10 @@ class PlayerBullet extends PositionComponent
 
   @override
   void update(double dt) {
-    // Proiettili player NON affetti dal slow-motion: compensano il timeScale
-    final realDt = game.timeScale > 0.01 ? dt / game.timeScale : dt;
+    // Proiettili player NON affetti dal slow-motion: compensano il timeScale.
+    // Clamp divisore 0.3 min: bomb-freeze (timeScale≈0.05) darebbe realDt=20×dt
+    // → bullet salta 6m in 1 frame = bucava collision senza hit.
+    final realDt = dt / game.timeScale.clamp(0.3, 1.0);
     super.update(realDt);
 
     // Store trail position

@@ -67,11 +67,12 @@ class ChronoWraithBoss extends BossBase {
       ));
     }
 
-    // Update afterimages
-    for (final ai in _afterimages.toList()) {
+    // Update afterimages — reverse-index loop (no List alloc per frame).
+    for (int i = _afterimages.length - 1; i >= 0; i--) {
+      final ai = _afterimages[i];
       ai.lifetime -= dt;
       ai.opacity = ai.lifetime;
-      if (ai.lifetime <= 0) _afterimages.remove(ai);
+      if (ai.lifetime <= 0) _afterimages.removeAt(i);
     }
 
     // Shoot
@@ -120,7 +121,13 @@ class ChronoWraithBoss extends BossBase {
     if (currentPhase >= 2) {
       for (final ai in _afterimages) {
         if (ai.lifetime > 0.8) {
-          final toPlayer = (playerPosition - ai.position).normalized();
+          // NaN guard: afterimage coincide con player → skip.
+          final delta = playerPosition - ai.position;
+          if (delta.length < 0.001) {
+            ai.lifetime = 0.5;
+            continue;
+          }
+          final toPlayer = delta.normalized();
           final bullet = EnemyBullet(
               direction: toPlayer,
               speed: 200,

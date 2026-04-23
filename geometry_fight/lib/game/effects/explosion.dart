@@ -109,12 +109,15 @@ class ExplosionEffect extends PositionComponent {
     _ringTimer = _age;
 
     bool allDead = true;
+    // Frame-rate-independent damping: pow(factor, dt*60) normalizza
+    // su 60Hz, evita particles che si fermano 2× più veloci a 120Hz.
+    final dampFactor = math.pow(epic ? 0.93 : 0.95, dt * 60.0).toDouble();
     for (final p in _particles) {
       p.lifetime -= dt;
       if (p.lifetime > 0) {
         allDead = false;
         p.position += p.velocity * dt;
-        p.velocity *= epic ? 0.93 : 0.95;
+        p.velocity *= dampFactor;
       }
     }
 
@@ -204,7 +207,8 @@ class FloatingText extends PositionComponent {
     super.update(dt);
     _lifetime -= dt;
     position.y += _velocity * dt;
-    _velocity *= 0.95;
+    // Frame-rate-independent damping.
+    _velocity *= math.pow(0.95, dt * 60.0).toDouble();
     if (_lifetime <= 0) removeFromParent();
   }
 

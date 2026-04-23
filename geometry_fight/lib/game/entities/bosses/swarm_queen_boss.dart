@@ -109,6 +109,8 @@ class SwarmQueenBoss extends BossBase {
   // Signature FX paints
   static final _wingPaint = Paint();
   static final _wingShimmerPaint = Paint()..style = PaintingStyle.stroke;
+  // Shield aura paint cached (era `new Paint()` per frame hive-bond).
+  static final _shieldAuraPaint = Paint()..style = PaintingStyle.stroke;
   static final _pollenPaint = Paint();
   static final _crownPaint = Paint();
   static final _crownJewelPaint = Paint();
@@ -131,15 +133,12 @@ class SwarmQueenBoss extends BossBase {
     // l'invulnerabilità. Contatore mob visibile come ring interno.
     if (scale <= 1.01 && _hiveBondActive) {
       final pulse = 0.5 + math.sin(_cellPhase * 4) * 0.3;
-      final shieldPaint = Paint()
-        ..color = const Color(0xFFFF00AA).withValues(alpha: 0.25 * pulse)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 3;
-      canvas.drawCircle(Offset(cx, cy), r * 1.5, shieldPaint);
-      shieldPaint.color =
-          const Color(0xFFFFAADD).withValues(alpha: 0.5 * pulse);
-      shieldPaint.strokeWidth = 1.5;
-      canvas.drawCircle(Offset(cx, cy), r * 1.35, shieldPaint);
+      _shieldAuraPaint.color = const Color(0xFFFF00AA).withValues(alpha: 0.25 * pulse);
+      _shieldAuraPaint.strokeWidth = 3;
+      canvas.drawCircle(Offset(cx, cy), r * 1.5, _shieldAuraPaint);
+      _shieldAuraPaint.color = const Color(0xFFFFAADD).withValues(alpha: 0.5 * pulse);
+      _shieldAuraPaint.strokeWidth = 1.5;
+      canvas.drawCircle(Offset(cx, cy), r * 1.35, _shieldAuraPaint);
     }
 
     // ─── ALI MEMBRANOSE CON SHIMMER ───
