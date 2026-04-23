@@ -88,6 +88,14 @@ class SnakeEnemy extends EnemyBase {
       final camY = game.camera.viewfinder.position.y;
       final halfH = game.tunnelHeight / 2;
       position.y = position.y.clamp(camY - halfH + 10, camY + halfH - 10);
+      // Despawn se la testa esce a sinistra del camera frame:
+      // senza X-clamp il serpente poteva perdersi off-screen.
+      final camX = game.camera.viewfinder.position.x;
+      final halfW = game.size.x > 0 ? game.size.x / 2 : 400.0;
+      if (position.x < camX - halfW - 100) {
+        removeFromParent();
+        return;
+      }
     } else {
       if (position.x <= 10 || position.x >= arenaWidth - 10) {
         position.x = position.x.clamp(10, arenaWidth - 10);

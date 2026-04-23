@@ -16,6 +16,9 @@ class InfernoBoss extends BossBase {
   double _attackTimer = 3.0;
   double _moveAngle = 0;
   final List<_FlameTrail> _trails = [];
+  // Cooldown boss-level: 60 trails sovrapposti sul player non devono
+  // causare 60 takeDamage nello stesso frame (oltre iframe player).
+  double _anyTrailHitTimer = 0;
 
   InfernoBoss()
       : super(
@@ -56,19 +59,22 @@ class InfernoBoss extends BossBase {
 
     // Lascia scia di fuoco
     _trails.add(_FlameTrail(position: position.clone(), lifetime: 3.0));
+    // Boss-level cooldown decrement.
+    if (_anyTrailHitTimer > 0) _anyTrailHitTimer -= dt;
     // Aggiorna e rimuovi trails
     for (int i = _trails.length - 1; i >= 0; i--) {
       final trail = _trails[i];
       trail.lifetime -= dt;
-      if (trail.damageTimer > 0) trail.damageTimer -= dt; // FIX H9: decrementa cooldown
       if (trail.lifetime <= 0) {
         _trails.removeAt(i);
-      } else {
-        // Danno al player dalle scie — con cooldown per evitare 60 hit/sec
+      } else if (_anyTrailHitTimer <= 0) {
+        // Cooldown BOSS-level: se ANY trail hit, skip altri per 0.5s.
+        // Evita che 60 trail sovrapposti causino 60 takeDamage in un frame.
         final dist = game.player.position.distanceTo(trail.position);
-        if (dist < 15 && trail.damageTimer <= 0) { // FIX H9: cooldown
+        if (dist < 15) {
           game.player.takeDamage();
-          trail.damageTimer = 0.5; // 0.5 secondi tra hit per la stessa particella
+          _anyTrailHitTimer = 0.5;
+          break;
         }
       }
     }

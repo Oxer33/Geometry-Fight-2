@@ -59,6 +59,9 @@ class PhantomKingBoss extends BossBase {
         _invisTimer = currentPhase == 2 ? 3.0 : 5.0; // Durata fase visibile
         // Attacco sorpresa al riapparire
         _shootBurst();
+        // Reset attackTimer: l'_attackTimer accumulato durante invisibilità
+        // scatterebbe subito → doppio volley (burst + shoot) stesso frame.
+        _attackTimer = currentPhase == 2 ? 1.0 : 2.0;
       }
     } else {
       _invisTimer -= dt;

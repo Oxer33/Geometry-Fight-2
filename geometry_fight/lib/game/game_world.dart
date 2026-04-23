@@ -1294,7 +1294,9 @@ class GeometryFightGame extends FlameGame
     tunnelScrollSpeed = 100;
     _tunnelCameraX = 0;
     _tunnelBossShrinkDelay = 0;
-    _tunnelShrinkProgress = 0.0;
+    // Fix: era 0.0 ma `_tunnelShrinkProgress` è full-height=1.0; con 0.0
+    // il tunnel partiva pre-shrunk al primo frame di un nuovo game tunnel.
+    _tunnelShrinkProgress = 1.0;
     _tunnelShrinkStartHeight = 420;
     tunnelBossesKilled = 0;
     _chaosTimer = 10.0;
@@ -1319,6 +1321,9 @@ class GeometryFightGame extends FlameGame
     grid = GridDistortion();
     if (!isTunnelMode) {
       world.add(grid);
+      // Ri-aggiunge ArenaBorder (era missing post-restart: bordo arena
+      // scompariva in classic mode dopo primo retry).
+      world.add(ArenaBorder());
     }
 
     // Tunnel renderer solo in tunnel mode

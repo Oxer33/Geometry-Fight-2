@@ -17,9 +17,17 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
     with TickerProviderStateMixin {
   String _selectedMode = 'classic';
   String _selectedDifficulty = 'normal';
+  // Cache: evita deserializzazione Hive per-frame dentro AnimatedBuilder.
+  // Refresh solo quando filtri cambiano.
+  late List<LeaderboardEntry> _cachedEntries;
 
   late AnimationController _entranceController;
   late AnimationController _glowController;
+
+  void _refreshEntries() {
+    _cachedEntries =
+        LeaderboardManager.getEntries(_selectedMode, _selectedDifficulty);
+  }
 
   static final _modes = [
     ('classic', 'CLASSICA', Icons.bolt_rounded, const Color(0xFF00FFFF)),
@@ -42,6 +50,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
   @override
   void initState() {
     super.initState();
+    _refreshEntries();
     _entranceController = AnimationController(
       duration: const Duration(milliseconds: 800),
       vsync: this,
@@ -62,8 +71,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
 
   @override
   Widget build(BuildContext context) {
-    final entries =
-        LeaderboardManager.getEntries(_selectedMode, _selectedDifficulty);
+    final entries = _cachedEntries;
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -188,7 +196,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
                   color: const Color(0xFFFFD700).withValues(alpha: 0.05),
                 ),
                 child: Text(
-                  '${LeaderboardManager.getEntries(_selectedMode, _selectedDifficulty).length} REC',
+                  '${_cachedEntries.length} REC',
                   style: TextStyle(
                     color: const Color(0xFFFFD700).withValues(alpha: 0.6),
                     fontSize: 10,
@@ -222,7 +230,10 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
                   icon: m.$3,
                   color: m.$4,
                   isSelected: isSelected,
-                  onTap: () => setState(() => _selectedMode = m.$1),
+                  onTap: () => setState(() {
+                    _selectedMode = m.$1;
+                    _refreshEntries();
+                  }),
                 );
               }).toList(),
             ),
@@ -248,7 +259,10 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
                   label: d.$2,
                   color: d.$3,
                   isSelected: isSelected,
-                  onTap: () => setState(() => _selectedDifficulty = d.$1),
+                  onTap: () => setState(() {
+                    _selectedDifficulty = d.$1;
+                    _refreshEntries();
+                  }),
                   glow: isSelected ? glow : 0,
                 ),
               );

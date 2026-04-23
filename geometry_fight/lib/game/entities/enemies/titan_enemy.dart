@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 import 'dart:ui';
 import 'package:flame/components.dart';
+import '../../../data/constants.dart';
 import 'enemy_base.dart';
 
 // Paint cache riutilizzato da tutti i Titan a schermo. Risparmia 4 alloc/frame
@@ -70,6 +71,16 @@ class TitanEnemy extends EnemyBase {
         _shockwavePushed = true;
         final pushDir = (playerPosition - position).normalized();
         game.player.position += pushDir * 80; // Impulso singolo
+        // Clamp post-push: evita di spingere il player fuori arena/tunnel.
+        if (game.isTunnelMode) {
+          final camY = game.camera.viewfinder.position.y;
+          final halfH = game.tunnelHeight / 2;
+          game.player.position.y = game.player.position.y
+              .clamp(camY - halfH + 10, camY + halfH - 10);
+        } else {
+          game.player.position.x = game.player.position.x.clamp(10.0, arenaWidth - 10);
+          game.player.position.y = game.player.position.y.clamp(10.0, arenaHeight - 10);
+        }
       }
     }
   }

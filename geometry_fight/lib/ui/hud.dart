@@ -923,22 +923,24 @@ class _GlowBadge extends StatelessWidget {
 
 /// Painter per l'icona vita (triangolo cyan come la nave)
 class _LifeIconPainter extends CustomPainter {
+  // Paint caches: evita 2× alloc per icona × N lives (fino a 5 istanze).
+  static final Paint _fillPaint = Paint()
+    ..color = const Color(0xFF00FFFF).withValues(alpha: 0.8);
+  static final Paint _glowPaint = Paint()
+    ..color = const Color(0xFF00FFFF).withValues(alpha: 0.3)
+    ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
+  static final Path _path = Path();
+
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = const Color(0xFF00FFFF).withValues(alpha: 0.8);
-    final glowPaint = Paint()
-      ..color = const Color(0xFF00FFFF).withValues(alpha: 0.3)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
-
-    final path = Path()
+    _path.reset();
+    _path
       ..moveTo(size.width / 2, 0)
       ..lineTo(size.width, size.height)
       ..lineTo(0, size.height)
       ..close();
-
-    canvas.drawPath(path, glowPaint);
-    canvas.drawPath(path, paint);
+    canvas.drawPath(_path, _glowPaint);
+    canvas.drawPath(_path, _fillPaint);
   }
 
   @override
@@ -947,27 +949,29 @@ class _LifeIconPainter extends CustomPainter {
 
 /// Painter per l'icona geom (diamante rotante)
 class _GeomIconPainter extends CustomPainter {
+  static final Paint _fillPaint = Paint()
+    ..color = const Color(0xFF00FFFF).withValues(alpha: 0.9);
+  static final Paint _glowPaint = Paint()
+    ..color = const Color(0xFF00FFFF).withValues(alpha: 0.3)
+    ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
+  static final Path _path = Path();
+
   @override
   void paint(Canvas canvas, Size size) {
     final cx = size.width / 2;
     final cy = size.height / 2;
     final r = size.width / 2;
 
-    final paint = Paint()
-      ..color = const Color(0xFF00FFFF).withValues(alpha: 0.9);
-    final glowPaint = Paint()
-      ..color = const Color(0xFF00FFFF).withValues(alpha: 0.3)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
-
-    final path = Path()
+    _path.reset();
+    _path
       ..moveTo(cx, cy - r)
       ..lineTo(cx + r * 0.6, cy)
       ..lineTo(cx, cy + r)
       ..lineTo(cx - r * 0.6, cy)
       ..close();
 
-    canvas.drawPath(path, glowPaint);
-    canvas.drawPath(path, paint);
+    canvas.drawPath(_path, _glowPaint);
+    canvas.drawPath(_path, _fillPaint);
   }
 
   @override
@@ -981,42 +985,42 @@ class _NeonBarPainter extends CustomPainter {
 
   _NeonBarPainter({required this.progress, required this.color});
 
+  // Paint cache: evita 3× alloc × 6 power-up × 30fps = 540 alloc/sec.
+  static final Paint _bgPaint = Paint()
+    ..color = Colors.white.withValues(alpha: 0.06);
+  static final Paint _glowPaint = Paint()
+    ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
+  static final Paint _barPaint = Paint();
+
   @override
   void paint(Canvas canvas, Size size) {
-    // Background scuro
-    final bgPaint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.06);
     canvas.drawRRect(
       RRect.fromRectAndRadius(
         Rect.fromLTWH(0, 0, size.width, size.height),
         const Radius.circular(2),
       ),
-      bgPaint,
+      _bgPaint,
     );
 
     // Barra di progresso con glow
     final barWidth = size.width * progress;
     if (barWidth > 0) {
-      // Glow
-      final glowPaint = Paint()
-        ..color = color.withValues(alpha: 0.4)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
+      _glowPaint.color = color.withValues(alpha: 0.4);
       canvas.drawRRect(
         RRect.fromRectAndRadius(
           Rect.fromLTWH(0, -1, barWidth, size.height + 2),
           const Radius.circular(2),
         ),
-        glowPaint,
+        _glowPaint,
       );
 
-      // Barra
-      final barPaint = Paint()..color = color.withValues(alpha: 0.8);
+      _barPaint.color = color.withValues(alpha: 0.8);
       canvas.drawRRect(
         RRect.fromRectAndRadius(
           Rect.fromLTWH(0, 0, barWidth, size.height),
           const Radius.circular(2),
         ),
-        barPaint,
+        _barPaint,
       );
     }
   }

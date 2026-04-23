@@ -260,8 +260,14 @@ class SpaceBackground extends PositionComponent
           stops: const [0.0, 0.5, 1.0],
         ).createShader(nebulaRect);
         _nebulaShaderCache[cacheKey] = shader;
-        // Limita dimensione cache per evitare accumulo illimitato
-        if (_nebulaShaderCache.length > 200) _nebulaShaderCache.clear();
+        // Eviction FIFO parziale (era `.clear()` che causava GPU stutter
+        // visibile: 200 shader dumped in un frame → spike).
+        if (_nebulaShaderCache.length > 200) {
+          final toEvict = _nebulaShaderCache.keys.take(100).toList();
+          for (final k in toEvict) {
+            _nebulaShaderCache.remove(k);
+          }
+        }
       }
 
       _nebulaPaint.shader = shader;

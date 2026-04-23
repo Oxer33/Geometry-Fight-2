@@ -48,6 +48,9 @@ class _AchievementsScreenState extends State<AchievementsScreen>
   late final int _unlockedCount;
   late final int _totalCount;
   late final double _completionPct;
+  // Cache unlocked/progress (era ~3600 Hive reads/sec durante entrance).
+  late final Map<String, bool> _unlockedCache;
+  late final Map<String, int> _progressCache;
 
   @override
   void initState() {
@@ -57,8 +60,17 @@ class _AchievementsScreenState extends State<AchievementsScreen>
       for (final cat in _categories)
         cat: allAchievements.where((a) => a.category == cat).toList(),
     };
-    _unlockedCount = AchievementManager.unlockedCount();
-    _totalCount = AchievementManager.totalCount();
+    // Snapshot stato Hive una volta sola invece di ogni frame.
+    _unlockedCache = {
+      for (final a in allAchievements)
+        a.id: AchievementManager.isUnlocked(a.id),
+    };
+    _progressCache = {
+      for (final a in allAchievements)
+        a.id: AchievementManager.getProgress(a.id),
+    };
+    _unlockedCount = _unlockedCache.values.where((v) => v).length;
+    _totalCount = _unlockedCache.length;
     _completionPct = _totalCount > 0 ? _unlockedCount / _totalCount : 0.0;
     _entranceController = AnimationController(
       duration: const Duration(milliseconds: 800),
@@ -318,8 +330,8 @@ class _AchievementsScreenState extends State<AchievementsScreen>
       AchievementDef achievement, Color categoryColor, double entrance,
       double delay, double glow) {
     final tileEntrance = (delay >= 1.0 ? 1.0 : ((entrance - delay) / (1.0 - delay)).clamp(0.0, 1.0));
-    final unlocked = AchievementManager.isUnlocked(achievement.id);
-    final progress = AchievementManager.getProgress(achievement.id);
+    final unlocked = _unlockedCache[achievement.id] ?? false;
+    final progress = _progressCache[achievement.id] ?? 0;
     final progressPct = achievement.target > 0
         ? (progress / achievement.target).clamp(0.0, 1.0)
         : 0.0;
