@@ -216,7 +216,7 @@ class _FireBullet extends PositionComponent with HasGameReference<GeometryFightG
     position += _velocity * dt;
     _lifetime -= dt;
     if (_lifetime <= 0) removeFromParent();
-    if (position.distanceTo(game.player.position) < 10) {
+    if (position.distanceTo(game.player.position) < 14) {
       game.player.takeDamage();
       removeFromParent();
     }
