@@ -33,6 +33,10 @@ const double plasmaExplosionRadius = 80.0;
 
 // Boss fight tuning
 const int bossMinionEnemyCap = 15;          // Max nemici attivi prima di skippare spawn minion
+// Cap più alto per big wave color-matched (richiesta utente 10/30/50 mob).
+// Separato dal cap regolare così le ondate non vengono clippate dal pool
+// di minion regolari già a schermo.
+const int bossBigWaveCap = 60;
 const double bossMinionSpawnInterval = 3.5; // Secondi tra ondate minion base
 
 // Camera

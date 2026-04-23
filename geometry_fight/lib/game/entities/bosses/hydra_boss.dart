@@ -115,6 +115,8 @@ class HydraBoss extends BossBase {
         math.cos(baseAngle) * 80,
         math.sin(baseAngle) * 80,
       );
+      // Stagger attack timer così le teste non sparano tutte sul primo frame.
+      head.attackTimer = _kHeadAttackInterval + (idx + 1) * 1.2;
       _heads.add(head);
     }
     if (_heads.length > _headCount) {
@@ -231,9 +233,9 @@ class HydraBoss extends BossBase {
   }
 
   void _headAttack(_HydraHead head, int index) {
-    // Richiesta utente: "ogni testa deve sparare UN proiettile ogni 5 secondi".
-    // Singolo bullet verso il player a velocità moderata. `attackType`
-    // mantenuto per varietà colore (ciano ogni 4° shot per readability).
+    // 1 proiettile ogni 5s verso il player. Re-randomizza attackType per
+    // evitare che una testa sia sempre stesso colore (bug: era static).
+    head.attackType = _hydraRng.nextInt(4);
     final headWorldPos = position + head.position;
     final toPlayer = (playerPosition - headWorldPos);
     if (toPlayer.length < 0.001) return;

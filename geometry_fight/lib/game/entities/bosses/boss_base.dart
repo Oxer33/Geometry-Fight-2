@@ -204,13 +204,14 @@ abstract class BossBase extends PositionComponent
   List<EnemyType> get colorMatchedMinions => const [EnemyType.drone];
 
   /// Timer per big wave color-matched: ogni 15s spawna 10/30/50 mob in base
-  /// alla fase. Separato da `_minionSpawnTimer` (spawn misto 3-9 mob/~5s).
-  double _bigWaveTimer = 15.0;
+  /// alla fase. Initial 5s (era 15): prima wave parte presto per feedback.
+  double _bigWaveTimer = 5.0;
   static const double _kBigWaveInterval = 15.0;
 
   /// Big wave color-matched (richiesta utente): 10/30/50 mob in base alla
   /// fase. Usa `colorMatchedMinions` per scegliere il tipo corretto per il
-  /// boss. Rispetta `bossMinionEnemyCap` — spawn parziale se cap vicino.
+  /// boss. Cap separato `bossBigWaveCap` (60) per permettere ondate grandi
+  /// senza essere clippate dal `bossMinionEnemyCap` (15).
   void _spawnColorWave() {
     if (!allowMinionSpawn) return;
     final types = colorMatchedMinions;
@@ -220,43 +221,51 @@ abstract class BossBase extends PositionComponent
       1 => 30,
       _ => 50,
     };
-    final free = bossMinionEnemyCap - game.enemyCount;
+    final free = bossBigWaveCap - game.enemyCount;
     final toSpawn = free.clamp(0, targetCount);
     for (int i = 0; i < toSpawn; i++) {
-      final type = types[i % types.length];
+      // Random type selection (era cycle i % length → ordine prevedibile).
+      final type = types[_bossRandom.nextInt(types.length)];
       final angle = _bossRandom.nextDouble() * math.pi * 2;
       final dist = 120 + _bossRandom.nextDouble() * 200;
-      final raw = position +
-          Vector2(math.cos(angle) * dist, math.sin(angle) * dist);
-      final spawnPos = game.isTunnelMode
-          ? raw
-          : Vector2(
-              raw.x.clamp(30.0, arenaWidth - 30.0),
-              raw.y.clamp(30.0, arenaHeight - 30.0),
-            );
+      Vector2 spawnPos;
+      if (game.isTunnelMode) {
+        // Tunnel: spawn viewport davanti al player (non offset dal boss)
+        // altrimenti può finire dietro camera → despawn istantaneo.
+        final cameraX = game.camera.viewfinder.position.x;
+        final halfW = game.size.x > 0 ? game.size.x / 2 : 400.0;
+        final sx = cameraX + halfW + 50 + _bossRandom.nextDouble() * 400;
+        final (topWall, bottomWall) = game.tunnelWallsAtX(sx);
+        const margin = 20.0;
+        final sy = topWall + margin +
+            _bossRandom.nextDouble() * (bottomWall - topWall - 2 * margin);
+        spawnPos = Vector2(sx, sy);
+      } else {
+        final raw = position +
+            Vector2(math.cos(angle) * dist, math.sin(angle) * dist);
+        spawnPos = Vector2(
+          raw.x.clamp(30.0, arenaWidth - 30.0),
+          raw.y.clamp(30.0, arenaHeight - 30.0),
+        );
+      }
       game.spawnEnemy(type, spawnPos);
     }
   }
 
   /// Spawna nemici di supporto durante il boss fight.
   /// Rispetta il limite bossMinionEnemyCap per evitare lag.
+  /// Fix (richiesta utente "mob dello stesso colore del boss"): non usa più
+  /// liste hardcoded di tipi misti ma il `colorMatchedMinions` del boss.
   void _spawnMinions() {
     // Subclass può disabilitare (es. rage mode con fuoco già saturo).
     if (!allowMinionSpawn) return;
     // Controlla quanti nemici ci sono già — se troppi, non spawnare
     if (game.enemyCount >= bossMinionEnemyCap) return;
-    
-    final baseCount = 3 + currentPhase * 2; // 3, 5, 7, 9 nemici per fase (ridotto per performance)
-    
-    final minionTypes = <List<EnemyType>>[
-      [EnemyType.drone, EnemyType.drone, EnemyType.swarmDrone],
-      [EnemyType.drone, EnemyType.kamikaze, EnemyType.weaver],
-      [EnemyType.kamikaze, EnemyType.weaver, EnemyType.swarmDrone],
-      [EnemyType.splitter, EnemyType.kamikaze, EnemyType.tesla],
-    ];
-    
-    final types = minionTypes[currentPhase.clamp(0, minionTypes.length - 1)];
-    
+
+    final baseCount = 3 + currentPhase * 2; // 3, 5, 7, 9 nemici per fase
+    final types = colorMatchedMinions;
+    if (types.isEmpty) return;
+
     for (int i = 0; i < baseCount; i++) {
       final type = types[_bossRandom.nextInt(types.length)];
       final angle = _bossRandom.nextDouble() * math.pi * 2;
