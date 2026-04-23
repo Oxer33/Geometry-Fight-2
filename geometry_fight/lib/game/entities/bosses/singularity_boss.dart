@@ -13,6 +13,20 @@ class SingularityBoss extends BossBase {
   double _vortexTimer = 12;
   double _blackRainTimer = 4.0;
   bool _pulling = false;
+
+  /// Clamp player to arena/tunnel bounds dopo una pull. Evita di
+  /// trascinarlo fuori dalle mura.
+  void _clampPlayerToBounds() {
+    if (game.isTunnelMode) {
+      final camY = game.camera.viewfinder.position.y;
+      final halfH = game.tunnelHeight / 2;
+      game.player.position.y = game.player.position.y
+          .clamp(camY - halfH + 10, camY + halfH - 10);
+    } else {
+      game.player.position.x = game.player.position.x.clamp(10.0, arenaWidth - 10);
+      game.player.position.y = game.player.position.y.clamp(10.0, arenaHeight - 10);
+    }
+  }
   double _pullDuration = 0;
   double _phase = 0;
   final List<Vector2> _vortexPositions = [];
@@ -71,6 +85,8 @@ class SingularityBoss extends BossBase {
           game.player.lives > 0) {
         // Forza 225 (era 150, +50%).
         game.player.position += pullDir.normalized() * 225 * dt;
+        // Clamp post-pull: evita di trascinare il player fuori arena/tunnel.
+        _clampPlayerToBounds();
       }
       _pullDuration -= dt;
       if (_pullDuration <= 0) _pulling = false;

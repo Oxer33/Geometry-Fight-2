@@ -26,6 +26,13 @@ class _SplashScreenState extends State<SplashScreen>
   bool _showLogo = false;
   bool _showExplosion = false;
   double _explosionPhase = 0;
+  // Prevent double-fire quando SKIP tap e 2200ms timer si accavallano.
+  bool _completed = false;
+  void _fireCompleteOnce() {
+    if (_completed) return;
+    _completed = true;
+    widget.onComplete();
+  }
 
   @override
   void initState() {
@@ -64,7 +71,7 @@ class _SplashScreenState extends State<SplashScreen>
         });
         _logoController.forward();
         Future.delayed(const Duration(milliseconds: 2200), () {
-          if (mounted) widget.onComplete();
+          if (mounted) _fireCompleteOnce();
         });
       }
     });
@@ -90,7 +97,7 @@ class _SplashScreenState extends State<SplashScreen>
     return Scaffold(
       backgroundColor: Colors.black,
       body: GestureDetector(
-        onTap: widget.onComplete,
+        onTap: _fireCompleteOnce,
         behavior: HitTestBehavior.opaque,
         child: Stack(
           children: [
@@ -117,7 +124,7 @@ class _SplashScreenState extends State<SplashScreen>
               top: MediaQuery.of(context).padding.top + 12,
               right: 16,
               child: GestureDetector(
-                onTap: widget.onComplete,
+                onTap: _fireCompleteOnce,
                 child: NeonAnimatedBuilder(
                   animation: _bgController,
                   builder: (context, _) {

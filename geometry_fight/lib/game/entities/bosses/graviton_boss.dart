@@ -74,6 +74,16 @@ class GravitonBoss extends BossBase {
       // Push: muove il player LONTANO dal boss (stessa direzione di toPlayer)
       final dir = _isPulling ? -1.0 : 1.0;
       game.player.position += toPlayer.normalized() * strength * dir;
+      // Clamp post-gravity: push può spingere il player fuori arena.
+      if (game.isTunnelMode) {
+        final camY = game.camera.viewfinder.position.y;
+        final halfH = game.tunnelHeight / 2;
+        game.player.position.y = game.player.position.y
+            .clamp(camY - halfH + 10, camY + halfH - 10);
+      } else {
+        game.player.position.x = game.player.position.x.clamp(10.0, arenaWidth - 10);
+        game.player.position.y = game.player.position.y.clamp(10.0, arenaHeight - 10);
+      }
     }
 
     // Distorci griglia

@@ -151,10 +151,12 @@ class SaveManager {
   }
 
   static Future<void> save(SaveData data) async {
+    if (!_initialized) return; // Guard contro LateInitializationError.
     await _box.put('save', data.toJson());
   }
 
   static Future<void> clear() async {
+    if (!_initialized) return;
     await _box.clear();
   }
 }

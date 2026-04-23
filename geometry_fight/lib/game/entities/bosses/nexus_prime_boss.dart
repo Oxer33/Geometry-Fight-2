@@ -174,7 +174,11 @@ class NexusPrimeBoss extends BossBase {
           if (!s.alive) continue;
           final worldPos = position + s.offset;
           if (child.position.distanceTo(worldPos) < _satelliteHitR) {
-            s.hp -= child.damage;
+            // Guard difensivo: damage NaN/non-positivo → fallback 1.
+            final dmg = child.damage.isFinite && child.damage > 0
+                ? child.damage
+                : 1.0;
+            s.hp -= dmg;
             if (s.hp <= 0) _killSatellite(s);
             child.removeFromParent();
             break;

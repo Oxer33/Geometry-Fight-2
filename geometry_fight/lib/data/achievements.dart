@@ -72,23 +72,28 @@ const List<AchievementDef> allAchievements = [
 /// Manager per gli achievement — persistenza con Hive
 class AchievementManager {
   static late Box _box;
+  static bool _initialized = false;
 
   static Future<void> init() async {
     _box = await Hive.openBox('geometry_fight_achievements');
+    _initialized = true;
   }
 
   /// Progresso corrente per un achievement
   static int getProgress(String achievementId) {
+    if (!_initialized) return 0;
     return _box.get('progress_$achievementId', defaultValue: 0) as int;
   }
 
   /// Se un achievement è stato sbloccato
   static bool isUnlocked(String achievementId) {
+    if (!_initialized) return false;
     return _box.get('unlocked_$achievementId', defaultValue: false) as bool;
   }
 
   /// Aggiorna il progresso e restituisce la lista di achievement appena sbloccati
   static List<AchievementDef> updateProgress(String achievementId, int value) {
+    if (!_initialized) return const [];
     final unlocked = <AchievementDef>[];
     final current = getProgress(achievementId);
     if (value > current) {
@@ -133,6 +138,7 @@ class AchievementManager {
 
   /// Pulisci tutto
   static Future<void> clear() async {
+    if (!_initialized) return;
     await _box.clear();
   }
 
@@ -160,6 +166,7 @@ class AchievementManager {
     required bool completedClassicNightmare,
     required int bossRushWave,
   }) {
+    if (!_initialized) return const [];
     final newlyUnlocked = <AchievementDef>[];
 
     // Reset session-based progress (questi achievement tracciano SOLO la sessione corrente)

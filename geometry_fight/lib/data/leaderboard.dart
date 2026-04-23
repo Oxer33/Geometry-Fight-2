@@ -42,9 +42,11 @@ class LeaderboardEntry {
 /// Mantiene le top 10 entry per ogni combinazione modalità+difficoltà.
 class LeaderboardManager {
   static late Box _box;
+  static bool _initialized = false;
 
   static Future<void> init() async {
     _box = await Hive.openBox('geometry_fight_leaderboard');
+    _initialized = true;
   }
 
   /// Restituisce la chiave di storage per una combinazione mode/difficulty
@@ -52,6 +54,7 @@ class LeaderboardManager {
 
   /// Restituisce le top entries per una modalità e difficoltà
   static List<LeaderboardEntry> getEntries(String mode, String difficulty) {
+    if (!_initialized) return const [];
     final key = _key(mode, difficulty);
     final raw = _box.get(key);
     if (raw == null) return [];
@@ -67,6 +70,7 @@ class LeaderboardManager {
 
   /// Restituisce tutte le entries di tutte le modalità
   static List<LeaderboardEntry> getAllEntries() {
+    if (!_initialized) return const [];
     final all = <LeaderboardEntry>[];
     for (final key in _box.keys) {
       final raw = _box.get(key);
@@ -83,6 +87,7 @@ class LeaderboardManager {
 
   /// Aggiunge una nuova entry e mantiene solo le top 10
   static Future<void> addEntry(LeaderboardEntry entry) async {
+    if (!_initialized) return;
     final key = _key(entry.mode, entry.difficulty);
     final existing = getEntries(entry.mode, entry.difficulty);
     existing.add(entry);
@@ -95,6 +100,7 @@ class LeaderboardManager {
 
   /// Controlla se il punteggio è da record (top 10)
   static bool isHighScore(String mode, String difficulty, int score) {
+    if (!_initialized) return false;
     final entries = getEntries(mode, difficulty);
     if (entries.length < 10) return true;
     return score > entries.last.score;
@@ -102,6 +108,7 @@ class LeaderboardManager {
 
   /// Pulisce tutta la leaderboard
   static Future<void> clear() async {
+    if (!_initialized) return;
     await _box.clear();
   }
 }
