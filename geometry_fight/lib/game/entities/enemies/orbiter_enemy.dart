@@ -15,6 +15,9 @@ class OrbiterEnemy extends EnemyBase {
   double _shootTimer = 2.0;
   double _spherePhase = 0;
 
+  // Paint cache: evita alloc per frame × N orbiter.
+  static final Paint _ringPaint = Paint()..style = PaintingStyle.stroke;
+
   OrbiterEnemy()
       : super(
           hp: 4,
@@ -69,11 +72,9 @@ class OrbiterEnemy extends EnemyBase {
     final r = size.x / 2 * scale;
 
     // Anello centrale
-    final ringPaint = Paint()
-      ..color = paint.color
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2 * scale;
-    canvas.drawCircle(Offset(cx, cy), r * 0.6, ringPaint);
+    _ringPaint.color = paint.color;
+    _ringPaint.strokeWidth = 2 * scale;
+    canvas.drawCircle(Offset(cx, cy), r * 0.6, _ringPaint);
 
     // 3 sfere orbitanti
     for (int i = 0; i < 3; i++) {
@@ -129,15 +130,18 @@ class _OrbiterBullet extends PositionComponent
     }
   }
 
+  // Paint cache bullet: evita alloc per frame × N bullet.
+  static final Paint _bulletPaint = Paint();
+
   @override
   void render(Canvas canvas) {
     final cx = size.x / 2;
     final cy = size.y / 2;
-    final p = Paint()..color = color.withValues(alpha: 0.4);
-    canvas.drawCircle(Offset(cx, cy), 5, p);
-    p.color = color;
-    canvas.drawCircle(Offset(cx, cy), 3, p);
-    p.color = const Color(0xFFFFFFFF).withValues(alpha: 0.8);
-    canvas.drawCircle(Offset(cx, cy), 1.5, p);
+    _bulletPaint.color = color.withValues(alpha: 0.4);
+    canvas.drawCircle(Offset(cx, cy), 5, _bulletPaint);
+    _bulletPaint.color = color;
+    canvas.drawCircle(Offset(cx, cy), 3, _bulletPaint);
+    _bulletPaint.color = const Color(0xFFFFFFFF).withValues(alpha: 0.8);
+    canvas.drawCircle(Offset(cx, cy), 1.5, _bulletPaint);
   }
 }

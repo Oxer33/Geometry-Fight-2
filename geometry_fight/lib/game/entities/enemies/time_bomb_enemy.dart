@@ -17,6 +17,18 @@ class TimeBombEnemy extends EnemyBase {
   double _activationTimer = 2.0;
   bool _dead = false;
 
+  // Paint caches: evita alloc per frame × N time-bomb.
+  static final Paint _bodyPaint = Paint();
+  static final Paint _ringPaint = Paint()
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 1;
+  static final Paint _lockPaint = Paint()
+    ..color = const Color(0xFF4488FF).withValues(alpha: 0.6);
+  // TextPainter cache: rebuild solo se countdown.ceil() cambia
+  // (~ 1 rebuild/sec invece di 60).
+  int _cachedCountdownInt = -1;
+  TextPainter? _cachedTp;
+
   TimeBombEnemy()
       : super(
           hp: 4,
@@ -103,7 +115,8 @@ class TimeBombEnemy extends EnemyBase {
     }
 
     // Cerchio principale
-    canvas.drawCircle(Offset(cx, cy), r, Paint()..color = bodyColor);
+    _bodyPaint.color = bodyColor;
+    canvas.drawCircle(Offset(cx, cy), r, _bodyPaint);
 
     if (scale <= 1.01) {
       // Scudo attivazione (se non ancora attivato)
@@ -121,37 +134,34 @@ class TimeBombEnemy extends EnemyBase {
           final ringProgress = ((idlePhase * 2 + i * 0.5) % 1.0);
           final ringR = r * 1.5 + ringProgress * _explosionRadius * 0.3;
           final ringAlpha = (1 - ringProgress) * urgency * 0.3;
-          canvas.drawCircle(
-            Offset(cx, cy), ringR,
-            Paint()
-              ..color = const Color(0xFFFF0000).withValues(alpha: ringAlpha)
-              ..style = PaintingStyle.stroke
-              ..strokeWidth = 1,
-          );
+          _ringPaint.color = const Color(0xFFFF0000).withValues(alpha: ringAlpha);
+          canvas.drawCircle(Offset(cx, cy), ringR, _ringPaint);
         }
       }
 
-      // Countdown numerico al centro
+      // Countdown numerico al centro (text cache)
       if (_activated) {
-        final countText = _countdown.ceil().toString();
-        final tp = TextPainter(
-          text: TextSpan(
-            text: countText,
-            style: TextStyle(
-              color: _countdown < 3 ? const Color(0xFFFF0000) : const Color(0xFFFFFFFF),
-              fontSize: r * 1.0,
-              fontWeight: FontWeight.w900,
-              fontFamily: 'monospace',
+        final countInt = _countdown.ceil();
+        if (countInt != _cachedCountdownInt || _cachedTp == null) {
+          _cachedCountdownInt = countInt;
+          _cachedTp = TextPainter(
+            text: TextSpan(
+              text: countInt.toString(),
+              style: TextStyle(
+                color: _countdown < 3 ? const Color(0xFFFF0000) : const Color(0xFFFFFFFF),
+                fontSize: r * 1.0,
+                fontWeight: FontWeight.w900,
+                fontFamily: 'monospace',
+              ),
             ),
-          ),
-          textDirection: TextDirection.ltr,
-        )..layout();
+            textDirection: TextDirection.ltr,
+          )..layout();
+        }
+        final tp = _cachedTp!;
         tp.paint(canvas, Offset(cx - tp.width / 2, cy - tp.height / 2));
       } else {
         // Icona scudo durante attivazione
-        final lockPaint = Paint()
-          ..color = const Color(0xFF4488FF).withValues(alpha: 0.6);
-        canvas.drawCircle(Offset(cx, cy), r * 0.3, lockPaint);
+        canvas.drawCircle(Offset(cx, cy), r * 0.3, _lockPaint);
       }
     }
   }

@@ -13,6 +13,17 @@ class ShieldEnemy extends EnemyBase {
   double _shieldRegenTimer = 0;
   final double _shieldRegenDelay = 4.0;
 
+  // Paint caches: evita alloc per frame × N shield enemies.
+  static final Paint _ringPaint = Paint()
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 0.8;
+  static final Paint _shieldPaint = Paint()
+    ..style = PaintingStyle.stroke;
+  static final Paint _segPaint = Paint();
+  static final Paint _regenPaint = Paint()
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 0.5;
+
   // Throttle per repel bullets (ogni 3 frame, non ogni frame)
   int _repelFrameCounter = 0;
 
@@ -162,11 +173,8 @@ class ShieldEnemy extends EnemyBase {
 
     if (scale <= 1.01) {
       // Anello interno strutturale
-      final ringPaint = Paint()
-        ..color = paint.color.withValues(alpha: 0.3)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 0.8;
-      canvas.drawCircle(Offset(cx, cy), r * 0.6, ringPaint);
+      _ringPaint.color = paint.color.withValues(alpha: 0.3);
+      canvas.drawCircle(Offset(cx, cy), r * 0.6, _ringPaint);
 
       // Nucleo pulsante (più veloce durante lock-on, no blur)
       final pulseSpeed = _state == _ShieldState.lockOn ? 12.0 : 4.0;
@@ -207,16 +215,14 @@ class ShieldEnemy extends EnemyBase {
       // Scudo principale (più largo durante charge)
       final shieldArc =
           _state == _ShieldState.charging ? math.pi * 0.9 : math.pi * 2 / 3;
-      final shieldPaint = Paint()
-        ..color = NeonColors.purple.withValues(alpha: shieldAlpha * 0.7)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 2.5 * scale;
+      _shieldPaint.color = NeonColors.purple.withValues(alpha: shieldAlpha * 0.7);
+      _shieldPaint.strokeWidth = 2.5 * scale;
       canvas.drawArc(
         Rect.fromCircle(center: Offset.zero, radius: 14 * scale),
         -shieldArc / 2,
         shieldArc,
         false,
-        shieldPaint,
+        _shieldPaint,
       );
 
       // Segmenti HP scudo (puntini lungo l'arco)
@@ -226,11 +232,10 @@ class ShieldEnemy extends EnemyBase {
           final segX = 14 * scale * math.cos(segAngle);
           final segY = 14 * scale * math.sin(segAngle);
           final segActive = i < shieldHp;
-          final segPaint = Paint()
-            ..color = segActive
-                ? NeonColors.purple.withValues(alpha: 0.8)
-                : NeonColors.purple.withValues(alpha: 0.15);
-          canvas.drawCircle(Offset(segX, segY), 1.5, segPaint);
+          _segPaint.color = segActive
+              ? NeonColors.purple.withValues(alpha: 0.8)
+              : NeonColors.purple.withValues(alpha: 0.15);
+          canvas.drawCircle(Offset(segX, segY), 1.5, _segPaint);
         }
       }
 
@@ -240,11 +245,8 @@ class ShieldEnemy extends EnemyBase {
       final regenProgress =
           (_shieldRegenTimer / _shieldRegenDelay).clamp(0.0, 1.0);
       if (regenProgress > 0) {
-        final regenPaint = Paint()
-          ..color = NeonColors.purple.withValues(alpha: regenProgress * 0.2)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 0.5;
-        canvas.drawCircle(Offset(cx, cy), 14 * scale, regenPaint);
+        _regenPaint.color = NeonColors.purple.withValues(alpha: regenProgress * 0.2);
+        canvas.drawCircle(Offset(cx, cy), 14 * scale, _regenPaint);
       }
     }
   }

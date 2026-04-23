@@ -200,9 +200,13 @@ class EternityEngineBoss extends BossBase {
   }
 
   void _attackRadial() {
+    // NaN guard: se boss coincide col player, usa baseAngle 0.
+    final delta = playerPosition - position;
+    final baseAngle = delta.length < 0.001
+        ? 0.0
+        : math.atan2(delta.y, delta.x);
     for (int i = 0; i < 6; i++) {
-      final dir = (playerPosition - position).normalized();
-      final angle = math.atan2(dir.y, dir.x) + (i - 2.5) * 0.15;
+      final angle = baseAngle + (i - 2.5) * 0.15;
       final bulletDir = Vector2(math.cos(angle), math.sin(angle));
       final bullet = _EternityBullet(direction: bulletDir, color: _getPhaseColor(1), speed: 250);
       bullet.position = position.clone();

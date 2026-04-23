@@ -8,6 +8,13 @@ import 'enemy_base.dart';
 class SpawnerEnemy extends EnemyBase {
   double _spawnTimer = 3.0;
 
+  // Rng + Paint caches condivisi (evita alloc per spawn + per frame).
+  static final math.Random _rng = math.Random();
+  static final Paint _linePaint = Paint()..strokeWidth = 0.5;
+  static final Paint _spawnPaint = Paint()
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 2;
+
   SpawnerEnemy()
       : super(
           hp: 15,
@@ -33,8 +40,8 @@ class SpawnerEnemy extends EnemyBase {
       _spawnTimer = 3.0;
       for (int i = 0; i < 2; i++) {
         final offset = Vector2(
-          (math.Random().nextDouble() - 0.5) * 40,
-          (math.Random().nextDouble() - 0.5) * 40,
+          (_rng.nextDouble() - 0.5) * 40,
+          (_rng.nextDouble() - 0.5) * 40,
         );
         game.spawnEnemy(EnemyType.drone, position + offset);
       }
@@ -67,23 +74,18 @@ class SpawnerEnemy extends EnemyBase {
     // Dettagli solo sul layer principale
     if (scale <= 1.01) {
       // Linee strutturali: collegano vertici opposti
-      final linePaint = Paint()
-        ..color = paint.color.withValues(alpha: 0.2)
-        ..strokeWidth = 0.5;
+      _linePaint.color = paint.color.withValues(alpha: 0.2);
       for (int i = 0; i < 3; i++) {
-        canvas.drawLine(vertices[i], vertices[i + 3], linePaint);
+        canvas.drawLine(vertices[i], vertices[i + 3], _linePaint);
       }
 
       // Indicatore spawn (cerchio che si riempie)
       final spawnProgress = 1.0 - (_spawnTimer / 3.0).clamp(0.0, 1.0);
       if (spawnProgress > 0.1) {
-        final spawnPaint = Paint()
-          ..color = NeonColors.orange.withValues(alpha: spawnProgress * 0.4)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 2;
+        _spawnPaint.color = NeonColors.orange.withValues(alpha: spawnProgress * 0.4);
         canvas.drawArc(
           Rect.fromCircle(center: Offset(cx, cy), radius: r * 1.2),
-          -math.pi / 2, math.pi * 2 * spawnProgress, false, spawnPaint,
+          -math.pi / 2, math.pi * 2 * spawnProgress, false, _spawnPaint,
         );
       }
 

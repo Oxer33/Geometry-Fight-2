@@ -23,6 +23,12 @@ class GlitchEnemy extends EnemyBase {
 
   static final _random = math.Random();
 
+  // Paint caches: evita alloc per frame × N glitch.
+  static final Paint _ghostPaint = Paint();
+  static final Paint _redPaint = Paint();
+  static final Paint _bluePaint = Paint();
+  static final Paint _scanPaint = Paint()..strokeWidth = 0.5;
+
   GlitchEnemy()
       : super(
           hp: 3,
@@ -121,46 +127,43 @@ class GlitchEnemy extends EnemyBase {
     if (_prevPosition != null && _flashTimer > 0) {
       final ghostAlpha = _flashTimer / 0.2;
       final ghostOffset = _prevPosition! - position;
-      final ghostPaint = Paint()
-        ..color = neonColor.withValues(alpha: ghostAlpha * 0.15);
+      _ghostPaint.color = neonColor.withValues(alpha: ghostAlpha * 0.15);
       canvas.drawRect(
         Rect.fromCenter(
           center: Offset(cx + ghostOffset.x, cy + ghostOffset.y),
           width: r * 2,
           height: r * 2,
         ),
-        ghostPaint,
+        _ghostPaint,
       );
     }
 
     // Effetto glitch: offset RGB casuali
     final glitchOffset = math.sin(_glitchPhase) * 2;
-    
+
     // Canale rosso (spostato)
     if (_flashTimer > 0 || (_glitchPhase % 3).abs() < 0.3) {
-      final redPaint = Paint()
-        ..color = const Color(0xFFFF0000).withValues(alpha: 0.3);
+      _redPaint.color = const Color(0xFFFF0000).withValues(alpha: 0.3);
       canvas.drawRect(
         Rect.fromCenter(
           center: Offset(cx + glitchOffset, cy),
           width: r * 1.8,
           height: r * 1.8,
         ),
-        redPaint,
+        _redPaint,
       );
     }
 
     // Canale blu (spostato dall'altra parte)
     if (_flashTimer > 0 || (_glitchPhase % 5).abs() < 0.3) {
-      final bluePaint = Paint()
-        ..color = const Color(0xFF0000FF).withValues(alpha: 0.3);
+      _bluePaint.color = const Color(0xFF0000FF).withValues(alpha: 0.3);
       canvas.drawRect(
         Rect.fromCenter(
           center: Offset(cx - glitchOffset, cy),
           width: r * 1.8,
           height: r * 1.8,
         ),
-        bluePaint,
+        _bluePaint,
       );
     }
 
@@ -176,15 +179,12 @@ class GlitchEnemy extends EnemyBase {
     canvas.drawPath(path, paint);
 
     // Linee di "scan" orizzontali (effetto glitch)
-    final scanPaint = Paint()
-      ..color = const Color(0xFFFFFFFF).withValues(alpha: 0.15)
-      ..strokeWidth = 0.5;
-    
+    _scanPaint.color = const Color(0xFFFFFFFF).withValues(alpha: 0.15);
     final scanY = cy + ((_glitchPhase * 20) % (r * 2)) - r;
     canvas.drawLine(
       Offset(cx - r, scanY),
       Offset(cx + r, scanY),
-      scanPaint,
+      _scanPaint,
     );
 
     // Punto centrale luminoso

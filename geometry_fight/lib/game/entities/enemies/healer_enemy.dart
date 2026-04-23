@@ -17,6 +17,11 @@ class HealerEnemy extends EnemyBase {
   static const double _healRadius = 200.0;
   static const double _keepDistance = 250.0;
 
+  // Paint cache: evita alloc per frame × N healers.
+  static final Paint _rangePaint = Paint()
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 0.5;
+
   HealerEnemy()
       : super(
           hp: 4,
@@ -31,19 +36,23 @@ class HealerEnemy extends EnemyBase {
   void updateBehavior(double dt) {
     // Mantieni distanza dal player (non troppo vicino, non troppo lontano)
     final dist = distanceToPlayer;
-    if (dist < _keepDistance - 50) {
-      // Troppo vicino, allontanati
-      final awayDir = (position - playerPosition).normalized();
-      position += awayDir * speed * dt;
-    } else if (dist > _keepDistance + 100) {
-      // Troppo lontano, avvicinati
-      final velocity = seekPlayer(speed * 0.6);
-      position += velocity * dt;
-    } else {
-      // Orbita lentamente attorno al player
-      final angle = math.atan2(position.y - playerPosition.y, position.x - playerPosition.x);
-      final orbitAngle = angle + dt * 0.5;
-      position = playerPosition + Vector2(math.cos(orbitAngle), math.sin(orbitAngle)) * dist;
+    // NaN guard: se coincide col player, skip movement (evita NaN
+    // normalize/atan2 → posizione +Inf → crash renderer).
+    if (dist > 0.001) {
+      if (dist < _keepDistance - 50) {
+        // Troppo vicino, allontanati
+        final awayDir = (position - playerPosition).normalized();
+        position += awayDir * speed * dt;
+      } else if (dist > _keepDistance + 100) {
+        // Troppo lontano, avvicinati
+        final velocity = seekPlayer(speed * 0.6);
+        position += velocity * dt;
+      } else {
+        // Orbita lentamente attorno al player
+        final angle = math.atan2(position.y - playerPosition.y, position.x - playerPosition.x);
+        final orbitAngle = angle + dt * 0.5;
+        position = playerPosition + Vector2(math.cos(orbitAngle), math.sin(orbitAngle)) * dist;
+      }
     }
 
     // Timer cura
@@ -113,11 +122,8 @@ class HealerEnemy extends EnemyBase {
       canvas.drawCircle(Offset(cx, cy), s * 0.2, EnemyBase.detailPaint);
 
       // Cerchio indicatore raggio cura
-      final rangePaint = Paint()
-        ..color = neonColor.withValues(alpha: 0.08)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 0.5;
-      canvas.drawCircle(Offset(cx, cy), s * 2, rangePaint);
+      _rangePaint.color = neonColor.withValues(alpha: 0.08);
+      canvas.drawCircle(Offset(cx, cy), s * 2, _rangePaint);
     }
   }
 }

@@ -613,6 +613,15 @@ class _BossHpBar extends StatelessWidget {
 
 /// Painter per la barra HP del boss con glow neon
 class _BossHpBarPainter extends CustomPainter {
+  // Paint caches: evita 5× Paint alloc per frame durante boss fight.
+  static final Paint _bgPaint = Paint();
+  static final Paint _borderPaint = Paint()
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 1;
+  static final Paint _glowPaint = Paint()
+    ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
+  static final Paint _fillPaint = Paint();
+  static final Paint _highlightPaint = Paint();
   final double progress;
   final Color color;
 
@@ -623,56 +632,56 @@ class _BossHpBarPainter extends CustomPainter {
     final radius = Radius.circular(4);
 
     // Background scuro
+    _bgPaint.color = Colors.white.withValues(alpha: 0.08);
     canvas.drawRRect(
       RRect.fromRectAndRadius(
         Rect.fromLTWH(0, 0, size.width, size.height),
         radius,
       ),
-      Paint()..color = Colors.white.withValues(alpha: 0.08),
+      _bgPaint,
     );
 
     // Bordo esterno
+    _borderPaint.color = color.withValues(alpha: 0.3);
     canvas.drawRRect(
       RRect.fromRectAndRadius(
         Rect.fromLTWH(0, 0, size.width, size.height),
         radius,
       ),
-      Paint()
-        ..color = color.withValues(alpha: 0.3)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1,
+      _borderPaint,
     );
 
     // Barra HP con glow
     final barWidth = size.width * progress;
     if (barWidth > 0) {
       // Glow
+      _glowPaint.color = color.withValues(alpha: 0.3);
       canvas.drawRRect(
         RRect.fromRectAndRadius(
           Rect.fromLTWH(0, -2, barWidth, size.height + 4),
           radius,
         ),
-        Paint()
-          ..color = color.withValues(alpha: 0.3)
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4),
+        _glowPaint,
       );
 
       // Barra piena
+      _fillPaint.color = color.withValues(alpha: 0.8);
       canvas.drawRRect(
         RRect.fromRectAndRadius(
           Rect.fromLTWH(0, 0, barWidth, size.height),
           radius,
         ),
-        Paint()..color = color.withValues(alpha: 0.8),
+        _fillPaint,
       );
 
       // Highlight superiore
+      _highlightPaint.color = Colors.white.withValues(alpha: 0.15);
       canvas.drawRRect(
         RRect.fromRectAndRadius(
           Rect.fromLTWH(1, 1, barWidth - 2, size.height * 0.4),
           radius,
         ),
-        Paint()..color = Colors.white.withValues(alpha: 0.15),
+        _highlightPaint,
       );
     }
   }
@@ -1042,6 +1051,11 @@ class _ArrowPainter extends CustomPainter {
   final GeometryFightGame game;
   _ArrowPainter(this.game);
 
+  // Paint caches: evita 2× alloc per freccia × 8 frecce × 30fps.
+  static final Paint _arrowGlowPaint = Paint()
+    ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
+  static final Paint _arrowPaint = Paint();
+
   @override
   void paint(Canvas canvas, Size size) {
     final playerPos = game.player.position;
@@ -1057,18 +1071,23 @@ class _ArrowPainter extends CustomPainter {
         // Posizione relativa alla camera
         final rel = child.position - camPos;
         if (rel.x.abs() > halfW + 20 || rel.y.abs() > halfH + 20) {
+          // NaN guard: se coincide col player, skip arrow.
+          final delta = child.position - playerPos;
+          if (delta.length < 0.001) continue;
           offscreen.add(_EnemyDir(
-            direction: (child.position - playerPos).normalized(),
-            distance: child.position.distanceTo(playerPos),
+            direction: delta.normalized(),
+            distance: delta.length,
           ));
         }
       }
       if (child is BossBase) {
         final rel = child.position - camPos;
         if (rel.x.abs() > halfW + 40 || rel.y.abs() > halfH + 40) {
+          final delta = child.position - playerPos;
+          if (delta.length < 0.001) continue;
           offscreen.add(_EnemyDir(
-            direction: (child.position - playerPos).normalized(),
-            distance: child.position.distanceTo(playerPos),
+            direction: delta.normalized(),
+            distance: delta.length,
             isBoss: true,
           ));
         }
@@ -1107,19 +1126,17 @@ class _ArrowPainter extends CustomPainter {
       canvas.rotate(angle);
 
       // Glow
-      final glowPaint = Paint()
-        ..color = color.withValues(alpha: alpha * 0.4)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
+      _arrowGlowPaint.color = color.withValues(alpha: alpha * 0.4);
       final path = Path()
         ..moveTo(0, -arrowSize)
         ..lineTo(arrowSize * 0.6, arrowSize * 0.4)
         ..lineTo(-arrowSize * 0.6, arrowSize * 0.4)
         ..close();
-      canvas.drawPath(path, glowPaint);
+      canvas.drawPath(path, _arrowGlowPaint);
 
       // Freccia solida
-      final paint = Paint()..color = color.withValues(alpha: alpha);
-      canvas.drawPath(path, paint);
+      _arrowPaint.color = color.withValues(alpha: alpha);
+      canvas.drawPath(path, _arrowPaint);
 
       canvas.restore();
     }

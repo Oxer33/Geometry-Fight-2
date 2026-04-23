@@ -14,6 +14,19 @@ class PulsarEnemy extends EnemyBase {
   double _pulseRadius = 0;
   bool _pulsing = false;
 
+  // Paint caches: evita alloc per frame × N pulsar (chargePaint, inner/outer
+  // ring, linePaint).
+  static final Paint _chargePaint = Paint()
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 1.5;
+  static final Paint _innerRing = Paint()
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 2.5;
+  static final Paint _outerRing = Paint()
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 1;
+  static final Paint _linePaint = Paint()..strokeWidth = 0.5;
+
   PulsarEnemy()
       : super(
           hp: 4,
@@ -102,13 +115,10 @@ class PulsarEnemy extends EnemyBase {
       // Indicatore di carica (cerchio che si riempie prima del pulse)
       final chargeProgress = 1.0 - (_pulseTimer / 2.5).clamp(0.0, 1.0);
       if (chargeProgress > 0.1) {
-        final chargePaint = Paint()
-          ..color = NeonColors.teal.withValues(alpha: chargeProgress * 0.4)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 1.5;
+        _chargePaint.color = NeonColors.teal.withValues(alpha: chargeProgress * 0.4);
         canvas.drawArc(
           Rect.fromCircle(center: Offset(cx, cy), radius: r * 1.3),
-          -math.pi / 2, math.pi * 2 * chargeProgress, false, chargePaint,
+          -math.pi / 2, math.pi * 2 * chargeProgress, false, _chargePaint,
         );
       }
 
@@ -128,11 +138,9 @@ class PulsarEnemy extends EnemyBase {
       }
 
       // Linee interne dal centro ai vertici
-      final linePaint = Paint()
-        ..color = paint.color.withValues(alpha: 0.15)
-        ..strokeWidth = 0.5;
+      _linePaint.color = paint.color.withValues(alpha: 0.15);
       for (final v in vertices) {
-        canvas.drawLine(Offset(cx, cy), v, linePaint);
+        canvas.drawLine(Offset(cx, cy), v, _linePaint);
       }
     }
 
@@ -140,17 +148,11 @@ class PulsarEnemy extends EnemyBase {
     if (_pulsing) {
       final alpha = 1.0 - (_pulseRadius / 150);
       // Onda interna brillante
-      final innerRing = Paint()
-        ..color = NeonColors.teal.withValues(alpha: alpha * 0.5)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 2.5;
-      canvas.drawCircle(Offset(cx, cy), _pulseRadius, innerRing);
+      _innerRing.color = NeonColors.teal.withValues(alpha: alpha * 0.5);
+      canvas.drawCircle(Offset(cx, cy), _pulseRadius, _innerRing);
       // Onda esterna sottile
-      final outerRing = Paint()
-        ..color = NeonColors.teal.withValues(alpha: alpha * 0.2)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1;
-      canvas.drawCircle(Offset(cx, cy), _pulseRadius * 1.2, outerRing);
+      _outerRing.color = NeonColors.teal.withValues(alpha: alpha * 0.2);
+      canvas.drawCircle(Offset(cx, cy), _pulseRadius * 1.2, _outerRing);
     }
   }
 }

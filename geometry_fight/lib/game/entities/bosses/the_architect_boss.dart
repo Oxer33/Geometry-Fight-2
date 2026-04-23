@@ -72,11 +72,15 @@ class TheArchitectBoss extends BossBase {
       // Structures shoot at player
       if (structure.attackTimer <= 0) {
         structure.attackTimer = 1.5;
-        final dir = (playerPosition - structure.position).normalized();
-        final bullet = EnemyBullet(
-            direction: dir, speed: 220, color: NeonColors.electricBlue);
-        bullet.position = structure.position.clone();
-        game.world.add(bullet);
+        // NaN guard: se player coincide con struttura, skip shot.
+        final delta = playerPosition - structure.position;
+        if (delta.length >= 0.001) {
+          final dir = delta.normalized();
+          final bullet = EnemyBullet(
+              direction: dir, speed: 220, color: NeonColors.electricBlue);
+          bullet.position = structure.position.clone();
+          game.world.add(bullet);
+        }
       }
     }
 
@@ -94,11 +98,15 @@ class TheArchitectBoss extends BossBase {
       _bossShootTimer -= dt;
       if (_bossShootTimer <= 0) {
         _bossShootTimer = 0.6;
-        final dir = (playerPosition - position).normalized();
-        final bullet = EnemyBullet(
-            direction: dir, speed: 280, color: NeonColors.white);
-        bullet.position = position.clone();
-        game.world.add(bullet);
+        // NaN guard: skip shoot se player coincide con boss.
+        final delta = playerPosition - position;
+        if (delta.length >= 0.001) {
+          final dir = delta.normalized();
+          final bullet = EnemyBullet(
+              direction: dir, speed: 280, color: NeonColors.white);
+          bullet.position = position.clone();
+          game.world.add(bullet);
+        }
       }
     }
   }

@@ -14,6 +14,9 @@ class ProtonEnemy extends EnemyBase {
   late Vector2 _moveDir;
   double _lifetime = 5.0;
 
+  // Paint cache: evita alloc per frame × N proton.
+  static final Paint _streakPaint = Paint()..strokeWidth = 0.5;
+
   ProtonEnemy({Vector2? direction, super.speed = 280})
       : super(
           hp: 1,
@@ -45,9 +48,14 @@ class ProtonEnemy extends EnemyBase {
     // (dopo 2s inizia a curvare verso il player, come in GW)
     if (_lifetime < 3.0) {
       final toPlayer = (playerPosition - position);
-      if (toPlayer.length > 0) {
+      if (toPlayer.length > 0.001) {
         final desired = toPlayer.normalized();
-        _moveDir = (_moveDir + desired * 0.02).normalized();
+        // NaN guard: `_moveDir + desired*0.02` può collassare a zero se
+        // _moveDir è quasi opposto a desired (rara cancellazione).
+        final sum = _moveDir + desired * 0.02;
+        if (sum.length > 0.001) {
+          _moveDir = sum.normalized();
+        }
       }
     }
 
@@ -94,9 +102,7 @@ class ProtonEnemy extends EnemyBase {
       }
 
       // Linee di velocità laterali
-      final streakPaint = Paint()
-        ..color = neonColor.withValues(alpha: 0.15)
-        ..strokeWidth = 0.5;
+      _streakPaint.color = neonColor.withValues(alpha: 0.15);
       final perpX = -_moveDir.y;
       final perpY = _moveDir.x;
       for (int side = -1; side <= 1; side += 2) {
@@ -105,7 +111,7 @@ class ProtonEnemy extends EnemyBase {
         canvas.drawLine(
           Offset(sx, sy),
           Offset(sx - _moveDir.x * 8, sy - _moveDir.y * 8),
-          streakPaint,
+          _streakPaint,
         );
       }
     }

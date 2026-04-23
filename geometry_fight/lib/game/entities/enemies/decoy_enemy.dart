@@ -13,6 +13,15 @@ class DecoyEnemy extends EnemyBase {
   bool _discovered = false; // Se il player ha sparato e lo ha scoperto
   double _mimicPhase = 0;
 
+  // Paint caches: evita alloc per frame × N decoy.
+  static final Paint _whitePaint = Paint();
+  static final Paint _sparklePaint = Paint();
+  static final Paint _xPaint = Paint()
+    ..color = const Color(0xFFFF0000)
+    ..strokeWidth = 2
+    ..style = PaintingStyle.stroke;
+  static final Paint _dangerPaint = Paint();
+
   DecoyEnemy()
       : super(
           hp: 2,
@@ -41,12 +50,6 @@ class DecoyEnemy extends EnemyBase {
       neonColor = const Color(0xFFFF2200); // Diventa rosso
     }
     super.takeDamage(amount, isArea: isArea);
-  }
-
-  @override
-  void onDeath() {
-    // Drop standard (1 geom) gestito da onEnemyKilled.
-    super.onDeath();
   }
 
   void _trapExplode() {
@@ -89,31 +92,20 @@ class DecoyEnemy extends EnemyBase {
     if (scale <= 1.01) {
       if (!_discovered) {
         // Imita power-up: punto bianco centrale (come i veri power-up)
-        canvas.drawCircle(
-          Offset.zero, 3,
-          Paint()..color = const Color(0xFFFFFFFF).withValues(alpha: 0.7),
-        );
+        _whitePaint.color = const Color(0xFFFFFFFF).withValues(alpha: 0.7);
+        canvas.drawCircle(Offset.zero, 3, _whitePaint);
         // Scintillio ingannevole
         final sparkle = 0.3 + math.sin(_mimicPhase * 3) * 0.3;
-        canvas.drawCircle(
-          Offset.zero, r * 0.7,
-          Paint()..color = paint.color.withValues(alpha: sparkle * 0.1),
-        );
+        _sparklePaint.color = paint.color.withValues(alpha: sparkle * 0.1);
+        canvas.drawCircle(Offset.zero, r * 0.7, _sparklePaint);
       } else {
         // Scoperto: mostra teschio/pericolo
-        // X rossa al centro
-        final xPaint = Paint()
-          ..color = const Color(0xFFFF0000)
-          ..strokeWidth = 2
-          ..style = PaintingStyle.stroke;
-        canvas.drawLine(Offset(-r * 0.3, -r * 0.3), Offset(r * 0.3, r * 0.3), xPaint);
-        canvas.drawLine(Offset(r * 0.3, -r * 0.3), Offset(-r * 0.3, r * 0.3), xPaint);
+        canvas.drawLine(Offset(-r * 0.3, -r * 0.3), Offset(r * 0.3, r * 0.3), _xPaint);
+        canvas.drawLine(Offset(r * 0.3, -r * 0.3), Offset(-r * 0.3, r * 0.3), _xPaint);
         // Glow rosso pulsante
         final dangerPulse = 0.3 + math.sin(_mimicPhase * 4) * 0.3;
-        canvas.drawCircle(
-          Offset.zero, r * 0.9,
-          Paint()..color = const Color(0xFFFF0000).withValues(alpha: dangerPulse * 0.5),
-        );
+        _dangerPaint.color = const Color(0xFFFF0000).withValues(alpha: dangerPulse * 0.5);
+        canvas.drawCircle(Offset.zero, r * 0.9, _dangerPaint);
       }
     }
     canvas.restore();

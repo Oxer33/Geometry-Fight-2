@@ -51,12 +51,13 @@ class TeslaEnemy extends EnemyBase {
       // PACK: posizionati sul lato opposto del player rispetto agli altri Tesla
       double avgAngle = 0;
       int myIndex = 0;
-      int teslaIndex = 0;
       for (final other in otherTeslas) {
         final diff = other.position - playerPosition;
         avgAngle += math.atan2(diff.y, diff.x);
-        if (other.hashCode < hashCode) myIndex = teslaIndex + 1;
-        teslaIndex++;
+        // Fix: conta i tesla con hashCode minore per determinare lo slot
+        // corretto nel fan-out. Prima overwrite per-iter → ignorava posizioni
+        // precedenti, dava sempre lo slot dell'ultimo matched.
+        if (other.hashCode < hashCode) myIndex++;
       }
       avgAngle /= otherTeslas.length;
 

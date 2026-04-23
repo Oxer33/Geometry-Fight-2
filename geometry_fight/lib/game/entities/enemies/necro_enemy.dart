@@ -15,6 +15,16 @@ class NecroEnemy extends EnemyBase {
   final List<_PendingResurrection> _pendingRes = [];
   static const double _resurrectionRadius = 200.0;
 
+  // Paint caches: evita alloc per frame × N necro.
+  static final Paint _ritualPaint = Paint()
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 0.5;
+  static final Paint _cardinalPaint = Paint();
+  static final Paint _eyePaint = Paint()..color = const Color(0xFF000000);
+  static final Paint _mouthPaint = Paint()
+    ..color = const Color(0xFF000000)
+    ..strokeWidth = 1;
+
   @override
   void onDeath() {
     _pendingRes.clear(); // Annulla resurrezioni pending
@@ -39,7 +49,8 @@ class NecroEnemy extends EnemyBase {
     final dist = distanceToPlayer;
     if (dist > 350) {
       position += seekPlayer(speed) * dt;
-    } else if (dist < 200) {
+    } else if (dist < 200 && dist > 0.001) {
+      // NaN guard: se coincide col player, skip (evita NaN normalize).
       final awayDir = (position - playerPosition).normalized();
       position += awayDir * speed * 0.5 * dt;
     }
@@ -80,21 +91,19 @@ class NecroEnemy extends EnemyBase {
 
     // Cerchio ritualistico esterno (solo principale)
     if (scale <= 1.01) {
-      final ritualPaint = Paint()
-        ..color = neonColor.withValues(alpha: 0.15)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 0.5;
+      _ritualPaint.color = neonColor.withValues(alpha: 0.15);
       canvas.save();
       canvas.translate(cx, cy);
       canvas.rotate(_ritualPhase * 0.3);
       // Cerchio con simboli
-      canvas.drawCircle(Offset.zero, r * 1.5, ritualPaint);
+      canvas.drawCircle(Offset.zero, r * 1.5, _ritualPaint);
       // Punti cardinali
+      _cardinalPaint.color = neonColor.withValues(alpha: 0.3);
       for (int i = 0; i < 4; i++) {
         final angle = i * math.pi / 2;
         final px = r * 1.5 * math.cos(angle);
         final py = r * 1.5 * math.sin(angle);
-        canvas.drawCircle(Offset(px, py), 1.5, Paint()..color = neonColor.withValues(alpha: 0.3));
+        canvas.drawCircle(Offset(px, py), 1.5, _cardinalPaint);
       }
       canvas.restore();
 
@@ -113,20 +122,16 @@ class NecroEnemy extends EnemyBase {
 
     // Dettagli teschio (solo layer principale)
     if (scale <= 1.01) {
-      final eyePaint = Paint()..color = const Color(0xFF000000);
       // Occhi
-      canvas.drawCircle(Offset(cx - r * 0.25, cy - r * 0.1), r * 0.15, eyePaint);
-      canvas.drawCircle(Offset(cx + r * 0.25, cy - r * 0.1), r * 0.15, eyePaint);
+      canvas.drawCircle(Offset(cx - r * 0.25, cy - r * 0.1), r * 0.15, _eyePaint);
+      canvas.drawCircle(Offset(cx + r * 0.25, cy - r * 0.1), r * 0.15, _eyePaint);
       // Pupille luminose
       final pupilGlow = 0.5 + math.sin(_ritualPhase * 3) * 0.5;
       EnemyBase.detailPaint.color = neonColor.withValues(alpha: pupilGlow);
       canvas.drawCircle(Offset(cx - r * 0.25, cy - r * 0.1), r * 0.08, EnemyBase.detailPaint);
       canvas.drawCircle(Offset(cx + r * 0.25, cy - r * 0.1), r * 0.08, EnemyBase.detailPaint);
       // Bocca (linea)
-      final mouthPaint = Paint()
-        ..color = const Color(0xFF000000)
-        ..strokeWidth = 1;
-      canvas.drawLine(Offset(cx - r * 0.2, cy + r * 0.25), Offset(cx + r * 0.2, cy + r * 0.25), mouthPaint);
+      canvas.drawLine(Offset(cx - r * 0.2, cy + r * 0.25), Offset(cx + r * 0.2, cy + r * 0.25), _mouthPaint);
     }
   }
 }

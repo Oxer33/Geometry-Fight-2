@@ -14,6 +14,17 @@ class LeechEnemy extends EnemyBase {
   double _tentaclePhase = 0;
   double _attachTimer = 0; // Durata dell'aggancio prima di staccarsi
 
+  // Paint caches: evita alloc per frame × N leech.
+  static final Paint _tentaclePaint = Paint()
+    ..style = PaintingStyle.stroke;
+  static final Paint _ringPaint = Paint()
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 0.6;
+  static final Paint _attachPaint = Paint();
+  static final Paint _veinPaint = Paint()
+    ..strokeWidth = 0.8
+    ..style = PaintingStyle.stroke;
+
   // Contatore globale leeches agganciati: applica slow solo quando > 0
   static int _attachedCount = 0;
   static double? _savedPlayerSpeed;
@@ -109,10 +120,8 @@ class LeechEnemy extends EnemyBase {
     final r = size.x / 2 * scale;
 
     // 6 tentacoli ondulanti con punte luminose
-    final tentaclePaint = Paint()
-      ..color = paint.color
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.2 * scale;
+    _tentaclePaint.color = paint.color;
+    _tentaclePaint.strokeWidth = 1.2 * scale;
 
     for (int i = 0; i < 6; i++) {
       final baseAngle = i * math.pi / 3 + _tentaclePhase * 0.5;
@@ -127,7 +136,7 @@ class LeechEnemy extends EnemyBase {
       final endY = cy + math.sin(baseAngle) * r * 1.3 + wobble1;
 
       path.quadraticBezierTo(midX, midY, endX, endY);
-      canvas.drawPath(path, tentaclePaint);
+      canvas.drawPath(path, _tentaclePaint);
 
       // Punte luminose sui tentacoli
       if (scale <= 1.01) {
@@ -142,11 +151,8 @@ class LeechEnemy extends EnemyBase {
 
     if (scale <= 1.01) {
       // Anello interno (membrana)
-      final ringPaint = Paint()
-        ..color = paint.color.withValues(alpha: 0.3)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 0.6;
-      canvas.drawCircle(Offset(cx, cy), r * 0.35, ringPaint);
+      _ringPaint.color = paint.color.withValues(alpha: 0.3);
+      canvas.drawCircle(Offset(cx, cy), r * 0.35, _ringPaint);
 
       // 3 sacche bio-luminose rotanti attorno al corpo
       for (int i = 0; i < 3; i++) {
@@ -167,21 +173,17 @@ class LeechEnemy extends EnemyBase {
     // Se agganciato: indicatore rosso + vene di assorbimento
     if (_attached && scale <= 1.01) {
       final pulseAlpha = 0.5 + math.sin(_tentaclePhase * 4) * 0.3;
-      final attachPaint = Paint()
-        ..color = const Color(0xFFFF0000).withValues(alpha: pulseAlpha);
-      canvas.drawCircle(Offset(cx, cy), r * 0.4, attachPaint);
+      _attachPaint.color = const Color(0xFFFF0000).withValues(alpha: pulseAlpha);
+      canvas.drawCircle(Offset(cx, cy), r * 0.4, _attachPaint);
 
       // Vene rosse pulsanti verso l'esterno
-      final veinPaint = Paint()
-        ..color = const Color(0xFFFF0000).withValues(alpha: 0.3)
-        ..strokeWidth = 0.8
-        ..style = PaintingStyle.stroke;
+      _veinPaint.color = const Color(0xFFFF0000).withValues(alpha: 0.3);
       for (int i = 0; i < 4; i++) {
         final vAngle = i * math.pi / 2 + _tentaclePhase;
         canvas.drawLine(
           Offset(cx, cy),
           Offset(cx + math.cos(vAngle) * r * 0.5, cy + math.sin(vAngle) * r * 0.5),
-          veinPaint,
+          _veinPaint,
         );
       }
     }

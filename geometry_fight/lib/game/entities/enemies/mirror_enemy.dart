@@ -16,6 +16,15 @@ class MirrorEnemy extends EnemyBase {
   static const double _idealDistance = 150.0;
   static const double _orbitSpeed = 1.8; // rad/s
 
+  // Paint cache: evita alloc per frame × N mirror enemies.
+  static final Paint _facePaint = Paint()
+    ..strokeWidth = 1.5
+    ..style = PaintingStyle.stroke;
+  static final Paint _diagPaint = Paint()..strokeWidth = 0.5;
+  static final Paint _cdPaint = Paint()
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 1;
+
   MirrorEnemy()
       : _orbitAngle = math.Random().nextDouble() * math.pi * 2,
         super(
@@ -52,8 +61,12 @@ class MirrorEnemy extends EnemyBase {
       for (final child in game.world.children.whereType<PlayerBullet>()) {
         final bulletDist = child.position.distanceTo(position);
         if (bulletDist < 30) {
-          // Reflect: remove player bullet, spawn enemy bullet going back
-          final reflectDir = (child.position - position).normalized();
+          // Reflect: remove player bullet, spawn enemy bullet going back.
+          // NaN guard: bullet coincide col mirror → fallback verso sud.
+          final delta = child.position - position;
+          final reflectDir = delta.length < 0.001
+              ? Vector2(0, 1)
+              : delta.normalized();
           final reflected = EnemyBullet(
             direction: reflectDir,
             speed: 400,
@@ -98,19 +111,14 @@ class MirrorEnemy extends EnemyBase {
       for (int i = 0; i < 8; i++) {
         final next = (i + 1) % 8;
         final shimmer = 0.15 + math.sin(idlePhase * 4 + i * 0.9) * 0.15;
-        final facePaint = Paint()
-          ..color = const Color(0xFFFFFFFF).withValues(alpha: shimmer)
-          ..strokeWidth = 1.5
-          ..style = PaintingStyle.stroke;
-        canvas.drawLine(verts[i], verts[next], facePaint);
+        _facePaint.color = const Color(0xFFFFFFFF).withValues(alpha: shimmer);
+        canvas.drawLine(verts[i], verts[next], _facePaint);
       }
 
       // Linee interne diagonali (struttura prismatica)
-      final diagPaint = Paint()
-        ..color = paint.color.withValues(alpha: 0.15)
-        ..strokeWidth = 0.5;
+      _diagPaint.color = paint.color.withValues(alpha: 0.15);
       for (int i = 0; i < 4; i++) {
-        canvas.drawLine(verts[i], verts[i + 4], diagPaint);
+        canvas.drawLine(verts[i], verts[i + 4], _diagPaint);
       }
 
       // Nucleo specchiato (riflette la luce)
@@ -123,11 +131,8 @@ class MirrorEnemy extends EnemyBase {
       // Indicatore cooldown riflesso
       if (_reflectCooldown > 0) {
         final cooldownProgress = (_reflectCooldown / 0.3).clamp(0.0, 1.0);
-        final cdPaint = Paint()
-          ..color = NeonColors.magenta.withValues(alpha: cooldownProgress * 0.3)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 1;
-        canvas.drawCircle(Offset(cx, cy), r * 1.1, cdPaint);
+        _cdPaint.color = NeonColors.magenta.withValues(alpha: cooldownProgress * 0.3);
+        canvas.drawCircle(Offset(cx, cy), r * 1.1, _cdPaint);
       }
     }
 
