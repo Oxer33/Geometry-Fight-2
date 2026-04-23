@@ -642,13 +642,14 @@ class WaveSystem {
     final marchDir = _borderRushDirection(side);
     final rows = 2 + _formRng.nextInt(2); // 2 o 3 schiere
     final perRow = (count / rows).ceil();
-    const rowSpacing = 32.0; // distanza tra righe (perpendicolare al bordo)
-    for (int r = 0; r < rows; r++) {
+    const rowSpacing = 32.0;
+    // Cap totale a `count` così rows*perRow non eccede il target wave.
+    int totalSpawned = 0;
+    for (int r = 0; r < rows && totalSpawned < count; r++) {
       final basePositions = _fBorderLine(perRow, side: side);
       for (final pos in basePositions) {
-        // Shift interno: ogni riga successiva più dentro l'arena.
+        if (totalSpawned >= count) break;
         final offset = marchDir * (rowSpacing * r);
-        // Brick pattern: righe dispari shiftate di 0.5 step lungo il bordo.
         final sidewayShift = (r.isOdd) ? rowSpacing * 0.5 : 0.0;
         final rowPos = Vector2(
           pos.x + offset.x + (marchDir.x == 0 ? sidewayShift : 0),
@@ -662,6 +663,7 @@ class WaveSystem {
         if (spawned is SwarmDroneEnemy) {
           spawned.setMarchDirection(marchDir);
         }
+        totalSpawned++;
       }
     }
   }
