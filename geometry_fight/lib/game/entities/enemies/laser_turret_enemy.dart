@@ -15,6 +15,14 @@ class LaserTurretEnemy extends EnemyBase {
   bool _laserActive = false;
   static const double _laserLength = 250.0;
 
+  // Paint caches: evita 2× alloc/frame × N turret a schermo.
+  static final Paint _cannonPaint = Paint()
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 1.5;
+  static final Paint _chargePaint = Paint()
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 2;
+
   LaserTurretEnemy()
       : super(
           hp: 6,
@@ -75,11 +83,8 @@ class LaserTurretEnemy extends EnemyBase {
     // Dettagli interni
     if (scale <= 1.01) {
       // Cerchio cannone al centro
-      final cannonPaint = Paint()
-        ..color = paint.color.withValues(alpha: 0.5)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.5;
-      canvas.drawCircle(Offset.zero, r * 0.5, cannonPaint);
+      _cannonPaint.color = paint.color.withValues(alpha: 0.5);
+      canvas.drawCircle(Offset.zero, r * 0.5, _cannonPaint);
 
       // Linea del laser (se attivo)
       if (_laserActive) {
@@ -100,13 +105,10 @@ class LaserTurretEnemy extends EnemyBase {
       } else {
         // Warmup: indicatore di carica (cerchio che si riempie)
         final chargeProgress = 1.0 - (_warmupTimer / 1.5).clamp(0.0, 1.0);
-        final chargePaint = Paint()
-          ..color = neonColor.withValues(alpha: chargeProgress * 0.5)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 2;
+        _chargePaint.color = neonColor.withValues(alpha: chargeProgress * 0.5);
         canvas.drawArc(
           Rect.fromCircle(center: Offset.zero, radius: r * 0.8),
-          -math.pi / 2, math.pi * 2 * chargeProgress, false, chargePaint,
+          -math.pi / 2, math.pi * 2 * chargeProgress, false, _chargePaint,
         );
       }
 

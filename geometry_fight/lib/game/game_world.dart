@@ -965,7 +965,10 @@ class GeometryFightGame extends FlameGame
     // per evitare contention MediaPlayer con il FX appena partito: con call
     // back-to-back uno dei due veniva silenziato randomicamente.
     if (player.lives > 0) {
+      final capturedSession = _sessionId;
       Future.delayed(const Duration(milliseconds: 150), () {
+        // Guard: session bumped (restart in corso) → callback obsoleto.
+        if (_sessionId != capturedSession) return;
         if (player.lives > 0) {
           unawaited(MusicManager.skipToNext());
         }
@@ -1113,7 +1116,10 @@ class GeometryFightGame extends FlameGame
       // libero per partire senza contention. Senza stagger, bgm.stop() +
       // FlameAudio.play concorrenti sullo stesso thread audio nativo
       // causano silenzio random sull'uno o l'altro.
+      final capturedSession = _sessionId;
       Future.delayed(const Duration(milliseconds: 250), () {
+        // Guard: se l'utente ha già riavviato, stop() killa la nuova bgm.
+        if (_sessionId != capturedSession) return;
         unawaited(MusicManager.stop());
       });
       saveSessionData();
@@ -1265,6 +1271,8 @@ class GeometryFightGame extends FlameGame
   }
 
   void restartGame() {
+    // Bump session: invalida Future.delayed callback pending (music stop/skip).
+    _sessionId++;
     // Riprendi il motore se era stato fermato (game over / pausa)
     resumeEngine();
 
@@ -1358,6 +1366,10 @@ class GeometryFightGame extends FlameGame
   // Cache conteggi nemici/boss — aggiornati una volta per frame in update()
   int _cachedEnemyCount = 0;
   int _cachedBossCount = 0;
+  // Session id — bump su restartGame. Future.delayed outliving gioco può
+  // usarlo per skippare callback post-restart (evita MusicManager.stop() /
+  // skipToNext() fired contro session nuova).
+  int _sessionId = 0;
   // Lista cached dei Necro per iterare in onEnemyKilled senza walk world.children.
   // Early-exit per O(n²) NecroEnemy loop quando il player uccide molti nemici.
   final List<NecroEnemy> _cachedNecros = <NecroEnemy>[];

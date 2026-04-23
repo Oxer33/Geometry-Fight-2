@@ -21,6 +21,9 @@ class _StatsScreenState extends State<StatsScreen>
   // Cache save data once — avoid 60x/sec deserialization
   late final SaveData _saveData;
   late final Map<String, dynamic> _stats;
+  // Cache achievement counters (erano Hive read per-frame dentro builder).
+  late final int _achUnlocked;
+  late final int _achTotal;
 
   @override
   void initState() {
@@ -28,6 +31,8 @@ class _StatsScreenState extends State<StatsScreen>
 
     _saveData = SaveManager.load();
     _stats = _saveData.stats;
+    _achUnlocked = AchievementManager.unlockedCount();
+    _achTotal = AchievementManager.totalCount();
 
     _entranceController = AnimationController(
       duration: const Duration(milliseconds: 800),
@@ -119,10 +124,8 @@ class _StatsScreenState extends State<StatsScreen>
                         const SizedBox(height: 16),
 
                         _buildSection('ACHIEVEMENT', Colors.greenAccent, entrance, 0.3, [
-                          _StatData('Sbloccati', '${AchievementManager.unlockedCount()} / ${AchievementManager.totalCount()}', Icons.military_tech_rounded, Colors.greenAccent,
-                            progress: AchievementManager.totalCount() > 0
-                                ? AchievementManager.unlockedCount() / AchievementManager.totalCount()
-                                : 0.0),
+                          _StatData('Sbloccati', '$_achUnlocked / $_achTotal', Icons.military_tech_rounded, Colors.greenAccent,
+                            progress: _achTotal > 0 ? _achUnlocked / _achTotal : 0.0),
                         ], glow),
 
                         if (saveData.highscores.isNotEmpty) ...[

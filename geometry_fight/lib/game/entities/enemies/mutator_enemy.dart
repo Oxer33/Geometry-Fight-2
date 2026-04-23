@@ -99,8 +99,11 @@ class MutatorEnemy extends EnemyBase {
   void _mutateEnemy(EnemyBase enemy) {
     // Potenzia il nemico
     enemy.speed *= 1.8; // +80% velocit
-    enemy.hp = (enemy.hp + enemy.maxHp * 0.5).clamp(0, enemy.maxHp * 3); // +50% HP
+    // Fix ordine: bump maxHp PRIMA del clamp, altrimenti hp > maxHp
+    // → HP bar mostra >100%. +50% HP relativo al vecchio maxHp.
+    final bonusHp = enemy.maxHp * 0.5;
     enemy.maxHp = enemy.maxHp * 1.5;
+    enemy.hp = (enemy.hp + bonusHp).clamp(0, enemy.maxHp);
     // Effetto visivo: colore più luminoso/giallo = "mutato"
     // (NO size change — in Flame il resize non aggiorna le hitbox a runtime)
     enemy.neonColor = const Color(0xFFFFDD44);
