@@ -112,9 +112,13 @@ class BlackHoleEnemy extends EnemyBase {
     const killRadius = 200.0;
     const pushForce = 400.0;
 
-    // Uccidi nemici vicini (non altri black hole)
+    // Uccidi nemici vicini (non altri black hole, e non i ProtonEnemy
+    // appena spawnati dalla stessa morte — stavano entro 20px e venivano
+    // killSilent subito, vanificando la "pioggia di proton").
     for (final child in List.from(game.world.children)) {
-      if (child is EnemyBase && child != this && child is! BlackHoleEnemy) {
+      if (child is EnemyBase && child != this &&
+          child is! BlackHoleEnemy &&
+          child is! ProtonEnemy) {
         final dist = child.position.distanceTo(position);
         if (dist < killRadius) {
           child.killSilently();

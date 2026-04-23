@@ -1,3 +1,4 @@
+import 'dart:collection';
 import 'dart:math' as math;
 import 'dart:ui';
 import 'package:flame/collisions.dart';
@@ -216,7 +217,8 @@ abstract class BossBase extends PositionComponent
   double _bigWaveTimer = 5.0;
   static const double _kBigWaveInterval = 15.0;
   // Queue per spread dello spawn su più frame (evita hitch quando target=50).
-  final List<EnemyType> _bigWaveQueue = [];
+  // ListQueue: removeFirst O(1) vs removeAt(0) O(N) per drain hot-path.
+  final ListQueue<EnemyType> _bigWaveQueue = ListQueue<EnemyType>();
   static const int _kMaxSpawnPerFrame = 6;
 
   /// Banal mob multiplier (richiesta utente: "più sono mob banali e più ne
@@ -276,7 +278,7 @@ abstract class BossBase extends PositionComponent
     int spawned = 0;
     while (_bigWaveQueue.isNotEmpty && spawned < _kMaxSpawnPerFrame) {
       if (game.enemyCount >= bossBigWaveCap) return; // cap reached, resta in queue
-      final type = _bigWaveQueue.removeAt(0);
+      final type = _bigWaveQueue.removeFirst();
       final spawnPos = _colorWaveSpawnPos();
       if (spawnPos != null) {
         game.spawnEnemy(type, spawnPos);

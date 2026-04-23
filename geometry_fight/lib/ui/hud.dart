@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 import 'package:flame/components.dart' show Vector2;
 import 'package:flutter/material.dart';
@@ -1160,21 +1161,23 @@ class _EnemyDir {
 class _GameNotifier extends ChangeNotifier implements Listenable {
   final GeometryFightGame game;
   bool _disposed = false;
+  Timer? _tickTimer;
 
   _GameNotifier(this.game) {
-    // Rebuild periodico per aggiornare la HUD (~30fps)
-    Future.doWhile(() async {
-      await Future.delayed(const Duration(milliseconds: 33));
-      if (!_disposed) {
-        notifyListeners();
-      }
-      return !_disposed;
+    // Timer.periodic è cancellabile: dispose lo ferma istantaneamente.
+    // Prima: Future.doWhile-loop continuava a vivere finché il Future
+    // in volo non completava (rischio notifyListeners post-dispose).
+    _tickTimer = Timer.periodic(const Duration(milliseconds: 33), (_) {
+      if (_disposed) return;
+      notifyListeners();
     });
   }
 
   @override
   void dispose() {
     _disposed = true;
+    _tickTimer?.cancel();
+    _tickTimer = null;
     super.dispose();
   }
 }
