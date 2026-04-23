@@ -250,6 +250,9 @@ class EnemyBullet extends PositionComponent
       }
       // Muri rossi tunnel (richiesta utente impenetrabili).
       if (game.hitsTunnelObstacle(position)) {
+        // Piccola esplosione rossa per feedback visivo.
+        game.spawnExplosion(position, NeonColors.laserRed,
+            radius: 10, particleCount: 3);
         removeFromParent();
       }
     } else {

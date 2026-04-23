@@ -154,9 +154,10 @@ abstract class BossBase extends PositionComponent
         cam.y - halfH + size.y / 2 + 20,
         cam.y + halfH - size.y / 2 - 20,
       );
-      // Muri rossi impenetrabili (richiesta utente): push away se dentro obstacle.
+      // Muri rossi impenetrabili: teletrasporta a cam.y (centro viewport)
+      // invece di push 6px (insufficiente per obstacle profondi).
       if (game.hitsTunnelObstacle(position)) {
-        position.y += (position.y < cam.y ? 1.0 : -1.0) * 6.0;
+        position.y = cam.y;
       }
     } else {
       position.x = position.x.clamp(50.0, arenaWidth - 50);
