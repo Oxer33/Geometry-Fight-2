@@ -206,9 +206,10 @@ class WaveSystem {
         if (_spawnIndex < _currentConfig!.spawns.length) {
           _spawnTimer = _delayBeforeNextGroup();
         } else {
-          // Tutti i gruppi spawnati - avvia il delay di sicurezza
+          // Tutti i gruppi spawnati - avvia il delay di sicurezza.
+          // Ridotto 1.5→0.8 (richiesta utente: ritmo più serrato).
           _allSpawned = true;
-          _postSpawnDelay = 1.5;
+          _postSpawnDelay = 0.8;
         }
       }
     }
@@ -228,14 +229,15 @@ class WaveSystem {
     // Notifica il game che la wave è completa (per Perfect Wave bonus)
     game.onWaveComplete();
 
-    // Delay tra wave dipende dalla modalità (in secondi)
+    // Delay tra wave dipende dalla modalità (in secondi).
+    // Classic ridotto 2.0→1.0 (richiesta utente: ritmo più serrato).
     double delaySec;
     if (_mode == GameMode.survival || _mode == GameMode.tunnel) {
       delaySec = 0.5;
     } else if (_mode == GameMode.bossRush) {
       delaySec = 3.0;
     } else {
-      delaySec = 2.0;
+      delaySec = 1.0;
     }
 
     // Schedula la prossima wave tramite timer (gestito in update)

@@ -23,10 +23,10 @@ abstract class EnemyBase extends PositionComponent
   bool _hasBecomeVisible = false;
 
   // Spawn invulnerability (come GW:RE2 — nemici appaiono con effetto materializzazione)
-  // 2.5s warning: nemico lampeggia, non si muove, non danneggia player, non subisce danno.
+  // 1.2s warning: nemico lampeggia, non si muove, non danneggia player, non subisce danno.
   // DEVE combaciare con `classicWaveGroupDelaySeconds` (constants.dart) — il blink
   // termina esattamente quando arriva il prossimo gruppo di spawn.
-  double _spawnInvulnTimer = 2.5;
+  double _spawnInvulnTimer = 1.2;
   // Fase accumulata per flash incrementale: avanza con freqHz*dt così la frequenza
   // può variare nel tempo (lento all'inizio, rapido verso la fine del warning)
   double _blinkPhase = 0;
