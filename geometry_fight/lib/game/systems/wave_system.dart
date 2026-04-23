@@ -36,6 +36,11 @@ enum _Formation {
   arc,
   zigzag,
   borderLine,
+  // Nuove formazioni centrate sul player (richiesta utente: "cerchi
+  // concentrici o forme chiuse intorno al player").
+  playerRing,
+  playerDoubleRing,
+  playerEncircle,
 }
 
 /// Lato dell'arena da cui spawna una schiera borderLine.
@@ -472,12 +477,12 @@ class WaveSystem {
     const Map<int, List<_Formation>> waveFormations = {
       1:  [_Formation.ring, _Formation.cross],
       2:  [_Formation.diamond, _Formation.flower, _Formation.vArrow, _Formation.borderLine],
-      3:  [_Formation.cross, _Formation.doublering, _Formation.cascade, _Formation.scatter, _Formation.ring, _Formation.borderLine],
-      4:  [_Formation.triangle, _Formation.burst, _Formation.ring, _Formation.xShape, _Formation.arrowHead, _Formation.squareRing],
+      3:  [_Formation.cross, _Formation.doublering, _Formation.cascade, _Formation.scatter, _Formation.ring, _Formation.borderLine, _Formation.playerRing],
+      4:  [_Formation.triangle, _Formation.burst, _Formation.ring, _Formation.xShape, _Formation.arrowHead, _Formation.squareRing, _Formation.playerDoubleRing],
       5:  [_Formation.hexagon, _Formation.flower, _Formation.pinwheel, _Formation.scatter, _Formation.arrowHead, _Formation.sineWave, _Formation.cascade, _Formation.ring],
-      6:  [_Formation.star5, _Formation.doublering, _Formation.diamond, _Formation.scatter, _Formation.vArrow, _Formation.sineWave, _Formation.cross, _Formation.ring, _Formation.borderLine],
+      6:  [_Formation.star5, _Formation.doublering, _Formation.diamond, _Formation.scatter, _Formation.vArrow, _Formation.sineWave, _Formation.cross, _Formation.ring, _Formation.borderLine, _Formation.playerEncircle],
       7:  [_Formation.pinwheel, _Formation.ring, _Formation.honeycomb, _Formation.xShape, _Formation.arrowHead, _Formation.tripleRing, _Formation.cascade, _Formation.squareRing, _Formation.arc, _Formation.borderLine],
-      8:  [_Formation.comet, _Formation.flower, _Formation.triangle, _Formation.scatter, _Formation.burst, _Formation.sineWave, _Formation.vArrow, _Formation.cross, _Formation.diamond, _Formation.ring],
+      8:  [_Formation.comet, _Formation.flower, _Formation.triangle, _Formation.scatter, _Formation.burst, _Formation.sineWave, _Formation.vArrow, _Formation.cross, _Formation.diamond, _Formation.ring, _Formation.playerRing],
       9:  [_Formation.infinity8, _Formation.doublering, _Formation.hexagon, _Formation.scatter, _Formation.arrowHead, _Formation.sineWave, _Formation.diamond, _Formation.xShape, _Formation.cross, _Formation.arc],
       11: [_Formation.doubleSpiral, _Formation.ring, _Formation.star5, _Formation.scatter, _Formation.arrowHead, _Formation.sineWave, _Formation.doublering, _Formation.cascade],
       12: [_Formation.flower, _Formation.honeycomb, _Formation.comet, _Formation.scatter, _Formation.burst, _Formation.sineWave, _Formation.vArrow, _Formation.cross, _Formation.doublering, _Formation.arc, _Formation.ring, _Formation.borderLine],
@@ -627,20 +632,36 @@ class WaveSystem {
     }
   }
 
-  /// Spawna una schiera di SwarmDrone lungo un intero bordo dell'arena, con
-  /// direzione di marcia forzata perpendicolare al bordo (verso l'interno).
+  /// Spawna schiere di SwarmDrone lungo un bordo, in ondate sfalsate
+  /// (richiesta utente: "più di una schiera sfalsate per renderle davvero
+  /// pericolose"). 2-3 righe parallele con offset perpendicolare.
+  /// Direzione di marcia applicata SUBITO via setMarchDirection → nessun
+  /// glitch di rotazione random al frame 0.
   void _spawnSwarmBorderLine(int count) {
     final side = _BorderSide.values[_formRng.nextInt(4)];
-    final positions = _fBorderLine(count, side: side);
     final marchDir = _borderRushDirection(side);
-    for (final pos in positions) {
-      final clamped = Vector2(
-        pos.x.clamp(20.0, arenaWidth - 20.0),
-        pos.y.clamp(20.0, arenaHeight - 20.0),
-      );
-      final spawned = game.spawnEnemy(EnemyType.swarmDrone, clamped);
-      if (spawned is SwarmDroneEnemy) {
-        spawned.forcedInitialDirection = marchDir.clone();
+    final rows = 2 + _formRng.nextInt(2); // 2 o 3 schiere
+    final perRow = (count / rows).ceil();
+    const rowSpacing = 32.0; // distanza tra righe (perpendicolare al bordo)
+    for (int r = 0; r < rows; r++) {
+      final basePositions = _fBorderLine(perRow, side: side);
+      for (final pos in basePositions) {
+        // Shift interno: ogni riga successiva più dentro l'arena.
+        final offset = marchDir * (rowSpacing * r);
+        // Brick pattern: righe dispari shiftate di 0.5 step lungo il bordo.
+        final sidewayShift = (r.isOdd) ? rowSpacing * 0.5 : 0.0;
+        final rowPos = Vector2(
+          pos.x + offset.x + (marchDir.x == 0 ? sidewayShift : 0),
+          pos.y + offset.y + (marchDir.y == 0 ? sidewayShift : 0),
+        );
+        final clamped = Vector2(
+          rowPos.x.clamp(20.0, arenaWidth - 20.0),
+          rowPos.y.clamp(20.0, arenaHeight - 20.0),
+        );
+        final spawned = game.spawnEnemy(EnemyType.swarmDrone, clamped);
+        if (spawned is SwarmDroneEnemy) {
+          spawned.setMarchDirection(marchDir);
+        }
       }
     }
   }
@@ -693,6 +714,10 @@ class WaveSystem {
       case _Formation.arc:          return _fArc(count, center, playerPos);
       case _Formation.zigzag:       return _fZigzag(count, center, playerPos);
       case _Formation.borderLine:   return _fBorderLine(count);
+      // Player-centered: formazioni chiuse attorno al player.
+      case _Formation.playerRing:       return _fRing(count, playerPos, playerPos);
+      case _Formation.playerDoubleRing: return _fDoublering(count, playerPos, playerPos);
+      case _Formation.playerEncircle:   return _fTripleRing(count, playerPos, playerPos);
     }
   }
 
@@ -1186,7 +1211,9 @@ class WaveSystem {
   List<Vector2> _fBorderLine(int count, {_BorderSide? side}) {
     final chosen = side ?? _BorderSide.values[_formRng.nextInt(4)];
     const edgePad = 40.0;    // distanza dal bordo perpendicolare (dentro arena)
-    const sidePad = 60.0;    // padding sui due estremi del bordo
+    // sidePad 140 (era 60) — richiesta utente: "non partono dall'angolo
+    // lasciando spazio al player sia negli angoli che tra i mob e il bordo".
+    const sidePad = 140.0;
 
     final positions = <Vector2>[];
     final n = math.max(1, count);

@@ -52,6 +52,16 @@ class SwarmDroneEnemy extends EnemyBase {
         : Vector2(0, _rng.nextBool() ? 1 : -1);  // verticale
   }
 
+  /// Setta la direzione di marcia SUBITO (update+render primo frame
+  /// coerenti). Usato da wave_system per spawn a schiera bordo.
+  /// Fix: `forcedInitialDirection` si applicava al primo update, ma il
+  /// render avveniva già a frame 0 con _moveDir random → triangoli
+  /// ruotati a caso prima di allinearsi.
+  void setMarchDirection(Vector2 dir) {
+    _moveDir = dir.clone();
+    forcedInitialDirection = null;
+  }
+
   @override
   void updateBehavior(double dt) {
     // Consume la direzione forzata al primo update (se settata dal wave system).
