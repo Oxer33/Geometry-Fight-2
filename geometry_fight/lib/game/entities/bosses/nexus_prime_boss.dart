@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'dart:ui';
 import 'package:flame/components.dart';
 import '../../../data/constants.dart';
+import '../../../data/wave_configs.dart';
 import '../../game_world.dart';
 import '../projectiles.dart';
 import 'boss_base.dart';
@@ -44,6 +45,11 @@ class NexusPrimeBoss extends BossBase {
           neonColor: const Color(0xFF00EEFF),
           size: Vector2(90, 90),
         );
+
+  // NexusPrime è CIANO → mob cyan (drone + orbiter + decoy).
+  @override
+  List<EnemyType> get colorMatchedMinions =>
+      const [EnemyType.drone, EnemyType.orbiter, EnemyType.decoy];
 
   @override
   int getPhase() {

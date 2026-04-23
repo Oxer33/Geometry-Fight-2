@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'dart:ui';
 import 'package:flame/components.dart';
 import '../../../data/constants.dart';
+import '../../../data/wave_configs.dart';
 import '../../game_world.dart';
 import 'boss_base.dart';
 
@@ -39,6 +40,11 @@ class GravitonBoss extends BossBase {
           neonColor: const Color(0xFF220044),
           size: Vector2(100, 100),
         );
+
+  // Graviton è VIOLA GRAVITÀ → mob orbitali (orbiter + proton + gravityWell).
+  @override
+  List<EnemyType> get colorMatchedMinions =>
+      const [EnemyType.orbiter, EnemyType.proton, EnemyType.gravityWell];
 
   @override
   int getPhase() {

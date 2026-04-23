@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'dart:ui';
 import 'package:flame/components.dart';
 import '../../../data/constants.dart';
+import '../../../data/wave_configs.dart';
 import 'boss_base.dart';
 import '../projectiles.dart';
 
@@ -52,6 +53,11 @@ class PrismHunterBoss extends BossBase {
           neonColor: NeonColors.cyan,
           size: Vector2(110, 110),
         );
+
+  // PrismHunter è CIANO/PRISMATICO → mob ciano-arcobaleno (drone + orbiter + mirror).
+  @override
+  List<EnemyType> get colorMatchedMinions =>
+      const [EnemyType.drone, EnemyType.orbiter, EnemyType.mirror];
 
   @override
   int getPhase() {

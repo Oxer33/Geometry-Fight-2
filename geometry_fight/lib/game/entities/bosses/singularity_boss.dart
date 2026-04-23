@@ -8,7 +8,7 @@ import '../projectiles.dart';
 
 class SingularityBoss extends BossBase {
   double _pulseTimer = 3;
-  double _pullTimer = 5;
+  double _pullTimer = 3.33; // +50% frequenza (era 5, richiesta utente)
   double _cloneTimer = 8;
   double _vortexTimer = 12;
   double _blackRainTimer = 4.0;
@@ -19,12 +19,17 @@ class SingularityBoss extends BossBase {
 
   SingularityBoss()
       : super(
-          hp: 1200,
+          hp: 1800, // +50% (era 1200, richiesta utente)
           bossName: 'SINGULARITY',
           pointValue: 12000,
           neonColor: NeonColors.green,
           size: Vector2(140, 140),
         );
+
+  // Singularity è VERDE → mob verdi (snake + pulsar + weaver).
+  @override
+  List<EnemyType> get colorMatchedMinions =>
+      const [EnemyType.snake, EnemyType.pulsar, EnemyType.weaver];
 
   @override
   int getPhase() {
@@ -55,7 +60,7 @@ class SingularityBoss extends BossBase {
     if (_pullTimer <= 0 && !_pulling) {
       _pulling = true;
       _pullDuration = 3.0; // +50% da 2.0
-      _pullTimer = 5.0;
+      _pullTimer = 3.33; // +50% frequenza (era 5.0, richiesta utente)
     }
 
     if (_pulling) {

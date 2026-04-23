@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'dart:ui';
 import 'package:flame/components.dart';
 import '../../../data/constants.dart';
+import '../../../data/wave_configs.dart';
 import 'boss_base.dart';
 import '../projectiles.dart';
 
@@ -25,6 +26,11 @@ class ChronoWraithBoss extends BossBase {
           neonColor: NeonColors.deepPurple,
           size: Vector2(130, 130),
         );
+
+  // ChronoWraith è VIOLA SCURO → mob viola (phantom + glitch + mirror).
+  @override
+  List<EnemyType> get colorMatchedMinions =>
+      const [EnemyType.phantom, EnemyType.glitch, EnemyType.mirror];
 
   @override
   int getPhase() {

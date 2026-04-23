@@ -66,6 +66,11 @@ class EternityEngineBoss extends BossBase {
           size: Vector2(130, 130),
         );
 
+  // EternityEngine è ARCOBALENO ROTANTE → mob neutri (drone + orbiter + decoy).
+  @override
+  List<EnemyType> get colorMatchedMinions =>
+      const [EnemyType.drone, EnemyType.orbiter, EnemyType.decoy];
+
   @override
   int getPhase() {
     if (healthPercent > 0.75) return 0;

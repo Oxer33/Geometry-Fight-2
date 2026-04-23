@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'dart:ui';
 import 'package:flame/components.dart';
 import '../../../data/constants.dart';
+import '../../../data/wave_configs.dart';
 import 'boss_base.dart';
 import '../projectiles.dart';
 
@@ -61,6 +62,11 @@ class AstralSentinelBoss extends BossBase {
     if (currentPhase >= 1) return 7;
     return 5;
   }
+
+  // AstralSentinel è CIANO COSMICO → mob ciano/stellari (drone + orbiter + pulsar).
+  @override
+  List<EnemyType> get colorMatchedMinions =>
+      const [EnemyType.drone, EnemyType.orbiter, EnemyType.pulsar];
 
   @override
   int getPhase() {

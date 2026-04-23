@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 import 'dart:ui';
 import 'package:flame/components.dart';
+import '../../../data/wave_configs.dart';
 import 'boss_base.dart';
 
 /// VOID REAPER - Boss che crea zone di morte nell'arena.
@@ -23,6 +24,11 @@ class VoidReaperBoss extends BossBase {
           neonColor: const Color(0xFF6600AA),
           size: Vector2(100, 100),
         );
+
+  // VoidReaper è VIOLA SCURO → mob viola (phantom + mirror + proton).
+  @override
+  List<EnemyType> get colorMatchedMinions =>
+      const [EnemyType.phantom, EnemyType.mirror, EnemyType.proton];
 
   @override
   int getPhase() {

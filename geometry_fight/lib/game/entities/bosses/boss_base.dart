@@ -121,6 +121,14 @@ abstract class BossBase extends PositionComponent
       _spawnMinions();
     }
 
+    // Big wave color-matched (richiesta utente): ogni 15s spawna 10/30/50
+    // mob del colore del boss in base alla fase.
+    _bigWaveTimer -= effectiveDt;
+    if (_bigWaveTimer <= 0) {
+      _bigWaveTimer = _kBigWaveInterval;
+      _spawnColorWave();
+    }
+
     // Clamp to arena
     if (game.isTunnelMode) {
       // TUNNEL BOSS: stile side-scroller — boss ancorato al lato destro dello schermo.
@@ -189,6 +197,46 @@ abstract class BossBase extends PositionComponent
   /// supporto dal BossBase. Utile per fasi "rage" che già inondano lo
   /// schermo (es. HydraBoss rage mode).
   bool get allowMinionSpawn => true;
+
+  /// Lista di EnemyType "dello stesso colore del boss" usata dal big-wave
+  /// spawn (richiesta utente: "mob dello stesso colore del boss").
+  /// Subclass override per restituire i mob color-matched; default drone.
+  List<EnemyType> get colorMatchedMinions => const [EnemyType.drone];
+
+  /// Timer per big wave color-matched: ogni 15s spawna 10/30/50 mob in base
+  /// alla fase. Separato da `_minionSpawnTimer` (spawn misto 3-9 mob/~5s).
+  double _bigWaveTimer = 15.0;
+  static const double _kBigWaveInterval = 15.0;
+
+  /// Big wave color-matched (richiesta utente): 10/30/50 mob in base alla
+  /// fase. Usa `colorMatchedMinions` per scegliere il tipo corretto per il
+  /// boss. Rispetta `bossMinionEnemyCap` — spawn parziale se cap vicino.
+  void _spawnColorWave() {
+    if (!allowMinionSpawn) return;
+    final types = colorMatchedMinions;
+    if (types.isEmpty) return;
+    final targetCount = switch (currentPhase) {
+      0 => 10,
+      1 => 30,
+      _ => 50,
+    };
+    final free = bossMinionEnemyCap - game.enemyCount;
+    final toSpawn = free.clamp(0, targetCount);
+    for (int i = 0; i < toSpawn; i++) {
+      final type = types[i % types.length];
+      final angle = _bossRandom.nextDouble() * math.pi * 2;
+      final dist = 120 + _bossRandom.nextDouble() * 200;
+      final raw = position +
+          Vector2(math.cos(angle) * dist, math.sin(angle) * dist);
+      final spawnPos = game.isTunnelMode
+          ? raw
+          : Vector2(
+              raw.x.clamp(30.0, arenaWidth - 30.0),
+              raw.y.clamp(30.0, arenaHeight - 30.0),
+            );
+      game.spawnEnemy(type, spawnPos);
+    }
+  }
 
   /// Spawna nemici di supporto durante il boss fight.
   /// Rispetta il limite bossMinionEnemyCap per evitare lag.

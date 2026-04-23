@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 import 'dart:ui';
 import 'package:flame/components.dart';
+import '../../../data/wave_configs.dart';
 import '../../game_world.dart';
 import 'boss_base.dart';
 
@@ -24,6 +25,11 @@ class TeslaLordBoss extends BossBase {
           neonColor: const Color(0xFFFFDD00),
           size: Vector2(110, 110),
         );
+
+  // TeslaLord è GIALLO ELETTRICO → mob electric (tesla + laserTurret + glitch).
+  @override
+  List<EnemyType> get colorMatchedMinions =>
+      const [EnemyType.tesla, EnemyType.laserTurret, EnemyType.glitch];
 
   @override
   int getPhase() {

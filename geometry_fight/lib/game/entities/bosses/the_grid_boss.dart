@@ -31,6 +31,11 @@ class TheGridBoss extends BossBase {
           size: Vector2(200, 200),
         );
 
+  // TheGrid è BIANCO → mob bianchi/neutri (drone + decoy).
+  @override
+  List<EnemyType> get colorMatchedMinions =>
+      const [EnemyType.drone, EnemyType.decoy];
+
   @override
   int getPhase() {
     if (healthPercent > 0.6) return 0;

@@ -48,6 +48,11 @@ class VoidKrakenBoss extends BossBase {
           size: Vector2(120, 120),
         );
 
+  // VoidKraken è VIOLA ABISSO → mob viola/oscuri (phantom + proton + mirror).
+  @override
+  List<EnemyType> get colorMatchedMinions =>
+      const [EnemyType.phantom, EnemyType.proton, EnemyType.mirror];
+
   @override
   int getPhase() {
     if (healthPercent < 0.25) return 2;

@@ -47,6 +47,11 @@ class SwarmQueenBoss extends BossBase {
     super.takeDamage(amount, isArea: isArea);
   }
 
+  // SwarmQueen è ROSA INTENSO → mob sciame rosa/rosso (swarmDrone + leech + kamikaze).
+  @override
+  List<EnemyType> get colorMatchedMinions =>
+      const [EnemyType.swarmDrone, EnemyType.leech, EnemyType.kamikaze];
+
   @override
   int getPhase() {
     if (healthPercent > 0.6) return 0;

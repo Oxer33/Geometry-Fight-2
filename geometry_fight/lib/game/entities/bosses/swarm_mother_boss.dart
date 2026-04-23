@@ -27,6 +27,11 @@ class SwarmMotherBoss extends BossBase {
           size: Vector2(180, 180),
         );
 
+  // SwarmMother è ARANCIONE → mob arancio/rossi (kamikaze + splitter + swarmDrone).
+  @override
+  List<EnemyType> get colorMatchedMinions =>
+      const [EnemyType.kamikaze, EnemyType.splitter, EnemyType.swarmDrone];
+
   @override
   int getPhase() {
     if (healthPercent > 0.7) return 0;

@@ -36,6 +36,11 @@ class OmegaCoreBoss extends BossBase {
           size: Vector2(120, 120),
         );
 
+  // OmegaCore è BIANCO/ARCOBALENO → mob bianchi/neutri (drone + orbiter + decoy).
+  @override
+  List<EnemyType> get colorMatchedMinions =>
+      const [EnemyType.drone, EnemyType.orbiter, EnemyType.decoy];
+
   @override
   int getPhase() {
     if (healthPercent > 0.75) return 0;

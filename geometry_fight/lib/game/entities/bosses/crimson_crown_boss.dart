@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'dart:ui';
 import 'package:flame/components.dart';
 import '../../../data/constants.dart';
+import '../../../data/wave_configs.dart';
 import 'boss_base.dart';
 import '../projectiles.dart';
 
@@ -38,6 +39,11 @@ class CrimsonCrownBoss extends BossBase {
           neonColor: NeonColors.orange,
           size: Vector2(100, 100),
         );
+
+  // CrimsonCrown è ARANCIONE/ROSSO → mob fuoco (kamikaze + swarmDrone + splitter).
+  @override
+  List<EnemyType> get colorMatchedMinions =>
+      const [EnemyType.kamikaze, EnemyType.swarmDrone, EnemyType.splitter];
 
   @override
   int getPhase() {

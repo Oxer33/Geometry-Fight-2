@@ -23,6 +23,12 @@ class TheArchitectBoss extends BossBase {
           size: Vector2(160, 160),
         );
 
+  // TheArchitect è BLU ELETTRICO → mob blu/azzurri (tesla + glitch + laserTurret).
+  // Esempio esplicitamente menzionato dall'utente.
+  @override
+  List<EnemyType> get colorMatchedMinions =>
+      const [EnemyType.tesla, EnemyType.glitch, EnemyType.laserTurret];
+
   @override
   int getPhase() {
     if (healthPercent > 0.6) return 0;

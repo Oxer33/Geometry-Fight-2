@@ -11,12 +11,15 @@ import '../projectiles.dart';
 // (80px offset + 12px testa). 100 = corpo + metà orbita → colpi teste contano.
 const double _kHitboxRadius = 100;
 
-// Rage mode (richiesta utente: "spara molto di piu"):
-// 5 bullet × 1/0.10s = 50 bullet/s radiali (tri-stella rotante + 2 extra).
-// + burst secondario ogni 2s (8 bullet) mirato al player → fase finale intensa.
-const double _kRageShootInterval = 0.10;
+// Rage mode: ridotto -30% rate (richiesta utente "raffiche enormi, 30%
+// meno proiettili"). 5 bullet × 1/0.14s ≈ 36/s radiali + secondario 5/2s.
+// Era 50/s + 4/s = 54/s; ora ~36/s + 2.5/s = 38/s → -30% rate totale.
+const double _kRageShootInterval = 0.14;
 const int _kRageBulletsPerBurst = 5;
+const int _kRageSecondaryBullets = 5; // era 8 → -37%
 const double _kRageSecondaryInterval = 2.0;
+// Ogni testa spara 1 proiettile ogni 5s (richiesta utente).
+const double _kHeadAttackInterval = 5.0;
 
 // Random statico condiviso — evita `math.Random()` allocato per head e per
 // attack tick (perf).
@@ -29,7 +32,7 @@ class _HydraHead {
 
   _HydraHead()
       : position = Vector2.zero(),
-        attackTimer = 2.0 + _hydraRng.nextDouble() * 2,
+        attackTimer = _kHeadAttackInterval,
         attackType = _hydraRng.nextInt(4);
 }
 
@@ -92,6 +95,11 @@ class HydraBoss extends BossBase {
   // radiali, aggiungere mob saturerebbe il canvas e lagga device medi.
   @override
   bool get allowMinionSpawn => !_rageMode;
+
+  // Hydra è VERDE → mob verdi (snake + weaver + pulsar).
+  @override
+  List<EnemyType> get colorMatchedMinions =>
+      const [EnemyType.snake, EnemyType.weaver, EnemyType.pulsar];
 
   /// Allinea il numero di teste concrete a `_headCount`.
   /// Pre-posiziona ogni testa al proprio angolo orbita così da essere
@@ -180,7 +188,7 @@ class HydraBoss extends BossBase {
 
       head.attackTimer -= dt;
       if (head.attackTimer <= 0) {
-        head.attackTimer = 2.0 + _hydraRng.nextDouble() * 1.5;
+        head.attackTimer = _kHeadAttackInterval;
         _headAttack(head, i);
       }
     }
@@ -208,8 +216,10 @@ class HydraBoss extends BossBase {
         final baseAngle = math.atan2(
             playerPosition.y - position.y,
             playerPosition.x - position.x);
-        for (int i = 0; i < 8; i++) {
-          final ang = baseAngle + (i - 3.5) * 0.12;
+        // Burst ridotto a _kRageSecondaryBullets (era 8, ora 5 → -37%).
+        final half = (_kRageSecondaryBullets - 1) / 2;
+        for (int i = 0; i < _kRageSecondaryBullets; i++) {
+          final ang = baseAngle + (i - half) * 0.15;
           final bdir = Vector2(math.cos(ang), math.sin(ang));
           final bullet = EnemyBullet(
               direction: bdir, speed: 420, color: const Color(0xFFFF6600));
@@ -221,51 +231,17 @@ class HydraBoss extends BossBase {
   }
 
   void _headAttack(_HydraHead head, int index) {
+    // Richiesta utente: "ogni testa deve sparare UN proiettile ogni 5 secondi".
+    // Singolo bullet verso il player a velocità moderata. `attackType`
+    // mantenuto per varietà colore (ciano ogni 4° shot per readability).
     final headWorldPos = position + head.position;
-
-    switch (head.attackType) {
-      case 0: // Radial burst
-        for (int i = 0; i < 8; i++) {
-          final angle = i * math.pi / 4;
-          final bdir = Vector2(math.cos(angle), math.sin(angle));
-          final bullet = EnemyBullet(
-              direction: bdir, speed: 200, color: NeonColors.green);
-          bullet.position = headWorldPos.clone();
-          game.world.add(bullet);
-        }
-      case 1: // Tracking burst
-        final toPlayer = (playerPosition - headWorldPos).normalized();
-        for (int i = 0; i < 5; i++) {
-          final bullet = EnemyBullet(
-            direction: toPlayer,
-            speed: 250 + i * 30.0,
-            color: NeonColors.green,
-          );
-          bullet.position = headWorldPos.clone();
-          game.world.add(bullet);
-        }
-      case 2: // Spawn snakes
-        for (int i = 0; i < 2; i++) {
-          game.spawnEnemy(
-              EnemyType.snake,
-              headWorldPos +
-                  Vector2(
-                    (_hydraRng.nextDouble() - 0.5) * 40,
-                    (_hydraRng.nextDouble() - 0.5) * 40,
-                  ));
-        }
-      case 3: // Tracking fan: 3 bullet verso il player
-        final baseAngle = math.atan2(playerPosition.y - headWorldPos.y,
-            playerPosition.x - headWorldPos.x);
-        for (final offset in [-0.12, 0.0, 0.12]) {
-          final angle = baseAngle + offset;
-          final bdir = Vector2(math.cos(angle), math.sin(angle));
-          final bullet = EnemyBullet(
-              direction: bdir, speed: 350, color: NeonColors.cyan);
-          bullet.position = headWorldPos.clone();
-          game.world.add(bullet);
-        }
-    }
+    final toPlayer = (playerPosition - headWorldPos);
+    if (toPlayer.length < 0.001) return;
+    final color = head.attackType == 3 ? NeonColors.cyan : NeonColors.green;
+    final bullet = EnemyBullet(
+        direction: toPlayer.normalized(), speed: 300, color: color);
+    bullet.position = headWorldPos.clone();
+    game.world.add(bullet);
   }
 
   // takeDamage NON viene sovrascritto: tutti gli hit passano dall'hitbox

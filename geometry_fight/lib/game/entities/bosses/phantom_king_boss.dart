@@ -35,6 +35,11 @@ class PhantomKingBoss extends BossBase {
           size: Vector2(85, 85),
         );
 
+  // PhantomKing è BLU/VIOLA SPETTRO → mob phantom/glitch/decoy.
+  @override
+  List<EnemyType> get colorMatchedMinions =>
+      const [EnemyType.phantom, EnemyType.glitch, EnemyType.decoy];
+
   @override
   int getPhase() {
     if (healthPercent > 0.6) return 0;

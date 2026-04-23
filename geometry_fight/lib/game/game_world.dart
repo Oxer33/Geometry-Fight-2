@@ -724,14 +724,20 @@ class GeometryFightGame extends FlameGame
     const viewHeight = 900.0; // era 600
     const padding = 300.0; // era 200
 
-    // Nel tunnel mode: nemici spawnano davanti alla camera (fuori schermo a destra)
+    // Tunnel mode: spawn davanti alla camera. Y calcolato usando i muri ALLA
+    // X DI SPAWN — altrimenti il sinusoidale dei muri può far finire mob
+    // oltre la parete inferiore → enemy_base clamp li incolla al muro
+    // ("mob rimangono appiccicati alla parete sotto" — richiesta utente).
     if (isTunnelMode) {
       final cameraX = camera.viewfinder.position.x;
       final screenHalfW = size.x / 2;
-      return Vector2(
-        cameraX + screenHalfW + 50 + random.nextDouble() * 450, // range orizz. +50%
-        player.position.y + (random.nextDouble() - 0.5) * tunnelHeight * 0.95,
-      );
+      final spawnX =
+          cameraX + screenHalfW + 50 + random.nextDouble() * 450;
+      final (topWall, bottomWall) = tunnelWallsAtX(spawnX);
+      const margin = 20.0;
+      final ySafe = topWall + margin +
+          random.nextDouble() * (bottomWall - topWall - 2 * margin);
+      return Vector2(spawnX, ySafe);
     }
 
     // Modalità normali: spawn da tutti e 4 i lati.

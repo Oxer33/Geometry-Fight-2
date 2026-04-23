@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 import 'dart:ui';
 import 'package:flame/components.dart';
+import '../../../data/wave_configs.dart';
 import '../../game_world.dart';
 import 'boss_base.dart';
 
@@ -24,6 +25,11 @@ class InfernoBoss extends BossBase {
           neonColor: const Color(0xFFFF4400),
           size: Vector2(90, 90),
         );
+
+  // Inferno è ROSSO FUOCO → mob rossi/fuoco (kamikaze + timeBomb + proton).
+  @override
+  List<EnemyType> get colorMatchedMinions =>
+      const [EnemyType.kamikaze, EnemyType.timeBomb, EnemyType.proton];
 
   @override
   int getPhase() {

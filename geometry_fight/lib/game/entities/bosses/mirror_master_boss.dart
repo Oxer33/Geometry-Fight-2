@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'dart:ui';
 import 'package:flame/components.dart';
 import '../../../data/constants.dart';
+import '../../../data/wave_configs.dart';
 import '../../game_world.dart';
 import '../projectiles.dart';
 import 'boss_base.dart';
@@ -57,6 +58,11 @@ class MirrorMasterBoss extends BossBase {
     }
     _mirrorsSpawned = true;
   }
+
+  // MirrorMaster è ARGENTO/CIANO → mob riflettenti (mirror + glitch + orbiter).
+  @override
+  List<EnemyType> get colorMatchedMinions =>
+      const [EnemyType.mirror, EnemyType.glitch, EnemyType.orbiter];
 
   @override
   int getPhase() {

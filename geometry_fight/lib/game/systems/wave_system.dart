@@ -90,8 +90,9 @@ class WaveSystem {
   void reset() {
     _tunnelSpawnTimer = 0.5;
     _tunnelKillCount = 0;
-    _nextBossAt = 60; // Primo boss a 60 kill (era 30)
+    _nextBossAt = 120; // Primo boss a 120 kill (richiesta utente)
     _tunnelBossCooldown = 0;
+    _tunnelBossBag.clear();
     currentWave = 0;
     _waveActive = false;
     _bossActive = false;
@@ -308,9 +309,22 @@ class WaveSystem {
   // === TUNNEL MODE: spawn continuo, no wave tradizionali ===
   double _tunnelSpawnTimer = 0.5;
   int _tunnelKillCount = 0; // Per boss ogni N kill
-  int _nextBossAt = 60; // Soglia primo boss (era 30, raddoppiato) — boss successivi a +30 incrementale
+  // Primo boss a 120 kill (era 60 — richiesta utente: arriva troppo presto).
+  // Boss successivi a +30 kill incrementali.
+  int _nextBossAt = 120;
   double _tunnelBossCooldown = 0; // Tempo minimo tra boss (s)
+  // Shuffle bag per ordine randomico dei boss (richiesta utente "ordine
+  // randomico"). Riempito con tutti i BossType.values, pescato dal front,
+  // refill quando vuoto → nessun boss ripete finché non li hai visti tutti.
+  final List<BossType> _tunnelBossBag = [];
   static final _tunnelRng = math.Random();
+
+  void _refillTunnelBossBag() {
+    _tunnelBossBag
+      ..clear()
+      ..addAll(BossType.values)
+      ..shuffle(_tunnelRng);
+  }
 
   /// Tunnel: spawn continuo di nemici randomici davanti al player.
   /// Spawn dimezzato rispetto a prima (era troppo caotico): min 10 nemici
@@ -342,12 +356,12 @@ class WaveSystem {
     if (_tunnelKillCount >= _nextBossAt &&
         game.bossCount == 0 &&
         _tunnelBossCooldown <= 0) {
-      final bosses = BossType.values;
-      // Primo boss (at 60) → idx 0. Successivi (+30 kill) → idx +1.
-      final bossIdx = ((_nextBossAt - 60) ~/ 30) % bosses.length;
-      game.spawnBoss(bosses[bossIdx]);
+      // Ordine randomico via shuffle bag (richiesta utente).
+      if (_tunnelBossBag.isEmpty) _refillTunnelBossBag();
+      final boss = _tunnelBossBag.removeAt(0);
+      game.spawnBoss(boss);
       _nextBossAt += 30; // Prossimo boss a +30 kill
-      _tunnelBossCooldown = 5.0; // Cooldown 5s: copre la materializzazione async del boss
+      _tunnelBossCooldown = 5.0; // Cooldown 5s: copre materializzazione async
     }
   }
 
