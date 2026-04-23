@@ -53,7 +53,10 @@ class OrbiterEnemy extends EnemyBase {
   }
 
   void _shootAtPlayer() {
-    final dir = (playerPosition - position).normalized();
+    // NaN guard: se player coincide col mob, skip shoot.
+    final delta = playerPosition - position;
+    if (delta.length < 0.001) return;
+    final dir = delta.normalized();
     final bullet = _OrbiterBullet(direction: dir, color: neonColor);
     bullet.position = position.clone();
     game.world.add(bullet);

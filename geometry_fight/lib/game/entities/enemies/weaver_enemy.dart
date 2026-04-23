@@ -69,8 +69,16 @@ class WeaverEnemy extends EnemyBase {
         // 90% probabilità di schivare (più alta del base 85%)
         if (_rng.nextDouble() < 0.90) {
           // Direzione di schivata: perpendicolare alla direzione del proiettile
-          final bulletToMe = (position - closestBullet.position).normalized();
-          final bulletDir = closestBullet.direction.normalized();
+          // NaN guard: se vettori zero-length, skip dodge (no normalize).
+          final delta = position - closestBullet.position;
+          final rawDir = closestBullet.direction;
+          if (delta.length < 0.001 || rawDir.length < 0.001) {
+            _dodgeCooldown = 0.2;
+            position += toPlayer * dt;
+            return;
+          }
+          final bulletToMe = delta.normalized();
+          final bulletDir = rawDir.normalized();
 
           // Scegli il lato che allontana di più dal proiettile
           final side1 = Vector2(-bulletDir.y, bulletDir.x);

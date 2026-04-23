@@ -688,13 +688,16 @@ class HomingMissile extends PositionComponent
       _cachedTarget = _pickDistinctTarget();
     }
 
-    // Steering
+    // Steering (NaN guard: se target coincide col missile, skip normalize).
     if (_cachedTarget != null && !_cachedTarget!.isRemoved) {
-      final desired = (_cachedTarget!.position - position).normalized() * 500;
-      final steering = (desired - _velocity)..clampLength(0, 800 * dt);
-      _velocity += steering;
-      if (_velocity.length > 500) {
-        _velocity = _velocity.normalized() * 500;
+      final toTarget = _cachedTarget!.position - position;
+      if (toTarget.length > 0.001) {
+        final desired = toTarget.normalized() * 500;
+        final steering = (desired - _velocity)..clampLength(0, 800 * dt);
+        _velocity += steering;
+        if (_velocity.length > 500) {
+          _velocity = _velocity.normalized() * 500;
+        }
       }
     }
 

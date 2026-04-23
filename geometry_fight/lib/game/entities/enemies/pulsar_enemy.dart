@@ -30,14 +30,17 @@ class PulsarEnemy extends EnemyBase {
     final toPlayer = playerPosition - position;
     final dist = toPlayer.length;
 
-    if (dist > 250) {
-      position += toPlayer.normalized() * speed * dt;
-    } else if (dist < 180) {
-      position -= toPlayer.normalized() * speed * dt;
-    } else {
-      // Orbit
-      final perpendicular = Vector2(-toPlayer.y, toPlayer.x).normalized();
-      position += perpendicular * speed * dt;
+    // NaN guard: se player coincide col mob, skip movement.
+    if (dist > 0.001) {
+      if (dist > 250) {
+        position += toPlayer.normalized() * speed * dt;
+      } else if (dist < 180) {
+        position -= toPlayer.normalized() * speed * dt;
+      } else {
+        // Orbit
+        final perpendicular = Vector2(-toPlayer.y, toPlayer.x).normalized();
+        position += perpendicular * speed * dt;
+      }
     }
 
     // Pulse attack
