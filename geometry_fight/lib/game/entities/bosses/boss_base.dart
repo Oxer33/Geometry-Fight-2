@@ -121,13 +121,14 @@ abstract class BossBase extends PositionComponent
       _spawnMinions();
     }
 
-    // Big wave color-matched (richiesta utente): ogni 15s spawna 10/30/50
-    // mob del colore del boss in base alla fase.
+    // Big wave color-matched: carica queue ogni 15s, poi drena max 6/frame
+    // per evitare frame hitch (50 mob in 1 frame = stutter visibile).
     _bigWaveTimer -= effectiveDt;
     if (_bigWaveTimer <= 0) {
       _bigWaveTimer = _kBigWaveInterval;
-      _spawnColorWave();
+      _enqueueColorWave();
     }
+    _drainWaveQueue();
 
     // Clamp to arena
     if (game.isTunnelMode) {
@@ -207,12 +208,13 @@ abstract class BossBase extends PositionComponent
   /// alla fase. Initial 5s (era 15): prima wave parte presto per feedback.
   double _bigWaveTimer = 5.0;
   static const double _kBigWaveInterval = 15.0;
+  // Queue per spread dello spawn su più frame (evita hitch quando target=50).
+  final List<EnemyType> _bigWaveQueue = [];
+  static const int _kMaxSpawnPerFrame = 6;
 
-  /// Big wave color-matched (richiesta utente): 10/30/50 mob in base alla
-  /// fase. Usa `colorMatchedMinions` per scegliere il tipo corretto per il
-  /// boss. Cap separato `bossBigWaveCap` (60) per permettere ondate grandi
-  /// senza essere clippate dal `bossMinionEnemyCap` (15).
-  void _spawnColorWave() {
+  /// Carica la big wave nella queue. `_drainWaveQueue` la processa su più
+  /// frame evitando frame hitch (spawn di 50 mob in 1 frame = stutter).
+  void _enqueueColorWave() {
     if (!allowMinionSpawn) return;
     final types = colorMatchedMinions;
     if (types.isEmpty) return;
@@ -221,35 +223,56 @@ abstract class BossBase extends PositionComponent
       1 => 30,
       _ => 50,
     };
-    final free = bossBigWaveCap - game.enemyCount;
-    final toSpawn = free.clamp(0, targetCount);
-    for (int i = 0; i < toSpawn; i++) {
-      // Random type selection (era cycle i % length → ordine prevedibile).
-      final type = types[_bossRandom.nextInt(types.length)];
-      final angle = _bossRandom.nextDouble() * math.pi * 2;
-      final dist = 120 + _bossRandom.nextDouble() * 200;
-      Vector2 spawnPos;
-      if (game.isTunnelMode) {
-        // Tunnel: spawn viewport davanti al player (non offset dal boss)
-        // altrimenti può finire dietro camera → despawn istantaneo.
-        final cameraX = game.camera.viewfinder.position.x;
-        final halfW = game.size.x > 0 ? game.size.x / 2 : 400.0;
-        final sx = cameraX + halfW + 50 + _bossRandom.nextDouble() * 400;
-        final (topWall, bottomWall) = game.tunnelWallsAtX(sx);
-        const margin = 20.0;
-        final sy = topWall + margin +
-            _bossRandom.nextDouble() * (bottomWall - topWall - 2 * margin);
-        spawnPos = Vector2(sx, sy);
-      } else {
-        final raw = position +
-            Vector2(math.cos(angle) * dist, math.sin(angle) * dist);
-        spawnPos = Vector2(
-          raw.x.clamp(30.0, arenaWidth - 30.0),
-          raw.y.clamp(30.0, arenaHeight - 30.0),
-        );
-      }
-      game.spawnEnemy(type, spawnPos);
+    // Riempi queue con tipi random così quando drenata spawna mob misti
+    // invece di tutti dello stesso tipo in sequenza.
+    for (int i = 0; i < targetCount; i++) {
+      _bigWaveQueue.add(types[_bossRandom.nextInt(types.length)]);
     }
+  }
+
+  /// Drena la queue: max `_kMaxSpawnPerFrame` mob per frame, rispetta cap.
+  void _drainWaveQueue() {
+    if (_bigWaveQueue.isEmpty) return;
+    if (!allowMinionSpawn) {
+      _bigWaveQueue.clear();
+      return;
+    }
+    int spawned = 0;
+    while (_bigWaveQueue.isNotEmpty && spawned < _kMaxSpawnPerFrame) {
+      if (game.enemyCount >= bossBigWaveCap) return; // cap reached, resta in queue
+      final type = _bigWaveQueue.removeAt(0);
+      final spawnPos = _colorWaveSpawnPos();
+      if (spawnPos != null) {
+        game.spawnEnemy(type, spawnPos);
+      }
+      spawned++;
+    }
+  }
+
+  /// Calcola una posizione valida per uno spawn di color wave.
+  /// Tunnel: viewport davanti al player. Normal: offset dal boss.
+  /// Guard su tunnel walls troppo stretti (sinusoidale può collassare).
+  Vector2? _colorWaveSpawnPos() {
+    if (game.isTunnelMode) {
+      final cameraX = game.camera.viewfinder.position.x;
+      final halfW = game.size.x > 0 ? game.size.x / 2 : 400.0;
+      final sx = cameraX + halfW + 50 + _bossRandom.nextDouble() * 400;
+      final (topWall, bottomWall) = game.tunnelWallsAtX(sx);
+      const margin = 20.0;
+      final span = bottomWall - topWall - 2 * margin;
+      final sy = span > 0
+          ? topWall + margin + _bossRandom.nextDouble() * span
+          : (topWall + bottomWall) / 2; // fallback center se walls stretti
+      return Vector2(sx, sy);
+    }
+    final angle = _bossRandom.nextDouble() * math.pi * 2;
+    final dist = 120 + _bossRandom.nextDouble() * 200;
+    final raw = position +
+        Vector2(math.cos(angle) * dist, math.sin(angle) * dist);
+    return Vector2(
+      raw.x.clamp(30.0, arenaWidth - 30.0),
+      raw.y.clamp(30.0, arenaHeight - 30.0),
+    );
   }
 
   /// Spawna nemici di supporto durante il boss fight.
