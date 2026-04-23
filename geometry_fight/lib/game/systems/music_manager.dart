@@ -101,19 +101,29 @@ class MusicManager {
   }
 
   /// Avvia modalità INTRO. Pesca un brano random tra i 3 intro.
-  /// Idempotente: se già in modalità intro e player attivo, non fa nulla.
+  /// Idempotente: se già in intro e sta davvero suonando → no-op. Se era in
+  /// intro ma paused (lifecycle) → resume() invece di ripartire. Se mode
+  /// diverso O nessuna sorgente attiva → pesca nuova canzone dal bag.
   static Future<void> playIntro() async {
     if (!_initialized) return;
     if (_mode == _Mode.intro && _isActuallyPlaying()) return;
+    if (_mode == _Mode.intro && _isPaused()) {
+      await resume();
+      return;
+    }
     _mode = _Mode.intro;
     await _playFromIntroBag();
   }
 
   /// Avvia modalità BGM. Pesca dal shuffle bag dei 40 brani gameplay.
-  /// Idempotente: se già in modalità bgm e player attivo, non fa nulla.
+  /// Idempotente: playing → no-op; paused → resume; altro → nuova canzone.
   static Future<void> playBgm() async {
     if (!_initialized) return;
     if (_mode == _Mode.bgm && _isActuallyPlaying()) return;
+    if (_mode == _Mode.bgm && _isPaused()) {
+      await resume();
+      return;
+    }
     _mode = _Mode.bgm;
     await _playFromBgmBag();
   }
@@ -174,14 +184,18 @@ class MusicManager {
 
   // ─── INTERNAL ──────────────────────────────────────────────────────────────
 
-  /// true se BGM ha una sorgente attiva (playing o paused). iOS a volte
-  /// riporta `playing` brevemente dopo `pause()` prima del callback nativo —
-  /// trattare `paused` come "già attivo" evita double-trigger di `playBgm()`
-  /// che lascerebbe la musica pausata invece di riprenderla.
+  /// true SOLO se la sorgente BGM sta effettivamente suonando.
+  /// NB: paused è gestito separatamente da `_isPaused` → i caller (playIntro/
+  /// playBgm) fanno resume() invece di ripartire.
+  /// Bug precedente: trattare `paused` come "già attivo" faceva sì che
+  /// `playIntro()` fosse no-op al rientro menu con player paused → nessuna
+  /// canzone partiva finché l'utente non cambiava mode.
   static bool _isActuallyPlaying() {
-    final s = _player.state;
-    return s == PlayerState.playing || s == PlayerState.paused;
+    return _player.state == PlayerState.playing;
   }
+
+  /// true se il player è paused (sorgente caricata ma ferma).
+  static bool _isPaused() => _player.state == PlayerState.paused;
 
   static void _refillIntroBag() {
     _introBag
@@ -234,26 +248,20 @@ class MusicManager {
   /// dovrebbe essere rimesso nel bag dal caller.
   static Future<bool> _playTrack(String relativePath) async {
     // Mutex: se un altro _playTrack è in volo, questa call diventa stale.
-    // Il caller più recente aggiorna comunque `_playSeq` così il vecchio
-    // in-flight rilascia il controllo senza applicare side-effect finali.
+    // Il caller più recente aggiorna `_playSeq` così il vecchio in-flight
+    // rilascia il controllo senza applicare side-effect finali.
+    // NB: NON aggiorniamo `_lastPlayed` qui (bug: avrebbe marcato come
+    // "appena suonato" un track mai partito, impattando avoidRepeat).
     if (_playInFlight) {
-      _playSeq++; // invalida la call in corso
-      _lastPlayed = relativePath;
+      _playSeq++;
       _lastManualPlayMs = DateTime.now().millisecondsSinceEpoch;
-      // Stale: track non consumato → caller lo riaccoderà.
       return false;
     }
     _playInFlight = true;
     final seq = ++_playSeq;
     _lastManualPlayMs = DateTime.now().millisecondsSinceEpoch;
-    _lastPlayed = relativePath;
     try {
-      // Attendi eventuale stop() in volo: se stop.bgm.stop() termina DOPO
-      // play.bgm.play(), cancella la nuova sorgente → silenzio. Timeout 2s
-      // per evitare deadlock se bgm.stop() si blocca su Android MediaPlayer.
-      // Clear del flag SOLO se non è stato sostituito da un altro stop()
-      // concorrente (identical check): altrimenti lasciamo al caller di stop()
-      // la responsabilità del clear quando il suo await completa.
+      // Attendi stop() in volo con timeout 2s.
       final localStop = _stopInFlight;
       if (localStop != null) {
         try {
@@ -262,21 +270,24 @@ class MusicManager {
         if (identical(_stopInFlight, localStop)) {
           _stopInFlight = null;
         }
+        // Settle delay 80ms: Android MediaPlayer può essere ancora in stato
+        // "stopping" anche dopo che Future.stop() completa → se play() fira
+        // in quella finestra, viene droppato silenziosamente. 80ms è
+        // abbastanza per il state transition senza percepire il gap.
+        await Future.delayed(const Duration(milliseconds: 80));
       }
-      // NOTE: NO stop() esplicito prima del play. audioplayers `play()`
-      // swappa la sorgente atomicamente, senza emettere onPlayerComplete
-      // spuri. Un stop() intermedio può scatenare un completion spurio
-      // → doppia pesca dal shuffle bag → music stuck.
-      //
-      // Il taglio comunque è pressoché istantaneo perché la nuova sorgente
-      // parte appena il setup audio completa (latenza minima).
+
+      // NO stop() esplicito prima del play: audioplayers.play() swappa la
+      // sorgente atomicamente. Un stop() intermedio scatena completion spuri
+      // → doppia pesca dal bag → music stuck.
       await FlameAudio.bgm.play(relativePath, volume: AudioSystem.bgmVolume);
 
-      // Se nel frattempo è arrivato un altro _playTrack (skip successivo),
-      // questa call è superseded — non facciamo altro.
+      // Superseded: un altro _playTrack è arrivato nel frattempo.
       if (seq != _playSeq) return true;
 
-      await _player.setReleaseMode(ReleaseMode.release);
+      // Success → marca track come appena suonato (per avoidRepeat).
+      // setReleaseMode è già impostato in init() → non ripeterlo ogni play.
+      _lastPlayed = relativePath;
       return true;
     } catch (e) {
       debugPrint('MusicManager play error ($relativePath): $e');

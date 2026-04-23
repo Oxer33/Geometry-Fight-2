@@ -125,28 +125,40 @@ class AudioSystem {
       try { await _disposeInFlight; } catch (_) {}
       _disposeInFlight = null;
     }
+    // Ogni pool ha il proprio try/catch: se uno fallisce non deve killare
+    // l'intero sistema audio. `_initialized=true` anche con pool parziali →
+    // gli SFX non-falliti funzionano comunque.
     try {
-      // Pool SOLO per WAV ad alta frequenza (max 4 player simultanei).
       _shootPool = await FlameAudio.createPool(_fxShoot, maxPlayers: 4);
+    } catch (_) {}
+    try {
       _geomPool = await FlameAudio.createPool(_fxGeom, maxPlayers: 3);
-
-      // Pool custom per mob_killed.mp3 — 4 player riutilizzati in round-robin.
-      // Evita alloc di AudioPlayer ogni kill (principale causa di lag progressivo).
+    } catch (_) {}
+    try {
       _enemyDeathMp3Pool = _Mp3Pool(_fxEnemyDeath, size: 4);
       await _enemyDeathMp3Pool!.load();
-
-      // Pool mp3 per eventi critici — 1 player ciascuno. Rari ma devono partire
-      // SEMPRE senza contention col bgm.play concorrente (death → skipToNext).
+    } catch (_) {
+      _enemyDeathMp3Pool = null;
+    }
+    try {
       _playerDeathMp3Pool = _Mp3Pool(_fxPlayerDeath, size: 1);
+      await _playerDeathMp3Pool!.load();
+    } catch (_) {
+      _playerDeathMp3Pool = null;
+    }
+    try {
       _bossKilledMp3Pool = _Mp3Pool(_fxBossKilled, size: 1);
+      await _bossKilledMp3Pool!.load();
+    } catch (_) {
+      _bossKilledMp3Pool = null;
+    }
+    try {
       _gameOverExplosionMp3Pool = _Mp3Pool(_fxGameOverExplosion, size: 1);
-      await Future.wait([
-        _playerDeathMp3Pool!.load(),
-        _bossKilledMp3Pool!.load(),
-        _gameOverExplosionMp3Pool!.load(),
-      ]);
-
-      // Pre-carica tutti gli altri (wav rari) — usati con FlameAudio.play.
+      await _gameOverExplosionMp3Pool!.load();
+    } catch (_) {
+      _gameOverExplosionMp3Pool = null;
+    }
+    try {
       await FlameAudio.audioCache.loadAll([
         _fxBomb,
         _fxPowerUp,
@@ -156,10 +168,10 @@ class AudioSystem {
         _fxGameOver,
         _fxExtraLife,
       ]);
-      _initialized = true;
-    } catch (_) {
-      _initialized = false;
-    }
+    } catch (_) {}
+    // Flag sempre true se arriviamo qui: _canPlay/_playRare hanno già
+    // null-check sui pool, suoni falliti restano muti ma quelli ok partono.
+    _initialized = true;
   }
 
   static void setVibration(bool enabled) {
@@ -274,8 +286,12 @@ class AudioSystem {
 
   /// Helper: prova direct `FlameAudio.play`, su failure (sync O async)
   /// fallback al pool fornito. `FlameAudio.play` è async → sync try/catch
-  /// non intercetta errori post-return del Future. `.catchError` chain
-  /// cattura entrambi i casi.
+  /// non intercetta errori post-return del Future. `.then`+onError li cattura.
+  ///
+  /// Fix: il precedente `catchError` ritornava `Future<AudioPlayer>.error(...)`
+  /// lasciando un error future dangling nella root zone → unhandled error log
+  /// su alcuni device. Ora `.then` con `onError` consuma l'errore senza
+  /// propagarlo.
   static void _tryDirectThenPool(
       String asset, double volume, _Mp3Pool? fallbackPool) {
     void poolFallback() {
@@ -284,12 +300,12 @@ class AudioSystem {
       }
     }
     try {
-      FlameAudio.play(asset, volume: volume).catchError((Object _) {
-        poolFallback();
-        // `catchError` richiede Future<AudioPlayer> come return; rilanciamo
-        // come error-future così non si innesca un altro listener.
-        return Future<AudioPlayer>.error('fallback handled');
-      });
+      FlameAudio.play(asset, volume: volume).then<void>(
+        (_) {},
+        onError: (Object _, StackTrace _) {
+          poolFallback();
+        },
+      );
     } catch (_) {
       poolFallback();
     }
@@ -359,7 +375,9 @@ class AudioSystem {
     _playerDeathMp3Pool = null;
     _bossKilledMp3Pool = null;
     _gameOverExplosionMp3Pool = null;
-    try { FlameAudio.audioCache.clearAll(); } catch (_) {}
+    // NB: NON chiamiamo audioCache.clearAll() — la cache è condivisa con la
+    // bgm (music_manager) e clear aggressivo invalida asset usati dal
+    // playIntro/playBgm del prossimo screen → latenza/fallimento del play.
     _disposeInFlight = Future.wait(toDispose);
   }
 

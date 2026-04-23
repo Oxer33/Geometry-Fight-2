@@ -209,10 +209,14 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
     _game.onGameOver = null;
     _game.onPause = null;
     AudioSystem.stopAll();
-    // Ferma BGM: al rientro del main menu, `playIntro()` scatterà lì (era
-    // già idempotente). Senza stop esplicito, la musica gameplay continuava
-    // a suonare sopra l'intro del menu.
-    unawaited(MusicManager.stop());
+    // Pause() invece di stop(): al rientro menu, `playIntro()` swappa la
+    // sorgente atomicamente (bgm.play di un intro track sostituisce il
+    // gameplay track in memoria). stop() in dispose racing con menu.
+    // playIntro era la causa del bug "torno al menù non parte nessuna
+    // canzone": il stop nativo completava DOPO il play dell'intro → FlameAudio
+    // vedeva il player in "stopping" e droppava silenziosamente il play.
+    // Pause è istantanea, no race.
+    unawaited(MusicManager.pause());
     super.dispose();
   }
 

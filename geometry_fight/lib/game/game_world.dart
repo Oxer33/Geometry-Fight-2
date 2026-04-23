@@ -943,12 +943,15 @@ class GeometryFightGame extends FlameGame
     // FX esplosione player (mp3 dell'utente) — ogni vita persa.
     AudioSystem.playPlayerDeath();
 
-    // Skip a nuova canzone SOLO se non è la morte finale. Su final death
-    // (`lives <= 0`) `onPlayerDeath` gestisce lo stop permanente della
-    // musica; fare skipToNext qui scatenerebbe race con MusicManager.stop()
-    // → la musica potrebbe ripartire dopo lo stop previsto.
+    // Skip a nuova canzone SOLO se non è la morte finale. Ritardato 150ms
+    // per evitare contention MediaPlayer con il FX appena partito: con call
+    // back-to-back uno dei due veniva silenziato randomicamente.
     if (player.lives > 0) {
-      unawaited(MusicManager.skipToNext());
+      Future.delayed(const Duration(milliseconds: 150), () {
+        if (player.lives > 0) {
+          unawaited(MusicManager.skipToNext());
+        }
+      });
     }
 
     scoreSystem.resetMultiplier();
@@ -1087,9 +1090,14 @@ class GeometryFightGame extends FlameGame
     if (player.lives <= 0) {
       gameState = GameState.gameOver;
       // FX gameover_explosion.mp3 (drammatico finale).
-      // La musica deve fermarsi DEFINITIVAMENTE su game over (richiesta utente).
       AudioSystem.playGameOver();
-      unawaited(MusicManager.stop());
+      // Stop musica ritardato 250ms: lascia a game-over FX MediaPlayer
+      // libero per partire senza contention. Senza stagger, bgm.stop() +
+      // FlameAudio.play concorrenti sullo stesso thread audio nativo
+      // causano silenzio random sull'uno o l'altro.
+      Future.delayed(const Duration(milliseconds: 250), () {
+        unawaited(MusicManager.stop());
+      });
       saveSessionData();
       pauseEngine(); // Ferma il loop Flame: niente più update/render/audio
       onGameOver?.call();
