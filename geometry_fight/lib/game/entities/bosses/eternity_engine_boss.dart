@@ -458,7 +458,7 @@ class _EternityBullet extends PositionComponent with HasGameReference<GeometryFi
   double _lifetime = 4.0;
 
   _EternityBullet({required this.direction, required this.color, this.speed = 180})
-      : super(size: Vector2(8, 8), anchor: Anchor.center);
+      : super(size: Vector2(18, 18), anchor: Anchor.center);
 
   @override
   Future<void> onLoad() async { _velocity = direction.normalized() * speed; }
@@ -480,9 +480,13 @@ class _EternityBullet extends PositionComponent with HasGameReference<GeometryFi
 
   @override
   void render(Canvas canvas) {
+    final cx = size.x / 2;
+    final cy = size.y / 2;
+    _bulletPaint.color = color.withValues(alpha: 0.3);
+    canvas.drawCircle(Offset(cx, cy), 8, _bulletPaint);
     _bulletPaint.color = color;
-    canvas.drawCircle(Offset(size.x / 2, size.y / 2), 3.5, _bulletPaint);
+    canvas.drawCircle(Offset(cx, cy), 6, _bulletPaint);
     _bulletCorePaint.color = const Color(0xFFFFFFFF).withValues(alpha: 0.7);
-    canvas.drawCircle(Offset(size.x / 2, size.y / 2), 1.5, _bulletCorePaint);
+    canvas.drawCircle(Offset(cx, cy), 3, _bulletCorePaint);
   }
 }

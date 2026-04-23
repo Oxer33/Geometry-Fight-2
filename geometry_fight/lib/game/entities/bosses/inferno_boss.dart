@@ -205,7 +205,7 @@ class _FireBullet extends PositionComponent with HasGameReference<GeometryFightG
   double _lifetime = 3.0;
 
   _FireBullet({required this.direction})
-      : super(size: Vector2(8, 8), anchor: Anchor.center);
+      : super(size: Vector2(18, 18), anchor: Anchor.center);
 
   @override
   Future<void> onLoad() async { _velocity = direction.normalized() * 200; }
@@ -227,9 +227,13 @@ class _FireBullet extends PositionComponent with HasGameReference<GeometryFightG
 
   @override
   void render(Canvas canvas) {
+    final cx = size.x / 2;
+    final cy = size.y / 2;
+    _bulletPaint.color = const Color(0xFFFF6600).withValues(alpha: 0.3);
+    canvas.drawCircle(Offset(cx, cy), 8, _bulletPaint);
     _bulletPaint.color = const Color(0xFFFF6600);
-    canvas.drawCircle(Offset(size.x / 2, size.y / 2), 3.5, _bulletPaint);
+    canvas.drawCircle(Offset(cx, cy), 6, _bulletPaint);
     _bulletCorePaint.color = const Color(0xFFFFFFFF).withValues(alpha: 0.7);
-    canvas.drawCircle(Offset(size.x / 2, size.y / 2), 1.5, _bulletCorePaint);
+    canvas.drawCircle(Offset(cx, cy), 3, _bulletCorePaint);
   }
 }

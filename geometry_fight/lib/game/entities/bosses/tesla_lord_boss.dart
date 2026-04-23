@@ -267,7 +267,7 @@ class _TeslaBullet extends PositionComponent with HasGameReference<GeometryFight
   double _lifetime = 3.0;
 
   _TeslaBullet({required this.direction, required this.color})
-      : super(size: Vector2(6, 6), anchor: Anchor.center);
+      : super(size: Vector2(18, 18), anchor: Anchor.center);
 
   @override
   Future<void> onLoad() async { _velocity = direction.normalized() * 220; }
@@ -289,9 +289,13 @@ class _TeslaBullet extends PositionComponent with HasGameReference<GeometryFight
 
   @override
   void render(Canvas canvas) {
+    final cx = size.x / 2;
+    final cy = size.y / 2;
+    _bulletPaint.color = color.withValues(alpha: 0.3);
+    canvas.drawCircle(Offset(cx, cy), 8, _bulletPaint);
     _bulletPaint.color = color;
-    canvas.drawCircle(Offset(size.x / 2, size.y / 2), 3.5, _bulletPaint);
+    canvas.drawCircle(Offset(cx, cy), 6, _bulletPaint);
     _bulletCorePaint.color = const Color(0xFFFFFFFF).withValues(alpha: 0.7);
-    canvas.drawCircle(Offset(size.x / 2, size.y / 2), 1.5, _bulletCorePaint);
+    canvas.drawCircle(Offset(cx, cy), 3, _bulletCorePaint);
   }
 }
