@@ -128,6 +128,21 @@ class TunnelRenderer extends PositionComponent
     }
   }
 
+  /// true se `pos` è dentro un ostacolo attivo (richiesta utente: muri rossi
+  /// tunnel impenetrabili da boss/mob/proiettili/armi player).
+  bool hitsObstacle(Vector2 pos) {
+    for (final obs in _obstacles) {
+      if ((pos.x - obs.x).abs() > obs.width / 2) continue;
+      final bounds = _boundsAtX(obs.x);
+      if (obs.isTop) {
+        if (pos.y < bounds.top + obs.height) return true;
+      } else {
+        if (pos.y > bounds.bottom - obs.height) return true;
+      }
+    }
+    return false;
+  }
+
   void _spawnObstacle() {
     // Spawna un ostacolo avanti alla camera (fuori schermo a destra)
     final cameraX = game.camera.viewfinder.position.x;

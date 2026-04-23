@@ -183,6 +183,16 @@ class GeometryFightGame extends FlameGame
   double tunnelHeight = 420; // Altezza corridoio (si allarga per boss)
   double tunnelTargetHeight = 420;
   bool get isTunnelMode => gameMode == GameMode.tunnel;
+
+  /// Riferimento al TunnelRenderer attivo (null se non tunnel mode).
+  /// Esposto per permettere a proiettili/mob di fare collision-check con
+  /// i muri rossi (richiesta utente: impenetrabili da tutti gli entità).
+  TunnelRenderer? tunnelRenderer;
+
+  /// True se la posizione è dentro un ostacolo tunnel rosso.
+  bool hitsTunnelObstacle(Vector2 pos) {
+    return tunnelRenderer?.hitsObstacle(pos) ?? false;
+  }
   double tunnelScrollSpeed = 100; // Velocità scroll camera (px/s, cresce nel tempo)
   double _tunnelCameraX = 0; // Posizione X della camera (avanza indipendentemente dal player)
   // Dopo morte boss: 5s di grace period con tunnel pieno, poi 5s di shrink
@@ -242,8 +252,10 @@ class GeometryFightGame extends FlameGame
 
     // Add tunnel renderer per modalità Tunnel
     if (isTunnelMode) {
-      world.add(TunnelRenderer());
+      tunnelRenderer = TunnelRenderer();
+      world.add(tunnelRenderer!);
     } else {
+      tunnelRenderer = null;
       // Bordo arena bianco fluo 4x spesso (solo modalità non-tunnel)
       world.add(ArenaBorder());
     }
@@ -1311,7 +1323,10 @@ class GeometryFightGame extends FlameGame
 
     // Tunnel renderer solo in tunnel mode
     if (isTunnelMode) {
-      world.add(TunnelRenderer());
+      tunnelRenderer = TunnelRenderer();
+      world.add(tunnelRenderer!);
+    } else {
+      tunnelRenderer = null;
     }
 
     player = Player();

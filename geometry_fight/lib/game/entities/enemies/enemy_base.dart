@@ -123,6 +123,13 @@ abstract class EnemyBase extends PositionComponent
       final (topWall, bottomWall) = game.tunnelWallsAtX(position.x);
       const margin = 6.0;
       position.y = position.y.clamp(topWall + margin, bottomWall - margin);
+      // Muri rossi tunnel impenetrabili (richiesta utente): se il mob è
+      // dentro un ostacolo, spingilo via verso il centro tunnel.
+      if (game.hitsTunnelObstacle(position)) {
+        final centerY = (topWall + bottomWall) / 2;
+        final pushDir = position.y < centerY ? 1.0 : -1.0;
+        position.y += pushDir * 4.0;
+      }
     } else {
       // Clamp con half-size: sprite intero dentro il bordo arena (richiesta
       // utente "bordo arena impenetrabile"). Prima `5` → mezzo mob usciva.

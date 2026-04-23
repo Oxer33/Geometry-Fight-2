@@ -74,6 +74,11 @@ class PlayerBullet extends PositionComponent
         removeFromParent();
         return;
       }
+      // Muri rossi tunnel (richiesta utente: impenetrabili).
+      if (game.hitsTunnelObstacle(position)) {
+        removeFromParent();
+        return;
+      }
     } else {
       if (maxBounces > 2) {
         // Ricochet weapon: rimbalza sui muri
@@ -240,6 +245,11 @@ class EnemyBullet extends PositionComponent
       final (topWall, bottomWall) = game.tunnelWallsAtX(position.x);
       if (position.y <= topWall || position.y >= bottomWall ||
           (position - game.player.position).length > 1200) {
+        removeFromParent();
+        return;
+      }
+      // Muri rossi tunnel (richiesta utente impenetrabili).
+      if (game.hitsTunnelObstacle(position)) {
         removeFromParent();
       }
     } else {
@@ -452,6 +462,12 @@ class PlasmaBullet extends PositionComponent
       final (topWall, bottomWall) = game.tunnelWallsAtX(position.x);
       if (position.x < cameraLeft || position.y <= topWall || position.y >= bottomWall ||
           (position - game.player.position).length > 1200) {
+        removeFromParent();
+        return;
+      }
+      // Muri rossi tunnel: plasma esplode (simula hit su muro).
+      if (game.hitsTunnelObstacle(position)) {
+        _explode(null);
         removeFromParent();
       }
     } else {
@@ -696,7 +712,8 @@ class HomingMissile extends PositionComponent
       final (topWall, bottomWall) = game.tunnelWallsAtX(position.x);
       if (position.x < cameraLeft ||
           position.y <= topWall ||
-          position.y >= bottomWall) {
+          position.y >= bottomWall ||
+          game.hitsTunnelObstacle(position)) {
         _detonate(null);
         return;
       }
