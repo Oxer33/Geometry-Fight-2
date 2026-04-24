@@ -78,8 +78,10 @@ class VortexEnemy extends EnemyBase {
       canvas.drawPath(path, paint);
     }
 
-    // Center
+    // Center — reset style + strokeWidth: `paint` è cached/condiviso.
+    // Leak di strokeWidth=2 su next fill caller altrimenti.
     paint.style = PaintingStyle.fill;
+    paint.strokeWidth = 0;
     canvas.drawCircle(Offset.zero, 4 * scale, paint);
 
     canvas.restore();

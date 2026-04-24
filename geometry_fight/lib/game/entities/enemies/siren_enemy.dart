@@ -42,7 +42,7 @@ class SirenEnemy extends EnemyBase {
           final pushDir = (bullet.position - position);
           if (pushDir.length > 0) {
             pushDir.normalize();
-            bullet.position -= pushDir * 200 * dt; // Controvento (2x per compensare skip)
+            bullet.position -= pushDir * 400 * dt; // Controvento 2× per compensare throttle ogni 2 frame
           }
         }
       }

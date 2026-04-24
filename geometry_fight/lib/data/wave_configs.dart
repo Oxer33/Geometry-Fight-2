@@ -168,8 +168,10 @@ List<WaveConfig> generateWaveConfigs() {
     // ═══════════════════════════════════════════════════════════════
     final spawns = _generateThemedWave(wave);
 
-    // Gate raro: 1 ogni 10 wave (indipendente dal tema).
-    if (wave >= 10 && wave % 10 == 0) {
+    // Gate raro: 1 ogni 10 wave (waves 11, 21, 31 ...). Prima check era
+    // `wave % 10 == 0` ma queste sono tutte boss wave (continue a L152)
+    // → gate non spawnava MAI. Sposto su `wave % 10 == 1` (non-boss).
+    if (wave >= 11 && wave % 10 == 1) {
       spawns.add(WaveSpawn(EnemyType.gate, 1, delay: 10));
     }
 

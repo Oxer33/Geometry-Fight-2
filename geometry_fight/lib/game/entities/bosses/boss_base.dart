@@ -263,6 +263,10 @@ abstract class BossBase extends PositionComponent
     }
     final avgWeight = totalWeight / types.length;
     final targetCount = (baseCount * avgWeight / 2.0).round();
+    // Cap queue growth: se cap nemici blocca drain, next enqueue raddoppia
+    // la queue ogni 15s → memory leak su fight prolungato. Skip se queue
+    // già > 2× targetCount (abbondante).
+    if (_bigWaveQueue.length > targetCount * 2) return;
     for (int i = 0; i < targetCount; i++) {
       _bigWaveQueue.add(types[_bossRandom.nextInt(types.length)]);
     }
