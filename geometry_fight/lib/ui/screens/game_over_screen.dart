@@ -841,6 +841,9 @@ class _NeonGameOverButtonState extends State<_NeonGameOverButton>
 
 // ==================== PARTICLES ====================
 class _GameOverParticlesPainter extends CustomPainter {
+  // Static cache: evita alloc per frame × 30 particles.
+  static final Paint _paintCache = Paint()..style = PaintingStyle.fill;
+
   final double time;
   final double opacity;
   final bool hasNewRecord;
@@ -855,7 +858,8 @@ class _GameOverParticlesPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     if (opacity < 0.01) return;
     final rng = Random(77);
-    final paint = Paint()..style = PaintingStyle.fill;
+    final paint = _paintCache;
+    paint.maskFilter = null; // reset: blur da prev frame potrebbe leaked
 
     final count = hasNewRecord ? 30 : 15;
     for (int i = 0; i < count; i++) {

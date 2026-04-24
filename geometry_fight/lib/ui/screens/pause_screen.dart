@@ -399,6 +399,9 @@ class _NeonPauseButtonState extends State<_NeonPauseButton>
 }
 
 class _PauseParticlesPainter extends CustomPainter {
+  // Static cache: evita alloc per frame × 20 particles.
+  static final Paint _paintCache = Paint()..style = PaintingStyle.fill;
+
   final double time;
   final double opacity;
 
@@ -408,7 +411,8 @@ class _PauseParticlesPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     if (opacity < 0.01) return;
     final rng = Random(42);
-    final paint = Paint()..style = PaintingStyle.fill;
+    final paint = _paintCache;
+    paint.maskFilter = null; // reset: blur da prev frame potrebbe leaked
 
     for (int i = 0; i < 20; i++) {
       final baseX = rng.nextDouble() * size.width;
