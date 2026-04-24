@@ -53,6 +53,10 @@ class WaveSystem {
   int _spawnIndex = 0;
   bool _waveActive = false;
   bool _bossActive = false;
+  // Se wave vuole spawnare un boss ma uno è ancora attivo, differisce
+  // qui e update() riprova quando bossCount torna 0. Senza questo, nuove
+  // wave con boss restavano stuck (never spawn) fino a wave successiva.
+  BossType? _pendingBoss;
   bool _allSpawned = false; // Tutti i gruppi sono stati spawnati
   double _postSpawnDelay = 0; // Delay dopo l'ultimo spawn prima di controllare completamento
   double _waveElapsedTimer = 0; // Timer per forzare completamento wave in classic mode
@@ -150,10 +154,14 @@ class WaveSystem {
     // Check for boss — spawna solo se non c'è già un boss attivo
     if (_currentConfig!.boss != null && game.bossCount == 0) {
       _bossActive = true;
+      _pendingBoss = null;
       game.spawnBoss(_currentConfig!.boss!);
     } else if (_currentConfig!.boss != null && game.bossCount > 0) {
-      // C'è già un boss — aspetta che muoia prima di spawnare il nuovo
+      // Boss precedente ancora attivo — memorizza e spawna quando bossCount = 0.
       _bossActive = true;
+      _pendingBoss = _currentConfig!.boss;
+    } else {
+      _pendingBoss = null;
     }
 
     game.onWaveStart?.call(wave);
@@ -189,8 +197,14 @@ class WaveSystem {
     }
 
     if (_bossActive) {
+      // Pending boss: spawna ora che il precedente è morto.
+      if (_pendingBoss != null && game.bossCount == 0) {
+        game.spawnBoss(_pendingBoss!);
+        _pendingBoss = null;
+      }
       // Wait for boss to die, ma continua a spawnare nemici se presenti
-      if (game.bossCount == 0 && _allSpawned && game.enemyCount == 0) {
+      if (game.bossCount == 0 && _pendingBoss == null &&
+          _allSpawned && game.enemyCount == 0) {
         _bossActive = false;
         _completeWave();
         return;

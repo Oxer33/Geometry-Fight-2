@@ -21,6 +21,10 @@ class CrashReporter {
   /// Appena `_prefs` si inizializza, vengono flushati su disco.
   static final List<String> _pendingEntries = <String>[];
 
+  /// Write chain — serializza `setStringList` per evitare che scritture
+  /// concorrenti su crash-burst si sovrascrivano (last-writer-wins).
+  static Future<void> _writeChain = Future.value();
+
   /// Installa gli handler globali. Chiamare dentro `runZonedGuarded` in main.
   static Future<void> install() async {
     if (_installed) return;
@@ -78,13 +82,17 @@ class CrashReporter {
         }
         return;
       }
-      final existing = _prefs!.getStringList(_kKey) ?? <String>[];
-      existing.add(entry);
-      if (existing.length > _kMaxEntries) {
-        existing.removeRange(0, existing.length - _kMaxEntries);
-      }
-      // unawaited: lint-safe + evita di bloccare handler di errore.
-      unawaited(_prefs!.setStringList(_kKey, existing));
+      // Serializza via _writeChain: burst di errori concorrenti rispettano
+      // l'ordine invece di sovrascriversi (last-writer-wins).
+      _writeChain = _writeChain.then((_) async {
+        final existing = _prefs!.getStringList(_kKey) ?? <String>[];
+        existing.add(entry);
+        if (existing.length > _kMaxEntries) {
+          existing.removeRange(0, existing.length - _kMaxEntries);
+        }
+        await _prefs!.setStringList(_kKey, existing);
+      }).catchError((_) {}); // Swallow errori catena (crash recorder non deve crashare).
+      unawaited(_writeChain);
     } catch (_) {
       // Recorder che crasha sarebbe un loop infinito — silenzia.
     }
@@ -92,13 +100,17 @@ class CrashReporter {
 
   static void _flushPending() {
     try {
-      final existing = _prefs?.getStringList(_kKey) ?? <String>[];
-      existing.addAll(_pendingEntries);
-      if (existing.length > _kMaxEntries) {
-        existing.removeRange(0, existing.length - _kMaxEntries);
-      }
-      unawaited(_prefs!.setStringList(_kKey, existing));
+      final flush = List<String>.from(_pendingEntries);
       _pendingEntries.clear();
+      _writeChain = _writeChain.then((_) async {
+        final existing = _prefs?.getStringList(_kKey) ?? <String>[];
+        existing.addAll(flush);
+        if (existing.length > _kMaxEntries) {
+          existing.removeRange(0, existing.length - _kMaxEntries);
+        }
+        await _prefs!.setStringList(_kKey, existing);
+      }).catchError((_) {});
+      unawaited(_writeChain);
     } catch (_) {}
   }
 
