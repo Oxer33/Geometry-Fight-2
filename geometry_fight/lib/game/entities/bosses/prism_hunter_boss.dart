@@ -72,9 +72,10 @@ class PrismHunterBoss extends BossBase {
     _sweepAngle += dt * 1.2;
 
     final toPlayer = playerPosition - position;
+    // NaN guard: se player coincide col boss, normalized() NaN. Skip.
     if (toPlayer.length > 220) {
       position += toPlayer.normalized() * 45 * dt;
-    } else if (toPlayer.length < 160) {
+    } else if (toPlayer.length > 0.001 && toPlayer.length < 160) {
       position -= toPlayer.normalized() * 30 * dt;
     }
 

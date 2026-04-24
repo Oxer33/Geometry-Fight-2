@@ -34,6 +34,9 @@ class _ModeSelectScreenState extends State<ModeSelectScreen>
   void initState() {
     super.initState();
     _saveData = SaveManager.load();
+    // Seed modifiers attivi dal save — prima `_activeModifiers` partiva
+    // vuoto, ignorando i modificatori selezionati in sessione precedente.
+    _activeModifiers = List<String>.from(_saveData.activeModifiers);
 
     _entranceController = AnimationController(
       duration: const Duration(milliseconds: 900),
@@ -452,9 +455,12 @@ class _ModeSelectScreenState extends State<ModeSelectScreen>
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: GestureDetector(
-            onTap: () {
+            onTap: () async {
               _saveData.activeModifiers = _activeModifiers;
-              SaveManager.save(_saveData);
+              // Await save: modifiers persistono prima della transizione.
+              // Prima: fire-and-forget → crash mid-wave perdeva i modifiers.
+              await SaveManager.save(_saveData);
+              if (!mounted) return;
               widget.onStart(_selectedMode, _selectedDifficulty);
             },
             child: Container(

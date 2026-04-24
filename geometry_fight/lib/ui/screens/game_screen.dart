@@ -45,6 +45,9 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
   double _fadeOverlayOpacity = 1.0;
   // Key per forzare ricostruzione GameWidget su restart (pulisce completamente lo stato Flame)
   int _gameKey = 0;
+  // Timer cancellabile per overlay fade. Prima Future.delayed senza
+  // cancel → doppia-retry rapida pending multipli.
+  Timer? _fadeTimer;
 
   @override
   void initState() {
@@ -53,8 +56,9 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
     _initGame();
     // Tutorial al primo avvio
     _checkTutorial();
-    // Dissolvi l'overlay nero dopo che il GameWidget ha renderizzato i primi frame
-    Future.delayed(const Duration(milliseconds: 300), () {
+    // Dissolvi overlay nero dopo GameWidget render primi frame (cancellabile).
+    _fadeTimer?.cancel();
+    _fadeTimer = Timer(const Duration(milliseconds: 300), () {
       if (mounted) setState(() => _fadeOverlayOpacity = 0.0);
     });
   }
@@ -203,6 +207,7 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _fadeTimer?.cancel();
     // Ferma il motore Flame e l'audio quando si esce dalla schermata
     // per evitare che suoni/vibrazioni continuino in background.
     _game.pauseEngine();
@@ -305,8 +310,9 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
                   _gameKey++; // Forza ricostruzione GameWidget
                   _fadeOverlayOpacity = 1.0; // Reset overlay
                 });
-                // Dissolvi l'overlay dopo l'init del nuovo GameWidget
-                Future.delayed(const Duration(milliseconds: 300), () {
+                // Dissolvi overlay dopo init nuovo GameWidget (cancellabile).
+                _fadeTimer?.cancel();
+                _fadeTimer = Timer(const Duration(milliseconds: 300), () {
                   if (mounted) setState(() => _fadeOverlayOpacity = 0.0);
                 });
               },

@@ -10,10 +10,17 @@ class TutorialOverlay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onDismiss,
-      child: Container(
-        color: Colors.black.withValues(alpha: 0.85),
+    // PopScope: Android back NON deve bypassare il tutorial e popare la
+    // schermata gioco senza marcare `tutorial_seen`. Intercetta → dismiss.
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) onDismiss();
+      },
+      child: GestureDetector(
+        onTap: onDismiss,
+        child: Container(
+          color: Colors.black.withValues(alpha: 0.85),
         child: SafeArea(
           child: Center(
             child: Padding(
@@ -101,6 +108,7 @@ class TutorialOverlay extends StatelessWidget {
             ),
           ),
         ),
+      ),
       ),
     );
   }
