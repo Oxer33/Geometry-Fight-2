@@ -19,19 +19,28 @@ class ScoreSystem {
     10000, 100000, 1000000, 10000000, 100000000, 1000000000,
   ];
   int _nextLifeIndex = 0;
-  bool _extraLifeEarned = false;
+  int _extraLivesThisFrame = 0;
 
   void update(double dt) {
-    _extraLifeEarned = false;
-    if (_nextLifeIndex < _extraLifeThresholds.length &&
+    _extraLivesThisFrame = 0;
+    // Loop: a single frame can cross multiple thresholds (e.g., boss kill
+    // with max multiplier jumping 9K → 200K skips both 10K and 100K marks
+    // in one tick). Previous `if` granted only one life → player lost the
+    // other. Advance index through EVERY crossed threshold and expose the
+    // count to caller so they can grant N lives at once.
+    while (_nextLifeIndex < _extraLifeThresholds.length &&
         score >= _extraLifeThresholds[_nextLifeIndex]) {
-      _extraLifeEarned = true;
+      _extraLivesThisFrame++;
       _nextLifeIndex++;
     }
   }
 
-  /// True se il player ha guadagnato una vita extra in questo frame
-  bool get earnedExtraLife => _extraLifeEarned;
+  /// True se il player ha guadagnato almeno una vita extra in questo frame
+  bool get earnedExtraLife => _extraLivesThisFrame > 0;
+
+  /// Numero di vite extra guadagnate in questo frame (1+ se multiple soglie
+  /// attraversate in un singolo update tick, es. boss kill con jump grande).
+  int get extraLivesThisFrame => _extraLivesThisFrame;
 
   /// Multiplier arrotondato per il display
   int get multiplierDisplay => multiplier.round();
@@ -61,7 +70,7 @@ class ScoreSystem {
     geoms = 0;
     multiplier = 1.0;
     _nextLifeIndex = 0;
-    _extraLifeEarned = false;
+    _extraLivesThisFrame = 0;
     // NOTA: geomValueMultiplier, scoreMultiplier e modifierMultiplier NON resettati qui
     // perché sono settati dalla difficoltà/modifier in game_world
   }

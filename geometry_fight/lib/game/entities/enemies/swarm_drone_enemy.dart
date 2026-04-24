@@ -102,8 +102,10 @@ class SwarmDroneEnemy extends EnemyBase {
   @override
   void onDeath() {
     // Enrage: tutti gli SwarmDrone si enragiano globalmente per 1.5s
-    // (evita iterazione O(n²) che causa lag con 100+ nemici)
-    _globalEnrageTimer = 1.5;
+    // (evita iterazione O(n²) che causa lag con 100+ nemici).
+    // Usa max per non accorciare un enrage già in corso (es. due drone muoiono
+    // a 0.5s di distanza → il secondo non deve troncare il timer del primo).
+    if (_globalEnrageTimer < 1.5) _globalEnrageTimer = 1.5;
     super.onDeath();
   }
 

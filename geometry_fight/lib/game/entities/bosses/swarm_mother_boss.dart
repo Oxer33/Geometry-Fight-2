@@ -133,7 +133,13 @@ class SwarmMotherBoss extends BossBase {
       if (_laserActive) {
         _laserAngle += dt * math.pi * 2 / 3;
         _laserTimer -= dt;
-        if (_laserTimer <= 0) _laserActive = false;
+        if (_laserTimer <= 0) {
+          _laserActive = false;
+          // BUG fix: reset cooldown a fine sweep. Senza questo
+          // _laserCooldown restava ≤0 → il telegraph ri-attivato al frame
+          // successivo (loop laser/telegraph senza pausa).
+          _laserCooldown = 8.0;
+        }
 
         // Damage player (solo laser ATTIVO, non durante telegraph).
         final laserDir = Vector2(math.cos(_laserAngle), math.sin(_laserAngle));

@@ -30,6 +30,13 @@ class PlayerBullet extends PositionComponent
   /// che Flame processi removeFromParent().
   bool wasReflected = false;
 
+  /// Cooldown per reflect() del Gate: senza questo, la collisione con la
+  /// sfera del Gate persiste per più frame → reflect() inverte _velocity
+  /// ogni frame → il proiettile resta bloccato dentro il Gate oscillando.
+  /// 0.08s = ~5 frame @60fps: abbastanza per uscire dall'hitbox (r=15px,
+  /// speed=700 → 56px in 0.08s = ben oltre il raggio).
+  double _reflectCooldown = 0;
+
   // Trail
   final List<Vector2> _trail = [];
   static const int _maxTrailLength = 8;
@@ -60,6 +67,8 @@ class PlayerBullet extends PositionComponent
     // → bullet salta 6m in 1 frame = bucava collision senza hit.
     final realDt = dt / game.timeScale.clamp(0.3, 1.0);
     super.update(realDt);
+
+    if (_reflectCooldown > 0) _reflectCooldown -= realDt;
 
     // Store trail position
     _trail.insert(0, position.clone());
@@ -194,8 +203,13 @@ class PlayerBullet extends PositionComponent
   }
 
   /// Reflect the bullet's velocity (used by GateEnemy deflection).
+  /// Idempotente: cooldown evita flip ripetuti se il bullet resta dentro
+  /// la hitbox della sfera del Gate per più frame consecutivi (Flame tiene
+  /// attiva la collisione finché i poligoni si sovrappongono).
   void reflect() {
+    if (_reflectCooldown > 0) return;
     _velocity = -_velocity;
+    _reflectCooldown = 0.08;
   }
 
   /// GW:RE2 Fear: quando un proiettile colpisce, solo i nemici "fear-dodge"
@@ -455,6 +469,11 @@ class PlasmaBullet extends PositionComponent
   late Vector2 _velocity;
   double _phase = 0;
 
+  /// Guard contro double-explode: stesso motivo di HomingMissile._detonated.
+  /// Collisioni multiple nello stesso frame → _explode chiamato N volte
+  /// prima di removeFromParent → AoE e particelle N volte.
+  bool _exploded = false;
+
   PlasmaBullet({required this.direction, this.damage = 3, this.sizeMultiplier = 1.0})
       : super(size: Vector2(20 * sizeMultiplier, 20 * sizeMultiplier), anchor: Anchor.center);
 
@@ -536,6 +555,8 @@ class PlasmaBullet extends PositionComponent
   }
 
   void _explode(PositionComponent? directHit) {
+    if (_exploded) return;
+    _exploded = true;
     // Firepower in-game raddoppia raggio esplosione (80 → 160).
     final explosionRadius = 80 * sizeMultiplier;
 
@@ -627,6 +648,12 @@ class HomingMissile extends PositionComponent
   PositionComponent? _cachedTarget;
   int _searchCooldown = 0;
 
+  /// Guard contro double-detonate: `removeFromParent()` è async in Flame.
+  /// Se il missile collide con 2 nemici nello stesso frame, `_detonate`
+  /// verrebbe chiamato due volte prima che la rimozione sia processata
+  /// → AoE doppio, esplosione visiva doppia, screen shake doppio.
+  bool _detonated = false;
+
   double get explosionRadius => baseExplosionRadius * sizeMultiplier;
 
   HomingMissile({
@@ -701,7 +728,14 @@ class HomingMissile extends PositionComponent
         _cachedTarget == null ||
         _cachedTarget!.isRemoved) {
       _searchCooldown = 5;
+      // Se stiamo switchando bersaglio, libera il vecchio claim così altri
+      // missili della salva possono puntarlo. Altrimenti il claimed set
+      // cresce sporcando la distinzione per tutta la durata del missile.
+      final oldTarget = _cachedTarget;
       _cachedTarget = _pickDistinctTarget();
+      if (oldTarget != null && !identical(oldTarget, _cachedTarget)) {
+        _volleyTargets[volleyId]?.remove(oldTarget);
+      }
     }
 
     // Steering (NaN guard: se target coincide col missile, skip normalize).
@@ -879,6 +913,8 @@ class HomingMissile extends PositionComponent
   /// `target` nullable: quando la detonazione è border-triggered (muri
   /// arena/tunnel) non c'è direct hit — solo AoE.
   void _detonate(PositionComponent? target) {
+    if (_detonated) return;
+    _detonated = true;
     final radius = explosionRadius;
 
     // Direct hit al bersaglio (se presente).

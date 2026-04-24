@@ -98,7 +98,8 @@ class AudioSystem {
   static const _fxGameOver = 'fx/game_over.wav';
   static const _fxExtraLife = 'fx/extra_life.wav';
 
-  // Cooldown: impedisce lo stesso suono di suonare troppo spesso
+  // Cooldown: impedisce lo stesso suono di suonare troppo spesso.
+  // Map has fixed keys (sound IDs) — bounded growth: one entry per sfx key.
   static final _lastPlayTime = <String, int>{};
   static const _minIntervalMs = 50; // ms minimo tra due riproduzioni dello stesso suono
 

@@ -160,9 +160,11 @@
 
 ## Conteggio
 
-- ✅ Full review + fix: 66 files
-- 🟡 Review done, minor/intentional: 23 files
-- ❌ Non review deep: 4 files
+- ✅ Full review + fix (agent pattern scan + deep semantic where flagged): 85 files
+- 🟡 Review done, clean / intentional / minor: 8 files
+- ❌ Non scansionati: 0 files
+
+**Nota:** "deep scan" = lettura riga-per-riga con review semantica. Eseguito deep semantic su: game_world, wave_system, boss_base, player, projectiles + 10 bosses. Altri file review pattern-scan (NaN/Paint/dispose/race/Future) con fix diretti dove trovato bug.
 
 ## TODO priorità residua (minor)
 

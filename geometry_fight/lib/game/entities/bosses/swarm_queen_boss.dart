@@ -21,6 +21,9 @@ class SwarmQueenBoss extends BossBase {
   // deve ripulire lo sciame per aprire la finestra di danno.
   static const int _kHiveBondThreshold = 15;
   int _swarmCount = 0;
+  // Shared rng — evita alloc di 5× `math.Random()` per `_spawnSwarm`
+  // (spawn ogni 1-2.5s → ~2-5 alloc/s eliminati).
+  static final math.Random _rng = math.Random();
 
   SwarmQueenBoss()
       : super(
@@ -90,8 +93,8 @@ class SwarmQueenBoss extends BossBase {
     if (game.enemyCount >= 30) return;
     final count = 5 + currentPhase * 3;
     for (int i = 0; i < count; i++) {
-      final angle = math.Random().nextDouble() * math.pi * 2;
-      final dist = 40 + math.Random().nextDouble() * 30;
+      final angle = _rng.nextDouble() * math.pi * 2;
+      final dist = 40 + _rng.nextDouble() * 30;
       final pos = position + Vector2(math.cos(angle) * dist, math.sin(angle) * dist);
       game.spawnEnemy(EnemyType.swarmDrone, pos);
     }
@@ -99,8 +102,8 @@ class SwarmQueenBoss extends BossBase {
     if (currentPhase >= 2) {
       for (int i = 0; i < 2; i++) {
         game.spawnEnemy(EnemyType.kamikaze, position + Vector2(
-          (math.Random().nextDouble() - 0.5) * 80,
-          (math.Random().nextDouble() - 0.5) * 80,
+          (_rng.nextDouble() - 0.5) * 80,
+          (_rng.nextDouble() - 0.5) * 80,
         ));
       }
     }

@@ -61,13 +61,15 @@ class TheArchitectBoss extends BossBase {
       _buildStructure();
     }
 
-    // Update structures
-    for (final structure in _structures.toList()) {
+    // Update structures — reverse iteration evita alloc di `.toList()` per
+    // frame (BUG fix perf: era una lista copiata 60×/s per mutazione sicura).
+    for (int sIdx = _structures.length - 1; sIdx >= 0; sIdx--) {
+      final structure = _structures[sIdx];
       structure.lifetime -= dt;
       structure.attackTimer -= dt;
 
       if (structure.lifetime <= 0) {
-        _structures.remove(structure);
+        _structures.removeAt(sIdx);
         continue;
       }
 

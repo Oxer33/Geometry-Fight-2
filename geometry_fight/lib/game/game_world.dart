@@ -338,9 +338,12 @@ class GeometryFightGame extends FlameGame
     scoreSystem.update(scaledDt);
     // Traccia tempo di gioco sessione (usa dt reale, non scalato)
     _sessionTimeSec += dt;
-    // Vite extra per soglie punteggio (10K, 100K, 1M, 10M, 100M, 1B)
-    if (scoreSystem.earnedExtraLife) {
-      player.lives++;
+    // Vite extra per soglie punteggio (10K, 100K, 1M, 10M, 100M, 1B).
+    // extraLivesThisFrame conta TUTTE le soglie attraversate in un singolo
+    // tick (es. boss kill che salta 9K → 200K = 2 vite, non 1).
+    final livesGained = scoreSystem.extraLivesThisFrame;
+    if (livesGained > 0) {
+      player.lives += livesGained;
       triggerScreenShake(3, 0.1);
     }
     powerUpSystem.update(scaledDt);

@@ -72,11 +72,15 @@ class SingularityBoss extends BossBase {
     }
 
     // Pull attack — forza +50% (150→225) e durata +50% (2.0→3.0s) richiesta utente.
-    _pullTimer -= dt;
-    if (_pullTimer <= 0 && !_pulling) {
-      _pulling = true;
-      _pullDuration = 3.0; // +50% da 2.0
-      _pullTimer = 3.33; // +50% frequenza (era 5.0, richiesta utente)
+    // BUG FIX: _pullTimer veniva resettato all'INIZIO del pull. Con pull 3.0s e
+    // cooldown 3.33s, il timer decrementava durante il pull → next trigger solo
+    // 0.33s dopo la fine → pull quasi continuo. Il reset va fatto a pull END.
+    if (!_pulling) {
+      _pullTimer -= dt;
+      if (_pullTimer <= 0) {
+        _pulling = true;
+        _pullDuration = 3.0; // +50% da 2.0
+      }
     }
 
     if (_pulling) {
@@ -91,7 +95,10 @@ class SingularityBoss extends BossBase {
         _clampPlayerToBounds();
       }
       _pullDuration -= dt;
-      if (_pullDuration <= 0) _pulling = false;
+      if (_pullDuration <= 0) {
+        _pulling = false;
+        _pullTimer = 3.33; // cooldown DOPO il pull (richiesta utente).
+      }
     }
 
     // Clone attack (phase 1+)

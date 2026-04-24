@@ -65,6 +65,20 @@ class GridDistortion extends PositionComponent {
     _pathsCreated = true;
   }
 
+  // Velocity cap: prevents unbounded accumulation when multiple explosions
+  // land in the same frame (boss ring + player bomb overlap). Without the
+  // cap, velocity can reach 10K+ px/s → spring overshoots rest by orders of
+  // magnitude → visible grid warp and wasted update cycles.
+  static const double _maxNodeSpeed = 2000.0;
+  static const double _maxNodeSpeedSq = _maxNodeSpeed * _maxNodeSpeed;
+
+  static void _capVelocity(_GridNode node) {
+    final lenSq = node.velocity.length2;
+    if (lenSq > _maxNodeSpeedSq) {
+      node.velocity.scale(_maxNodeSpeed / math.sqrt(lenSq));
+    }
+  }
+
   void applyForce(Vector2 center, double radius, double force) {
     final radiusSq = radius * radius;
     // NaN guard: distSq > 1e-6 (non solo > 0) evita NaN da normalize
@@ -80,6 +94,7 @@ class GridDistortion extends PositionComponent {
           final strength = force * (1.0 - dist / radius);
           final dir = (node.position - center)..normalize();
           node.velocity += dir * strength;
+          _capVelocity(node);
         }
       }
     }
@@ -99,6 +114,7 @@ class GridDistortion extends PositionComponent {
           final strength = force * (1.0 - dist / radius);
           final dir = (center - node.position)..normalize();
           node.velocity += dir * strength;
+          _capVelocity(node);
         }
       }
     }

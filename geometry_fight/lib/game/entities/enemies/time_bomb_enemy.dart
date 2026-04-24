@@ -79,19 +79,21 @@ class TimeBombEnemy extends EnemyBase {
       game.grid.applyForce(position, _explosionRadius * 1.5, 1500);
     }
     game.triggerScreenShake(8, 0.4);
-    game.onEnemyKilled(this);
-    removeFromParent();
+    // Delegano a super per settare EnemyBase._isDead + onEnemyKilled +
+    // removeFromParent — evita che un killSilently successivo (bomba/gate)
+    // esploda di nuovo e conti un secondo kill.
+    super.onDeath();
   }
 
   @override
   void onDeath() {
     if (_dead) return;
     _dead = true;
-    // Ucciso dal player: no esplosione, drop power-up garantito
+    // Ucciso dal player: no esplosione area, drop power-up garantito
     game.spawnPowerUp(position);
-    game.onEnemyKilled(this);
     game.spawnExplosion(position, NeonColors.green, radius: 30, particleCount: 15);
-    removeFromParent();
+    // super.onDeath gestisce _isDead + game.onEnemyKilled(this) + removeFromParent.
+    super.onDeath();
   }
 
   @override

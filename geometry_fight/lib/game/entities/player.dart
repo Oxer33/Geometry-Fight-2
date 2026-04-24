@@ -168,7 +168,19 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
     // Shooting (usa realDt per non essere rallentato dallo slow-mo)
     _fireTimer -= realDt;
     if ((game.isShooting || aimDir.length > 0.3) && _fireTimer <= 0) {
-      _shoot(aimDir.length > 0.3 ? aimDir : Vector2(0, -1));
+      // Direction default: se il giocatore preme fire senza mirare, usa
+      // l'orientamento della nave (_rotation) invece di hardcoded "su".
+      // Prima: ship che guardava est sparava sempre a nord → disconnect
+      // visivo. _rotation = atan2(aimY, aimX) + pi/2 → aimVector inverso:
+      // (cos(_rotation - pi/2), sin(_rotation - pi/2)).
+      final Vector2 shootDir;
+      if (aimDir.length > 0.3) {
+        shootDir = aimDir;
+      } else {
+        final a = _rotation - math.pi / 2;
+        shootDir = Vector2(math.cos(a), math.sin(a));
+      }
+      _shoot(shootDir);
     }
 
     // Timers (tutti con realDt — il player non è affetto dal slow-mo)
@@ -237,8 +249,12 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
     // Overdrive powerup: potenzia SOLO la velocità di movimento della nave
     // (vedi update() line 103). Non incrementa fire rate né danno né pierce
     // — era un effetto cumulativo che rendeva il powerup troppo forte.
-    final fireRateMultiplier = game.saveData.fireRateMultiplier *
-        (hasRapidFire ? 2.5 : 1.0);
+    // Clamp a 0.01 min per evitare divisione per zero se un shop mult arriva
+    // a 0 (bug upgrade tier o save file corrotto) → fire interval infinito,
+    // il player non spara più per tutto il run. Safety net.
+    final fireRateMultiplier = (game.saveData.fireRateMultiplier *
+            (hasRapidFire ? 2.5 : 1.0))
+        .clamp(0.01, double.infinity);
 
     double fireInterval = 1.0 / (baseFireRate * fireRateMultiplier);
     _fireTimer = fireInterval;
@@ -429,14 +445,23 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
     if (hasShield) {
       shieldHits--;
       if (shieldHits <= 0) {
+        // Reset completo dello stato scudo: shieldHits/hasShield/shieldTimer
+        // devono essere sempre coerenti tra loro per evitare stati "zombie"
+        // (hasShield=false ma shieldTimer>0 → un nuovo applyShield avrebbe
+        // dovuto comunque sovrascrivere ma eliminiamo l'ambiguità qui).
         hasShield = false;
+        shieldTimer = 0;
       }
       game.spawnExplosion(position, NeonColors.cyan, radius: 30);
       return;
     }
 
-    lives--;
+    // FIX race multi-hit stesso frame: più collision possono chiamare
+    // takeDamage() nello stesso tick (es. due nemici sovrapposti). Impostare
+    // _invincibleTimer PRIMA di decrementare lives rende la seconda chiamata
+    // no-op via il guard `isInvincible` in cima → perdi 1 vita per hit, non N.
     _invincibleTimer = playerInvincibilityDuration;
+    lives--;
 
     // Scudo post-morte dall'upgrade shop: compare solo dopo aver perso una vita
     final shieldDur = game.saveData.postDeathShieldDuration;

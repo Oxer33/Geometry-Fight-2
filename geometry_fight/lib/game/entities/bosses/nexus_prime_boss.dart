@@ -168,21 +168,25 @@ class NexusPrimeBoss extends BossBase {
     // Intercetta PlayerBullet entro _satelliteHitR di ogni satellite vivo.
     // Il satellite assorbe il bullet e prende damage — richiede più hit per
     // rompersi (era 1-hit kill, ora HP-based).
-    for (final child in game.world.children) {
-      if (child is PlayerBullet) {
-        for (final s in _satellites) {
-          if (!s.alive) continue;
-          final worldPos = position + s.offset;
-          if (child.position.distanceTo(worldPos) < _satelliteHitR) {
-            // Guard difensivo: damage NaN/non-positivo → fallback 1.
-            final dmg = child.damage.isFinite && child.damage > 0
-                ? child.damage
-                : 1.0;
-            s.hp -= dmg;
-            if (s.hp <= 0) _killSatellite(s);
-            child.removeFromParent();
-            break;
-          }
+    // BUG FIX: iterare game.world.children mentre si chiama removeFromParent
+    // può causare ConcurrentModificationError (Flame rimuove fine frame ma la
+    // collection interna può mutare). Snapshot + isRemoved guard.
+    final nexusChildrenSnapshot = game.world.children.toList(growable: false);
+    for (final child in nexusChildrenSnapshot) {
+      if (child is! PlayerBullet) continue;
+      if (child.isRemoved) continue;
+      for (final s in _satellites) {
+        if (!s.alive) continue;
+        final worldPos = position + s.offset;
+        if (child.position.distanceTo(worldPos) < _satelliteHitR) {
+          // Guard difensivo: damage NaN/non-positivo → fallback 1.
+          final dmg = child.damage.isFinite && child.damage > 0
+              ? child.damage
+              : 1.0;
+          s.hp -= dmg;
+          if (s.hp <= 0) _killSatellite(s);
+          child.removeFromParent();
+          break;
         }
       }
     }

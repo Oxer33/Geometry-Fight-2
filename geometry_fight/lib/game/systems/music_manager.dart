@@ -299,12 +299,12 @@ class MusicManager {
       debugPrint('MusicManager play error ($relativePath): $e');
       return true; // track consumato comunque — non riaccodare
     } finally {
-      // Rilascia mutex solo se possediamo ancora il seq corrente.
-      // Senza guard, un vecchio _playTrack che finisce dopo uno stop()
-      // + nuovo _playTrack clearebbe il mutex preso dalla nuova call.
-      if (seq == _playSeq) {
-        _playInFlight = false;
-      }
+      // Mutex ownership: this call set `_playInFlight = true`, so this call
+      // must release it. Concurrent callers that hit the early-return branch
+      // DO NOT set `_playInFlight`; they only bump `_playSeq` to invalidate
+      // our late side-effects. A seq-gated release deadlocked the mutex when
+      // a superseding caller returned stale without ever taking ownership.
+      _playInFlight = false;
     }
   }
 

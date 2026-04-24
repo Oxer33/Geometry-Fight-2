@@ -106,6 +106,10 @@ class TheGridBoss extends BossBase {
       _laserTimer -= dt;
       if (_laserTimer <= 0) {
         _laserActive = false;
+        // BUG fix: reset cooldown al termine dello sweep. Senza questo
+        // _laserCooldown restava ≤0 → il telegraph ri-partiva al frame
+        // successivo (loop laser → telegraph → laser infinito).
+        _laserCooldown = 6.0;
       }
 
       // Damage player if in laser path (solo quando ATTIVO, non wind-up).
