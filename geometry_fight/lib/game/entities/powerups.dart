@@ -283,6 +283,8 @@ class PowerUp extends PositionComponent
       Set<Vector2> intersectionPoints, PositionComponent other) {
     if (other is Player) {
       applyTo(other);
+      // Bump session counter: era morto, achievement totalPowerUps sempre 0.
+      other.game.sessionPowerUps++;
       removeFromParent();
     }
     super.onCollisionStart(intersectionPoints, other);

@@ -663,6 +663,9 @@ class WaveSystem {
     final rows = 2 + _formRng.nextInt(2); // 2 o 3 schiere
     final perRow = (count / rows).ceil();
     const rowSpacing = 32.0;
+    // Clamp usa effectiveArena per rispettare `tiny_arena` modifier.
+    final eW = game.effectiveArenaWidth;
+    final eH = game.effectiveArenaHeight;
     // Cap totale a `count` così rows*perRow non eccede il target wave.
     int totalSpawned = 0;
     for (int r = 0; r < rows && totalSpawned < count; r++) {
@@ -676,8 +679,8 @@ class WaveSystem {
           pos.y + offset.y + (marchDir.y == 0 ? sidewayShift : 0),
         );
         final clamped = Vector2(
-          rowPos.x.clamp(20.0, arenaWidth - 20.0),
-          rowPos.y.clamp(20.0, arenaHeight - 20.0),
+          rowPos.x.clamp(20.0, eW - 20.0),
+          rowPos.y.clamp(20.0, eH - 20.0),
         );
         final spawned = game.spawnEnemy(EnemyType.swarmDrone, clamped);
         if (spawned is SwarmDroneEnemy) {
@@ -698,12 +701,17 @@ class WaveSystem {
     }
   }
 
-  /// Centro casuale nell'arena, lontano dai bordi
+  /// Centro casuale nell'arena, lontano dai bordi.
+  /// Usa effectiveArena per rispettare `tiny_arena` modifier — altrimenti
+  /// il centro cadeva nella zona fuori-arena e tutte le posizioni
+  /// venivano clampate al bordo → formazione ammassata.
   Vector2 _randomFormationCenter() {
-    const pad = 160.0;
+    final eW = game.effectiveArenaWidth;
+    final eH = game.effectiveArenaHeight;
+    final pad = math.min(160.0, math.min(eW, eH) * 0.25);
     return Vector2(
-      pad + _formRng.nextDouble() * (arenaWidth - pad * 2),
-      pad + _formRng.nextDouble() * (arenaHeight - pad * 2),
+      pad + _formRng.nextDouble() * (eW - pad * 2),
+      pad + _formRng.nextDouble() * (eH - pad * 2),
     );
   }
 
@@ -755,18 +763,20 @@ class WaveSystem {
   }
 
   /// Diamond: rombo (4 lati)
+  /// FIX: distribuzione greedy su 4 lati — prima con count<8 i lati 3/4
+  /// restavano vuoti → rombo diventava triangolo storto.
   List<Vector2> _fDiamond(int count, Vector2 center, Vector2 _) {
     final r = 70.0 + count * 2.0;
     final corners = [
       Vector2(0, -r), Vector2(r, 0), Vector2(0, r), Vector2(-r, 0),
     ];
-    final perSide = math.max(2, count ~/ 4);
     final positions = <Vector2>[];
     for (int s = 0; s < 4 && positions.length < count; s++) {
       final start = corners[s];
       final end = corners[(s + 1) % 4];
-      for (int p = 0; p < perSide && positions.length < count; p++) {
-        final t = p / perSide;
+      final sideCount = ((count - positions.length) / (4 - s)).ceil();
+      for (int p = 0; p < sideCount && positions.length < count; p++) {
+        final t = sideCount <= 1 ? 0.0 : p / sideCount;
         positions.add(center + Vector2(
           start.x + (end.x - start.x) * t,
           start.y + (end.y - start.y) * t,
@@ -777,8 +787,9 @@ class WaveSystem {
   }
 
   /// Cross: più (+) con 4 braccia
+  /// FIX: distribuisce count equamente tra 4 braccia — prima con count<8
+  /// solo 1-2 braccia ricevevano nemici → la "+" diventava "/" o "L".
   List<Vector2> _fCross(int count, Vector2 center, Vector2 _) {
-    final perArm = math.max(2, count ~/ 4);
     // Direzioni: su, destra, giù, sinistra
     const dirs = [
       [0.0, -1.0], [1.0, 0.0], [0.0, 1.0], [-1.0, 0.0],
@@ -787,8 +798,12 @@ class WaveSystem {
     for (int a = 0; a < 4 && positions.length < count; a++) {
       final dx = dirs[a][0];
       final dy = dirs[a][1];
-      for (int p = 0; p < perArm && positions.length < count; p++) {
-        final dist = 20.0 + p * (110.0 / math.max(1, perArm - 1));
+      // Distribuzione greedy: arm a riceve `count/4` arrotondato con resto.
+      final armCount = ((count - positions.length) / (4 - a)).ceil();
+      for (int p = 0; p < armCount && positions.length < count; p++) {
+        final dist = armCount <= 1
+            ? 65.0
+            : 20.0 + p * (110.0 / (armCount - 1));
         positions.add(center + Vector2(dx * dist, dy * dist));
       }
     }
@@ -796,19 +811,20 @@ class WaveSystem {
   }
 
   /// Triangle: triangolo equilatero (3 lati)
+  /// FIX: distribuzione greedy su 3 lati — prima con count<6 un lato restava vuoto.
   List<Vector2> _fTriangle(int count, Vector2 center, Vector2 _) {
     const r = 110.0;
     final vertices = List.generate(3, (k) {
       final angle = -math.pi / 2 + k * math.pi * 2 / 3;
       return Vector2(math.cos(angle) * r, math.sin(angle) * r);
     });
-    final perSide = math.max(2, count ~/ 3);
     final positions = <Vector2>[];
     for (int s = 0; s < 3 && positions.length < count; s++) {
       final start = vertices[s];
       final end = vertices[(s + 1) % 3];
-      for (int p = 0; p < perSide && positions.length < count; p++) {
-        final t = p / perSide;
+      final sideCount = ((count - positions.length) / (3 - s)).ceil();
+      for (int p = 0; p < sideCount && positions.length < count; p++) {
+        final t = sideCount <= 1 ? 0.0 : p / sideCount;
         positions.add(center + Vector2(
           start.x + (end.x - start.x) * t,
           start.y + (end.y - start.y) * t,
@@ -842,7 +858,8 @@ class WaveSystem {
     return positions;
   }
 
-  /// Star5: stella a 5 punte — punti distribuiti sui 10 segmenti
+  /// Star5: stella a 5 punte — punti distribuiti sui 10 segmenti.
+  /// FIX: distribuzione greedy — prima con count<10 alcuni segmenti restavano vuoti.
   List<Vector2> _fStar5(int count, Vector2 center, Vector2 _) {
     const outerR = 120.0;
     const innerR = 50.0;
@@ -852,13 +869,11 @@ class WaveSystem {
       final r = (i % 2 == 0) ? outerR : innerR;
       return Vector2(math.cos(angle) * r, math.sin(angle) * r);
     });
-    // Distribuzione dei count punti sui 10 segmenti
-    final pointsPerSeg = math.max(1, count ~/ 10);
     final positions = <Vector2>[];
     for (int s = 0; s < 10 && positions.length < count; s++) {
       final start = starVerts[s];
       final end = starVerts[(s + 1) % 10];
-      final pts = (s == 9) ? (count - positions.length) : pointsPerSeg;
+      final pts = ((count - positions.length) / (10 - s)).ceil();
       for (int p = 0; p < pts && positions.length < count; p++) {
         final t = pts <= 1 ? 0.0 : p / (pts - 1);
         positions.add(center + Vector2(
@@ -989,19 +1004,20 @@ class WaveSystem {
   }
 
   /// Hexagon: esagono (6 lati)
+  /// FIX: distribuzione greedy su 6 lati — prima con count<12 più lati restavano vuoti.
   List<Vector2> _fHexagon(int count, Vector2 center, Vector2 _) {
     final r = 80.0 + count * 2.0;
     final vertices = List.generate(6, (k) {
       final angle = k * math.pi / 3;
       return Vector2(math.cos(angle) * r, math.sin(angle) * r);
     });
-    final perSide = math.max(2, count ~/ 6);
     final positions = <Vector2>[];
     for (int s = 0; s < 6 && positions.length < count; s++) {
       final start = vertices[s];
       final end = vertices[(s + 1) % 6];
-      for (int p = 0; p < perSide && positions.length < count; p++) {
-        final t = p / perSide;
+      final sideCount = ((count - positions.length) / (6 - s)).ceil();
+      for (int p = 0; p < sideCount && positions.length < count; p++) {
+        final t = sideCount <= 1 ? 0.0 : p / sideCount;
         positions.add(center + Vector2(
           start.x + (end.x - start.x) * t,
           start.y + (end.y - start.y) * t,
@@ -1054,6 +1070,7 @@ class WaveSystem {
   }
 
   /// SquareRing: perimetro di un quadrato
+  /// FIX: distribuzione greedy su 4 lati — prima con count<8 lati vuoti.
   List<Vector2> _fSquareRing(int count, Vector2 center, Vector2 _) {
     final side = 160.0 + count * 2.0;
     final half = side / 2;
@@ -1061,13 +1078,13 @@ class WaveSystem {
       Vector2(-half, -half), Vector2(half, -half),
       Vector2(half, half), Vector2(-half, half),
     ];
-    final perSide = math.max(2, count ~/ 4);
     final positions = <Vector2>[];
     for (int s = 0; s < 4 && positions.length < count; s++) {
       final start = corners[s];
       final end = corners[(s + 1) % 4];
-      for (int p = 0; p < perSide && positions.length < count; p++) {
-        final t = p / perSide;
+      final sideCount = ((count - positions.length) / (4 - s)).ceil();
+      for (int p = 0; p < sideCount && positions.length < count; p++) {
+        final t = sideCount <= 1 ? 0.0 : p / sideCount;
         positions.add(center + Vector2(
           start.x + (end.x - start.x) * t,
           start.y + (end.y - start.y) * t,
@@ -1190,15 +1207,18 @@ class WaveSystem {
   }
 
   /// XShape: due diagonali incrociate (4 braccia a 45°)
+  /// FIX: distribuzione greedy su 4 braccia — prima con count<8 alcune braccia vuote.
   List<Vector2> _fXShape(int count, Vector2 center, Vector2 _) {
     const armLen = 130.0;
     // Angoli 45°, 135°, 225°, 315°
     final angles = [math.pi / 4, 3 * math.pi / 4, 5 * math.pi / 4, 7 * math.pi / 4];
-    final perArm = math.max(2, count ~/ 4);
     final positions = <Vector2>[];
     for (int a = 0; a < 4 && positions.length < count; a++) {
-      for (int p = 0; p < perArm && positions.length < count; p++) {
-        final dist = 20.0 + p * (armLen - 20.0) / math.max(1, perArm - 1);
+      final armCount = ((count - positions.length) / (4 - a)).ceil();
+      for (int p = 0; p < armCount && positions.length < count; p++) {
+        final dist = armCount <= 1
+            ? 75.0
+            : 20.0 + p * (armLen - 20.0) / (armCount - 1);
         positions.add(center + Vector2(
           math.cos(angles[a]) * dist,
           math.sin(angles[a]) * dist,
@@ -1230,12 +1250,16 @@ class WaveSystem {
   /// BorderLine: schiera lungo un intero bordo dell'arena.
   /// Se `side` è null ne pesca uno a caso. I nemici sono equispaziati con un
   /// padding laterale per evitare che il primo/ultimo tocchino subito l'angolo.
+  /// Usa effectiveArena per rispettare `tiny_arena` modifier.
   List<Vector2> _fBorderLine(int count, {_BorderSide? side}) {
     final chosen = side ?? _BorderSide.values[_formRng.nextInt(4)];
+    final eW = game.effectiveArenaWidth;
+    final eH = game.effectiveArenaHeight;
     const edgePad = 40.0;    // distanza dal bordo perpendicolare (dentro arena)
     // sidePad 140 (era 60) — richiesta utente: "non partono dall'angolo
     // lasciando spazio al player sia negli angoli che tra i mob e il bordo".
-    const sidePad = 140.0;
+    // Clamp sidePad quando arena è tiny così non resta nessuno slot libero.
+    final sidePad = math.min(140.0, math.min(eW, eH) * 0.25);
 
     final positions = <Vector2>[];
     final n = math.max(1, count);
@@ -1243,18 +1267,18 @@ class WaveSystem {
     switch (chosen) {
       case _BorderSide.top:
       case _BorderSide.bottom:
-        final y = chosen == _BorderSide.top ? edgePad : arenaHeight - edgePad;
+        final y = chosen == _BorderSide.top ? edgePad : eH - edgePad;
         final startX = sidePad;
-        final endX = arenaWidth - sidePad;
+        final endX = eW - sidePad;
         for (int i = 0; i < count; i++) {
           final t = n == 1 ? 0.5 : i / (n - 1);
           positions.add(Vector2(startX + (endX - startX) * t, y));
         }
       case _BorderSide.left:
       case _BorderSide.right:
-        final x = chosen == _BorderSide.left ? edgePad : arenaWidth - edgePad;
+        final x = chosen == _BorderSide.left ? edgePad : eW - edgePad;
         final startY = sidePad;
-        final endY = arenaHeight - sidePad;
+        final endY = eH - sidePad;
         for (int i = 0; i < count; i++) {
           final t = n == 1 ? 0.5 : i / (n - 1);
           positions.add(Vector2(x, startY + (endY - startY) * t));

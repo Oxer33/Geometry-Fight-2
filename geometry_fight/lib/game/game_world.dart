@@ -1316,6 +1316,18 @@ class GeometryFightGame extends FlameGame
     LeechEnemy.resetAttachedCount();
     HomingMissile.resetStaticState();
     SplitterEnemy.resetFrameBudget();
+    // Reset count cache: stale values dal session precedente potevano far
+    // credere al WaveSystem che ci fosse ancora un boss attivo → wave 1
+    // con boss entrava in _pendingBoss invece che spawn immediato.
+    _cachedEnemyCount = 0;
+    _cachedBossCount = 0;
+    _cachedActiveBoss = null;
+    _cachedNecros.clear();
+    _countCacheTimer = 0;
+    // Clear held keys: se user teneva premuto un tasto durante game over,
+    // il set resta sporco. Il primo onKeyEvent ripulisce, ma cleanup qui
+    // evita 1-frame di input fantasma in retry.
+    _pressedKeys.clear();
     scoreSystem.reset();
     scoreSystem.geomValueMultiplier = diffConfig.geomValueMultiplier;
     scoreSystem.scoreMultiplier = diffConfig.scoreMultiplier;

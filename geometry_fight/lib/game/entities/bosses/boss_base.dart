@@ -77,7 +77,10 @@ abstract class BossBase extends PositionComponent
   void update(double dt) {
     // Il boss ignora il powerup TimeSlow: compensa il timeScale con realDt.
     // Durante un burst slow-mo (bomba/morte) senza powerup attivo, rallenta normalmente.
-    final effectiveDt = (game.player.timeSlowTimer > 0 && game.timeScale > 0.01)
+    // Threshold 0.2 (non 0.01) evita amplificazioni estreme: se timeScale=0.011
+    // e dividiamo → boss salta di ~90×dt per frame (teleport visibile). A 0.2,
+    // amplificazione max 5× dt — tollerabile. Sotto soglia, niente compensazione.
+    final effectiveDt = (game.player.timeSlowTimer > 0 && game.timeScale > 0.2)
         ? dt / game.timeScale
         : dt;
 
@@ -102,15 +105,22 @@ abstract class BossBase extends PositionComponent
 
     // Determine phase. `_phaseFlashTimer > 0` agisce da debounce: se due
     // soglie HP vengono attraversate nello stesso frame (bomba a HP bassa),
-    // FX partono una volta sola; l'`onPhaseChange` della subclass continua
-    // a essere chiamato per ogni transizione di fase (logica gameplay).
+    // FX partono una volta sola; l'`onPhaseChange` della subclass viene
+    // invocato per OGNI fase intermedia (bomba che salta fase 0→2 chiama
+    // onPhaseChange(1) e onPhaseChange(2)) — altrimenti subclass perdono
+    // setup di fase intermedia (spawn, pattern attacco, ecc).
     final newPhase = getPhase();
     if (newPhase != currentPhase) {
-      currentPhase = newPhase;
       if (_phaseFlashTimer <= 0) {
         _triggerPhaseFx();
       }
-      onPhaseChange(currentPhase);
+      // Step through intermediate phases one at a time (supports both skip-up
+      // e skip-down — es. heal powerup che ripristina HP potrebbe regredire).
+      final step = newPhase > currentPhase ? 1 : -1;
+      while (currentPhase != newPhase) {
+        currentPhase += step;
+        onPhaseChange(currentPhase);
+      }
     }
 
     updateBoss(effectiveDt);
@@ -157,10 +167,14 @@ abstract class BossBase extends PositionComponent
         cam.y - halfH + size.y / 2 + 20,
         cam.y + halfH - size.y / 2 - 20,
       );
-      // Muri rossi impenetrabili: teletrasporta a cam.y (centro viewport)
-      // invece di push 6px (insufficiente per obstacle profondi).
+      // Muri rossi impenetrabili: teletrasporta al centro del TUNNEL (non
+      // al centro viewport). Gli ostacoli possono attraversare cam.y se la
+      // curva `tunnelCenterOffsetAt` porta il tunnel sopra/sotto il centro
+      // schermo → teleport a cam.y potrebbe finire dentro un obstacle →
+      // loop infinito di teleport. Usa midpoint dei walls come safe Y.
       if (game.hitsTunnelObstacle(position)) {
-        position.y = cam.y;
+        final (topWall, bottomWall) = game.tunnelWallsAtX(position.x);
+        position.y = (topWall + bottomWall) / 2;
       }
     } else {
       position.x = position.x.clamp(50.0, arenaWidth - 50);
@@ -176,6 +190,10 @@ abstract class BossBase extends PositionComponent
   /// call-site AoE (laser, plasma, homing, bomba) possano passare lo stesso
   /// named param a boss + nemici senza branching. Default false, retro-compat.
   void takeDamage(double amount, {bool isArea = false}) {
+    // Guard: se onDeath già fired, AoE ticks successivi (plasma/laser che
+    // continuano 1-2 frame prima che removeFromParent propaghi) triggeravano
+    // flash bianco su boss morto + decremento HP negativo. Ignora.
+    if (_onDeathFired) return;
     hp -= amount;
     _flashTimer = 0.08;
     // Chromatic hit solo su danno sostanziale: sotto threshold non triggera
@@ -472,7 +490,9 @@ abstract class BossBase extends PositionComponent
 
     if (_chromaticHitTimer > 0) {
       // RGB split: disegna 2 offsetted in cyan + magenta, poi il corpo sopra.
-      final splitT = (_chromaticHitTimer / 0.18).clamp(0.0, 1.0);
+      // Divisore deve matchare il valore impostato in takeDamage (0.12),
+      // altrimenti splitT max = 0.667 → effetto FX mai a intensità piena.
+      final splitT = (_chromaticHitTimer / 0.12).clamp(0.0, 1.0);
       final offset = 3.5 * splitT;
       canvas.save();
       canvas.translate(-offset, 0);
@@ -509,6 +529,13 @@ abstract class BossBase extends PositionComponent
   @override
   void onCollisionStart(
       Set<Vector2> intersectionPoints, PositionComponent other) {
+    // Guard: boss morto (onDeath fired) resta attivo 1-2 frame prima che
+    // removeFromParent propaghi. Collision callback fire-rebbe takeDamage
+    // sul player → danno ingiusto da cadavere. Blocca.
+    if (_onDeathFired) {
+      super.onCollisionStart(intersectionPoints, other);
+      return;
+    }
     if (other is Player) {
       other.takeDamage();
     }
