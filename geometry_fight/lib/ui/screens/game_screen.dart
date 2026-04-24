@@ -237,6 +237,12 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
       backgroundColor: Colors.black,
       body: Stack(
         children: [
+          // Safety net: background nero pieno dietro GameWidget.
+          // Flame può flashare bianco su alcuni device nel gap tra
+          // loadingBuilder end e primo render di SpaceBackground.
+          // Questo Positioned.fill nero chiude il gap.
+          Positioned.fill(child: Container(color: Colors.black)),
+
           // === GAME ENGINE ===
           // Key cambia ad ogni restart → Flutter distrugge il vecchio GameWidget
           // e ne crea uno nuovo, garantendo pulizia completa dello stato Flame
@@ -244,6 +250,7 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
             key: ValueKey(_gameKey),
             game: _game,
             loadingBuilder: (context) => Container(color: Colors.black),
+            backgroundBuilder: (context) => Container(color: Colors.black),
           ),
 
           // === JOYSTICK VISUALI (dual-stick) ===
