@@ -333,11 +333,16 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
             ),
 
           // === OVERLAY NERO anti-flash (si dissolve in 300ms dopo l'init) ===
-          IgnorePointer(
-            child: AnimatedOpacity(
-              opacity: _fadeOverlayOpacity,
-              duration: const Duration(milliseconds: 250),
-              child: Container(color: Colors.black),
+          // BUG FIX: Container(color: black) senza Positioned.fill in Stack
+          // ha size zero (nessun child + nessuna size) → overlay non copriva
+          // nulla, flash bianco frame iniziali GameWidget visibile.
+          Positioned.fill(
+            child: IgnorePointer(
+              child: AnimatedOpacity(
+                opacity: _fadeOverlayOpacity,
+                duration: const Duration(milliseconds: 250),
+                child: Container(color: Colors.black),
+              ),
             ),
           ),
         ],
