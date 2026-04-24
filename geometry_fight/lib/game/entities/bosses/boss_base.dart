@@ -148,7 +148,9 @@ abstract class BossBase extends PositionComponent
       // Y: segue il player con smoothing + oscillazione sinusoidale per varietà
       final targetY = game.player.position.y;
       position.y += (targetY - position.y) * 1.5 * effectiveDt; // Insegue Y del player lentamente
-      position.y += math.sin(_flashTimer * 10 + hp) * 30 * effectiveDt; // Micro-oscillazione
+      // Micro-oscillazione Y: usa `_fxPhase` (continuo) invece di `_flashTimer`
+      // (a zero il 99% del tempo → sin(hp) costante, oscillazione morta).
+      position.y += math.sin(_fxPhase * 3 + hp * 0.1) * 30 * effectiveDt;
 
       // Clamp Y ai limiti del tunnel visibile
       position.y = position.y.clamp(

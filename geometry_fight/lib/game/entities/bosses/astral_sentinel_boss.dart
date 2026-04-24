@@ -31,6 +31,10 @@ const double _kRadiusPerExtraStar = 15;
 class AstralSentinelBoss extends BossBase {
   double _phase = 0;
   double _starWindUp = 2.5;
+  // Valore iniziale wind-up corrente (2.5 a phase 0, 1.8 a phase ≥1).
+  // Render usa questo come denominatore → telegraph parte da alpha 0
+  // invece di saltare a 0.28 nella fase avanzata.
+  double _starWindUpInit = 2.5;
   double _cycleTimer = 4.0;
   bool _starsActive = false;
   List<Vector2> _starPositions = [];
@@ -91,6 +95,7 @@ class AstralSentinelBoss extends BossBase {
       _cycleTimer = 0;
       _starsActive = true;
       _starWindUp = currentPhase >= 1 ? 1.8 : 2.5;
+      _starWindUpInit = _starWindUp;
       final cnt = _starCount;
       // Scala raggio col numero di stelle per evitare sovrapposizioni
       // (pentagon=140, heptagon=170, decagon=215).
@@ -195,7 +200,7 @@ class AstralSentinelBoss extends BossBase {
 
     // Stelle + linee (render relativo a boss)
     if (_starsActive && _starPositions.isNotEmpty) {
-      final windFrac = 1.0 - (_starWindUp / 2.5).clamp(0.0, 1.0);
+      final windFrac = 1.0 - (_starWindUp / _starWindUpInit).clamp(0.0, 1.0);
       final lineAlpha = windFrac.clamp(0.0, 1.0);
 
       _linePaint.color =
