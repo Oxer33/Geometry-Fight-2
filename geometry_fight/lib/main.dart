@@ -99,8 +99,12 @@ class GeometryFightApp extends StatelessWidget {
     return MaterialApp(
       title: 'Geometry Fight',
       debugShowCheckedModeBanner: false,
+      // color: background a livello OS/task-switcher durante launch
+      // + fallback se theme non si applica ancora.
+      color: Colors.black,
       theme: ThemeData.dark().copyWith(
         scaffoldBackgroundColor: Colors.black,
+        canvasColor: Colors.black,
       ),
       home: const NavigationWrapper(),
     );

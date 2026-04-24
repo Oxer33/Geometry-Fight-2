@@ -235,22 +235,38 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
-      body: Stack(
-        children: [
+      body: ColoredBox(
+        color: Colors.black,
+        child: Stack(
+          children: [
           // Safety net: background nero pieno dietro GameWidget.
-          // Flame può flashare bianco su alcuni device nel gap tra
-          // loadingBuilder end e primo render di SpaceBackground.
-          // Questo Positioned.fill nero chiude il gap.
-          Positioned.fill(child: Container(color: Colors.black)),
+          // ColoredBox + SizedBox.expand → garantito full-size (Container
+          // color-only può avere size indeterminata in alcune configurazioni).
+          const Positioned.fill(
+            child: SizedBox.expand(
+              child: ColoredBox(color: Colors.black),
+            ),
+          ),
 
           // === GAME ENGINE ===
           // Key cambia ad ogni restart → Flutter distrugge il vecchio GameWidget
-          // e ne crea uno nuovo, garantendo pulizia completa dello stato Flame
-          GameWidget(
-            key: ValueKey(_gameKey),
-            game: _game,
-            loadingBuilder: (context) => Container(color: Colors.black),
-            backgroundBuilder: (context) => Container(color: Colors.black),
+          // e ne crea uno nuovo, garantendo pulizia completa dello stato Flame.
+          // Wrap ColoredBox esterno: forza background nero anche se Flame
+          // avesse un white flash prima del primo render di SpaceBackground.
+          Positioned.fill(
+            child: ColoredBox(
+              color: Colors.black,
+              child: GameWidget(
+                key: ValueKey(_gameKey),
+                game: _game,
+                loadingBuilder: (context) => const SizedBox.expand(
+                  child: ColoredBox(color: Colors.black),
+                ),
+                backgroundBuilder: (context) => const SizedBox.expand(
+                  child: ColoredBox(color: Colors.black),
+                ),
+              ),
+            ),
           ),
 
           // === JOYSTICK VISUALI (dual-stick) ===
@@ -341,11 +357,14 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
               child: AnimatedOpacity(
                 opacity: _fadeOverlayOpacity,
                 duration: const Duration(milliseconds: 250),
-                child: Container(color: Colors.black),
+                child: const SizedBox.expand(
+                  child: ColoredBox(color: Colors.black),
+                ),
               ),
             ),
           ),
-        ],
+          ],
+        ),
       ),
     );
   }
