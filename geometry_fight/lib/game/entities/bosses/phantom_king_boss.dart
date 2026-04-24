@@ -19,6 +19,8 @@ class PhantomKingBoss extends BossBase {
   double _attackTimer = 2.0;
   double _cloneTimer = 8.0;
   double _crownPhase = 0;
+  // Shared rng — evita alloc in teleport/clone spawn.
+  static final math.Random _rng = math.Random();
 
   // Mirror shadow clone (nuova meccanica richiesta utente):
   // una silhouette fantasma all'opposto del player rispetto al boss, che
@@ -69,8 +71,8 @@ class PhantomKingBoss extends BossBase {
         _isInvisible = true;
         _invisTimer = currentPhase == 2 ? 2.0 : 3.0;
         // Teletrasporto in posizione casuale vicino al player
-        final angle = math.Random().nextDouble() * math.pi * 2;
-        final dist = 150 + math.Random().nextDouble() * 200;
+        final angle = _rng.nextDouble() * math.pi * 2;
+        final dist = 150 + _rng.nextDouble() * 200;
         position = playerPosition + Vector2(math.cos(angle) * dist, math.sin(angle) * dist);
         if (game.isTunnelMode) {
           final cam = game.camera.viewfinder.position;
@@ -163,8 +165,8 @@ class PhantomKingBoss extends BossBase {
   void _spawnClone() {
     // Spawna un nemico drone colorato come il boss
     game.spawnEnemy(EnemyType.drone, position + Vector2(
-      (math.Random().nextDouble() - 0.5) * 100,
-      (math.Random().nextDouble() - 0.5) * 100,
+      (_rng.nextDouble() - 0.5) * 100,
+      (_rng.nextDouble() - 0.5) * 100,
     ));
   }
 

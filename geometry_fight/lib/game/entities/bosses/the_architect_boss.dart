@@ -13,6 +13,8 @@ class TheArchitectBoss extends BossBase {
   final List<_Structure> _structures = [];
   double _wallAttackTimer = 6;
   double _bossShootTimer = 0.6;
+  // Shared rng — evita alloc in _buildStructure/_wallAttack.
+  static final math.Random _rng = math.Random();
 
   TheArchitectBoss()
       : super(
@@ -112,8 +114,8 @@ class TheArchitectBoss extends BossBase {
   }
 
   void _buildStructure() {
-    final angle = math.Random().nextDouble() * math.pi * 2;
-    final dist = 150 + math.Random().nextDouble() * 200;
+    final angle = _rng.nextDouble() * math.pi * 2;
+    final dist = 150 + _rng.nextDouble() * 200;
     final pos = position + Vector2(math.cos(angle) * dist, math.sin(angle) * dist);
 
     _structures.add(_Structure(
@@ -130,7 +132,7 @@ class TheArchitectBoss extends BossBase {
 
   void _wallAttack() {
     // Create a wall of bullets
-    final horizontal = math.Random().nextBool();
+    final horizontal = _rng.nextBool();
     for (int i = 0; i < 15; i++) {
       Vector2 bulletPos;
       Vector2 bulletDir;

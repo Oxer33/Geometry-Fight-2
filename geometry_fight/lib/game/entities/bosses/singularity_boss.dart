@@ -13,6 +13,8 @@ class SingularityBoss extends BossBase {
   double _vortexTimer = 12;
   double _blackRainTimer = 4.0;
   bool _pulling = false;
+  // Shared rng — evita alloc in _spawnClones/_blackRain.
+  static final math.Random _rng = math.Random();
 
   /// Clamp player to arena/tunnel bounds dopo una pull. Evita di
   /// trascinarlo fuori dalle mura.
@@ -135,8 +137,8 @@ class SingularityBoss extends BossBase {
   void _spawnClones() {
     for (int i = 0; i < 2; i++) {
       final offset = Vector2(
-        (math.Random().nextDouble() - 0.5) * 400,
-        (math.Random().nextDouble() - 0.5) * 400,
+        (_rng.nextDouble() - 0.5) * 400,
+        (_rng.nextDouble() - 0.5) * 400,
       );
       // Spawn a weak drone that looks like the boss (simplified as special drone)
       game.spawnEnemy(EnemyType.drone, position + offset);
@@ -159,7 +161,7 @@ class SingularityBoss extends BossBase {
 
   void _blackRain() {
     for (int i = 0; i < 5; i++) {
-      final x = playerPosition.x + (math.Random().nextDouble() - 0.5) * 400;
+      final x = playerPosition.x + (_rng.nextDouble() - 0.5) * 400;
       final bullet = EnemyBullet(
         direction: Vector2(0, 1),
         speed: 300,

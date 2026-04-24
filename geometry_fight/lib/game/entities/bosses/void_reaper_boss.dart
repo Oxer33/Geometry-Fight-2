@@ -15,6 +15,8 @@ class VoidReaperBoss extends BossBase {
   double _movePhase = 0;
   final List<_DeathZone> _deathZones = [];
   static const int _maxZones = 6;
+  // Shared rng — evita alloc a ogni _createDeathZone.
+  static final math.Random _rng = math.Random();
 
   VoidReaperBoss()
       : super(
@@ -87,7 +89,7 @@ class VoidReaperBoss extends BossBase {
       _deathZones.removeAt(0);
     }
     // Piazza la zona vicino al player
-    final random = math.Random();
+    final random = _rng;
     final offset = Vector2(
       (random.nextDouble() - 0.5) * 300,
       (random.nextDouble() - 0.5) * 300,

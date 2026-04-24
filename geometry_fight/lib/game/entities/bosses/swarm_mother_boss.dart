@@ -11,6 +11,8 @@ class SwarmMotherBoss extends BossBase {
   bool _laserActive = false;
   double _laserTimer = 0;
   double _laserCooldown = 8.0;
+  // Shared rng — evita alloc a ogni spawn mob (6 call sites).
+  static final math.Random _rng = math.Random();
   // Wind-up telegraph (richiesta utente): linea dim 1.2s prima del sweep letale.
   double _laserTelegraphTimer = 0;
   static const double _kLaserTelegraphDuration = 1.2;
@@ -78,16 +80,16 @@ class SwarmMotherBoss extends BossBase {
           _spawnTimer = 4;
           for (int i = 0; i < 6; i++) {
             game.spawnEnemy(EnemyType.drone, position + Vector2(
-              (math.Random().nextDouble() - 0.5) * 200,
-              (math.Random().nextDouble() - 0.5) * 200,
+              (_rng.nextDouble() - 0.5) * 200,
+              (_rng.nextDouble() - 0.5) * 200,
             ));
           }
         case 1:
           _spawnTimer = 3;
           for (int i = 0; i < 5; i++) {
             game.spawnEnemy(EnemyType.drone, position + Vector2(
-              (math.Random().nextDouble() - 0.5) * 150,
-              (math.Random().nextDouble() - 0.5) * 150,
+              (_rng.nextDouble() - 0.5) * 150,
+              (_rng.nextDouble() - 0.5) * 150,
             ));
           }
         case 2:
@@ -99,8 +101,8 @@ class SwarmMotherBoss extends BossBase {
           _spawnTimer = 1.5;
           for (int i = 0; i < 5; i++) {
             game.spawnEnemy(EnemyType.kamikaze, position + Vector2(
-              (math.Random().nextDouble() - 0.5) * 100,
-              (math.Random().nextDouble() - 0.5) * 100,
+              (_rng.nextDouble() - 0.5) * 100,
+              (_rng.nextDouble() - 0.5) * 100,
             ));
           }
       }

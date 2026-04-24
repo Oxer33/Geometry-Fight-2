@@ -34,6 +34,8 @@ class EternityEngineBoss extends BossBase {
   double _ringRotation1 = 0;
   double _ringRotation2 = 0;
   double _ringRotation3 = 0;
+  // Shared rng — evita alloc in onPhaseChange/attackHoming/attackWall.
+  static final math.Random _rng = math.Random();
 
   // Rewind mechanic (nuova meccanica richiesta utente):
   // traccia posizioni player nei precedenti 3s → orbi teletrasportati
@@ -87,7 +89,7 @@ class EternityEngineBoss extends BossBase {
     }
     // Ogni fase spawna nemici di supporto
     for (int i = 0; i < 3 + phase * 2; i++) {
-      final angle = math.Random().nextDouble() * math.pi * 2;
+      final angle = _rng.nextDouble() * math.pi * 2;
       game.spawnEnemy(EnemyType.drone, position + Vector2(
         math.cos(angle) * 200, math.sin(angle) * 200,
       ));
@@ -217,15 +219,15 @@ class EternityEngineBoss extends BossBase {
   void _attackHoming() {
     for (int i = 0; i < 2; i++) {
       game.spawnEnemy(EnemyType.swarmDrone, position + Vector2(
-        (math.Random().nextDouble() - 0.5) * 100,
-        (math.Random().nextDouble() - 0.5) * 100,
+        (_rng.nextDouble() - 0.5) * 100,
+        (_rng.nextDouble() - 0.5) * 100,
       ));
     }
   }
 
   void _attackWall() {
     // Muro di proiettili orizzontale o verticale
-    final horizontal = math.Random().nextBool();
+    final horizontal = _rng.nextBool();
     for (int i = -5; i <= 5; i++) {
       final dir = horizontal
           ? Vector2(0, i > 0 ? 1 : -1)

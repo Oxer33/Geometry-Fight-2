@@ -23,6 +23,9 @@ class OmegaCoreBoss extends BossBase {
   // Lightning telegraph (richiesta utente): warning ring 0.8s prima dell'AoE
   // → player può schivare uscendo dal raggio.
   double _lightningWindUp = 0;
+
+  // Shared rng: evita alloc a ogni spawn/zone.
+  static final math.Random _rng = math.Random();
   Vector2? _lightningTarget;
   static const double _kLightningWindUp = 0.8;
   static const double _kLightningRadius = 200;
@@ -151,18 +154,17 @@ class OmegaCoreBoss extends BossBase {
   void _spawnMinions() {
     for (int i = 0; i < 3 + currentPhase; i++) {
       game.spawnEnemy(EnemyType.drone, position + Vector2(
-        (math.Random().nextDouble() - 0.5) * 200,
-        (math.Random().nextDouble() - 0.5) * 200,
+        (_rng.nextDouble() - 0.5) * 200,
+        (_rng.nextDouble() - 0.5) * 200,
       ));
     }
   }
 
   void _createDeathZone() {
-    final random = math.Random();
     _deathZones.add(_DeathZone(
       position: playerPosition + Vector2(
-        (random.nextDouble() - 0.5) * 200,
-        (random.nextDouble() - 0.5) * 200,
+        (_rng.nextDouble() - 0.5) * 200,
+        (_rng.nextDouble() - 0.5) * 200,
       ),
       lifetime: 8.0,
     ));

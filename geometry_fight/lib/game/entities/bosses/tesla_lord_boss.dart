@@ -16,6 +16,8 @@ class TeslaLordBoss extends BossBase {
   double _attackTimer = 2.0;
   double _towerSpawnTimer = 8.0;
   final List<Vector2> _towerPositions = [];
+  // Shared rng — evita alloc in _spawnTowers.
+  static final math.Random _rng = math.Random();
 
   TeslaLordBoss()
       : super(
@@ -45,7 +47,7 @@ class TeslaLordBoss extends BossBase {
 
   void _spawnTowers(int count) {
     _towerPositions.clear();
-    final random = math.Random();
+    final random = _rng;
     for (int i = 0; i < count; i++) {
       final angle = i * math.pi * 2 / count;
       final dist = 200 + random.nextDouble() * 150;
