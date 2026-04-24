@@ -417,43 +417,79 @@ class LaserBeam extends PositionComponent
     final glowW = 12 * sizeMultiplier;
     final coreW = 3 * sizeMultiplier;
 
-    // Beam principale (glow + core dritto dopo il cono).
-    _laserGlowPaint.color = NeonColors.laserRed.withValues(alpha: 0.4);
+    final pulseLen = laserBeamLength - coneLen;
+
+    // ─── BEAM PRINCIPALE 4 STRATI (outer halo → mid → core → nucleus) ───
+    _laserGlowPaint.color = const Color(0xFFAA0000).withValues(alpha: 0.25);
     canvas.drawRect(
-        Rect.fromLTWH(-glowW / 2, coneLen, glowW, laserBeamLength - coneLen),
+        Rect.fromLTWH(-glowW * 0.9, coneLen, glowW * 1.8, pulseLen),
         _laserGlowPaint);
-    _laserCorePaint.color = NeonColors.laserRed;
+    _laserGlowPaint.color = const Color(0xFFFF2244).withValues(alpha: 0.55);
     canvas.drawRect(
-        Rect.fromLTWH(-coreW / 2, coneLen, coreW, laserBeamLength - coneLen),
+        Rect.fromLTWH(-glowW * 0.5, coneLen, glowW, pulseLen),
+        _laserGlowPaint);
+    _laserCorePaint.color = const Color(0xFFFF6677);
+    canvas.drawRect(
+        Rect.fromLTWH(-coreW * 0.9, coneLen, coreW * 1.8, pulseLen),
+        _laserCorePaint);
+    _laserCorePaint.color = const Color(0xFFFFEEDD);
+    canvas.drawRect(
+        Rect.fromLTWH(-coreW * 0.4, coneLen, coreW * 0.8, pulseLen),
         _laserCorePaint);
 
-    // Pulsazioni rosse (ridotte 3→2 per meno lag — richiesta utente).
-    const pulseCount = 2;
-    const pulseSpeed = 900.0;
-    final pulseLen = laserBeamLength - coneLen;
-    for (int i = 0; i < pulseCount; i++) {
+    // ─── 3 PLASMA COMETS (sfere energetiche scorrevoli con trail) ───
+    const cometCount = 3;
+    const cometSpeed = 1100.0;
+    for (int i = 0; i < cometCount; i++) {
       final raw =
-          _pulsePhase * pulseSpeed + i * pulseLen / pulseCount;
+          _pulsePhase * cometSpeed + i * pulseLen / cometCount;
       final py = coneLen + (raw % pulseLen);
-      final pulseW = glowW * 1.8;
-      final pulseH = 28 * sizeMultiplier;
+      final cometR = 14 * sizeMultiplier;
+
+      // Trail: 4 sfere fading dietro al comet
+      for (int t = 1; t <= 4; t++) {
+        final trailY = py - t * (cometR * 0.85);
+        if (trailY < coneLen) continue;
+        final trailAlpha = 0.55 * (1.0 - t / 5.0);
+        _laserPulsePaint.color =
+            const Color(0xFFFF3322).withValues(alpha: trailAlpha);
+        canvas.drawCircle(
+            Offset(0, trailY), cometR * (1.0 - t * 0.18), _laserPulsePaint);
+      }
+
+      // Halo esterno rosso
       _laserPulsePaint.color =
-          const Color(0xFFFF4444).withValues(alpha: 0.75);
-      canvas.drawRect(
-          Rect.fromLTWH(-pulseW / 2, py - pulseH / 2, pulseW, pulseH),
-          _laserPulsePaint);
+          const Color(0xFFFF1100).withValues(alpha: 0.5);
+      canvas.drawCircle(Offset(0, py), cometR * 1.4, _laserPulsePaint);
+      // Mid arancione caldo
       _laserPulsePaint.color =
-          const Color(0xFFFFFFFF).withValues(alpha: 0.9);
-      canvas.drawRect(
-          Rect.fromLTWH(-coreW * 2, py - pulseH / 4, coreW * 4, pulseH / 2),
-          _laserPulsePaint);
+          const Color(0xFFFFAA22).withValues(alpha: 0.85);
+      canvas.drawCircle(Offset(0, py), cometR * 0.85, _laserPulsePaint);
+      // Nucleus bianco caldo
+      _laserPulsePaint.color =
+          const Color(0xFFFFFFFF).withValues(alpha: 0.95);
+      canvas.drawCircle(Offset(0, py), cometR * 0.45, _laserPulsePaint);
+    }
+
+    // ─── ELECTRIC CRACKLE (5 puntini bianchi sui bordi del beam) ───
+    const crackleCount = 5;
+    for (int i = 0; i < crackleCount; i++) {
+      final crackleSeed = (i * 73 + (_pulsePhase * 12).toInt()) % 100;
+      if (crackleSeed > 60) continue;
+      final crackleY = coneLen + (crackleSeed / 100.0) * pulseLen;
+      final crackleX = (crackleSeed % 2 == 0 ? 1 : -1) *
+          (glowW * 0.55 + (crackleSeed % 7) * 0.5);
+      _laserPulsePaint.color =
+          const Color(0xFFFFFFFF).withValues(alpha: 0.85);
+      canvas.drawCircle(
+          Offset(crackleX, crackleY), 1.4 * sizeMultiplier, _laserPulsePaint);
     }
 
     // Cono davanti a tutto (copre base del beam per fusion smooth).
-    _laserGlowPaint.color = NeonColors.laserRed.withValues(alpha: 0.55);
+    _laserGlowPaint.color = NeonColors.laserRed.withValues(alpha: 0.7);
     canvas.drawPath(_laserConePath, _laserGlowPaint);
     _laserCorePaint.color =
-        const Color(0xFFFFFFFF).withValues(alpha: 0.8);
+        const Color(0xFFFFFFFF).withValues(alpha: 0.9);
     canvas.drawPath(_laserConePath, _laserCorePaint);
 
     canvas.restore();
