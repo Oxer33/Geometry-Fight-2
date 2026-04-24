@@ -34,6 +34,9 @@ class EternityEngineBoss extends BossBase {
   double _ringRotation1 = 0;
   double _ringRotation2 = 0;
   double _ringRotation3 = 0;
+  // Rage (phase 3): spawn black hole ogni 10s invece di burst totali
+  // (richiesta utente: rage sparava troppi proiettili).
+  double _rageBlackHoleTimer = 10.0;
   // Shared rng — evita alloc in onPhaseChange/attackHoming/attackWall.
   static final math.Random _rng = math.Random();
 
@@ -186,7 +189,22 @@ class EternityEngineBoss extends BossBase {
         case 0: _attackSpiral(8);
         case 1: _attackSpiral(12); _attackRadial();
         case 2: _attackSpiral(16); _attackRadial(); _attackHoming();
-        case 3: _attackSpiral(20); _attackRadial(); _attackHoming(); _attackWall();
+        // Rage (richiesta utente): spara come phase 2 — no burst totale.
+        case 3: _attackSpiral(16); _attackRadial(); _attackHoming();
+      }
+    }
+
+    // Rage: spawn black hole ogni 10s (richiesta utente).
+    if (currentPhase == 3) {
+      _rageBlackHoleTimer -= dt;
+      if (_rageBlackHoleTimer <= 0) {
+        _rageBlackHoleTimer = 10.0;
+        final spawnPos = playerPosition +
+            Vector2(
+              (_rng.nextDouble() - 0.5) * 300,
+              (_rng.nextDouble() - 0.5) * 300,
+            );
+        game.spawnEnemy(EnemyType.blackHole, spawnPos);
       }
     }
   }
@@ -225,21 +243,8 @@ class EternityEngineBoss extends BossBase {
     }
   }
 
-  void _attackWall() {
-    // Muro di proiettili orizzontale o verticale
-    final horizontal = _rng.nextBool();
-    for (int i = -5; i <= 5; i++) {
-      final dir = horizontal
-          ? Vector2(0, i > 0 ? 1 : -1)
-          : Vector2(i > 0 ? 1 : -1, 0);
-      final offset = horizontal
-          ? Vector2(i * 40.0, 0)
-          : Vector2(0, i * 40.0);
-      final bullet = _EternityBullet(direction: dir, color: _getPhaseColor(3), speed: 150);
-      bullet.position = position + offset;
-      game.world.add(bullet);
-    }
-  }
+  // `_attackWall` rimosso: richiesta utente rage spari uniformi phase-2
+  // style + black hole ogni 10s (non più burst totale).
 
   Color _getPhaseColor(int ring) {
     final hue = (_phase * 30 + ring * 90) % 360;

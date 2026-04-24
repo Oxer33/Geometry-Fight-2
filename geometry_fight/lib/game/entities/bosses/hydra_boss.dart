@@ -14,8 +14,10 @@ const double _kHitboxRadius = 100;
 // Rage mode: ridotto ulteriormente (richiesta utente "spara troppo").
 // 5 bullet × 1/0.35s ≈ 14/s radiali + secondary 3/3s = 1/s. Totale ~15/s
 // (era ~38/s → -60% rate).
-const double _kRageShootInterval = 0.35;
-const int _kRageBulletsPerBurst = 5;
+// Rage toned down (richiesta utente: "boss sparano troppi proiettili,
+// dovrebbero spawnare più mob"): 0.35→0.6 interval, 5→4 bullet/burst.
+const double _kRageShootInterval = 0.6;
+const int _kRageBulletsPerBurst = 4;
 const int _kRageSecondaryBullets = 3;
 const double _kRageSecondaryInterval = 3.0;
 // Base phases: ogni testa spara ogni 3s (era 5s — richiesta "spara poco"
@@ -92,10 +94,10 @@ class HydraBoss extends BossBase {
     _syncHeads();
   }
 
-  // Disabilita minion spawn in rage mode: il boss già spara 16 bullet/s
-  // radiali, aggiungere mob saturerebbe il canvas e lagga device medi.
+  // Rage toned down: ora abilita minion spawn anche in rage (richiesta
+  // utente: "dovrebbero spawnare più mob invece di sparare troppo").
   @override
-  bool get allowMinionSpawn => !_rageMode;
+  bool get allowMinionSpawn => true;
 
   // Hydra è VERDE → mob verdi (snake + weaver + pulsar).
   @override

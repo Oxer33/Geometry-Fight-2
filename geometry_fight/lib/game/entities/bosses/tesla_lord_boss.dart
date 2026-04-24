@@ -80,10 +80,11 @@ class TeslaLordBoss extends BossBase {
       _spawnTowers(3 + currentPhase);
     }
 
-    // Attacco: proiettili
+    // Attacco proiettili (toned down — richiesta utente "boss sparano
+    // troppo, dovrebbero spawnare più mob"): intervals 1.5→1.8 / 0.8→1.2.
     _attackTimer -= dt;
     if (_attackTimer <= 0) {
-      _attackTimer = currentPhase == 2 ? 0.8 : 1.5;
+      _attackTimer = currentPhase == 2 ? 1.2 : 1.8;
       _shootSpiral();
     }
 

@@ -306,6 +306,8 @@ class LaserBeam extends PositionComponent
   double _pulsePhase = 0;
   double _hitPartCooldown = 0;
   late final Vector2 _dir;
+  // Throttle hit-walk a frame alterni (risolve lag richiesta utente).
+  int _walkFrame = 0;
 
   LaserBeam({required this.direction, this.damage = 1, this.sizeMultiplier = 1.0})
       : super(size: Vector2(3, laserBeamLength), anchor: Anchor.topCenter);
@@ -325,33 +327,40 @@ class LaserBeam extends PositionComponent
 
     position.setFrom(game.player.position);
 
+    // Throttle hit-walk a frame alterni: halve O(N) cost, 2× damage
+    // per tick preserva DPS (richiesta utente: laser generava lag).
+    _walkFrame++;
+    final doWalk = (_walkFrame & 1) == 0;
     final dir = _dir;
     final enemyHitRadius = 20 * sizeMultiplier;
     final bossHitRadius = 30 * sizeMultiplier;
     bool didHit = false;
     Vector2? hitPoint;
-    for (final child in game.world.children) {
-      if (child is EnemyBase) {
-        final toEnemy = child.position - position;
-        final dot = toEnemy.dot(dir);
-        if (dot > 0 && dot < laserBeamLength) {
-          final perpDist = (toEnemy - dir * dot).length;
-          if (perpDist < enemyHitRadius) {
-            child.takeDamage(damage * dt * 60, isArea: true);
-            didHit = true;
-            hitPoint = child.position;
+    if (doWalk) {
+      final dmgMul = dt * 60 * 2; // 2× per compensare skip frame
+      for (final child in game.world.children) {
+        if (child is EnemyBase) {
+          final toEnemy = child.position - position;
+          final dot = toEnemy.dot(dir);
+          if (dot > 0 && dot < laserBeamLength) {
+            final perpDist = (toEnemy - dir * dot).length;
+            if (perpDist < enemyHitRadius) {
+              child.takeDamage(damage * dmgMul, isArea: true);
+              didHit = true;
+              hitPoint = child.position;
+            }
           }
         }
-      }
-      if (child is BossBase) {
-        final toBoss = child.position - position;
-        final dot = toBoss.dot(dir);
-        if (dot > 0 && dot < laserBeamLength) {
-          final perpDist = (toBoss - dir * dot).length;
-          if (perpDist < bossHitRadius) {
-            child.takeDamage(damage * dt * 60);
-            didHit = true;
-            hitPoint = child.position;
+        if (child is BossBase) {
+          final toBoss = child.position - position;
+          final dot = toBoss.dot(dir);
+          if (dot > 0 && dot < laserBeamLength) {
+            final perpDist = (toBoss - dir * dot).length;
+            if (perpDist < bossHitRadius) {
+              child.takeDamage(damage * dmgMul);
+              didHit = true;
+              hitPoint = child.position;
+            }
           }
         }
       }
@@ -399,8 +408,8 @@ class LaserBeam extends PositionComponent
         Rect.fromLTWH(-coreW / 2, coneLen, coreW, laserBeamLength - coneLen),
         _laserCorePaint);
 
-    // Pulsazioni rosse intense che viaggiano verso avanti (richiesta utente).
-    const pulseCount = 3;
+    // Pulsazioni rosse (ridotte 3→2 per meno lag — richiesta utente).
+    const pulseCount = 2;
     const pulseSpeed = 900.0;
     final pulseLen = laserBeamLength - coneLen;
     for (int i = 0; i < pulseCount; i++) {

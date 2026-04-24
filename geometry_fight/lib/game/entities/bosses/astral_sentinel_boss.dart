@@ -52,11 +52,16 @@ class AstralSentinelBoss extends BossBase {
   static final _auraPaint = Paint();
   static final _starRayPaint = Paint()..style = PaintingStyle.stroke;
 
+  // Secondary burst: attacco radiale periodico (prima solo rete stelle).
+  double _radialBurstTimer = 5.0;
+
   AstralSentinelBoss()
       : super(
-          hp: 900,
+          // Boost (richiesta utente: "troppo banale"):
+          // HP 900 → 1400 (+55%), pointValue 9000 → 12000.
+          hp: 1400,
           bossName: 'ASTRAL SENTINEL',
-          pointValue: 9000,
+          pointValue: 12000,
           neonColor: NeonColors.cyan,
           size: Vector2(130, 130),
         );
@@ -90,11 +95,27 @@ class AstralSentinelBoss extends BossBase {
       position += toCenter.normalized() * 20 * dt;
     }
 
+    // Radial burst secondario (richiesta utente: boost difficoltà).
+    _radialBurstTimer -= dt;
+    if (_radialBurstTimer <= 0) {
+      _radialBurstTimer = currentPhase >= 2 ? 3.5 : 5.0;
+      final count = 10 + currentPhase * 4;
+      for (int i = 0; i < count; i++) {
+        final ang = i * math.pi * 2 / count + _phase * 0.3;
+        final dir = Vector2(math.cos(ang), math.sin(ang));
+        final bullet = EnemyBullet(
+            direction: dir, speed: 180, color: NeonColors.cyan);
+        bullet.position = position.clone();
+        game.world.add(bullet);
+      }
+    }
+
     _cycleTimer -= dt;
     if (_cycleTimer <= 0 && !_starsActive) {
       _cycleTimer = 0;
       _starsActive = true;
-      _starWindUp = currentPhase >= 1 ? 1.8 : 2.5;
+      // Wind-up ridotto (boost: era 2.5/1.8 → ora 1.8/1.2).
+      _starWindUp = currentPhase >= 1 ? 1.2 : 1.8;
       _starWindUpInit = _starWindUp;
       final cnt = _starCount;
       // Scala raggio col numero di stelle per evitare sovrapposizioni
@@ -148,9 +169,10 @@ class AstralSentinelBoss extends BossBase {
           }
         }
         if (_fireQueue.isEmpty) {
-          // Fire completato: reset per il prossimo ciclo.
+          // Fire completato: reset per il prossimo ciclo (cycle più corto
+          // per boost difficoltà: era 3.0/4.0 → ora 2.0/3.0).
           _starsActive = false;
-          _cycleTimer = currentPhase >= 2 ? 3.0 : 4.0;
+          _cycleTimer = currentPhase >= 2 ? 2.0 : 3.0;
           _linesFireTimer = 0;
         }
       }

@@ -106,7 +106,15 @@ class TunnelRenderer extends PositionComponent
         final bounds = _boundsAtX(obs.x);
         final topWall = bounds.top;
         final bottomWall = bounds.bottom;
-        if (obs.isTop) {
+        if (obs.isFloating) {
+          // Floating: ostacolo centrato a yCenter, height/2 sopra+sotto.
+          final halfH = obs.height / 2;
+          if (playerPos.y > obs.yCenter - halfH &&
+              playerPos.y < obs.yCenter + halfH) {
+            game.player.takeDamage();
+            _obstacles.removeAt(i);
+          }
+        } else if (obs.isTop) {
           // Ostacolo dal muro superiore
           if (playerPos.y < topWall + obs.height) {
             game.player.takeDamage();
@@ -133,6 +141,13 @@ class TunnelRenderer extends PositionComponent
   bool hitsObstacle(Vector2 pos) {
     for (final obs in _obstacles) {
       if ((pos.x - obs.x).abs() > obs.width / 2) continue;
+      if (obs.isFloating) {
+        final halfH = obs.height / 2;
+        if (pos.y > obs.yCenter - halfH && pos.y < obs.yCenter + halfH) {
+          return true;
+        }
+        continue;
+      }
       final bounds = _boundsAtX(obs.x);
       if (obs.isTop) {
         if (pos.y < bounds.top + obs.height) return true;
@@ -165,12 +180,25 @@ class TunnelRenderer extends PositionComponent
         break;
       }
     }
+    // ~40% floating (detached): richiesta utente "sparsi invece di bordo".
+    final floating = forcedSide == null && _random.nextDouble() < 0.4;
+    double yCenter = 0;
+    double finalHeight = obsHeight;
+    if (floating) {
+      // Centro random nel tunnel, lasciando passaggi sopra/sotto di almeno 40px.
+      final mid = (bounds.top + bounds.bottom) / 2;
+      finalHeight = (obsHeight * 0.7).clamp(30.0, tunnelSpan * 0.35);
+      final jitterRange = (tunnelSpan / 2 - finalHeight / 2 - 40).clamp(0.0, tunnelSpan);
+      yCenter = mid + (_random.nextDouble() - 0.5) * 2 * jitterRange;
+    }
     _obstacles.add(_TunnelObstacle(
       x: aheadX,
       isTop: forcedSide ?? _random.nextBool(),
       width: 30 + _random.nextDouble() * 40,
-      height: obsHeight,
+      height: finalHeight,
       lifetime: 12.0,
+      isFloating: floating,
+      yCenter: yCenter,
     ));
   }
 
@@ -367,10 +395,19 @@ class TunnelRenderer extends PositionComponent
       final bounds = _boundsAtX(obs.x);
       final topY = bounds.top;
       final bottomY = bounds.bottom;
-      final baseY = obs.isTop ? topY : bottomY;
-      final endY = obs.isTop ? topY + obs.height : bottomY - obs.height;
-      final rectTop = math.min(baseY, endY);
-      final rectBottom = math.max(baseY, endY);
+      final double rectTop;
+      final double rectBottom;
+      if (obs.isFloating) {
+        // Floating: rettangolo centrato a yCenter con height/2 sopra+sotto.
+        final halfH = obs.height / 2;
+        rectTop = obs.yCenter - halfH;
+        rectBottom = obs.yCenter + halfH;
+      } else {
+        final baseY = obs.isTop ? topY : bottomY;
+        final endY = obs.isTop ? topY + obs.height : bottomY - obs.height;
+        rectTop = math.min(baseY, endY);
+        rectBottom = math.max(baseY, endY);
+      }
       final obsRect = Rect.fromLTRB(
         obs.x - obs.width / 2,
         rectTop,
@@ -450,11 +487,15 @@ class TunnelRenderer extends PositionComponent
 /// Ostacolo nel tunnel (barriera laser)
 class _TunnelObstacle {
   double x;
-  bool isTop; // Dal muro superiore o inferiore
+  bool isTop; // Dal muro superiore o inferiore (ignorato se isFloating)
   double width;
   double height;
   double lifetime;
   double phase = 0;
+  // Floating: se true, ostacolo fluttua a `yCenter` (richiesta utente:
+  // "muri rossi sparsi invece di sempre a bordo").
+  bool isFloating;
+  double yCenter;
 
   _TunnelObstacle({
     required this.x,
@@ -462,6 +503,8 @@ class _TunnelObstacle {
     required this.width,
     required this.height,
     required this.lifetime,
+    this.isFloating = false,
+    this.yCenter = 0,
   });
 }
 
