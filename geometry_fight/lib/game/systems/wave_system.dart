@@ -620,13 +620,19 @@ class WaveSystem {
         ? _classicFormation(currentWave, _spawnIndex)
         : _Formation.values[_formRng.nextInt(_Formation.values.length)];
 
+    // Clamp usa effectiveArena per rispettare `tiny_arena` modifier.
+    // Prima usava arenaWidth/Height full → enemy spawnavano fuori view
+    // quando arena era ridotta.
+    final eW = game.effectiveArenaWidth;
+    final eH = game.effectiveArenaHeight;
+
     // borderLine per altri tipi: dispone lungo un bordo senza rush forzato.
     if (formation == _Formation.borderLine) {
       final positions = _fBorderLine(count);
       for (final pos in positions) {
         final clamped = Vector2(
-          pos.x.clamp(20.0, arenaWidth - 20.0),
-          pos.y.clamp(20.0, arenaHeight - 20.0),
+          pos.x.clamp(20.0, eW - 20.0),
+          pos.y.clamp(20.0, eH - 20.0),
         );
         game.spawnEnemy(type, clamped);
       }
@@ -639,8 +645,8 @@ class WaveSystem {
 
     for (final pos in positions) {
       final clamped = Vector2(
-        pos.x.clamp(20.0, arenaWidth - 20.0),
-        pos.y.clamp(20.0, arenaHeight - 20.0),
+        pos.x.clamp(20.0, eW - 20.0),
+        pos.y.clamp(20.0, eH - 20.0),
       );
       game.spawnEnemy(type, clamped);
     }

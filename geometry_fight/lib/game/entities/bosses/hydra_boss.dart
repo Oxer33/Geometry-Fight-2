@@ -219,7 +219,7 @@ class HydraBoss extends BossBase {
         final baseAngle = math.atan2(
             playerPosition.y - position.y,
             playerPosition.x - position.x);
-        // Burst ridotto a _kRageSecondaryBullets (era 8, ora 5 → -37%).
+        // Burst ridotto a _kRageSecondaryBullets (era 8, ora 3 → -62%).
         final half = (_kRageSecondaryBullets - 1) / 2;
         for (int i = 0; i < _kRageSecondaryBullets; i++) {
           final ang = baseAngle + (i - half) * 0.15;
