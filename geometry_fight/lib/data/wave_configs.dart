@@ -160,7 +160,12 @@ List<WaveConfig> generateWaveConfigs() {
     // + escalation graduale + climax pre-boss (MEGASWARM tier 3+).
     // ═══════════════════════════════════════════════════════════════
     final archetype = _pickArchetype(wave, history);
-    final spawns = archetype.generator(wave);
+    // Mob count × 2 (richiesta utente "almeno il doppio"). Post-process
+    // del generator per non riscrivere tutti i 31 archetypi inline.
+    // Gate (1 unità) escluso dal moltiplicatore (aggiunto dopo).
+    final spawns = archetype.generator(wave)
+        .map((s) => WaveSpawn(s.type, s.count * 2, delay: s.delay))
+        .toList();
 
     // Gate hazard raro: 1 ogni 10 wave non-boss (11, 21, 31, ...).
     if (wave >= 11 && wave % 10 == 1) {

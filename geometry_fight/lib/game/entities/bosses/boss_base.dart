@@ -271,10 +271,11 @@ abstract class BossBase extends PositionComponent
     if (!allowMinionSpawn) return;
     final types = colorMatchedMinions;
     if (types.isEmpty) return;
+    // Richiesta utente: triplicato (era 10/30/50 → ora 30/90/150).
     final baseCount = switch (currentPhase) {
-      0 => 10,
-      1 => 30,
-      _ => 50,
+      0 => 30,
+      1 => 90,
+      _ => 150,
     };
     // Scala count per weight medio (banal=3× → target più grosso).
     int totalWeight = 0;
@@ -348,7 +349,8 @@ abstract class BossBase extends PositionComponent
     // Controlla quanti nemici ci sono già — se troppi, non spawnare
     if (game.enemyCount >= bossMinionEnemyCap) return;
 
-    final baseCount = 3 + currentPhase * 2; // 3, 5, 7, 9 nemici per fase
+    // Triplicato (richiesta utente): era 3/5/7/9 → ora 9/15/21/27 per fase.
+    final baseCount = 9 + currentPhase * 6;
     final types = colorMatchedMinions;
     if (types.isEmpty) return;
 

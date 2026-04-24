@@ -31,12 +31,12 @@ const double overdriveBeamLength = 1200.0;
 const double overdriveBeamWidth = 40.0;
 const double plasmaExplosionRadius = 80.0;
 
-// Boss fight tuning
-const int bossMinionEnemyCap = 15;          // Max nemici attivi prima di skippare spawn minion
-// Cap più alto per big wave color-matched (richiesta utente 10/30/50 mob).
+// Boss fight tuning — caps triplicati (richiesta utente "triplo mob boss")
+const int bossMinionEnemyCap = 45;          // Max nemici attivi prima di skippare spawn minion (era 15)
+// Cap big wave color-matched (era 60, ora 150 per supportare baseCount 30/90/150).
 // Separato dal cap regolare così le ondate non vengono clippate dal pool
 // di minion regolari già a schermo.
-const int bossBigWaveCap = 60;
+const int bossBigWaveCap = 150;
 const double bossMinionSpawnInterval = 3.5; // Secondi tra ondate minion base
 
 // Camera
