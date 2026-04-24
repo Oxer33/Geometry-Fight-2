@@ -1071,6 +1071,71 @@ class _SkinPreviewPainter extends CustomPainter {
     ..style = PaintingStyle.stroke
     ..strokeWidth = 0.5;
 
+  // Cached paints per _drawStealthShip (9 allocs/frame).
+  static final Paint _stealthGlowPaint = Paint()
+    ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10);
+  static final Paint _stealthBodyPaint = Paint()
+    ..color = const Color(0xFF151520);
+  static final Paint _stealthPanelPaint = Paint()
+    ..style = PaintingStyle.fill;
+  static final Paint _stealthEdgePaint = Paint()
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 1.2;
+  static final Paint _stealthCircuitPaint = Paint()..strokeWidth = 0.5;
+  static final Paint _stealthEyeBlurPaint = Paint()
+    ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
+  static final Paint _stealthEyeCorePaint = Paint();
+
+  // Cached paints per _drawCrystalShip (~7 allocs/frame).
+  static final Paint _crystalBodyPaint = Paint();
+  static final Paint _crystalFacetPaint = Paint()
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 0.8;
+  static final Paint _crystalPrism1Paint = Paint()
+    ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8);
+  static final Paint _crystalPrism2Paint = Paint()
+    ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5);
+  static final Paint _crystalBorderPaint = Paint()
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 1.5;
+  static final Paint _crystalVertPaint = Paint();
+
+  // Cached paints per _drawGhostShip (3 allocs/frame + loop particles).
+  static final Paint _ghostAfterPaint = Paint();
+  static final Paint _ghostGlowPaint = Paint()
+    ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 15);
+  static final Paint _ghostBodyPaint = Paint();
+
+  // Cached paints per _drawOmegaShip (7 allocs/frame).
+  static final Paint _omegaGlowPaint = Paint()
+    ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 12);
+  static final Paint _omegaBodyPaint = Paint();
+  static final Paint _omegaEdgePaint = Paint()
+    ..color = Colors.white.withValues(alpha: 0.2)
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 0.8;
+  static final Paint _omegaInnerEdgePaint = Paint()
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 0.7;
+  static final Paint _omegaCenterGlowPaint = Paint()
+    ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6);
+  static final Paint _omegaCenterCorePaint = Paint()
+    ..color = Colors.white.withValues(alpha: 0.8);
+  static final Paint _omegaNodePaint = Paint();
+
+  // Cached paints per _drawPreviewThrusters (2 allocs × 2 thruster/frame).
+  // Blur radius 3 * s, con s = 2.5 const → 7.5 statico.
+  static final Paint _thrusterFlamePaint = Paint()
+    ..color = const Color(0xFFFF6600).withValues(alpha: 0.35)
+    ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 7.5);
+  static final Paint _thrusterCorePaint = Paint()
+    ..color = Colors.white.withValues(alpha: 0.6)
+    ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2);
+
+  // Cached paints per _drawOrbitingParticles (2 allocs × 8 particles/frame).
+  static final Paint _orbitingParticlePaint = Paint();
+  static final Paint _orbitingLinePaint = Paint()..strokeWidth = 0.5;
+
   final String skinId;
   final Color color;
   final double time;
@@ -1208,41 +1273,30 @@ class _SkinPreviewPainter extends CustomPainter {
       ..lineTo(-6 * s, -4 * s)
       ..close();
 
-    final glowPaint = Paint()
-      ..color = c.withValues(alpha: 0.2)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10);
+    final glowPaint = _stealthGlowPaint..color = c.withValues(alpha: 0.2);
     canvas.drawPath(path, glowPaint);
 
-    final bodyPaint = Paint()..color = const Color(0xFF151520);
-    canvas.drawPath(path, bodyPaint);
+    canvas.drawPath(path, _stealthBodyPaint);
 
     // Pannelli interni
-    final panelPaint = Paint()
-      ..color = c.withValues(alpha: 0.08)
-      ..style = PaintingStyle.fill;
+    final panelPaint = _stealthPanelPaint..color = c.withValues(alpha: 0.08);
     final panelL = Path()
       ..moveTo(-6 * s, -4 * s)..lineTo(0, -10 * s)..lineTo(0, 6 * s)..lineTo(-12 * s, 8 * s)..close();
     canvas.drawPath(panelL, panelPaint);
 
-    final edgePaint = Paint()
-      ..color = c
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.2;
+    final edgePaint = _stealthEdgePaint..color = c;
     canvas.drawPath(path, edgePaint);
 
     // Linee circuito
-    final circuitPaint = Paint()
-      ..color = c.withValues(alpha: 0.2)
-      ..strokeWidth = 0.5;
+    final circuitPaint = _stealthCircuitPaint..color = c.withValues(alpha: 0.2);
     canvas.drawLine(Offset(0, -10 * s), Offset(0, 8 * s), circuitPaint);
     canvas.drawLine(Offset(-6 * s, -4 * s), Offset(6 * s, -4 * s), circuitPaint);
 
     // Occhio rosso pulsante
     final eyePulse = 0.6 + math.sin(time * 3) * 0.3;
-    canvas.drawCircle(Offset(0, -6 * s), 2.5 * s, Paint()
-      ..color = c.withValues(alpha: eyePulse)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3));
-    canvas.drawCircle(Offset(0, -6 * s), 1.5 * s, Paint()..color = c);
+    canvas.drawCircle(Offset(0, -6 * s), 2.5 * s,
+        _stealthEyeBlurPaint..color = c.withValues(alpha: eyePulse));
+    canvas.drawCircle(Offset(0, -6 * s), 1.5 * s, _stealthEyeCorePaint..color = c);
   }
 
   void _drawCrystalShip(Canvas canvas, double s, Color c) {
@@ -1255,14 +1309,11 @@ class _SkinPreviewPainter extends CustomPainter {
       ..lineTo(-8 * s, -2 * s)
       ..close();
 
-    final bodyPaint = Paint()..color = c.withValues(alpha: 0.25);
+    final bodyPaint = _crystalBodyPaint..color = c.withValues(alpha: 0.25);
     canvas.drawPath(path, bodyPaint);
 
     // Sfaccettature con riempimento graduale
-    final facetPaint = Paint()
-      ..color = c.withValues(alpha: 0.4)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 0.8;
+    final facetPaint = _crystalFacetPaint..color = c.withValues(alpha: 0.4);
     canvas.drawLine(Offset(0, -18 * s), Offset(0, 14 * s), facetPaint);
     canvas.drawLine(Offset(-8 * s, -2 * s), Offset(12 * s, 8 * s), facetPaint);
     canvas.drawLine(Offset(8 * s, -2 * s), Offset(-12 * s, 8 * s), facetPaint);
@@ -1272,21 +1323,16 @@ class _SkinPreviewPainter extends CustomPainter {
 
     // Riflesso prismatico che ruota
     final hue = (time * 50) % 360;
-    final prismPaint = Paint()
-      ..color = HSVColor.fromAHSV(0.25, hue, 0.8, 1).toColor()
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8);
+    final prismPaint = _crystalPrism1Paint
+      ..color = HSVColor.fromAHSV(0.25, hue, 0.8, 1).toColor();
     canvas.drawCircle(Offset(0, -2 * s), 6 * s, prismPaint);
     // Secondo riflesso sfasato
-    final prismPaint2 = Paint()
-      ..color = HSVColor.fromAHSV(0.12, (hue + 120) % 360, 0.8, 1).toColor()
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5);
+    final prismPaint2 = _crystalPrism2Paint
+      ..color = HSVColor.fromAHSV(0.12, (hue + 120) % 360, 0.8, 1).toColor();
     canvas.drawCircle(Offset(3 * s, -6 * s), 4 * s, prismPaint2);
 
     // Bordo glow
-    final borderPaint = Paint()
-      ..color = c.withValues(alpha: 0.6)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.5;
+    final borderPaint = _crystalBorderPaint..color = c.withValues(alpha: 0.6);
     canvas.drawPath(path, borderPaint);
 
     // Punti luminosi sui vertici
@@ -1294,7 +1340,8 @@ class _SkinPreviewPainter extends CustomPainter {
                    Offset(0, 14 * s), Offset(-12 * s, 8 * s), Offset(-8 * s, -2 * s)];
     for (int i = 0; i < verts.length; i++) {
       final vPulse = 0.3 + math.sin(time * 3 + i * 1.0) * 0.3;
-      canvas.drawCircle(verts[i], 1.5, Paint()..color = Colors.white.withValues(alpha: vPulse));
+      canvas.drawCircle(verts[i], 1.5,
+          _crystalVertPaint..color = Colors.white.withValues(alpha: vPulse));
     }
   }
 
@@ -1304,15 +1351,13 @@ class _SkinPreviewPainter extends CustomPainter {
     // Afterimage (ombra sfasata)
     canvas.save();
     canvas.translate(math.sin(time * 1.5) * 3, math.cos(time * 1.2) * 3);
-    _drawShipPath(canvas, s, Paint()..color = c.withValues(alpha: alpha * 0.2));
+    _drawShipPath(canvas, s, _ghostAfterPaint..color = c.withValues(alpha: alpha * 0.2));
     canvas.restore();
 
-    final glowPaint = Paint()
-      ..color = c.withValues(alpha: alpha * 0.4)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 15);
+    final glowPaint = _ghostGlowPaint..color = c.withValues(alpha: alpha * 0.4);
     _drawShipPath(canvas, s, glowPaint);
 
-    final bodyPaint = Paint()..color = c.withValues(alpha: alpha);
+    final bodyPaint = _ghostBodyPaint..color = c.withValues(alpha: alpha);
     _drawShipPath(canvas, s, bodyPaint);
 
     // Ghost particles che salgono
@@ -1354,19 +1399,13 @@ class _SkinPreviewPainter extends CustomPainter {
     }
     path.close();
 
-    final glowPaint = Paint()
-      ..color = c.withValues(alpha: 0.3)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 12);
+    final glowPaint = _omegaGlowPaint..color = c.withValues(alpha: 0.3);
     canvas.drawPath(path, glowPaint);
 
-    final bodyPaint = Paint()..color = c;
-    canvas.drawPath(path, bodyPaint);
+    canvas.drawPath(path, _omegaBodyPaint..color = c);
 
     // Bordo bianco
-    canvas.drawPath(path, Paint()
-      ..color = Colors.white.withValues(alpha: 0.2)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 0.8);
+    canvas.drawPath(path, _omegaEdgePaint);
 
     // Stella interna contro-rotante
     canvas.save();
@@ -1387,17 +1426,13 @@ class _SkinPreviewPainter extends CustomPainter {
       innerPath.lineTo(innerX, innerY);
     }
     innerPath.close();
-    canvas.drawPath(innerPath, Paint()
-      ..color = c.withValues(alpha: 0.25)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 0.7);
+    canvas.drawPath(innerPath, _omegaInnerEdgePaint..color = c.withValues(alpha: 0.25));
     canvas.restore();
 
     // Centro orb + glow
-    canvas.drawCircle(Offset.zero, 6 * s, Paint()
-      ..color = c.withValues(alpha: 0.25)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6));
-    canvas.drawCircle(Offset.zero, 3.5 * s, Paint()..color = Colors.white.withValues(alpha: 0.8));
+    canvas.drawCircle(
+        Offset.zero, 6 * s, _omegaCenterGlowPaint..color = c.withValues(alpha: 0.25));
+    canvas.drawCircle(Offset.zero, 3.5 * s, _omegaCenterCorePaint);
 
     // Nodi pulsanti sulle punte
     for (int i = 0; i < 4; i++) {
@@ -1405,7 +1440,8 @@ class _SkinPreviewPainter extends CustomPainter {
       final nx = math.cos(angle) * 15 * s;
       final ny = math.sin(angle) * 15 * s;
       final np = 0.3 + math.sin(time * 4 + i * 1.5) * 0.3;
-      canvas.drawCircle(Offset(nx, ny), 1.5, Paint()..color = c.withValues(alpha: np));
+      canvas.drawCircle(
+          Offset(nx, ny), 1.5, _omegaNodePaint..color = c.withValues(alpha: np));
     }
 
     canvas.restore();
@@ -1436,17 +1472,14 @@ class _SkinPreviewPainter extends CustomPainter {
 
     for (final xOff in [-5.0 * s, 5.0 * s]) {
       // Fiamma esterna
-      final flamePaint = Paint()
-        ..color = const Color(0xFFFF6600).withValues(alpha: 0.35)
-        ..maskFilter = MaskFilter.blur(BlurStyle.normal, 3 * s);
       canvas.drawOval(
         Rect.fromCenter(center: Offset(xOff, 13 * s + flameLen * 0.5), width: 5 * s, height: flameLen * s * 0.5),
-        flamePaint,
+        _thrusterFlamePaint,
       );
       // Nucleo bianco
       canvas.drawOval(
         Rect.fromCenter(center: Offset(xOff, 13 * s + flameLen * 0.3), width: 2.5 * s, height: flameLen * s * 0.25),
-        Paint()..color = Colors.white.withValues(alpha: 0.6)..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2),
+        _thrusterCorePaint,
       );
     }
 
@@ -1454,7 +1487,8 @@ class _SkinPreviewPainter extends CustomPainter {
   }
 
   void _drawOrbitingParticles(Canvas canvas, double cx, double cy, double t, Color c) {
-    final paint = Paint();
+    final paint = _orbitingParticlePaint;
+    final linePaint = _orbitingLinePaint..color = c.withValues(alpha: 0.03);
     for (int i = 0; i < 8; i++) {
       final angle = t * 0.5 + i * math.pi / 4;
       final dist = 78 + math.sin(t * 0.7 + i * 2) * 8;
@@ -1469,9 +1503,7 @@ class _SkinPreviewPainter extends CustomPainter {
         final nextDist = 78 + math.sin(t * 0.7 + (i + 1) * 2) * 8;
         final nx = cx + math.cos(nextAngle) * nextDist;
         final ny = cy + math.sin(nextAngle) * nextDist;
-        canvas.drawLine(Offset(x, y), Offset(nx, ny), Paint()
-          ..color = c.withValues(alpha: 0.03)
-          ..strokeWidth = 0.5);
+        canvas.drawLine(Offset(x, y), Offset(nx, ny), linePaint);
       }
     }
   }
@@ -1483,6 +1515,16 @@ class _SkinPreviewPainter extends CustomPainter {
 // ==================== TRAIL PREVIEW PAINTER ====================
 
 class _TrailPreviewPainter extends CustomPainter {
+  // Cached paints: trail loop ×25 + ice crystal + nave finale.
+  static final Paint _trailBodyPaint = Paint();
+  static final Paint _shipBodyPaint = Paint()..color = NeonColors.cyan;
+  static final Paint _shipGlowPaint = Paint()
+    ..color = NeonColors.cyan.withValues(alpha: 0.25)
+    ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8);
+  static final Paint _iceCrystalPaint = Paint()
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 0.8;
+
   final String trailId;
   final Color color;
   final double time;
@@ -1549,7 +1591,7 @@ class _TrailPreviewPainter extends CustomPainter {
       }
 
       if (trailSize > 0.5) {
-        final paint = Paint()
+        final paint = _trailBodyPaint
           ..color = trailColor.withValues(alpha: trailAlpha.clamp(0.01, 0.6));
         canvas.drawCircle(Offset(tx, ty), trailSize, paint);
 
@@ -1566,7 +1608,6 @@ class _TrailPreviewPainter extends CustomPainter {
     canvas.translate(shipX, shipY);
     canvas.rotate(angle);
 
-    final shipPaint = Paint()..color = NeonColors.cyan;
     final s = 1.2;
     final path = Path()
       ..moveTo(0, -14 * s)
@@ -1580,22 +1621,16 @@ class _TrailPreviewPainter extends CustomPainter {
       ..lineTo(-13 * s, 10 * s)
       ..lineTo(-4 * s, -6 * s)
       ..close();
-    canvas.drawPath(path, shipPaint);
+    canvas.drawPath(path, _shipBodyPaint);
 
     // Glow
-    final glowPaint = Paint()
-      ..color = NeonColors.cyan.withValues(alpha: 0.25)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8);
-    canvas.drawPath(path, glowPaint);
+    canvas.drawPath(path, _shipGlowPaint);
 
     canvas.restore();
   }
 
   void _drawIceCrystal(Canvas canvas, double x, double y, double r, double alpha) {
-    final paint = Paint()
-      ..color = color.withValues(alpha: alpha * 0.6)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 0.8;
+    final paint = _iceCrystalPaint..color = color.withValues(alpha: alpha * 0.6);
     // 6-point ice crystal
     for (int i = 0; i < 6; i++) {
       final a = i * math.pi / 3;

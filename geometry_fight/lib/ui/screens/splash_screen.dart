@@ -278,6 +278,48 @@ class _SplashPainter extends CustomPainter {
   static final Paint _droneCoreHaloPaint = Paint();
   static final Paint _droneCorePaint = Paint();
 
+  // Nebula paint cache (2 allocs/frame → 0; shader + .color mutati inline).
+  static final Paint _nebulaPaint = Paint();
+
+  // Scrolling bg paint cache (216 linee/frame → 1 Paint; .color/.strokeWidth mutati)
+  static final Paint _scrollBgPaint = Paint()..strokeCap = StrokeCap.round;
+
+  // Stars paint cache (354 cerchi/frame × 3 layer → 1 Paint riutilizzato)
+  static final Paint _starsPaint = Paint();
+
+  // Speed lines paint cache (15 linee/frame → 1 Paint; strokeWidth costante)
+  static final Paint _speedLinesPaint = Paint()..strokeWidth = 0.5;
+
+  // Explosion paint cache: flash + shockwave + rings(4) + particelle(35) + debris(12)
+  // → 52 alloc/frame su fase esplosione, ora 5 Paint riutilizzati.
+  static final Paint _explosionFlashPaint = Paint();
+  static final Paint _explosionShockPaint = Paint()
+    ..style = PaintingStyle.stroke;
+  static final Paint _explosionRingPaint = Paint()
+    ..style = PaintingStyle.stroke;
+  // MaskFilter blur costante (radius=2) pre-cached → evita rebuild ogni frame.
+  static final Paint _explosionParticlePaint = Paint()
+    ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2);
+  static final Paint _explosionDebrisPaint = Paint()..strokeWidth = 1;
+
+  // Logo line paint cache (2 linee decorative → 1 Paint; strokeWidth=1 costante)
+  static final Paint _logoLinePaint = Paint()..strokeWidth = 1;
+
+  // Logo glow paint cache: MaskFilter blur(radius=40) cached all'init (nota
+  // che `_drawLogo` disegna cerchio costante, blur costante → Paint totalmente
+  // stabile, solo .color cambia con alpha).
+  static final Paint _logoGlowPaint = Paint()
+    ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 40);
+
+  // TextPainter cache — quantizza alpha (0..255) e scale (×100 int) così
+  // micro-delta tra frame non forzano re-layout. Cache invalida solo quando
+  // quantized values cambiano (≈32 distinti durante l'animazione).
+  static TextPainter? _cachedTitlePainter;
+  static int _cachedTitleAlphaQ = -1;
+  static int _cachedTitleScaleQ = -1;
+  static TextPainter? _cachedSubPainter;
+  static int _cachedSubAlphaPulseQ = -1;
+
   _SplashPainter({
     required this.chaseProgress,
     required this.bgPhase,
@@ -315,31 +357,29 @@ class _SplashPainter extends CustomPainter {
 
   // === NEBULOSA (sfondo colorato sfumato) ===
   void _drawNebula(Canvas canvas, Size size) {
-    final paint = Paint();
-
     // Nebulosa blu-viola in alto a sinistra
     final p1 = Offset(size.width * 0.2, size.height * 0.3);
     final pulse1 = 0.03 + math.sin(bgPhase * math.pi * 2) * 0.01;
-    paint.shader = RadialGradient(
+    _nebulaPaint.shader = RadialGradient(
       colors: [
         Color.fromRGBO(30, 0, 100, pulse1),
         Colors.transparent,
       ],
     ).createShader(Rect.fromCircle(center: p1, radius: size.width * 0.5));
-    canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), paint);
+    canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), _nebulaPaint);
 
     // Nebulosa cyan in basso a destra
     final p2 = Offset(size.width * 0.8, size.height * 0.7);
     final pulse2 = 0.02 + math.sin(bgPhase * math.pi * 2 + 2) * 0.01;
-    paint.shader = RadialGradient(
+    _nebulaPaint.shader = RadialGradient(
       colors: [
         Color.fromRGBO(0, 50, 80, pulse2),
         Colors.transparent,
       ],
     ).createShader(Rect.fromCircle(center: p2, radius: size.width * 0.4));
-    canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), paint);
+    canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), _nebulaPaint);
 
-    paint.shader = null;
+    _nebulaPaint.shader = null;
   }
 
   // === SFONDO SCORREVOLE veloce (strie da destra a sinistra) ===
@@ -347,7 +387,6 @@ class _SplashPainter extends CustomPainter {
   void _drawScrollingBg(Canvas canvas, Size size) {
     if (chaseProgress < 0.03) return;
     final intensity = (chaseProgress * 2.0).clamp(0.0, 1.0);
-    final paint = Paint()..strokeCap = StrokeCap.round;
     final rng = math.Random(33);
 
     // Strie lente: 60 → 180
@@ -362,9 +401,9 @@ class _SplashPainter extends CustomPainter {
       final x = ((baseX - travel) % (size.width + baseLen + 50)) - baseLen;
       final alpha = (0.03 + rng.nextDouble() * 0.06) * intensity;
       final strokeW = 0.2 + rng.nextDouble() * 0.6;
-      paint.color = Color.fromRGBO(160, 210, 255, alpha);
-      paint.strokeWidth = strokeW;
-      canvas.drawLine(Offset(x, y), Offset(x + baseLen, y), paint);
+      _scrollBgPaint.color = Color.fromRGBO(160, 210, 255, alpha);
+      _scrollBgPaint.strokeWidth = strokeW;
+      canvas.drawLine(Offset(x, y), Offset(x + baseLen, y), _scrollBgPaint);
     }
 
     // Strie più luminose (veloci): 12 → 36
@@ -378,9 +417,9 @@ class _SplashPainter extends CustomPainter {
       final travel = chaseProgress * speedFactor;
       final x = ((baseX - travel) % (size.width + baseLen + 50)) - baseLen;
       final alpha = (0.06 + rng2.nextDouble() * 0.08) * intensity;
-      paint.color = Color.fromRGBO(220, 240, 255, alpha);
-      paint.strokeWidth = 0.8;
-      canvas.drawLine(Offset(x, y), Offset(x + baseLen, y), paint);
+      _scrollBgPaint.color = Color.fromRGBO(220, 240, 255, alpha);
+      _scrollBgPaint.strokeWidth = 0.8;
+      canvas.drawLine(Offset(x, y), Offset(x + baseLen, y), _scrollBgPaint);
     }
   }
 
@@ -388,7 +427,6 @@ class _SplashPainter extends CustomPainter {
   // 3x particelle, 2x velocità base, variate per parallasse
   void _drawStars(Canvas canvas, Size size) {
     final random = math.Random(42);
-    final paint = Paint();
 
     // Layer lontano: 80 → 240, velocità base x2 con variazione individuale
     for (int i = 0; i < 240; i++) {
@@ -399,8 +437,8 @@ class _SplashPainter extends CustomPainter {
       final x = (baseX - parallax) % size.width;
       final s = 0.3 + random.nextDouble() * 0.7;
       final twinkle = 0.2 + 0.5 * ((math.sin(bgPhase * math.pi * 2 * (0.5 + random.nextDouble()) + i) + 1) / 2);
-      paint.color = Color.fromRGBO(180, 200, 255, twinkle * 0.4);
-      canvas.drawCircle(Offset(x, y), s, paint);
+      _starsPaint.color = Color.fromRGBO(180, 200, 255, twinkle * 0.4);
+      canvas.drawCircle(Offset(x, y), s, _starsPaint);
     }
 
     // Layer medio: 30 → 90
@@ -412,8 +450,8 @@ class _SplashPainter extends CustomPainter {
       final x = (baseX - parallax) % size.width;
       final s = 0.5 + random.nextDouble() * 1.2;
       final twinkle = 0.3 + 0.7 * ((math.sin(bgPhase * math.pi * 2 * (1 + random.nextDouble()) + i * 3) + 1) / 2);
-      paint.color = Color.fromRGBO(200, 220, 255, twinkle * 0.6);
-      canvas.drawCircle(Offset(x, y), s, paint);
+      _starsPaint.color = Color.fromRGBO(200, 220, 255, twinkle * 0.6);
+      canvas.drawCircle(Offset(x, y), s, _starsPaint);
     }
 
     // Layer vicino: 8 → 24, velocità massima variata per profondità
@@ -425,8 +463,8 @@ class _SplashPainter extends CustomPainter {
       final x = (baseX - parallax) % size.width;
       final s = 1.0 + random.nextDouble() * 1.5;
       final twinkle = 0.4 + 0.6 * ((math.sin(bgPhase * math.pi * 2 * (2 + random.nextDouble()) + i * 7) + 1) / 2);
-      paint.color = Color.fromRGBO(220, 240, 255, twinkle * 0.7);
-      canvas.drawCircle(Offset(x, y), s, paint);
+      _starsPaint.color = Color.fromRGBO(220, 240, 255, twinkle * 0.7);
+      canvas.drawCircle(Offset(x, y), s, _starsPaint);
     }
   }
 
@@ -434,7 +472,6 @@ class _SplashPainter extends CustomPainter {
   void _drawSpeedLines(Canvas canvas, Size size) {
     final random = math.Random(77);
     final intensity = (chaseProgress * 2).clamp(0.0, 1.0);
-    final paint = Paint()..strokeWidth = 0.5;
 
     for (int i = 0; i < 15; i++) {
       final y = random.nextDouble() * size.height;
@@ -442,8 +479,8 @@ class _SplashPainter extends CustomPainter {
       final len = baseLen * intensity;
       final x = (random.nextDouble() * size.width * 1.5 - chaseProgress * size.width * 2) % (size.width + len);
       final alpha = 0.08 + random.nextDouble() * 0.07;
-      paint.color = Color.fromRGBO(100, 180, 255, alpha * intensity);
-      canvas.drawLine(Offset(x, y), Offset(x + len, y), paint);
+      _speedLinesPaint.color = Color.fromRGBO(100, 180, 255, alpha * intensity);
+      canvas.drawLine(Offset(x, y), Offset(x + len, y), _speedLinesPaint);
     }
   }
 
@@ -830,9 +867,10 @@ class _SplashPainter extends CustomPainter {
     // Flash bianco intenso
     if (p < 0.25) {
       final alpha = (1 - p / 0.25) * 0.8;
+      _explosionFlashPaint.color = Color.fromRGBO(255, 255, 255, alpha);
       canvas.drawRect(
         Rect.fromLTWH(0, 0, size.width, size.height),
-        Paint()..color = Color.fromRGBO(255, 255, 255, alpha),
+        _explosionFlashPaint,
       );
     }
 
@@ -840,13 +878,9 @@ class _SplashPainter extends CustomPainter {
     if (p < 0.8) {
       final ringR = p * size.width * 0.4;
       final ringAlpha = (1 - p / 0.8) * 0.5;
-      canvas.drawCircle(
-        Offset(cx, cy), ringR,
-        Paint()
-          ..color = Color.fromRGBO(0, 255, 255, ringAlpha)
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 3 * (1 - p / 0.8),
-      );
+      _explosionShockPaint.color = Color.fromRGBO(0, 255, 255, ringAlpha);
+      _explosionShockPaint.strokeWidth = 3 * (1 - p / 0.8);
+      canvas.drawCircle(Offset(cx, cy), ringR, _explosionShockPaint);
     }
 
     // Cerchi concentrici multipli
@@ -856,16 +890,14 @@ class _SplashPainter extends CustomPainter {
       if (rp <= 0) continue;
       final r = rp * 120 + i * 20;
       final alpha = (1 - rp / 1.5).clamp(0, 1) * 0.35;
-      canvas.drawCircle(
-        Offset(cx, cy), r.toDouble(),
-        Paint()
-          ..color = Color.fromRGBO(0, 255, 255, alpha.toDouble())
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = (3 - i * 0.5).clamp(0.5, 3),
-      );
+      _explosionRingPaint.color =
+          Color.fromRGBO(0, 255, 255, alpha.toDouble());
+      _explosionRingPaint.strokeWidth = (3 - i * 0.5).clamp(0.5, 3);
+      canvas.drawCircle(Offset(cx, cy), r.toDouble(), _explosionRingPaint);
     }
 
-    // Particelle esplosione (più numerose e colorate)
+    // Particelle esplosione (più numerose e colorate) — MaskFilter blur(2)
+    // è pre-cached sul Paint statico (const).
     final random = math.Random(99);
     for (int i = 0; i < 35; i++) {
       final angle = random.nextDouble() * math.pi * 2;
@@ -880,12 +912,11 @@ class _SplashPainter extends CustomPainter {
           : colorChoice == 1
               ? Color.fromRGBO(255, 255, 255, alpha.toDouble())
               : Color.fromRGBO(255, 0, 170, alpha.toDouble() * 0.6);
+      _explosionParticlePaint.color = color;
       canvas.drawCircle(
         Offset(cx + math.cos(angle) * dist, cy + math.sin(angle) * dist),
         pSize * (1 - p * 0.5).clamp(0.3, 1),
-        Paint()
-          ..color = color
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2),
+        _explosionParticlePaint,
       );
     }
 
@@ -898,12 +929,12 @@ class _SplashPainter extends CustomPainter {
       final dy = math.sin(angle);
       final sx = cx + dx * dist;
       final sy = cy + dy * dist;
+      _explosionDebrisPaint.color =
+          Color.fromRGBO(0, 255, 255, alpha.toDouble());
       canvas.drawLine(
         Offset(sx, sy),
         Offset(sx + dx * 6, sy + dy * 6),
-        Paint()
-          ..color = Color.fromRGBO(0, 255, 255, alpha.toDouble())
-          ..strokeWidth = 1,
+        _explosionDebrisPaint,
       );
     }
   }
@@ -917,50 +948,56 @@ class _SplashPainter extends CustomPainter {
       final lineAlpha = ((alpha - 0.3) / 0.7).clamp(0.0, 1.0);
       final lineW = 100 * scale * lineAlpha;
       final lineY = cy - 35 * scale;
+      _logoLinePaint.color = Color.fromRGBO(0, 255, 255, lineAlpha * 0.3);
       canvas.drawLine(
         Offset(cx - lineW, lineY),
         Offset(cx + lineW, lineY),
-        Paint()
-          ..color = Color.fromRGBO(0, 255, 255, lineAlpha * 0.3)
-          ..strokeWidth = 1,
+        _logoLinePaint,
       );
     }
 
-    // Glow dietro il testo
+    // Glow dietro il testo (MaskFilter blur(40) è pre-cached sul Paint)
     if (alpha > 0.2) {
-      canvas.drawCircle(
-        Offset(cx, cy),
-        80 * scale,
-        Paint()
-          ..color = Color.fromRGBO(0, 255, 255, alpha * 0.05)
-          ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 40),
-      );
+      _logoGlowPaint.color = Color.fromRGBO(0, 255, 255, alpha * 0.05);
+      canvas.drawCircle(Offset(cx, cy), 80 * scale, _logoGlowPaint);
     }
 
-    // Titolo "GEOMETRY FIGHT"
-    final textPainter = TextPainter(
-      text: TextSpan(
-        text: 'GEOMETRY FIGHT',
-        style: TextStyle(
-          color: Color.fromRGBO(0, 255, 255, alpha),
-          fontSize: 42 * scale,
-          fontWeight: FontWeight.w900,
-          fontFamily: 'monospace',
-          letterSpacing: 6,
-          shadows: [
-            Shadow(
-              color: Color.fromRGBO(0, 255, 255, alpha * 0.5),
-              blurRadius: 20,
-            ),
-            Shadow(
-              color: Color.fromRGBO(0, 150, 255, alpha * 0.3),
-              blurRadius: 40,
-            ),
-          ],
+    // Titolo "GEOMETRY FIGHT" — TextPainter riusato se alpha/scale quantizzati
+    // invariati rispetto al frame precedente. Quantizzazione a 256 step alpha
+    // × 100 step scale ≈ invisibile all'occhio ma taglia ~60 alloc TextPainter
+    // durante fade-in (1.8s × 60fps = 108 frame).
+    final titleAlphaQ = (alpha * 255).round();
+    final titleScaleQ = (scale * 100).round();
+    if (_cachedTitlePainter == null ||
+        _cachedTitleAlphaQ != titleAlphaQ ||
+        _cachedTitleScaleQ != titleScaleQ) {
+      _cachedTitlePainter = TextPainter(
+        text: TextSpan(
+          text: 'GEOMETRY FIGHT',
+          style: TextStyle(
+            color: Color.fromRGBO(0, 255, 255, alpha),
+            fontSize: 42 * scale,
+            fontWeight: FontWeight.w900,
+            fontFamily: 'monospace',
+            letterSpacing: 6,
+            shadows: [
+              Shadow(
+                color: Color.fromRGBO(0, 255, 255, alpha * 0.5),
+                blurRadius: 20,
+              ),
+              Shadow(
+                color: Color.fromRGBO(0, 150, 255, alpha * 0.3),
+                blurRadius: 40,
+              ),
+            ],
+          ),
         ),
-      ),
-      textDirection: TextDirection.ltr,
-    )..layout();
+        textDirection: TextDirection.ltr,
+      )..layout();
+      _cachedTitleAlphaQ = titleAlphaQ;
+      _cachedTitleScaleQ = titleScaleQ;
+    }
+    final textPainter = _cachedTitlePainter!;
 
     final textX = cx - textPainter.width / 2;
     final textY = cy - textPainter.height / 2;
@@ -971,12 +1008,11 @@ class _SplashPainter extends CustomPainter {
       final lineAlpha = ((alpha - 0.3) / 0.7).clamp(0.0, 1.0);
       final lineW = 100 * scale * lineAlpha;
       final lineY2 = cy + 30 * scale;
+      _logoLinePaint.color = Color.fromRGBO(0, 255, 255, lineAlpha * 0.3);
       canvas.drawLine(
         Offset(cx - lineW, lineY2),
         Offset(cx + lineW, lineY2),
-        Paint()
-          ..color = Color.fromRGBO(0, 255, 255, lineAlpha * 0.3)
-          ..strokeWidth = 1,
+        _logoLinePaint,
       );
     }
 
@@ -985,19 +1021,29 @@ class _SplashPainter extends CustomPainter {
       final subAlpha = ((alpha - 0.5) * 2).clamp(0, 1).toDouble();
       // Pulsazione del sottotitolo
       final pulse = 0.3 + math.sin(bgPhase * math.pi * 4) * 0.15;
-      final subPainter = TextPainter(
-        text: TextSpan(
-          text: 'TOCCA PER INIZIARE',
-          style: TextStyle(
-            color: Color.fromRGBO(255, 255, 255, subAlpha * pulse),
-            fontSize: 12,
-            fontFamily: 'monospace',
-            letterSpacing: 5,
+      // Cache sub-painter per alpha*pulse quantizzato (stesso approccio).
+      final subAlphaPulseQ = (subAlpha * pulse * 255).round();
+      if (_cachedSubPainter == null ||
+          _cachedSubAlphaPulseQ != subAlphaPulseQ) {
+        _cachedSubPainter = TextPainter(
+          text: TextSpan(
+            text: 'TOCCA PER INIZIARE',
+            style: TextStyle(
+              color: Color.fromRGBO(255, 255, 255, subAlpha * pulse),
+              fontSize: 12,
+              fontFamily: 'monospace',
+              letterSpacing: 5,
+            ),
           ),
-        ),
-        textDirection: TextDirection.ltr,
-      )..layout();
-      subPainter.paint(canvas, Offset(cx - subPainter.width / 2, textY + textPainter.height + 30));
+          textDirection: TextDirection.ltr,
+        )..layout();
+        _cachedSubAlphaPulseQ = subAlphaPulseQ;
+      }
+      final subPainter = _cachedSubPainter!;
+      subPainter.paint(
+        canvas,
+        Offset(cx - subPainter.width / 2, textY + textPainter.height + 30),
+      );
     }
   }
 
