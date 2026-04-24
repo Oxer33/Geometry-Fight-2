@@ -139,6 +139,8 @@ const Map<int, List<WaveSpawn>> _bossEntourageSpawns = {
 
 List<WaveConfig> generateWaveConfigs() {
   final configs = <WaveConfig>[];
+  // Ring buffer ultimi 3 archetipi scelti → no ripetizione consecutiva.
+  final history = <int>[];
 
   for (int wave = 1; wave <= 100; wave++) {
     // Boss wave: ogni wave multipla di 5.
@@ -153,24 +155,14 @@ List<WaveConfig> generateWaveConfigs() {
     }
 
     // ═══════════════════════════════════════════════════════════════
-    // STILE GEOMETRY WARS (richiesta utente): 3-4 tipi di mob per wave
-    // in quantità massiccia → arena si riempie. Ogni wave ha un TEMA
-    // riconoscibile invece di un mix disordinato di ogni mob esistente.
-    //
-    // Base rotation (wave % 5):
-    //   1 → SWARM ASSAULT  (swarmDrone + drone + kamikaze opz.)
-    //   2 → RUSH           (kamikaze + weaver + swarmDrone)
-    //   3 → MINE FIELD     (mine + shield + drone)
-    //   4 → GEOMETRIC      (splitter + snake + pulsar + phantom)
-    //
-    // Late-game (wave >= 50): 4 temi speciali sostituiscono la rotazione
-    // base su wave specifiche per varietà (ELECTRIC/TEMPORAL/GRAVITY/BIOHAZARD).
+    // ARCHETYPE SYSTEM (ispirato GW2:RE Sequence): 31 archetipi con 4
+    // tier di difficoltà, random weighted per wave. Varietà massima
+    // + escalation graduale + climax pre-boss (MEGASWARM tier 3+).
     // ═══════════════════════════════════════════════════════════════
-    final spawns = _generateThemedWave(wave);
+    final archetype = _pickArchetype(wave, history);
+    final spawns = archetype.generator(wave);
 
-    // Gate raro: 1 ogni 10 wave (waves 11, 21, 31 ...). Prima check era
-    // `wave % 10 == 0` ma queste sono tutte boss wave (continue a L152)
-    // → gate non spawnava MAI. Sposto su `wave % 10 == 1` (non-boss).
+    // Gate hazard raro: 1 ogni 10 wave non-boss (11, 21, 31, ...).
     if (wave >= 11 && wave % 10 == 1) {
       spawns.add(WaveSpawn(EnemyType.gate, 1, delay: 10));
     }
@@ -181,143 +173,228 @@ List<WaveConfig> generateWaveConfigs() {
   return configs;
 }
 
-// ═══════════════════════════════════════════════════════════════════════
-// TEMI WAVE — richiesta utente: ondate "uniche e particolari" con 3-4
-// tipi di mob che riempiono l'arena (GW:RE style).
-// ═══════════════════════════════════════════════════════════════════════
+/// Archetype: blueprint per generare gli spawn di una wave non-boss.
+class _Archetype {
+  final String name;
+  final int tier; // 1=facile, 4=nightmare
+  final List<WaveSpawn> Function(int wave) generator;
+  const _Archetype(this.name, this.tier, this.generator);
+}
 
-/// Genera spawn list per una wave non-boss applicando il tema rotante.
-/// Count scalati per "riempire l'arena" (counts alti, pochi tipi).
-List<WaveSpawn> _generateThemedWave(int wave) {
-  // Late-game variety (wave >= 50): temi speciali su wave selezionate.
-  if (wave >= 50) {
-    final lateTheme = _lateGameThemeOverride(wave);
-    if (lateTheme != null) return lateTheme;
+/// Picker weighted per tier. Regole:
+/// - Wave 1 = CARDINAL QUARTET fisso (onboarding).
+/// - Wave %5 == 4 (pre-boss) = forced MEGASWARM/STORM/HELL (climax).
+/// - Tier range scala col wave: 1-10 → t1-2; 11-25 → t1-2;
+///   26-45 → t2-3; 46+ → t2-4.
+/// - No ripetizione ultimi 3 archetipi (history ring buffer).
+_Archetype _pickArchetype(int wave, List<int> history) {
+  if (wave == 1) {
+    final idx = _archetypes.indexWhere((a) => a.name == 'CARDINAL QUARTET');
+    _pushHistory(history, idx);
+    return _archetypes[idx];
   }
 
-  switch (wave % 5) {
-    case 1:
-      return _themeSwarmAssault(wave);
-    case 2:
-      return _themeRush(wave);
-    case 3:
-      return _themeMineField(wave);
-    case 4:
-      return _themeGeometricHorror(wave);
-    default:
-      // case 0 gestita sopra come boss. Safety fallback.
-      return _themeSwarmAssault(wave);
+  final isPreBoss = wave % 5 == 4;
+  final minTier = isPreBoss ? 3 : (wave <= 25 ? 1 : 2);
+  final maxTier = wave <= 10
+      ? 2
+      : wave <= 25
+          ? 2
+          : wave <= 45
+              ? 3
+              : 4;
+
+  final pool = <int>[];
+  for (int i = 0; i < _archetypes.length; i++) {
+    final a = _archetypes[i];
+    if (a.tier < minTier || a.tier > maxTier) continue;
+    if (history.contains(i)) continue;
+    if (isPreBoss &&
+        !(a.name.contains('MEGASWARM') ||
+            a.name.contains('STORM') ||
+            a.name.contains('HELL'))) {
+      continue;
+    }
+    pool.add(i);
   }
+  if (pool.isEmpty) {
+    history.clear();
+    for (int i = 0; i < _archetypes.length; i++) {
+      final a = _archetypes[i];
+      if (a.tier >= minTier && a.tier <= maxTier) pool.add(i);
+    }
+  }
+
+  // Pseudo-random deterministico sul wave number: riproducibile,
+  // varia per-wave, history previene ripetizioni.
+  final pickIdx = pool[(wave * 2654435761) % pool.length];
+  _pushHistory(history, pickIdx);
+  return _archetypes[pickIdx];
 }
 
-/// TEMA A — SWARM ASSAULT: massa swarmDrone + drone medium.
-/// Ondate cardinali che riempiono l'arena con bersagli facili.
-List<WaveSpawn> _themeSwarmAssault(int wave) {
-  return [
-    WaveSpawn(EnemyType.swarmDrone,
-        (80 + wave * 6).clamp(80, 200), delay: 0.2),
-    WaveSpawn(EnemyType.drone,
-        (40 + wave * 3).clamp(40, 100), delay: 1.2),
-    if (wave >= 8)
-      WaveSpawn(EnemyType.kamikaze,
-          (10 + wave).clamp(10, 40), delay: 2.5),
-  ];
+void _pushHistory(List<int> h, int idx) {
+  h.add(idx);
+  if (h.length > 3) h.removeAt(0);
 }
 
-/// TEMA B — RUSH: kamikaze veloci + weaver evasivi + swarmDrone come tappeto.
-/// Forza movimento costante del player, non si può stare fermi.
-List<WaveSpawn> _themeRush(int wave) {
-  return [
-    WaveSpawn(EnemyType.kamikaze,
-        (24 + wave * 3).clamp(24, 80), delay: 0.3),
-    WaveSpawn(EnemyType.weaver,
-        (12 + wave * 2).clamp(12, 50), delay: 1.5),
-    WaveSpawn(EnemyType.swarmDrone,
-        (40 + wave * 4).clamp(40, 140), delay: 2.8),
-  ];
-}
-
-/// TEMA C — MINE FIELD: statici (mine) + tank (shield) + drone filler.
-/// Challenge di posizionamento, non si attraversa liberamente.
-List<WaveSpawn> _themeMineField(int wave) {
-  return [
-    WaveSpawn(EnemyType.mine,
-        (16 + wave * 2).clamp(16, 50), delay: 0.2),
-    WaveSpawn(EnemyType.drone,
-        (40 + wave * 3).clamp(40, 120), delay: 1.5),
-    if (wave >= 4)
-      WaveSpawn(EnemyType.shieldEnemy,
-          (6 + wave).clamp(6, 30), delay: 2.8),
-  ];
-}
-
-/// TEMA D — GEOMETRIC HORROR: splitter + snake + pulsar + phantom (late).
-/// Comportamenti complessi che richiedono lettura del pattern.
-List<WaveSpawn> _themeGeometricHorror(int wave) {
-  return [
-    if (wave >= 3)
-      WaveSpawn(EnemyType.splitter,
-          (5 + wave ~/ 2).clamp(5, 16), delay: 0.3),
-    WaveSpawn(EnemyType.snake,
-        (6 + wave).clamp(6, 30), delay: 1.2),
-    if (wave >= 5)
-      WaveSpawn(EnemyType.pulsar,
-          (8 + wave).clamp(8, 30), delay: 2.2),
-    if (wave >= 9)
-      WaveSpawn(EnemyType.phantom,
-          (4 + wave ~/ 2).clamp(4, 20), delay: 3.5),
-  ];
-}
-
-/// Late-game override (wave >= 50): 4 temi speciali che sostituiscono la
-/// rotazione base su wave specifiche per varietà avanzata.
-List<WaveSpawn>? _lateGameThemeOverride(int wave) {
-  // wave % 20 pattern — boss su 0/5/10/15 (già gestiti), temi su 1/3/7/9/11/13/17/19 a scelta.
-  final mod = wave % 20;
-  switch (mod) {
-    case 1: // 51, 71, 91 → ELECTRIC
-      return [
-        WaveSpawn(EnemyType.tesla, (20 + wave).clamp(20, 60)),
-        WaveSpawn(EnemyType.laserTurret,
-            (8 + wave ~/ 3).clamp(8, 24), delay: 2),
-        WaveSpawn(EnemyType.drone, (30 + wave).clamp(30, 80), delay: 3),
-      ];
-    case 3: // 53, 73, 93 → TEMPORAL
-      return [
-        WaveSpawn(EnemyType.glitch, (12 + wave ~/ 2).clamp(12, 40)),
-        WaveSpawn(EnemyType.phantom,
-            (10 + wave ~/ 2).clamp(10, 30), delay: 1.5),
-        WaveSpawn(EnemyType.mirror,
-            (10 + wave ~/ 2).clamp(10, 30), delay: 2.8),
-        WaveSpawn(EnemyType.decoy,
-            (12 + wave ~/ 2).clamp(12, 40), delay: 3.5),
-      ];
-    case 7: // 57, 77, 97 → GRAVITY
-      return [
-        WaveSpawn(EnemyType.gravityWell,
-            (1 + wave ~/ 30).clamp(1, 3), delay: 0.5),
-        if (wave >= 60)
-          WaveSpawn(EnemyType.blackHole,
-              (wave ~/ 25).clamp(1, 3), delay: 1.5),
-        WaveSpawn(EnemyType.orbiter,
-            (16 + wave ~/ 2).clamp(16, 40), delay: 3),
+// ═══════════════════════════════════════════════════════════════════════
+// ARCHETYPE LIBRARY — 31 archetipi (tier 1-4) ispirati GW2:RE Sequence.
+// Tier 1: onboarding/easy (wave 1-15).
+// Tier 2: mix mid, posizionamento richiesto (wave 10-35).
+// Tier 3: MEGASWARM/climax, 1 tipo in massa + contorno (wave 25-55).
+// Tier 4: nightmare, meccaniche ostili combinate (wave 45+).
+// ═══════════════════════════════════════════════════════════════════════
+final List<_Archetype> _archetypes = [
+  // ─── TIER 1 ─────────────────────────────────────────────────────────
+  _Archetype('CARDINAL QUARTET', 1, (w) => [
+        WaveSpawn(EnemyType.drone, 4, delay: 0),
+        WaveSpawn(EnemyType.drone, (12 + w).clamp(12, 30), delay: 3.0),
+      ]),
+  _Archetype('INCOMING RUSH', 1, (w) => [
+        WaveSpawn(EnemyType.drone, (20 + w * 2).clamp(20, 50), delay: 0.3),
+        WaveSpawn(EnemyType.kamikaze, (6 + w).clamp(6, 20), delay: 2.0),
+      ]),
+  _Archetype('GENTLE SWEEP', 1, (w) => [
+        WaveSpawn(EnemyType.weaver, (10 + w).clamp(10, 25), delay: 0.2),
+        WaveSpawn(EnemyType.drone, (15 + w * 2).clamp(15, 40), delay: 1.5),
+      ]),
+  _Archetype('BORDER RAIN', 1, (w) => [
         WaveSpawn(EnemyType.swarmDrone,
-            (40 + wave).clamp(40, 120), delay: 4),
-      ];
-    case 9: // 69, 89 → BIOHAZARD
-      return [
-        WaveSpawn(EnemyType.healer, (3 + wave ~/ 15).clamp(3, 8)),
-        WaveSpawn(EnemyType.siren,
-            (6 + wave ~/ 5).clamp(6, 20), delay: 1.5),
-        WaveSpawn(EnemyType.mutator,
-            (4 + wave ~/ 10).clamp(4, 12), delay: 2.5),
-        WaveSpawn(EnemyType.leech,
-            (16 + wave).clamp(16, 50), delay: 3.5),
-        if (wave >= 60)
-          WaveSpawn(EnemyType.necro,
-              (wave ~/ 15).clamp(1, 4), delay: 5),
-      ];
-    default:
-      return null;
-  }
-}
+            (40 + w * 4).clamp(40, 120), delay: 0.2),
+        WaveSpawn(EnemyType.drone, (15 + w).clamp(15, 35), delay: 2.0),
+      ]),
+  _Archetype('PAIR ESCALATION', 1, (w) => [
+        WaveSpawn(EnemyType.shieldEnemy, 2, delay: 0),
+        WaveSpawn(EnemyType.weaver, 2, delay: 0.5),
+        WaveSpawn(EnemyType.drone, (25 + w * 2).clamp(25, 60), delay: 3.0),
+      ]),
+
+  // ─── TIER 2 ─────────────────────────────────────────────────────────
+  _Archetype('SPAWNER SIEGE', 2, (w) => [
+        WaveSpawn(EnemyType.spawner, (2 + w ~/ 15).clamp(2, 4), delay: 0.5),
+        WaveSpawn(EnemyType.drone, (20 + w).clamp(20, 40), delay: 2.5),
+      ]),
+  _Archetype('SNAKE PARADE', 2, (w) => [
+        WaveSpawn(EnemyType.snake, (4 + w ~/ 3).clamp(4, 12), delay: 0.3),
+        WaveSpawn(EnemyType.drone, (20 + w * 2).clamp(20, 50), delay: 2.5),
+      ]),
+  _Archetype('MIRROR WALL', 2, (w) => [
+        WaveSpawn(EnemyType.mirror, (5 + w ~/ 5).clamp(5, 10), delay: 0.3),
+        WaveSpawn(EnemyType.kamikaze, (20 + w).clamp(20, 45), delay: 2.0),
+      ]),
+  _Archetype('DIAGONAL STORM', 2, (w) => [
+        WaveSpawn(EnemyType.weaver, (30 + w * 3).clamp(30, 70), delay: 0.3),
+        WaveSpawn(EnemyType.drone, (10 + w).clamp(10, 30), delay: 2.5),
+      ]),
+  _Archetype('PULSAR RING', 2, (w) => [
+        WaveSpawn(EnemyType.pulsar, (6 + w ~/ 5).clamp(6, 12), delay: 0.3),
+        WaveSpawn(EnemyType.drone, (15 + w * 2).clamp(15, 40), delay: 2.0),
+      ]),
+  _Archetype('TESLA NETWORK', 2, (w) => [
+        WaveSpawn(EnemyType.tesla, (4 + w ~/ 6).clamp(4, 8), delay: 0.3),
+        WaveSpawn(EnemyType.shieldEnemy,
+            (5 + w ~/ 4).clamp(5, 12), delay: 2.0),
+        WaveSpawn(EnemyType.drone, (15 + w).clamp(15, 35), delay: 3.5),
+      ]),
+  _Archetype('PHANTOM HUNT', 2, (w) => [
+        WaveSpawn(EnemyType.phantom, (6 + w ~/ 4).clamp(6, 12), delay: 0.3),
+        WaveSpawn(EnemyType.weaver, (20 + w * 2).clamp(20, 45), delay: 2.0),
+      ]),
+  _Archetype('HAZARD MAZE', 2, (w) => [
+        WaveSpawn(EnemyType.mine, (8 + w ~/ 3).clamp(8, 16), delay: 0.3),
+        WaveSpawn(EnemyType.laserTurret,
+            (3 + w ~/ 8).clamp(3, 6), delay: 1.5),
+        WaveSpawn(EnemyType.snake, (8 + w ~/ 2).clamp(8, 20), delay: 3.0),
+      ]),
+  _Archetype('ORBITER CAGE', 2, (w) => [
+        WaveSpawn(EnemyType.orbiter, (5 + w ~/ 5).clamp(5, 10), delay: 0.3),
+        WaveSpawn(EnemyType.drone, (20 + w * 2).clamp(20, 50), delay: 2.5),
+      ]),
+  _Archetype('LEECH SWARM', 2, (w) => [
+        WaveSpawn(EnemyType.leech, (10 + w).clamp(10, 25), delay: 0.3),
+        WaveSpawn(EnemyType.drone, (25 + w * 2).clamp(25, 55), delay: 2.0),
+      ]),
+
+  // ─── TIER 3 — MEGASWARM (climax pre-boss) ───────────────────────────
+  _Archetype('MEGASWARM DRONES', 3, (w) => [
+        WaveSpawn(EnemyType.drone, (70 + w * 3).clamp(70, 160), delay: 0.3),
+        WaveSpawn(EnemyType.weaver, (5 + w ~/ 8).clamp(5, 12), delay: 2.0),
+      ]),
+  _Archetype('MEGASWARM KAMIKAZE', 3, (w) => [
+        WaveSpawn(EnemyType.kamikaze, (40 + w * 2).clamp(40, 90), delay: 0.3),
+        WaveSpawn(EnemyType.shieldEnemy,
+            (6 + w ~/ 6).clamp(6, 14), delay: 2.5),
+      ]),
+  _Archetype('MEGASWARM SNAKES', 3, (w) => [
+        WaveSpawn(EnemyType.snake, (8 + w ~/ 2).clamp(8, 24), delay: 0.3),
+        WaveSpawn(EnemyType.weaver, (25 + w * 2).clamp(25, 55), delay: 2.5),
+      ]),
+  _Archetype('MEGASWARM LEECHES', 3, (w) => [
+        WaveSpawn(EnemyType.leech, (20 + w).clamp(20, 40), delay: 0.3),
+        WaveSpawn(EnemyType.drone, (20 + w * 2).clamp(20, 50), delay: 2.0),
+      ]),
+  _Archetype('MEGASWARM SWARM', 3, (w) => [
+        WaveSpawn(EnemyType.swarmDrone,
+            (100 + w * 5).clamp(100, 220), delay: 0.2),
+        WaveSpawn(EnemyType.kamikaze, (15 + w).clamp(15, 40), delay: 2.5),
+      ]),
+  _Archetype('CONCENTRIC STORM', 3, (w) => [
+        // Ondate ring successive che circondano player.
+        WaveSpawn(EnemyType.drone, (15 + w).clamp(15, 35), delay: 0.3),
+        WaveSpawn(EnemyType.drone, (15 + w).clamp(15, 35), delay: 2.5),
+        WaveSpawn(EnemyType.drone, (15 + w).clamp(15, 35), delay: 4.5),
+        WaveSpawn(EnemyType.weaver, (5 + w ~/ 6).clamp(5, 12), delay: 5.5),
+      ]),
+  _Archetype('QUADRANT STORM', 3, (w) => [
+        WaveSpawn(EnemyType.weaver, (12 + w ~/ 2).clamp(12, 25), delay: 0.3),
+        WaveSpawn(EnemyType.pulsar, (6 + w ~/ 5).clamp(6, 12), delay: 1.2),
+        WaveSpawn(EnemyType.shieldEnemy,
+            (8 + w ~/ 4).clamp(8, 16), delay: 2.2),
+        WaveSpawn(EnemyType.drone, (20 + w).clamp(20, 45), delay: 3.5),
+      ]),
+  _Archetype('MEGASWARM GATES', 3, (w) => [
+        WaveSpawn(EnemyType.gate, (2 + w ~/ 30).clamp(2, 3), delay: 0.5),
+        WaveSpawn(EnemyType.drone, (40 + w * 2).clamp(40, 90), delay: 2.5),
+      ]),
+  _Archetype('MUTATOR STORM', 3, (w) => [
+        WaveSpawn(EnemyType.mutator, (2 + w ~/ 20).clamp(2, 4), delay: 0.3),
+        WaveSpawn(EnemyType.drone, (30 + w * 2).clamp(30, 70), delay: 2.0),
+      ]),
+  _Archetype('MEGASWARM TITANS', 3, (w) => [
+        WaveSpawn(EnemyType.titan, (4 + w ~/ 10).clamp(4, 8), delay: 0.3),
+        WaveSpawn(EnemyType.drone, (25 + w * 2).clamp(25, 55), delay: 2.5),
+      ]),
+
+  // ─── TIER 4 — NIGHTMARE (wave 45+) ──────────────────────────────────
+  _Archetype('VOID STORM', 4, (w) => [
+        WaveSpawn(EnemyType.blackHole, 2, delay: 0.5),
+        WaveSpawn(EnemyType.drone, (35 + w).clamp(35, 70), delay: 2.5),
+        WaveSpawn(EnemyType.proton, (8 + w ~/ 5).clamp(8, 20), delay: 4.0),
+      ]),
+  _Archetype('NECRO STORM', 4, (w) => [
+        WaveSpawn(EnemyType.necro, (3 + w ~/ 15).clamp(3, 6), delay: 0.3),
+        WaveSpawn(EnemyType.drone, (30 + w).clamp(30, 65), delay: 2.0),
+        WaveSpawn(EnemyType.weaver, (6 + w ~/ 8).clamp(6, 14), delay: 3.5),
+      ]),
+  _Archetype('MEGASWARM TIMEBOMBS', 4, (w) => [
+        WaveSpawn(EnemyType.timeBomb,
+            (12 + w ~/ 3).clamp(12, 25), delay: 0.3),
+        WaveSpawn(EnemyType.drone, (20 + w).clamp(20, 45), delay: 2.5),
+      ]),
+  _Archetype('GLITCH STORM', 4, (w) => [
+        WaveSpawn(EnemyType.glitch, (8 + w ~/ 4).clamp(8, 16), delay: 0.3),
+        WaveSpawn(EnemyType.kamikaze, (30 + w * 2).clamp(30, 70), delay: 2.0),
+      ]),
+  _Archetype('SIREN STORM', 4, (w) => [
+        WaveSpawn(EnemyType.siren, (6 + w ~/ 6).clamp(6, 12), delay: 0.3),
+        WaveSpawn(EnemyType.drone, (40 + w * 2).clamp(40, 80), delay: 2.0),
+        WaveSpawn(EnemyType.weaver, (8 + w ~/ 5).clamp(8, 20), delay: 3.5),
+      ]),
+  _Archetype('HELL SPAWN', 4, (w) => [
+        WaveSpawn(EnemyType.spawner, (3 + w ~/ 20).clamp(3, 5), delay: 0.5),
+        WaveSpawn(EnemyType.necro, (2 + w ~/ 25).clamp(2, 4), delay: 2.0),
+        WaveSpawn(EnemyType.kamikaze, (15 + w).clamp(15, 35), delay: 3.5),
+      ]),
+];
+
+// Obsolete themed-wave helpers rimossi — sostituiti da archetype system.
