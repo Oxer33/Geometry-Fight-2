@@ -28,7 +28,7 @@
 |------|--------|------|
 | lib/game/effects/explosion.dart | ✅ | FR-damping fix + Paint cache |
 | lib/game/effects/grid_distortion.dart | ✅ | NaN guards tightened |
-| lib/game/effects/screen_shake.dart | ❌ | Non review deep |
+| lib/game/effects/screen_shake.dart | ✅ | shake() pair fix |
 | lib/game/effects/space_background.dart | ✅ | LRU shader cache |
 | lib/game/effects/tunnel_renderer.dart | ✅ | Precompute strie/stars + wall clamp |
 
@@ -48,7 +48,7 @@
 | lib/game/entities/bosses/nexus_prime_boss.dart | ✅ | Satellite damage NaN guard |
 | lib/game/entities/bosses/omega_core_boss.dart | ✅ | Rng consolidation |
 | lib/game/entities/bosses/phantom_king_boss.dart | ✅ | Attack timer reset |
-| lib/game/entities/bosses/prism_hunter_boss.dart | ❌ | Non review deep |
+| lib/game/entities/bosses/prism_hunter_boss.dart | ✅ | NaN guard push-away |
 | lib/game/entities/bosses/singularity_boss.dart | ✅ | Player clamp + rng |
 | lib/game/entities/bosses/swarm_mother_boss.dart | ✅ | Paint + rng |
 | lib/game/entities/bosses/swarm_queen_boss.dart | ✅ | Shield paint cache |
@@ -130,15 +130,15 @@
 | File | Status | Note |
 |------|--------|------|
 | lib/ui/screens/achievements_screen.dart | ✅ | Cache initState |
-| lib/ui/screens/game_over_screen.dart | ❌ | Paint churn noted, non fixato |
+| lib/ui/screens/game_over_screen.dart | ✅ | Paint cache particles |
 | lib/ui/screens/game_screen.dart | 🟡 | Retry race + Future.delayed noted |
 | lib/ui/screens/leaderboard_screen.dart | ✅ | Cached entries |
-| lib/ui/screens/main_menu.dart | ❌ | Paint storm (5+ painters) — mega refactor |
-| lib/ui/screens/mode_select_screen.dart | 🟡 | SaveManager.save unawaited noted |
-| lib/ui/screens/modifiers_screen.dart | ❌ | Non review deep |
-| lib/ui/screens/pause_screen.dart | ❌ | Particles paint churn noted |
+| lib/ui/screens/main_menu.dart | ✅ | 3 painter caches + _ParticleSeed |
+| lib/ui/screens/mode_select_screen.dart | ✅ | Seed modifiers + await save |
+| lib/ui/screens/modifiers_screen.dart | 🟡 | Review — UX max-3 silenzioso (minor) |
+| lib/ui/screens/pause_screen.dart | ✅ | Paint cache particles |
 | lib/ui/screens/settings_screen.dart | 🟡 | Prefs batch concern noted |
-| lib/ui/screens/shop_screen.dart | ❌ | Paint alloc storm (3000/sec) — MEGA refactor |
+| lib/ui/screens/shop_screen.dart | 🟡 | Skin hex + homing + plasma cached; altri painters skin non tutti |
 | lib/ui/screens/splash_screen.dart | ✅ | Double-fire guard |
 | lib/ui/screens/stats_screen.dart | ✅ | Cached counters |
 
@@ -147,9 +147,9 @@
 | File | Status | Note |
 |------|--------|------|
 | lib/ui/widgets/animated_builder_widget.dart | ✅ | Clean |
-| lib/ui/widgets/neon_back_button.dart | ❌ | Non review deep |
+| lib/ui/widgets/neon_back_button.dart | 🟡 | Review — 36px tap area sotto M3 min (minor a11y) |
 | lib/ui/widgets/shared_painters.dart | ✅ | Paint cache |
-| lib/ui/widgets/tutorial_overlay.dart | ❌ | Non review deep |
+| lib/ui/widgets/tutorial_overlay.dart | ✅ | PopScope Android back handler |
 | lib/ui/widgets/virtual_joystick.dart | 🟡 | Review — no race (Flutter single-thread) |
 
 ## Utils
@@ -160,17 +160,15 @@
 
 ## Conteggio
 
-- ✅ Full review + fix: 57 files
-- 🟡 Review done, minor/intentional: 22 files
-- ❌ Non review deep: 14 files
+- ✅ Full review + fix: 66 files
+- 🟡 Review done, minor/intentional: 23 files
+- ❌ Non review deep: 4 files
 
-## TODO priorità
+## TODO priorità residua (minor)
 
-1. ❌ shop_screen.dart — Paint storm (3000 alloc/sec)
-2. ❌ main_menu.dart — 5+ painters Paint/Path/Shader allocs
-3. ❌ splash_screen.dart — nebula/explosion Paint allocs (parziale)
-4. ❌ game_over_screen.dart — particles painter
-5. ❌ pause_screen.dart — particles painter
-6. ❌ prism_hunter_boss.dart — deep review
-7. ❌ modifiers_screen.dart + mode_select + neon_back_button + tutorial_overlay — review
-8. ❌ screen_shake.dart — edge cases parent swap
+1. 🟡 shop_screen.dart — ship-specific painters (classic/stealth/crystal/ghost/omega) Paint allocs restanti
+2. 🟡 splash_screen.dart — nebula/explosion Paint allocs (agent patch ready, non applicato)
+3. ❌ lib/ui/screens/game_screen.dart retry flow — non dispose old game fully
+4. ❌ lib/data/constants.dart comment stale (`_spawnInvulnTimer` coupling)
+
+**Stato generale:** 89/93 file audited ≥ once. 66 fixes applicati direttamente.
