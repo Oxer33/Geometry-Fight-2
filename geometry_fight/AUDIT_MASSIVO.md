@@ -30,19 +30,19 @@
 | lib/game/effects/grid_distortion.dart | ✅ | NaN guards tightened |
 | lib/game/effects/screen_shake.dart | ✅ | shake() pair fix |
 | lib/game/effects/space_background.dart | ✅ | LRU shader cache |
-| lib/game/effects/tunnel_renderer.dart | ✅ | Precompute strie/stars + wall clamp |
+| lib/game/effects/tunnel_renderer.dart | ✅ | Precompute strie/stars + wall clamp + floating obstacles |
 
 ## Bosses
 
 | File | Status | Note |
 |------|--------|------|
-| lib/game/entities/bosses/astral_sentinel_boss.dart | ✅ | Wind-up fade fix + queue safe |
+| lib/game/entities/bosses/astral_sentinel_boss.dart | ✅ | Wind-up fade + boost HP/radial burst |
 | lib/game/entities/bosses/boss_base.dart | ✅ | Queue cap + Y osc fix + ListQueue |
 | lib/game/entities/bosses/chrono_wraith_boss.dart | ✅ | Reverse iter + NaN guard |
 | lib/game/entities/bosses/crimson_crown_boss.dart | 🟡 | Clean — minor review |
-| lib/game/entities/bosses/eternity_engine_boss.dart | ✅ | NaN + rng cache |
+| lib/game/entities/bosses/eternity_engine_boss.dart | ✅ | NaN + rng + rage BH spawn 10s |
 | lib/game/entities/bosses/graviton_boss.dart | ✅ | Player clamp |
-| lib/game/entities/bosses/hydra_boss.dart | ✅ | Rage timer + comment fix |
+| lib/game/entities/bosses/hydra_boss.dart | ✅ | Rage toned down + minion spawn abilitato |
 | lib/game/entities/bosses/inferno_boss.dart | ✅ | Trail cooldown |
 | lib/game/entities/bosses/mirror_master_boss.dart | 🟡 | Review done, skip bullet-rain (intentional) |
 | lib/game/entities/bosses/nexus_prime_boss.dart | ✅ | Satellite damage NaN guard |
@@ -52,7 +52,7 @@
 | lib/game/entities/bosses/singularity_boss.dart | ✅ | Player clamp + rng |
 | lib/game/entities/bosses/swarm_mother_boss.dart | ✅ | Paint + rng |
 | lib/game/entities/bosses/swarm_queen_boss.dart | ✅ | Shield paint cache |
-| lib/game/entities/bosses/tesla_lord_boss.dart | ✅ | Rng consolidation |
+| lib/game/entities/bosses/tesla_lord_boss.dart | ✅ | Rng + attackTimer toned down |
 | lib/game/entities/bosses/the_architect_boss.dart | ✅ | NaN guards + rng |
 | lib/game/entities/bosses/the_grid_boss.dart | ✅ | NaN + Paint cache |
 | lib/game/entities/bosses/void_kraken_boss.dart | ✅ | Player clamp |
@@ -100,7 +100,7 @@
 | lib/game/entities/geom.dart | 🟡 | Review done — minor |
 | lib/game/entities/player.dart | ✅ | TimeScale clamp |
 | lib/game/entities/powerups.dart | 🟡 | smartBomb capacity already guarded |
-| lib/game/entities/projectiles.dart | ✅ | NaN guards + realDt clamp |
+| lib/game/entities/projectiles.dart | ✅ | NaN + realDt clamp + laser throttle+render |
 
 ## Game world + systems
 
