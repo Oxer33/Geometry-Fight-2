@@ -105,30 +105,38 @@ class MirrorMasterBoss extends BossBase {
     // Intercetta PlayerBullet entro 22px → riflette come EnemyBullet
     // + danno 3 allo specchio. Bullet ad alto damage (plasma) romperà
     // lo specchio in 3 hit.
-    for (final child in game.world.children) {
-      if (child is PlayerBullet) {
-        for (final m in _mirrors) {
-          if (!m.alive) continue;
-          if (child.position.distanceTo(m.position) < 22) {
-            m.hp -= 3;
-            if (m.hp <= 0) {
-              m.alive = false;
-              game.spawnExplosion(m.position, const Color(0xFFCCDDFF),
-                  radius: 40, particleCount: 12);
-              game.triggerScreenShake(3, 0.15);
-            }
-            // Reflect verso player — EnemyBullet veloce.
-            final dir = (playerPosition - m.position);
-            if (dir.length > 0.001) {
-              final reflected = _MirrorBullet(
-                  direction: dir.normalized(),
-                  color: const Color(0xFFFF88FF));
-              reflected.position = m.position.clone();
-              game.world.add(reflected);
-            }
-            child.removeFromParent();
-            break;
+    //
+    // BUG FIX: `removeFromParent()` di Flame è async (processato a fine
+    // frame). Senza flag, un PlayerBullet fermo sullo specchio veniva
+    // "reflected" ogni frame fino alla rimozione effettiva → rain di
+    // _MirrorBullet. `wasReflected` + `isRemoved` guard + snapshot list
+    // (niente concurrent modification su game.world.children).
+    final childrenSnapshot = game.world.children.toList(growable: false);
+    for (final child in childrenSnapshot) {
+      if (child is! PlayerBullet) continue;
+      if (child.wasReflected || child.isRemoved) continue;
+      for (final m in _mirrors) {
+        if (!m.alive) continue;
+        if (child.position.distanceTo(m.position) < 22) {
+          m.hp -= 3;
+          if (m.hp <= 0) {
+            m.alive = false;
+            game.spawnExplosion(m.position, const Color(0xFFCCDDFF),
+                radius: 40, particleCount: 12);
+            game.triggerScreenShake(3, 0.15);
           }
+          // Reflect verso player — EnemyBullet veloce.
+          final dir = (playerPosition - m.position);
+          if (dir.length > 0.001) {
+            final reflected = _MirrorBullet(
+                direction: dir.normalized(),
+                color: const Color(0xFFFF88FF));
+            reflected.position = m.position.clone();
+            game.world.add(reflected);
+          }
+          child.wasReflected = true;
+          child.removeFromParent();
+          break;
         }
       }
     }

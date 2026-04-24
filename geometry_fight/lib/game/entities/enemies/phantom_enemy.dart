@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 import 'dart:ui';
+import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
 import '../../../data/constants.dart';
 import 'enemy_base.dart';
@@ -13,6 +14,7 @@ class PhantomEnemy extends EnemyBase {
   bool _visible = true;
   double _opacity = 1.0;
   final double _flankAngle;
+  CircleHitbox? _hitbox;
 
   PhantomEnemy()
       : _flankAngle =
@@ -25,6 +27,16 @@ class PhantomEnemy extends EnemyBase {
           neonColor: NeonColors.electricBlue,
           size: Vector2(20, 20),
         );
+
+  @override
+  Future<void> onLoad() async {
+    // Replica EnemyBase.onLoad ma salva riferimento per gating del collisionType
+    // durante fade-in/out — così il phantom non riceve collisioni da bullet
+    // quando `_visible` è false (bug: hitbox sempre attiva prima).
+    _hitbox = CircleHitbox(radius: size.x / 2, anchor: Anchor.center)
+      ..position = size / 2;
+    add(_hitbox!);
+  }
 
   @override
   void updateBehavior(double dt) {
@@ -49,6 +61,13 @@ class PhantomEnemy extends EnemyBase {
       // Fade-in: bersaglio valido a metà rientro (opacity >= 0.5).
       _visible = _opacity >= 0.5;
     }
+
+    // Gate hitbox: quando invisibile, disattiva collisioni — prima la hitbox
+    // era sempre attiva quindi i proiettili colpivano il nulla (takeDamage
+    // bail-out) ma il phantom poteva comunque danneggiare il player.
+    // `inactive` = no collisioni né active né passive.
+    _hitbox?.collisionType =
+        _visible ? CollisionType.active : CollisionType.inactive;
 
     final toPlayer = playerPosition - position;
     if (toPlayer.length == 0) return;

@@ -34,6 +34,13 @@ abstract class EnemyBase extends PositionComponent
   double get spawnInvulnTimer => _spawnInvulnTimer; // FIX H5: accesso da PhantomEnemy
   /// Azzera invulnerabilità spawn (per nemici generati in-game, non spawnati)
   void clearSpawnInvulnerability() => _spawnInvulnTimer = 0;
+  /// Set breve invuln (es. 0.1s) per figli dei Splitter → protegge dalla
+  /// cascata laser/plasma che investirebbe i figli nello stesso frame del
+  /// padre. NON usa i 1.2s di default (evita che i figli restino fermi a
+  /// lampeggiare — devono muoversi subito).
+  void setSpawnInvulnerability(double seconds) {
+    _spawnInvulnTimer = seconds;
+  }
 
   // Fear mechanic (come GW:RE2 — nemici fuggono brevemente quando colpiti da proiettili vicini)
   double _fearTimer = 0;
@@ -70,8 +77,10 @@ abstract class EnemyBase extends PositionComponent
     if (_spawnPulse > 0) _spawnPulse -= dt;
     if (_spawnInvulnTimer > 0) {
       // Flash frequency incrementale: 1 Hz all'inizio → 12 Hz a fine warning
-      // Curva quadratica: accelera verso la fine per effetto "imminenza"
-      final progress = 1.0 - (_spawnInvulnTimer / 2.5).clamp(0.0, 1.0);
+      // Curva quadratica: accelera verso la fine per effetto "imminenza".
+      // Divisore = default spawn invuln (1.2s) == `classicWaveGroupDelaySeconds`.
+      // Prima era 2.5 (stale), quindi la curva non arrivava mai a 12 Hz.
+      final progress = 1.0 - (_spawnInvulnTimer / 1.2).clamp(0.0, 1.0);
       final freqHz = 1.0 + progress * progress * 11.0; // 1..12 Hz
       _blinkPhase += freqHz * dt;
       _spawnInvulnTimer -= dt;

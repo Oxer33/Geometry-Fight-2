@@ -25,14 +25,34 @@ class _ModifiersSheetState extends State<ModifiersSheet> {
   }
 
   void _toggle(String id) {
+    final wasAtCap = !_active.contains(id) && _active.length >= 3;
+    if (wasAtCap) {
+      // Feedback utente: cap raggiunto, drop silenzioso → SnackBar esplicita.
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          const SnackBar(
+            duration: Duration(milliseconds: 1500),
+            backgroundColor: Color(0xFF0A0A1A),
+            behavior: SnackBarBehavior.floating,
+            content: Text(
+              'MAX 3 MODIFICATORI',
+              style: TextStyle(
+                color: Colors.orangeAccent,
+                fontFamily: 'monospace',
+                letterSpacing: 2,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        );
+      return;
+    }
     setState(() {
       if (_active.contains(id)) {
         _active.remove(id);
       } else {
-        // Max 3 modificatori attivi
-        if (_active.length < 3) {
-          _active.add(id);
-        }
+        _active.add(id);
       }
     });
     widget.onChanged(List.from(_active));

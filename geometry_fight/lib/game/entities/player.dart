@@ -35,6 +35,12 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
   double _invincibleTimer = 0;
   bool get isInvincible => _invincibleTimer > 0;
 
+  /// Controls inverted flag — settato dai GravityWellEnemy ogni frame mentre
+  /// il player è dentro il loro raggio. Se true, `moveInput` viene negato in
+  /// update() prima dell'integrazione della posizione. Reset a false ad ogni
+  /// tick, quindi va settato continuativamente.
+  bool controlsInverted = false;
+
   // Shield
   int shieldHits = 0;
   bool hasShield = false;
@@ -115,12 +121,18 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
     }
 
     // Movement (usa realDt per non essere rallentato dallo slow-mo)
-    final moveDir = game.moveInput;
+    // Se il player è dentro il raggio di un GravityWellEnemy, `controlsInverted`
+    // viene settato true ogni frame dal nemico → nega moveInput per invertire
+    // i controlli (meccanica GW). Flag resettato a fine tick.
+    final moveDir = controlsInverted ? -game.moveInput : game.moveInput;
     if (moveDir.length > 0) {
       final actualSpeed = speed * (hasOverdrive ? 1.15 : 1.0) *
           game.saveData.speedMultiplier;
       position += moveDir * actualSpeed * realDt;
     }
+    // Reset flag ad ogni tick — i GravityWell lo rialzano in updateBehavior
+    // se il player resta nel raggio, altrimenti i controlli tornano normali.
+    controlsInverted = false;
 
     // Clamp to arena
     if (game.isTunnelMode) {

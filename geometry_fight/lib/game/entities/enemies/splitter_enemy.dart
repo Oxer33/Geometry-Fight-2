@@ -187,7 +187,12 @@ class SplitterEnemy extends EnemyBase {
         );
         child.position =
             position + Vector2(math.cos(angle), math.sin(angle)) * 20 + jitter;
-        child.clearSpawnInvulnerability();
+        // 0.1s invuln: abbastanza per sopravvivere al frame del laser/plasma
+        // che ha killato il padre (cascata sincrona), non così lungo da far
+        // lampeggiare i figli. Prima `clearSpawnInvulnerability()` lasciava
+        // i figli esposti → laser che passava per lo splitter large uccideva
+        // in un frame i 2 medium + 4 small generati.
+        child.setSpawnInvulnerability(0.1);
         game.world.add(child);
       }
     }

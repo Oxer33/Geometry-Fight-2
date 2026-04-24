@@ -45,6 +45,13 @@ class GravityWellEnemy extends EnemyBase {
     if (!game.isTunnelMode) {
       game.grid.applyAttraction(position, _invertRadius, 50 * dt);
     }
+
+    // Inversione controlli: se il player è nel raggio del campo, alza il flag.
+    // Il player.update() legge il flag, nega moveInput, e lo resetta a fine tick
+    // → va risettato ogni frame finché il player rimane dentro il raggio.
+    if (position.distanceTo(playerPosition) < _invertRadius) {
+      game.player.controlsInverted = true;
+    }
   }
 
   @override

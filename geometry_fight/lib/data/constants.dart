@@ -46,9 +46,9 @@ const double cameraSmoothing = 0.12;
 // Delay tra gruppi di spawn in modalità classica.
 // Ridotto 2.5→1.2 (richiesta utente: "mob dei vari gruppi compaiono troppo
 // distanti temporalmente").
-// IMPORTANTE: deve combaciare con `_spawnInvulnTimer` in enemy_base.dart
-// (lampeggio di warning), così il flash finisce esattamente quando arriva
-// il prossimo gruppo.
+// NB: la warning/spawn-invuln del singolo nemico (`_spawnInvulnTimer` in
+// enemy_base.dart, attualmente 4s) non è accoppiata a questo delay — il
+// flash copre il proprio spawn, non l'intervallo fra gruppi.
 const double classicWaveGroupDelaySeconds = 1.2;
 // Timeout massimo per il completamento di una wave classica DOPO l'ultimo
 // spawn: anche se restano nemici vivi, la wave successiva parte comunque.

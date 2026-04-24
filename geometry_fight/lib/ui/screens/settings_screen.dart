@@ -312,23 +312,29 @@ class _SettingsScreenState extends State<SettingsScreen>
                         delay: 0.5,
                         onTap: () async {
                           final messenger = ScaffoldMessenger.of(context);
-                          final save = SaveManager.load();
-                          save.unlockedSkins
-                            ..clear()
-                            ..add('classic');
-                          save.unlockedTrails
-                            ..clear()
-                            ..add('normal');
-                          save.unlockedWeapons
-                            ..clear()
-                            ..add('basic');
-                          save.unlockedModes
-                            ..clear()
-                            ..add('classic');
-                          save.upgrades.clear();
-                          save.activeSkin = 'classic';
-                          save.activeTrail = 'normal';
-                          save.startingWeapon = 'basic';
+                          // Rebuild SaveData immutabilmente (coding-style:
+                          // ALWAYS new objects, NEVER mutate): preservo i
+                          // campi non resettati (goldGeoms, highscores,
+                          // stats, totalPlaytime, playedModes,
+                          // activeModifiers) e ricreo liste/mappe da zero.
+                          final current = SaveManager.load();
+                          final save = SaveData(
+                            goldGeoms: current.goldGeoms,
+                            upgrades: <String, int>{},
+                            unlockedSkins: <String>['classic'],
+                            unlockedTrails: <String>['normal'],
+                            unlockedModes: <String>['classic'],
+                            unlockedWeapons: <String>['basic'],
+                            highscores: Map<String, int>.from(current.highscores),
+                            totalPlaytime: current.totalPlaytime,
+                            stats: Map<String, int>.from(current.stats),
+                            playedModes: List<String>.from(current.playedModes),
+                            activeModifiers:
+                                List<String>.from(current.activeModifiers),
+                            activeSkin: 'classic',
+                            activeTrail: 'normal',
+                            startingWeapon: 'basic',
+                          );
                           await SaveManager.save(save);
                           if (!mounted) return;
                           messenger.showSnackBar(
@@ -779,6 +785,14 @@ class _SettingsScreenState extends State<SettingsScreen>
                   _vibration = true;
                   _showFps = false;
                 });
+                // Riapplico i volumi runtime: `prefs.remove` pulisce il
+                // persistente ma il mixer live conserva l'ultimo valore
+                // usato → senza questi reapply la musica resterebbe al
+                // volume pre-reset finché non si tocca lo slider.
+                AudioSystem.setSfxVolume(_sfxVolume);
+                AudioSystem.setBgmVolume(_bgmVolume);
+                AudioSystem.setVibration(_vibration);
+                MusicManager.setVolume(_bgmVolume);
               }
             },
             child: Container(

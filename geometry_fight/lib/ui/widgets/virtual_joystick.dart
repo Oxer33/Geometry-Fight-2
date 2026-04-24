@@ -244,7 +244,11 @@ class _JoystickPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant _JoystickPainter oldDelegate) => true;
+  bool shouldRepaint(covariant _JoystickPainter oldDelegate) =>
+      oldDelegate.color != color ||
+      oldDelegate.thumbOffset != thumbOffset ||
+      oldDelegate.radius != radius ||
+      oldDelegate.pulseValue != pulseValue;
 }
 
 // NeonAnimatedBuilder è importato da animated_builder_widget.dart

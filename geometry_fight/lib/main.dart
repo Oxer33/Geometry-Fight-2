@@ -36,29 +36,45 @@ void main() async {
     ]);
     await SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
 
-    // Initialize Hive per save data e leaderboard
+    // Initialize Hive per save data e leaderboard.
+    // Selettivo: se una singola box è corrotta, wipe SOLO quella (non butto
+    // via tutto il progresso utente). Fallback generale `deleteFromDisk`
+    // solo se `Hive.initFlutter()` stesso fallisce (problema a monte).
     try {
       await Hive.initFlutter();
-      await SaveManager.init();
-      await LeaderboardManager.init();
-      await AchievementManager.init();
     } catch (e, st) {
-      // Primo fallimento: probabile corruzione dati → wipe + retry.
       CrashReporter.handleZoneError(e, st);
       try {
         await Hive.deleteFromDisk();
         await Hive.initFlutter();
-        await SaveManager.init();
-        await LeaderboardManager.init();
-        await AchievementManager.init();
       } catch (e2, st2) {
-        // Secondo fallimento: NON swallowiamo. `runZonedGuarded` cattura,
-        // il CrashReporter logga, e l'utente vede un crash esplicito invece
-        // di un save manager null che crasha al primo read.
         CrashReporter.handleZoneError(e2, st2);
         rethrow;
       }
     }
+
+    Future<void> initOrResetBox(
+      String boxName,
+      Future<void> Function() initFn,
+    ) async {
+      try {
+        await initFn();
+      } catch (e, st) {
+        CrashReporter.handleZoneError(e, st);
+        try {
+          await Hive.deleteBoxFromDisk(boxName);
+          await initFn();
+        } catch (e2, st2) {
+          CrashReporter.handleZoneError(e2, st2);
+          rethrow;
+        }
+      }
+    }
+
+    await initOrResetBox('geometry_fight_save', SaveManager.init);
+    await initOrResetBox('geometry_fight_leaderboard', LeaderboardManager.init);
+    await initOrResetBox(
+        'geometry_fight_achievements', AchievementManager.init);
 
     // Initialize audio system (SFX) + music manager (BGM)
     await AudioSystem.init();

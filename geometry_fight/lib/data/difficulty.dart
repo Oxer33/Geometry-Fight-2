@@ -43,12 +43,12 @@ class DifficultyConfig {
 const Map<Difficulty, DifficultyConfig> difficultyConfigs = {
   Difficulty.easy: DifficultyConfig(
     name: 'FACILE',
-    description: 'Per chi inizia. Più vite, nemici deboli, tanti power-up.',
+    description: 'Per chi inizia. Più vite, nemici deboli, drop power-up raddoppiati vs normale.',
     enemyHpMultiplier: 0.7,
     enemySpeedMultiplier: 0.8,
     enemyCountMultiplier: 0.7,
     spawnDelayMultiplier: 1.3,
-    powerUpDropRate: 0.005, // /20: era 0.10
+    powerUpDropRate: 0.005, // /20 of legacy 0.10 — easy = 2x normal
     geomDropMultiplier: 1.5,
     geomValueMultiplier: 1.0, // ogni geom = +1x
     scoreMultiplier: 0.5,
@@ -62,7 +62,7 @@ const Map<Difficulty, DifficultyConfig> difficultyConfigs = {
     enemySpeedMultiplier: 1.0,
     enemyCountMultiplier: 1.0,
     spawnDelayMultiplier: 1.0,
-    powerUpDropRate: 0.0025, // /20: era 0.05
+    powerUpDropRate: 0.0025, // /20 of legacy 0.05 — baseline drop rate
     geomDropMultiplier: 1.0,
     geomValueMultiplier: 1.0, // ogni geom = +1x
     scoreMultiplier: 1.0,
@@ -71,12 +71,12 @@ const Map<Difficulty, DifficultyConfig> difficultyConfigs = {
   ),
   Difficulty.hard: DifficultyConfig(
     name: 'DIFFICILE',
-    description: 'Per i veterani. Nemici aggressivi e resistenti.',
+    description: 'Per i veterani. Nemici aggressivi, drop power-up dimezzati vs normale.',
     enemyHpMultiplier: 1.5,
     enemySpeedMultiplier: 1.25,
     enemyCountMultiplier: 1.3,
     spawnDelayMultiplier: 0.8,
-    powerUpDropRate: 0.0015, // /20: era 0.03
+    powerUpDropRate: 0.0015, // /20 of legacy 0.03 — hard = 0.6x normal
     geomDropMultiplier: 1.5,
     geomValueMultiplier: 1.25, // ogni geom = +1.25x
     scoreMultiplier: 2.0,
@@ -85,12 +85,12 @@ const Map<Difficulty, DifficultyConfig> difficultyConfigs = {
   ),
   Difficulty.nightmare: DifficultyConfig(
     name: 'INCUBO',
-    description: 'Impossibile? Forse. Solo per i migliori.',
+    description: 'Impossibile? Forse. Drop power-up rarissimi, solo per i migliori.',
     enemyHpMultiplier: 2.0,
     enemySpeedMultiplier: 1.5,
     enemyCountMultiplier: 1.6,
     spawnDelayMultiplier: 0.6,
-    powerUpDropRate: 0.001, // /20: era 0.02
+    powerUpDropRate: 0.001, // /20 of legacy 0.02 — nightmare = 0.4x normal
     geomDropMultiplier: 2.0,
     geomValueMultiplier: 1.5, // ogni geom = +1.5x
     scoreMultiplier: 4.0,

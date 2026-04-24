@@ -36,8 +36,10 @@ class ScoreSystem {
   /// Multiplier arrotondato per il display
   int get multiplierDisplay => multiplier.round();
 
-  void addKill(int points, Vector2 position) {
-    // Punti = base × multiplier geom × scoreMultiplier difficoltà × modifierMultiplier
+  void addKill(int points, Vector2 _) {
+    // Punti = base × multiplier geom × scoreMultiplier difficoltà × modifierMultiplier.
+    // Param position riservato a futuri floaty-text/combo emitter; placeholder
+    // `_` silenzia lint unused_element senza rompere callsite esistenti.
     final earnedPoints = (points * multiplier * scoreMultiplier * modifierMultiplier).round();
     score += earnedPoints;
   }

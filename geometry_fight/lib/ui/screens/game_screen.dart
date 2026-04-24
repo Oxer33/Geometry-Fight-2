@@ -185,6 +185,9 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Gate: il callback può arrivare durante dispose o prima del primo
+    // frame → evito di toccare `_game` se lo State non è più montato.
+    if (!mounted) return;
     if (state == AppLifecycleState.paused ||
         state == AppLifecycleState.inactive) {
       if (_game.gameState == GameState.playing) {
@@ -198,9 +201,12 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
       // dalla pausa UI. Ma:
       //   - ricarica i pool SFX (`stopAll()` li ha disposed su paused) così
       //     i suoni di gioco tornano attivi al riprendere del gameplay;
-      //   - riprendi la musica (era in pausa).
+      //   - riprendi la musica (era in pausa) solo se non siamo su overlay
+      //     game over (in GameOver la BGM deve restare silenziata).
       unawaited(AudioSystem.init());
-      unawaited(MusicManager.resume());
+      if (!_showGameOver) {
+        unawaited(MusicManager.resume());
+      }
     }
   }
 

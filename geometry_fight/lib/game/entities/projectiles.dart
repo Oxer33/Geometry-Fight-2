@@ -25,6 +25,11 @@ class PlayerBullet extends PositionComponent
   late Vector2 _velocity;
   double _distanceTravelled = 0;
 
+  /// Flag: già riflesso da MirrorMaster. Evita "rain" di _MirrorBullet
+  /// quando un PlayerBullet resta sullo specchio per più frame prima
+  /// che Flame processi removeFromParent().
+  bool wasReflected = false;
+
   // Trail
   final List<Vector2> _trail = [];
   static const int _maxTrailLength = 8;

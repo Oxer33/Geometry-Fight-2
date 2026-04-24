@@ -60,9 +60,15 @@ class KamikazeEnemy extends EnemyBase {
         }
       case KamikazeState.rushing:
         position += _rushDirection! * speed * dt;
-        // Bounds check: se esce dall'arena, inverti direzione per tornare
-        if (position.x < -50 || position.x > arenaWidth + 50 ||
-            position.y < -50 || position.y > arenaHeight + 50) {
+        // Arena clamp in rush: EnemyBase.update clampa la pos al bordo arena
+        // DOPO updateBehavior, ma senza transizione di stato il kamikaze
+        // restava inchiodato al muro per tutto `_stateTimer` continuando a
+        // premere contro il bordo. Check TOUCH bordo (non 50px past) → passa
+        // subito a recovering così il prossimo charge può ritargettare.
+        final hx = size.x / 2;
+        final hy = size.y / 2;
+        if (position.x <= hx || position.x >= arenaWidth - hx ||
+            position.y <= hy || position.y >= arenaHeight - hy) {
           _state = KamikazeState.recovering;
           _stateTimer = 0.8;
         }

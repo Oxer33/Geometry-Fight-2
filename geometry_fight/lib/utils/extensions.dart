@@ -2,6 +2,12 @@ import 'dart:math' as math;
 import 'dart:ui';
 import 'package:flame/components.dart';
 
+/// Helper extensions su Vector2 / Color.
+/// NOTE: al momento il file non è importato da nessun modulo (grep in `lib/`
+/// restituisce 0 risultati); `Vector2.distanceToSquared` usato altrove arriva
+/// dalla built-in di Flame. Teniamo i membri ancora utili come utility
+/// generali, ma RIMOSSO `clampLength(double)` che shadowava la built-in
+/// `Vector2.clampLength(double min, double max)` e introduceva ambiguità.
 extension Vector2Ext on Vector2 {
   Vector2 rotatedBy(double angle) {
     final c = math.cos(angle);
@@ -11,13 +17,7 @@ extension Vector2Ext on Vector2 {
 
   double get heading => math.atan2(y, x);
 
-  Vector2 clampLength(double maxLength) {
-    if (length2 > maxLength * maxLength) {
-      return normalized() * maxLength;
-    }
-    return clone();
-  }
-
+  /// Variante squared (risparmia sqrt) sopra a `distanceTo`.
   double distanceToSquared(Vector2 other) {
     final dx = x - other.x;
     final dy = y - other.y;
