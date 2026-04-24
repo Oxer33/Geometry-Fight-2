@@ -299,7 +299,12 @@ class MusicManager {
       debugPrint('MusicManager play error ($relativePath): $e');
       return true; // track consumato comunque — non riaccodare
     } finally {
-      _playInFlight = false;
+      // Rilascia mutex solo se possediamo ancora il seq corrente.
+      // Senza guard, un vecchio _playTrack che finisce dopo uno stop()
+      // + nuovo _playTrack clearebbe il mutex preso dalla nuova call.
+      if (seq == _playSeq) {
+        _playInFlight = false;
+      }
     }
   }
 

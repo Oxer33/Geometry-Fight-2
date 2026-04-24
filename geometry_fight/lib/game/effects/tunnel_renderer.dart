@@ -206,30 +206,57 @@ class TunnelRenderer extends PositionComponent
     _renderSpeedLines(canvas, startX, endX, topWallY, bottomWallY);
   }
 
+  // Precomputed strie params: evita math.Random(77) per frame + 5×nextDouble
+  // × 20 iter. Unica alloc al primo uso.
+  // Tuple: [yOffsetFrac, baseLen, speedMul, baseWorldXFrac, alpha, strokeW].
+  static List<List<double>>? _strieParams;
+  // Precomputed stars params: [baseWorldXFrac, yOffsetFrac].
+  static List<List<double>>? _starParams;
+
+  static void _precomputeBgParams() {
+    if (_strieParams != null) return;
+    final strieRng = math.Random(77);
+    _strieParams = List.generate(20, (_) {
+      return <double>[
+        strieRng.nextDouble(),               // yOffsetFrac
+        15.0 + strieRng.nextDouble() * 60,   // baseLen
+        0.8 + strieRng.nextDouble() * 2.0,   // speedMul
+        strieRng.nextDouble(),               // baseWorldXFrac
+        0.04 + strieRng.nextDouble() * 0.06, // alpha
+        0.3 + strieRng.nextDouble() * 0.4,   // strokeW
+      ];
+    });
+    final starRng = math.Random(42);
+    _starParams = List.generate(25, (_) {
+      return <double>[
+        starRng.nextDouble(), // baseWorldXFrac
+        starRng.nextDouble(), // yOffsetFrac
+      ];
+    });
+  }
+
   /// Particelle bg stile splash: strie + stelle parallax scorrevoli.
   /// Count dimezzato (splash: 180+36 strie + 240+90+24 stelle → qui ~50 tot)
   /// e size ridotto per non distrarre dal gameplay.
   void _renderScrollingBg(Canvas canvas, double cameraX, double viewWidth) {
+    _precomputeBgParams();
     final sizeY = game.size.y > 0 ? game.size.y : 600;
     final cameraY = game.camera.viewfinder.position.y;
     final topY = cameraY - sizeY / 2;
-    // Uso `cameraX` come "scroll" globale: le particelle scorrono verso sx
-    // mentre la camera avanza verso dx.
 
     // ─── STRIE (20 strie orizzontali a velocità variate) ───
-    final strieRng = math.Random(77);
-    for (int i = 0; i < 20; i++) {
-      final yOffset = strieRng.nextDouble() * sizeY;
-      final baseLen = 15.0 + strieRng.nextDouble() * 60;
-      final speedMul = 0.8 + strieRng.nextDouble() * 2.0;
-      final baseWorldX = strieRng.nextDouble() * viewWidth * 3;
-      // Posizione in world: baseWorldX spostata a sx di cameraX * speedMul.
+    final strieList = _strieParams!;
+    for (int i = 0; i < strieList.length; i++) {
+      final p = strieList[i];
+      final yOffset = p[0] * sizeY;
+      final baseLen = p[1];
+      final speedMul = p[2];
+      final baseWorldX = p[3] * viewWidth * 3;
       final period = viewWidth * 2 + baseLen;
       final worldX = ((baseWorldX - cameraX * speedMul) % period + period) % period;
       final screenX = cameraX - viewWidth + worldX;
-      final alpha = 0.04 + strieRng.nextDouble() * 0.06;
-      _bgStriePaint.color = Color.fromRGBO(180, 210, 255, alpha);
-      _bgStriePaint.strokeWidth = 0.3 + strieRng.nextDouble() * 0.4;
+      _bgStriePaint.color = Color.fromRGBO(180, 210, 255, p[4]);
+      _bgStriePaint.strokeWidth = p[5];
       canvas.drawLine(
         Offset(screenX, topY + yOffset),
         Offset(screenX + baseLen, topY + yOffset),
@@ -238,15 +265,18 @@ class TunnelRenderer extends PositionComponent
     }
 
     // ─── STELLE (25 totali, 3 layer profondità) ───
-    final starRng = math.Random(42);
-    for (int i = 0; i < 25; i++) {
-      final baseWorldX = starRng.nextDouble() * viewWidth * 3;
-      final yOffset = starRng.nextDouble() * sizeY;
-      // Layer profondità: determina velocità + size + alpha
-      final layer = i % 3; // 0=lontano, 1=medio, 2=vicino
-      final speedMul = [0.3, 0.7, 1.4][layer];
-      final starSize = [0.4, 0.7, 1.1][layer];
-      final alpha = [0.25, 0.45, 0.65][layer];
+    const layerSpeeds = [0.3, 0.7, 1.4];
+    const layerSizes = [0.4, 0.7, 1.1];
+    const layerAlphas = [0.25, 0.45, 0.65];
+    final starList = _starParams!;
+    for (int i = 0; i < starList.length; i++) {
+      final p = starList[i];
+      final baseWorldX = p[0] * viewWidth * 3;
+      final yOffset = p[1] * sizeY;
+      final layer = i % 3;
+      final speedMul = layerSpeeds[layer];
+      final starSize = layerSizes[layer];
+      final alpha = layerAlphas[layer];
 
       final period = viewWidth * 2 + 10;
       final worldX = ((baseWorldX - cameraX * speedMul) % period + period) % period;

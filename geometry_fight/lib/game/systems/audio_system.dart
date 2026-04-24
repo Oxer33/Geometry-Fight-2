@@ -125,6 +125,9 @@ class AudioSystem {
       try { await _disposeInFlight; } catch (_) {}
       _disposeInFlight = null;
     }
+    // Double-check post-await: se init() concurrente ha già finito,
+    // skip setup (evita pool duplicate/leak).
+    if (_initialized) return;
     // Ogni pool ha il proprio try/catch: se uno fallisce non deve killare
     // l'intero sistema audio. `_initialized=true` anche con pool parziali →
     // gli SFX non-falliti funzionano comunque.
