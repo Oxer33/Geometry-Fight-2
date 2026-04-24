@@ -194,8 +194,6 @@ _Archetype _pickArchetype(int wave, List<int> history) {
     return _archetypes[idx];
   }
 
-  final isPreBoss = wave % 5 == 4;
-  final minTier = isPreBoss ? 3 : (wave <= 25 ? 1 : 2);
   final maxTier = wave <= 10
       ? 2
       : wave <= 25
@@ -203,6 +201,12 @@ _Archetype _pickArchetype(int wave, List<int> history) {
           : wave <= 45
               ? 3
               : 4;
+  // Pre-boss climax (MEGASWARM forzato) solo se maxTier ≥ 3 (wave > 25).
+  // BUG CRITICO: prima wave 4 (pre-boss boss 5) forzava minTier=3 ma
+  // maxTier=2 → pool vuoto → pool[% 0] IntegerDivisionByZeroException
+  // durante generateWaveConfigs() → game crash → schermo bianco.
+  final isPreBoss = wave % 5 == 4 && maxTier >= 3;
+  final minTier = isPreBoss ? 3 : (wave <= 25 ? 1 : 2);
 
   final pool = <int>[];
   for (int i = 0; i < _archetypes.length; i++) {
@@ -223,6 +227,13 @@ _Archetype _pickArchetype(int wave, List<int> history) {
       final a = _archetypes[i];
       if (a.tier >= minTier && a.tier <= maxTier) pool.add(i);
     }
+  }
+  // Emergency fallback: se ancora vuoto (configurazione degenere),
+  // usa CARDINAL QUARTET invece di crashare con % 0.
+  if (pool.isEmpty) {
+    final idx = _archetypes.indexWhere((a) => a.name == 'CARDINAL QUARTET');
+    _pushHistory(history, idx);
+    return _archetypes[idx];
   }
 
   // Pseudo-random deterministico sul wave number: riproducibile,
