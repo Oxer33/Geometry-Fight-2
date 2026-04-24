@@ -1066,6 +1066,11 @@ class _UpgradeItem {
 // ==================== SKIN PREVIEW PAINTER ====================
 
 class _SkinPreviewPainter extends CustomPainter {
+  // Cached paint per hex grid — era alloc per frame × N celle.
+  static final Paint _hexPaint = Paint()
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 0.5;
+
   final String skinId;
   final Color color;
   final double time;
@@ -1134,10 +1139,7 @@ class _SkinPreviewPainter extends CustomPainter {
   }
 
   void _drawHexGrid(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.02)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 0.5;
+    final paint = _hexPaint..color = Colors.white.withValues(alpha: 0.02);
     const spacing = 28.0;
     for (double y = -spacing; y < size.height + spacing; y += spacing * 0.87) {
       final row = (y / (spacing * 0.87)).round();
@@ -1612,6 +1614,28 @@ class _TrailPreviewPainter extends CustomPainter {
 // ==================== WEAPON PREVIEW PAINTER ====================
 
 class _WeaponPreviewPainter extends CustomPainter {
+  // Cached paints per homing missile (8 allocs/missile × 5 missiles/frame).
+  static final Paint _homingTrailPaint = Paint();
+  static final Paint _homingFlameOuterPaint = Paint();
+  static final Paint _homingFlameMidPaint = Paint();
+  static final Paint _homingFlameCorePaint = Paint();
+  static final Paint _homingFinPaint = Paint();
+  static final Paint _homingBodyPaint = Paint();
+  static final Paint _homingNosePaint = Paint();
+  static final Paint _homingImpactPaint = Paint()
+    ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
+  // Cached paints per plasma bolt (8 allocs/bolt × 4 bolts/frame).
+  static final Paint _plasmaArcPaint = Paint()
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 0.6;
+  static final Paint _plasmaGlowOuterPaint = Paint()
+    ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8);
+  static final Paint _plasmaGlowMidPaint = Paint()
+    ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
+  static final Paint _plasmaBodyGlowPaint = Paint();
+  static final Paint _plasmaBodyPaint = Paint();
+  static final Paint _plasmaCorePaint = Paint();
+
   final String pattern;
   final Color color;
   final double time;
@@ -1910,7 +1934,7 @@ class _WeaponPreviewPainter extends CustomPainter {
         final ty = _bezier(startY, midY, targetY, tt);
         final ta = alpha * (1.0 - j / 8) * 0.3;
         canvas.drawCircle(Offset(tx, ty), 1.0,
-            Paint()..color = color.withValues(alpha: ta));
+            _homingTrailPaint..color = color.withValues(alpha: ta));
       }
 
       // Direzione missile = tangente bezier (derivata).
@@ -1936,7 +1960,7 @@ class _WeaponPreviewPainter extends CustomPainter {
             center: Offset(0, bodyH * 0.55 + flameLen * 0.3),
             width: bodyW * 1.3,
             height: flameLen * 1.2),
-        Paint()
+        _homingFlameOuterPaint
           ..color = const Color(0xFFFF2200).withValues(alpha: 0.5 * alpha),
       );
       canvas.drawOval(
@@ -1944,7 +1968,7 @@ class _WeaponPreviewPainter extends CustomPainter {
             center: Offset(0, bodyH * 0.52 + flameLen * 0.25),
             width: bodyW * 0.85,
             height: flameLen * 0.85),
-        Paint()
+        _homingFlameMidPaint
           ..color = const Color(0xFFFF8800).withValues(alpha: 0.85 * alpha),
       );
       canvas.drawOval(
@@ -1952,7 +1976,7 @@ class _WeaponPreviewPainter extends CustomPainter {
             center: Offset(0, bodyH * 0.5 + flameLen * 0.2),
             width: bodyW * 0.5,
             height: flameLen * 0.5),
-        Paint()..color = const Color(0xFFFFFFDD).withValues(alpha: alpha),
+        _homingFlameCorePaint..color = const Color(0xFFFFFFDD).withValues(alpha: alpha),
       );
 
       // Fins (triangoli laterali) — color cyan
@@ -1966,7 +1990,7 @@ class _WeaponPreviewPainter extends CustomPainter {
         ..lineTo(bodyW * 0.5, bodyH * 0.55)
         ..close();
       canvas.drawPath(
-          finPath, Paint()..color = color.withValues(alpha: 0.9 * alpha));
+          finPath, _homingFinPaint..color = color.withValues(alpha: 0.9 * alpha));
 
       // Corpo cyan rounded
       canvas.drawRRect(
@@ -1977,7 +2001,7 @@ class _WeaponPreviewPainter extends CustomPainter {
               height: bodyH * 0.8),
           Radius.circular(bodyW * 0.25),
         ),
-        Paint()..color = color.withValues(alpha: alpha),
+        _homingBodyPaint..color = color.withValues(alpha: alpha),
       );
 
       // Naso bianco (cono)
@@ -1988,7 +2012,7 @@ class _WeaponPreviewPainter extends CustomPainter {
         ..close();
       canvas.drawPath(
           nosePath,
-          Paint()
+          _homingNosePaint
             ..color = const Color(0xFFE0FFFF).withValues(alpha: alpha));
 
       canvas.restore();
@@ -1999,9 +2023,7 @@ class _WeaponPreviewPainter extends CustomPainter {
         canvas.drawCircle(
             Offset(bx, by),
             8 * (t - 0.9) / 0.1,
-            Paint()
-              ..color = Colors.white.withValues(alpha: impactAlpha)
-              ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4));
+            _homingImpactPaint..color = Colors.white.withValues(alpha: impactAlpha));
       }
     }
   }
@@ -2022,10 +2044,7 @@ class _WeaponPreviewPainter extends CustomPainter {
       final baseR = 7 + math.sin(time * 3 + i) * 1.2;
 
       // Archi elettrici attorno al plasma
-      final arcPaint = Paint()
-        ..color = color.withValues(alpha: alpha * 0.2 * pulse)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 0.6;
+      final arcPaint = _plasmaArcPaint..color = color.withValues(alpha: alpha * 0.2 * pulse);
       canvas.drawArc(
         Rect.fromCircle(center: Offset(cx, y), radius: baseR * 1.5),
         time * 5 + i, math.pi * 0.8, false, arcPaint,
@@ -2036,18 +2055,17 @@ class _WeaponPreviewPainter extends CustomPainter {
       );
 
       // 3 strati di glow concentrici (come in-game PlasmaBullet.render).
-      canvas.drawCircle(Offset(cx, y), baseR * 2.4, Paint()
-        ..color = color.withValues(alpha: alpha * 0.25 * pulse)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8));
-      canvas.drawCircle(Offset(cx, y), baseR * 1.8, Paint()
-        ..color = color.withValues(alpha: alpha * 0.5 * pulse)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4));
-      canvas.drawCircle(Offset(cx, y), baseR * 1.3, Paint()
+      canvas.drawCircle(Offset(cx, y), baseR * 2.4, _plasmaGlowOuterPaint
+        ..color = color.withValues(alpha: alpha * 0.25 * pulse));
+      canvas.drawCircle(Offset(cx, y), baseR * 1.8, _plasmaGlowMidPaint
+        ..color = color.withValues(alpha: alpha * 0.5 * pulse));
+      canvas.drawCircle(Offset(cx, y), baseR * 1.3, _plasmaBodyGlowPaint
         ..color = color.withValues(alpha: alpha * 0.8 * pulse));
       // Body viola pieno
-      canvas.drawCircle(Offset(cx, y), baseR, Paint()..color = color.withValues(alpha: alpha));
+      canvas.drawCircle(Offset(cx, y), baseR, _plasmaBodyPaint
+        ..color = color.withValues(alpha: alpha));
       // Nucleo bianco lampeggiante
-      canvas.drawCircle(Offset(cx, y), baseR * 0.45, Paint()
+      canvas.drawCircle(Offset(cx, y), baseR * 0.45, _plasmaCorePaint
         ..color = Colors.white.withValues(alpha: alpha * blink));
     }
   }

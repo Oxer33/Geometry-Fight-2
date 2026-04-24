@@ -955,32 +955,36 @@ class _AnimatedBorderPainter extends CustomPainter {
     required this.glowIntensity,
   });
 
+  // Cache: colors/stops + Paint statica. Shader rebuild per frame
+  // (rotazione animata continua).
+  static final List<Color> _sweepColors = [
+    Colors.cyanAccent.withValues(alpha: 0.8),
+    const Color(0xFFFF00AA).withValues(alpha: 0.6),
+    const Color(0xFF00FF88).withValues(alpha: 0.5),
+    Colors.cyanAccent.withValues(alpha: 0.6),
+    const Color(0xFFFF00AA).withValues(alpha: 0.6),
+    Colors.cyanAccent.withValues(alpha: 0.8),
+  ];
+  static const List<double> _sweepStops = [0.0, 0.2, 0.4, 0.6, 0.8, 1.0];
+  static final Paint _borderPaint = Paint()..style = PaintingStyle.stroke;
+
   @override
   void paint(Canvas canvas, Size size) {
     final rect = Rect.fromLTWH(0, 0, size.width, size.height);
     final rrect = RRect.fromRectAndRadius(rect, Radius.circular(borderRadius));
 
-    // Gradient che ruota lungo il bordo — usa transform per evitare seam
     final sweep = SweepGradient(
       center: Alignment.center,
       transform: GradientRotation(progress * math.pi * 2),
-      colors: [
-        Colors.cyanAccent.withValues(alpha: 0.8),
-        const Color(0xFFFF00AA).withValues(alpha: 0.6),
-        const Color(0xFF00FF88).withValues(alpha: 0.5),
-        Colors.cyanAccent.withValues(alpha: 0.6),
-        const Color(0xFFFF00AA).withValues(alpha: 0.6),
-        Colors.cyanAccent.withValues(alpha: 0.8),
-      ],
-      stops: const [0.0, 0.2, 0.4, 0.6, 0.8, 1.0],
+      colors: _sweepColors,
+      stops: _sweepStops,
     );
 
-    final paint = Paint()
+    _borderPaint
       ..shader = sweep.createShader(rect)
-      ..style = PaintingStyle.stroke
       ..strokeWidth = strokeWidth;
 
-    canvas.drawRRect(rrect, paint);
+    canvas.drawRRect(rrect, _borderPaint);
   }
 
   @override
@@ -1186,57 +1190,65 @@ class _NeonParticlesPainter extends CustomPainter {
 
   _NeonParticlesPainter(this.progress);
 
+  // Cache: Paint + colors costanti + seeds precomputed.
+  static const int _particleCount = 30;
+  static const List<Color> _particleColors = [
+    Colors.cyanAccent,
+    Color(0xFFFF00AA),
+    Color(0xFF00FF88),
+    Color(0xFFFFD700),
+    Colors.white,
+  ];
+  static final Paint _particlePaint = Paint();
+  static final List<_ParticleSeed> _seeds = _buildSeeds();
+
+  static List<_ParticleSeed> _buildSeeds() {
+    final r = math.Random(77);
+    return List.generate(_particleCount, (_) {
+      final baseXNorm = r.nextDouble();
+      final baseYNorm = r.nextDouble();
+      final speed = 0.15 + r.nextDouble() * 0.4;
+      final phase = r.nextDouble() * math.pi * 2;
+      final radius = 1.0 + r.nextDouble() * 2.5;
+      return _ParticleSeed(baseXNorm, baseYNorm, speed, phase, radius);
+    });
+  }
+
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint();
-    final random = math.Random(77);
     final t = progress * math.pi * 2;
 
-    final colors = [
-      Colors.cyanAccent,
-      const Color(0xFFFF00AA),
-      const Color(0xFF00FF88),
-      const Color(0xFFFFD700),
-      Colors.white,
-    ];
-
-    for (int i = 0; i < 30; i++) {
-      final baseX = random.nextDouble() * size.width;
-      final baseY = random.nextDouble() * size.height;
-      final speed = 0.15 + random.nextDouble() * 0.4;
-      final phase = random.nextDouble() * math.pi * 2;
+    for (int i = 0; i < _particleCount; i++) {
+      final s = _seeds[i];
+      final baseX = s.baseXNorm * size.width;
+      final baseY = s.baseYNorm * size.height;
+      final speed = s.speed;
+      final phase = s.phase;
 
       final x = baseX + math.cos(t * speed + phase) * 35 +
           math.sin(t * speed * 0.6 + phase * 2.3) * 18;
       final y = baseY + math.sin(t * speed * 0.7 + phase) * 28 +
           math.cos(t * speed * 0.4 + phase * 1.7) * 12;
 
-      // Alpha pulsante
       final alpha = (0.05 + math.sin(t * speed * 2 + phase) * 0.04).clamp(0.01, 0.12);
-      final radius = 1.0 + random.nextDouble() * 2.5;
-      final color = colors[i % colors.length];
+      final radius = s.radius;
+      final color = _particleColors[i % _particleColors.length];
 
-      // Glow principale
-      paint.color = color.withValues(alpha: alpha);
-      canvas.drawCircle(Offset(x, y), radius, paint);
+      _particlePaint.color = color.withValues(alpha: alpha);
+      canvas.drawCircle(Offset(x, y), radius, _particlePaint);
 
-      // Alone più grande e tenue
-      paint.color = color.withValues(alpha: alpha * 0.3);
-      canvas.drawCircle(Offset(x, y), radius * 3, paint);
+      _particlePaint.color = color.withValues(alpha: alpha * 0.3);
+      canvas.drawCircle(Offset(x, y), radius * 3, _particlePaint);
 
-      // Trail
       if (i % 2 == 0) {
         final dx = math.cos(t * speed + phase) * speed * 12;
         final dy = math.sin(t * speed * 0.7 + phase) * speed * 10;
-        final prevX = x - dx;
-        final prevY = y - dy;
-
-        paint
+        _particlePaint
           ..color = color.withValues(alpha: alpha * 0.3)
           ..strokeWidth = radius * 0.6
           ..style = PaintingStyle.stroke;
-        canvas.drawLine(Offset(prevX, prevY), Offset(x, y), paint);
-        paint.style = PaintingStyle.fill;
+        canvas.drawLine(Offset(x - dx, y - dy), Offset(x, y), _particlePaint);
+        _particlePaint.style = PaintingStyle.fill;
       }
     }
   }
@@ -1246,6 +1258,21 @@ class _NeonParticlesPainter extends CustomPainter {
       old.progress != progress;
 }
 
+class _ParticleSeed {
+  final double baseXNorm;
+  final double baseYNorm;
+  final double speed;
+  final double phase;
+  final double radius;
+  const _ParticleSeed(
+    this.baseXNorm,
+    this.baseYNorm,
+    this.speed,
+    this.phase,
+    this.radius,
+  );
+}
+
 // ==================== SCANLINE OVERLAY ====================
 
 class _ScanlinePainter extends CustomPainter {
@@ -1253,31 +1280,31 @@ class _ScanlinePainter extends CustomPainter {
 
   _ScanlinePainter(this.progress);
 
+  // Cache: scanPaint costante; glowPaint riusa con shader rebuild per frame.
+  static final Paint _scanPaint = Paint()
+    ..color = Colors.white.withValues(alpha: 0.012)
+    ..strokeWidth = 0.5;
+  static final Paint _scanGlowPaint = Paint();
+  static final LinearGradient _glowGradient = LinearGradient(
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+    colors: [
+      Colors.cyanAccent.withValues(alpha: 0),
+      Colors.cyanAccent.withValues(alpha: 0.03),
+      Colors.cyanAccent.withValues(alpha: 0),
+    ],
+  );
+
   @override
   void paint(Canvas canvas, Size size) {
-    // Scanlines sottili orizzontali (effetto CRT)
-    final scanPaint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.012)
-      ..strokeWidth = 0.5;
-
     for (double y = 0; y < size.height; y += 3) {
-      canvas.drawLine(Offset(0, y), Offset(size.width, y), scanPaint);
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), _scanPaint);
     }
 
-    // Linea di scansione luminosa che scorre verticalmente
     final scanY = progress * (size.height + 60) - 30;
-    final scanGlow = Paint()
-      ..shader = LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-        colors: [
-          Colors.cyanAccent.withValues(alpha: 0),
-          Colors.cyanAccent.withValues(alpha: 0.03),
-          Colors.cyanAccent.withValues(alpha: 0),
-        ],
-      ).createShader(Rect.fromLTWH(0, scanY - 20, size.width, 40));
-
-    canvas.drawRect(Rect.fromLTWH(0, scanY - 20, size.width, 40), scanGlow);
+    final glowRect = Rect.fromLTWH(0, scanY - 20, size.width, 40);
+    _scanGlowPaint.shader = _glowGradient.createShader(glowRect);
+    canvas.drawRect(glowRect, _scanGlowPaint);
   }
 
   @override
