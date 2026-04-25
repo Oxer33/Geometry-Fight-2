@@ -19,8 +19,10 @@ abstract class BossBase extends PositionComponent
   int currentPhase = 0;
   double _flashTimer = 0;
 
-  // Sistema spawn nemici durante boss fight
-  double _minionSpawnTimer = 2.0; // Timer iniziale prima del primo spawn
+  // Sistema spawn nemici durante boss fight.
+  // Timer iniziale = interval pieno → primo spawn DOPO 10s, coerente con
+  // request "almeno 10s tra uno spawn e l'altro".
+  double _minionSpawnTimer = bossMinionSpawnInterval;
   // Override-able per-boss (richiesta utente: variabile per balancing
   // per-singolo-boss in futuro). Default = bossMinionSpawnInterval (10s).
   double get minionSpawnInterval => bossMinionSpawnInterval;
@@ -128,11 +130,12 @@ abstract class BossBase extends PositionComponent
     updateBoss(effectiveDt);
 
     // Spawn nemici a ondate regolari durante il boss fight.
-    // Phase scaling ridotto (era -0.8/phase) per rispettare il min 10s.
+    // Phase scaling proporzionale (10% riduzione/fase) → flessibile a
+    // qualsiasi valore di `minionSpawnInterval` (per-boss override).
     _minionSpawnTimer -= effectiveDt;
     if (_minionSpawnTimer <= 0) {
       final iv = minionSpawnInterval;
-      _minionSpawnTimer = (iv - currentPhase * 1.0).clamp(iv * 0.6, iv);
+      _minionSpawnTimer = (iv - currentPhase * iv * 0.1).clamp(iv * 0.6, iv);
       _spawnMinions();
     }
 
@@ -356,17 +359,18 @@ abstract class BossBase extends PositionComponent
     // Dimezzato dal triplo (richiesta utente): 9/15/21/27 → 5/8/11/14.
     final baseCount = 5 + currentPhase * 3;
     final types = colorMatchedMinions;
-    if (types.isEmpty) return;
-    // Bias 70% verso mob "semplici" (drone/swarmDrone/kamikaze) come
-    // richiesto, 30% colorMatched specifico per identità del boss.
+    // Bias 70% verso mob VERAMENTE semplici (drone + swarmDrone) come
+    // richiesto. 30% colorMatched specifico per identità del boss.
+    // Kamikaze rimosso da simplePool (rush behavior, non "semplice").
     const simplePool = [
       EnemyType.drone,
       EnemyType.swarmDrone,
-      EnemyType.kamikaze,
     ];
+    // Se boss non ha colorMatchedMinions, fallback completo a simplePool
+    // (prima return early → boss non spawnava nulla).
 
     for (int i = 0; i < baseCount; i++) {
-      final isSimple = _bossRandom.nextDouble() < 0.7;
+      final isSimple = types.isEmpty || _bossRandom.nextDouble() < 0.7;
       final pool = isSimple ? simplePool : types;
       final type = pool[_bossRandom.nextInt(pool.length)];
       final angle = _bossRandom.nextDouble() * math.pi * 2;

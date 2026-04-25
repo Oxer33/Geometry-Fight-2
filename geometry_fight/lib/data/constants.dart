@@ -31,11 +31,12 @@ const double overdriveBeamLength = 1200.0;
 const double overdriveBeamWidth = 40.0;
 const double plasmaExplosionRadius = 80.0;
 
-// Boss fight tuning — caps triplicati (richiesta utente "triplo mob boss")
+// Boss fight tuning — caps aumentati per supportare wave classic + boss
+// big-wave senza throttle (richiesta utente "più mob"; baseCount poi
+// dimezzato in fase 2 di balance, ma cap mantenuto per testa di buffer).
 const int bossMinionEnemyCap = 45;          // Max nemici attivi prima di skippare spawn minion (era 15)
-// Cap big wave color-matched (era 60, ora 150 per supportare baseCount 30/90/150).
-// Separato dal cap regolare così le ondate non vengono clippate dal pool
-// di minion regolari già a schermo.
+// Cap big wave color-matched (era 60, ora 150) per accomodare baseCount
+// 15/45/75 + buffer per archetype-driven spawn paralleli.
 const int bossBigWaveCap = 150;
 // Secondi tra ondate minion base — richiesta utente "almeno 10 secondi
 // tra uno spawn e l'altro". Subclass possono override `minionSpawnInterval`

@@ -322,7 +322,8 @@ class LaserBeam extends PositionComponent
   final double damage;
   final double sizeMultiplier;
   double _lifetime = 0.1;
-  double _pulsePhase = 0;
+  // Pre-warmed: evita flicker frame 0 con trail comet sotto y=0.
+  double _pulsePhase = 0.5;
   double _hitPartCooldown = 0;
   late final Vector2 _dir;
   // Throttle hit-walk a frame alterni (risolve lag richiesta utente).
@@ -421,6 +422,15 @@ class LaserBeam extends PositionComponent
 
     final pulseLen = laserBeamLength - coneLen;
 
+    // ─── CONO PRIMA DI TUTTO (così comets sono visibili al di sopra) ───
+    // Era disegnato in fondo → comets in regione y<22 nascosti dal cono.
+    // User feedback "deve partire dalla punta del triangolo": ora cono
+    // sotto + comets sopra → pulse visibile dalla punta in poi.
+    _laserGlowPaint.color = NeonColors.laserRed.withValues(alpha: 0.6);
+    canvas.drawPath(_laserConePath, _laserGlowPaint);
+    _laserCorePaint.color = NeonColors.laserRed;
+    canvas.drawPath(_laserConePath, _laserCorePaint);
+
     // ─── BEAM PRINCIPALE 4 STRATI (outer halo → mid → core → nucleus) ───
     _laserGlowPaint.color = const Color(0xFFAA0000).withValues(alpha: 0.25);
     canvas.drawRect(
@@ -440,9 +450,6 @@ class LaserBeam extends PositionComponent
         _laserCorePaint);
 
     // ─── 8 PLASMA COMETS — coprono TUTTO il fascio dalla punta cono ───
-    // User feedback: pulse "solo in alcuni tratti, deve partire dalla
-    // punta del triangolo". Ora 8 comets spaziati ogni 1/8 del beam
-    // FULL length (incluso cono) → copertura continua y=0 → laserBeamLength.
     const cometCount = 8;
     const cometSpeed = 850.0;
     final cometR = 7 * sizeMultiplier;
@@ -455,7 +462,7 @@ class LaserBeam extends PositionComponent
       // Trail: 3 sfere fading dietro
       for (int t = 1; t <= 3; t++) {
         final trailY = py - t * (cometR * 0.9);
-        if (trailY < 0) continue; // clamp dietro la punta del cono
+        if (trailY < 0) continue;
         final trailAlpha = 0.55 * (1.0 - t / 4.0);
         _laserPulsePaint.color =
             const Color(0xFFFF3322).withValues(alpha: trailAlpha);
@@ -490,13 +497,6 @@ class LaserBeam extends PositionComponent
       canvas.drawCircle(
           Offset(crackleX, crackleY), 1.4 * sizeMultiplier, _laserPulsePaint);
     }
-
-    // Cono davanti a tutto (copre base del beam per fusion smooth).
-    // Tutto rosso laser (richiesta utente: stesso colore del fascio).
-    _laserGlowPaint.color = NeonColors.laserRed.withValues(alpha: 0.6);
-    canvas.drawPath(_laserConePath, _laserGlowPaint);
-    _laserCorePaint.color = NeonColors.laserRed;
-    canvas.drawPath(_laserConePath, _laserCorePaint);
 
     canvas.restore();
   }

@@ -162,9 +162,15 @@ List<WaveConfig> generateWaveConfigs() {
     final archetype = _pickArchetype(wave, history);
     // Mob count × 2 (richiesta utente "almeno il doppio"). Post-process
     // del generator per non riscrivere tutti i 31 archetypi inline.
+    // Cap a 300/spawn-group per evitare flood GC su MEGASWARM tier 3
+    // (clamp pre-mult arrivava a 220 → ×2 = 440 in single batch).
     // Gate (1 unità) escluso dal moltiplicatore (aggiunto dopo).
     final spawns = archetype.generator(wave)
-        .map((s) => WaveSpawn(s.type, s.count * 2, delay: s.delay))
+        .map((s) => WaveSpawn(
+              s.type,
+              (s.count * 2).clamp(1, 300),
+              delay: s.delay,
+            ))
         .toList();
 
     // Gate hazard raro: 1 ogni 10 wave non-boss (11, 21, 31, ...).
