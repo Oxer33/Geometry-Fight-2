@@ -404,14 +404,16 @@ class LaserBeam extends PositionComponent
     canvas.translate(size.x / 2, 0);
     canvas.rotate(angle);
 
-    // Cono alla base (richiesta utente): piccolo triangolo dalla navicella.
+    // Cono INVERTITO (richiesta utente): punto stretto al player → si
+    // allarga verso il beam → effetto "energia concentrata che esplode
+    // nel laser". Colore rosso laser (era bianco-rosso, ora coerente).
     const coneLen = 22.0;
     final coneHalfW = 6 * sizeMultiplier;
     _laserConePath.reset();
-    _laserConePath.moveTo(-coneHalfW, 0);
-    _laserConePath.lineTo(coneHalfW, 0);
-    _laserConePath.lineTo(coneHalfW * 0.35, coneLen);
-    _laserConePath.lineTo(-coneHalfW * 0.35, coneLen);
+    _laserConePath.moveTo(-coneHalfW * 0.15, 0);  // punto stretto al player
+    _laserConePath.lineTo(coneHalfW * 0.15, 0);
+    _laserConePath.lineTo(coneHalfW, coneLen);     // si allarga al beam
+    _laserConePath.lineTo(-coneHalfW, coneLen);
     _laserConePath.close();
 
     final glowW = 12 * sizeMultiplier;
@@ -437,24 +439,26 @@ class LaserBeam extends PositionComponent
         Rect.fromLTWH(-coreW * 0.4, coneLen, coreW * 0.8, pulseLen),
         _laserCorePaint);
 
-    // ─── 3 PLASMA COMETS (sfere energetiche scorrevoli con trail) ───
-    const cometCount = 3;
-    const cometSpeed = 1100.0;
+    // ─── 5 PLASMA COMETS (più piccoli + più distribuiti) ───
+    // Era 3 grossi → ora 5 piccoli spaziati ogni 1/5 del beam → coprono
+    // tutta la lunghezza del fascio invece di sembrare ammassati.
+    const cometCount = 5;
+    const cometSpeed = 850.0;
+    final cometR = 7 * sizeMultiplier; // era 14 → metà
     for (int i = 0; i < cometCount; i++) {
       final raw =
           _pulsePhase * cometSpeed + i * pulseLen / cometCount;
       final py = coneLen + (raw % pulseLen);
-      final cometR = 14 * sizeMultiplier;
 
-      // Trail: 4 sfere fading dietro al comet
-      for (int t = 1; t <= 4; t++) {
-        final trailY = py - t * (cometR * 0.85);
+      // Trail: 3 sfere fading (era 4) — più snelli per coerenza
+      for (int t = 1; t <= 3; t++) {
+        final trailY = py - t * (cometR * 0.9);
         if (trailY < coneLen) continue;
-        final trailAlpha = 0.55 * (1.0 - t / 5.0);
+        final trailAlpha = 0.55 * (1.0 - t / 4.0);
         _laserPulsePaint.color =
             const Color(0xFFFF3322).withValues(alpha: trailAlpha);
         canvas.drawCircle(
-            Offset(0, trailY), cometR * (1.0 - t * 0.18), _laserPulsePaint);
+            Offset(0, trailY), cometR * (1.0 - t * 0.22), _laserPulsePaint);
       }
 
       // Halo esterno rosso
@@ -486,10 +490,10 @@ class LaserBeam extends PositionComponent
     }
 
     // Cono davanti a tutto (copre base del beam per fusion smooth).
-    _laserGlowPaint.color = NeonColors.laserRed.withValues(alpha: 0.7);
+    // Tutto rosso laser (richiesta utente: stesso colore del fascio).
+    _laserGlowPaint.color = NeonColors.laserRed.withValues(alpha: 0.6);
     canvas.drawPath(_laserConePath, _laserGlowPaint);
-    _laserCorePaint.color =
-        const Color(0xFFFFFFFF).withValues(alpha: 0.9);
+    _laserCorePaint.color = NeonColors.laserRed;
     canvas.drawPath(_laserConePath, _laserCorePaint);
 
     canvas.restore();
