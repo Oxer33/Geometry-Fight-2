@@ -15,6 +15,7 @@ import 'ui/screens/game_screen.dart';
 import 'ui/screens/shop_screen.dart';
 import 'ui/screens/settings_screen.dart';
 import 'ui/screens/mode_select_screen.dart';
+import 'ui/screens/loadout_screen.dart';
 import 'ui/screens/leaderboard_screen.dart';
 import 'ui/screens/splash_screen.dart';
 import 'ui/screens/stats_screen.dart';
@@ -111,7 +112,7 @@ class GeometryFightApp extends StatelessWidget {
   }
 }
 
-enum AppScreen { splash, mainMenu, modeSelect, game, shop, settings, leaderboard, stats, achievements }
+enum AppScreen { splash, mainMenu, modeSelect, loadout, game, shop, settings, leaderboard, stats, achievements }
 
 class NavigationWrapper extends StatefulWidget {
   const NavigationWrapper({super.key});
@@ -184,10 +185,18 @@ class _NavigationWrapperState extends State<NavigationWrapper> {
           key: const ValueKey('modeSelect'),
           onBack: () => _navigateTo(AppScreen.mainMenu),
           onStart: (mode, difficulty) {
+            // Pre-game step: vai a Loadout (richiesta utente: "schermata che fa
+            // scegliere il loadout ovvero arma e pet"). Poi loadout → game.
             _selectedMode = mode;
             _selectedDifficulty = difficulty;
-            _navigateTo(AppScreen.game);
+            _navigateTo(AppScreen.loadout);
           },
+        );
+      case AppScreen.loadout:
+        return LoadoutScreen(
+          key: const ValueKey('loadout'),
+          onBack: () => _navigateTo(AppScreen.modeSelect),
+          onConfirm: () => _navigateTo(AppScreen.game),
         );
       case AppScreen.game:
         return GameScreen(

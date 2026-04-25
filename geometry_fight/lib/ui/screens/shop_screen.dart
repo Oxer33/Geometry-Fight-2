@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../../data/save_data.dart';
 import '../../data/constants.dart';
+import '../../data/pet_types.dart';
 import '../widgets/neon_back_button.dart';
 
 class ShopScreen extends StatefulWidget {
@@ -23,7 +24,8 @@ class _ShopScreenState extends State<ShopScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 5, vsync: this);
+    // 6 tab: upgrades, weapons, pets (NUOVO), modes, skins, trails.
+    _tabController = TabController(length: 6, vsync: this);
     _tabController.addListener(() {
       if (_tabController.indexIsChanging) {
         setState(() => _selectedPreviewIndex = null);
@@ -141,6 +143,7 @@ class _ShopScreenState extends State<ShopScreen>
               tabs: const [
                 Tab(text: 'UPGRADES'),
                 Tab(text: 'WEAPONS'),
+                Tab(text: 'PETS'),
                 Tab(text: 'MODES'),
                 Tab(text: 'SKINS'),
                 Tab(text: 'TRAILS'),
@@ -153,6 +156,7 @@ class _ShopScreenState extends State<ShopScreen>
                 children: [
                   _buildUpgradesTab(),
                   _buildWeaponsTab(),
+                  _buildPetsTab(),
                   _buildModesTab(),
                   _buildSkinsTab(),
                   _buildTrailsTab(),
@@ -290,6 +294,115 @@ class _ShopScreenState extends State<ShopScreen>
         color: item.color,
         time: time,
       ),
+    );
+  }
+
+  // ==================== PETS TAB ====================
+
+  /// Pets tab: lista pet companion (kPetCatalog) con buy/equip.
+  /// Diversa dagli altri tab perché non serve preview painter — i pet
+  /// sono visibili in-game, qui basta nome + descrizione + costo.
+  Widget _buildPetsTab() {
+    return ListView.builder(
+      padding: const EdgeInsets.all(12),
+      itemCount: kPetCatalog.length,
+      itemBuilder: (context, index) {
+        final p = kPetCatalog[index];
+        final owned = _saveData.unlockedPets.contains(p.id);
+        final isActive = _saveData.activePet == p.id;
+
+        return Container(
+          margin: const EdgeInsets.only(bottom: 10),
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+                color: isActive
+                    ? p.color.withValues(alpha: 0.9)
+                    : p.color.withValues(alpha: 0.3),
+                width: isActive ? 2 : 1),
+            color: p.color.withValues(alpha: isActive ? 0.10 : 0.04),
+          ),
+          child: Row(
+            children: [
+              // Pet badge (cerchio colorato + iconCode)
+              Container(
+                width: 56,
+                height: 56,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: p.color.withValues(alpha: 0.18),
+                  border: Border.all(
+                      color: p.color.withValues(alpha: 0.7), width: 2),
+                  boxShadow: [
+                    BoxShadow(
+                        color: p.color.withValues(alpha: 0.5), blurRadius: 8)
+                  ],
+                ),
+                alignment: Alignment.center,
+                child: Text(
+                  p.iconCode,
+                  style: TextStyle(
+                    color: p.color,
+                    fontSize: 24,
+                    fontWeight: FontWeight.w900,
+                    fontFamily: 'monospace',
+                  ),
+                ),
+              ),
+              const SizedBox(width: 14),
+              // Nome + descrizione
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      p.displayName,
+                      style: TextStyle(
+                        color: p.color,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w900,
+                        fontFamily: 'monospace',
+                        letterSpacing: 2,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      p.description,
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.7),
+                        fontSize: 11,
+                        fontFamily: 'monospace',
+                        height: 1.3,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 10),
+              // Action button (BUY o EQUIP/EQUIPPED)
+              _PetActionButton(
+                cost: p.cost,
+                owned: owned,
+                isActive: isActive,
+                color: p.color,
+                onBuy: () {
+                  _purchase(p.id, p.cost, () {
+                    if (!_saveData.unlockedPets.contains(p.id)) {
+                      _saveData.unlockedPets.add(p.id);
+                    }
+                    _saveData.activePet = p.id;
+                  });
+                },
+                onEquip: () {
+                  setState(() => _saveData.activePet = p.id);
+                  SaveManager.save(_saveData);
+                },
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -2159,4 +2272,67 @@ class _WeaponPreviewPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _WeaponPreviewPainter old) => old.time != time;
+}
+
+/// Pulsante azione per la riga di un pet nel tab PETS:
+/// - se non posseduto → "BUY [cost]g"
+/// - se posseduto + non attivo → "EQUIP"
+/// - se attivo → "EQUIPPED" (read-only verde)
+class _PetActionButton extends StatelessWidget {
+  final int cost;
+  final bool owned;
+  final bool isActive;
+  final Color color;
+  final VoidCallback onBuy;
+  final VoidCallback onEquip;
+
+  const _PetActionButton({
+    required this.cost,
+    required this.owned,
+    required this.isActive,
+    required this.color,
+    required this.onBuy,
+    required this.onEquip,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final String label;
+    final Color btnColor;
+    final VoidCallback? onTap;
+    if (isActive) {
+      label = 'EQUIPPED';
+      btnColor = Colors.greenAccent;
+      onTap = null;
+    } else if (owned) {
+      label = 'EQUIP';
+      btnColor = color;
+      onTap = onEquip;
+    } else {
+      label = 'BUY ${cost}g';
+      btnColor = const Color(0xFFFFD700);
+      onTap = onBuy;
+    }
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(8),
+          color: btnColor.withValues(alpha: 0.12),
+          border: Border.all(color: btnColor.withValues(alpha: 0.7)),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: btnColor,
+            fontSize: 11,
+            fontWeight: FontWeight.w900,
+            fontFamily: 'monospace',
+            letterSpacing: 1.5,
+          ),
+        ),
+      ),
+    );
+  }
 }

@@ -16,6 +16,12 @@ class SaveData {
   String activeSkin;
   String activeTrail;
   String startingWeapon;
+  /// Pet companion id attivo (loadout). 'none' = nessun pet equipaggiato
+  /// (default per save vecchi). Vedi `pet_types.dart` per id validi.
+  String activePet;
+  /// Lista dei pet sbloccati nello shop. Default `['none']` (sempre disponibile
+  /// l'opzione "no pet"). Pet acquistati aggiunti tramite shop_screen.
+  List<String> unlockedPets;
 
   SaveData({
     this.goldGeoms = 0,
@@ -32,6 +38,8 @@ class SaveData {
     this.activeSkin = 'classic',
     this.activeTrail = 'normal',
     this.startingWeapon = 'basic',
+    this.activePet = 'none',
+    List<String>? unlockedPets,
   })  : upgrades = upgrades ?? {},
         unlockedSkins = unlockedSkins ?? ['classic'],
         unlockedTrails = unlockedTrails ?? ['normal'],
@@ -40,7 +48,8 @@ class SaveData {
         highscores = highscores ?? {},
         stats = stats ?? {},
         playedModes = playedModes ?? [],
-        activeModifiers = activeModifiers ?? [];
+        activeModifiers = activeModifiers ?? [],
+        unlockedPets = unlockedPets ?? ['none'];
 
   int getUpgradeLevel(String id) => upgrades[id] ?? 0;
 
@@ -101,6 +110,8 @@ class SaveData {
         'activeSkin': activeSkin,
         'activeTrail': activeTrail,
         'startingWeapon': startingWeapon,
+        'activePet': activePet,
+        'unlockedPets': unlockedPets,
       };
 
   factory SaveData.fromJson(Map<String, dynamic> json) => SaveData(
@@ -126,6 +137,9 @@ class SaveData {
         activeSkin: json['activeSkin'] ?? 'classic',
         activeTrail: json['activeTrail'] ?? 'normal',
         startingWeapon: json['startingWeapon'] ?? 'basic',
+        // Pet fields: default 'none' / ['none'] per back-compat con save vecchi.
+        activePet: json['activePet'] ?? 'none',
+        unlockedPets: List<String>.from(json['unlockedPets'] ?? ['none']),
       );
 }
 

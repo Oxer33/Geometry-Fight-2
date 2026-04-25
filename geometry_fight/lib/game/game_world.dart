@@ -63,7 +63,9 @@ import 'entities/bosses/void_kraken_boss.dart';
 import 'entities/bosses/astral_sentinel_boss.dart';
 import 'entities/bosses/eternity_engine_boss.dart';
 import 'entities/geom.dart';
+import 'entities/pets/pet_base.dart';
 import 'entities/projectiles.dart';
+import '../data/pet_types.dart';
 import 'effects/grid_distortion.dart';
 import 'effects/screen_shake.dart';
 import 'effects/explosion.dart';
@@ -139,6 +141,10 @@ class GeometryFightGame extends FlameGame
   late DifficultyConfig diffConfig;
 
   SaveData saveData = SaveData();
+
+  /// Pet companion attivo (Geometry Wars 3 style drone). null se loadout
+  /// = 'none'. Settato in `onLoad` post-spawn player, distrutto al restart.
+  PetBase? activePet;
 
   GeometryFightGame({
     this.difficulty = Difficulty.normal,
@@ -267,6 +273,14 @@ class GeometryFightGame extends FlameGame
     player.bombs = diffConfig.startingBombs;
     player.setWeaponFromId(saveData.startingWeapon);
     world.add(player);
+
+    // Pet companion (Geometry Wars 3 style drone). Solo se loadout != 'none'.
+    final petType = petTypeById(saveData.activePet);
+    activePet = createPet(petType);
+    if (activePet != null) {
+      activePet!.position = player.position + Vector2(40, 0);
+      world.add(activePet!);
+    }
 
     // Applica modificatori
     _applyModifiers();

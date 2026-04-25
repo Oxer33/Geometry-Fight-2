@@ -74,6 +74,28 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
   static const int _maxTrailLength = 18;
   double _trailTimer = 0;
 
+  // Knockback time-based (richiesta utente "pushback duri 1-1.5s, no
+  // istantaneo"). Velocità decade linearmente da v0→0 sull'intera durata,
+  // così la distanza integrata = v0 * duration / 2 = `distance` requested.
+  Vector2 _knockbackVel = Vector2.zero();
+  double _knockbackTimer = 0;
+  double _knockbackDuration = 0;
+
+  /// Applica un knockback animato over time. `dir` è la direzione (auto
+  /// normalizzata), `distance` è la distanza totale da percorrere, `duration`
+  /// è il tempo dell'animazione (default 1.2s = sweet spot fra istantaneo
+  /// e troppo lento).
+  ///
+  /// Multiple call sovrascrivono il knockback in corso (no stacking) per
+  /// evitare yo-yo se 2 black hole esplodono ravvicinati.
+  void applyKnockback(Vector2 dir, double distance, {double duration = 1.2}) {
+    if (dir.length == 0 || distance <= 0 || duration <= 0) return;
+    final v0 = 2 * distance / duration;
+    _knockbackVel = dir.normalized() * v0;
+    _knockbackTimer = duration;
+    _knockbackDuration = duration;
+  }
+
   Player() : super(size: Vector2(30, 34), anchor: Anchor.center);
 
   @override
@@ -133,6 +155,20 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
     // Reset flag ad ogni tick — i GravityWell lo rialzano in updateBehavior
     // se il player resta nel raggio, altrimenti i controlli tornano normali.
     controlsInverted = false;
+
+    // ── KNOCKBACK time-based (es. esplosione black hole) ────────────────
+    // Decadimento lineare velocità v(t) = v0 * (1 - t/T) → integrale =
+    // v0*T/2 = distance richiesta in `applyKnockback`. Evita teletrasporto
+    // istantaneo del player (richiesta utente: durata ~1.2s).
+    if (_knockbackTimer > 0) {
+      final progress = 1.0 - (_knockbackTimer / _knockbackDuration);
+      final velFactor = (1.0 - progress).clamp(0.0, 1.0);
+      position += _knockbackVel * velFactor * realDt;
+      _knockbackTimer -= realDt;
+      if (_knockbackTimer <= 0) {
+        _knockbackVel.setZero();
+      }
+    }
 
     // Clamp to arena
     if (game.isTunnelMode) {

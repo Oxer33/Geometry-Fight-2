@@ -126,11 +126,16 @@ class BlackHoleEnemy extends EnemyBase {
       }
     }
 
-    // Respingi il player
+    // Respingi il player con animazione 1.2s (richiesta utente: prima era
+    // teletrasporto istantaneo singolo frame). `applyKnockback` decade la
+    // velocità linearmente sulla durata, distanza integrata = pushDistance.
     final toPlayer = game.player.position - position;
     if (toPlayer.length > 0 && toPlayer.length < killRadius * 1.5) {
       final pushDir = toPlayer.normalized();
-      game.player.position += pushDir * pushForce * (1.0 - toPlayer.length / (killRadius * 1.5));
+      final falloff =
+          (1.0 - toPlayer.length / (killRadius * 1.5)).clamp(0.0, 1.0);
+      final pushDistance = pushForce * falloff;
+      game.player.applyKnockback(pushDir, pushDistance, duration: 1.2);
     }
 
     // Mega esplosione visiva
