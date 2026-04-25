@@ -4,15 +4,16 @@ import '../../data/pet_types.dart';
 import '../../data/save_data.dart';
 import '../widgets/neon_back_button.dart';
 
-/// Schermata Loadout — pre-game weapon + pet selection.
+/// Schermata Loadout — pre-game weapon + pet selection in DUE STEP
+/// (richiesta utente: "due schermate, una per le armi e una per i pet,
+/// senza scroll, bottoni più piccoli").
 ///
-/// Pushed dopo `ModeSelectScreen` e prima di `GameScreen` quando l'utente
-/// preme "START". Permette di scegliere:
-/// - Arma di partenza (tra unlocked weapons in shop)
-/// - Pet companion (tra unlocked pets in shop, opzione 'none' sempre disponibile)
+/// Step 0: ARMA — 7 cards weapon (BASIC/TRIPLE/SPREAD/RICOCHET/HOMING/PLASMA/LASER)
+///                + bottone "AVANTI" → step 1.
+/// Step 1: PET  — 7 cards pet (NESSUNO + 6 da kPetCatalog)
+///                + bottone "AVVIA PARTITA" → onConfirm.
 ///
-/// Le selezioni vengono persistite in `SaveData.startingWeapon` /
-/// `SaveData.activePet`. La partita reinizia con questi valori.
+/// Layout responsivo: GridView.count colonne 4 → cards ~90px senza scroll.
 class LoadoutScreen extends StatefulWidget {
   final VoidCallback onBack;
   final VoidCallback onConfirm;
@@ -29,6 +30,7 @@ class LoadoutScreen extends StatefulWidget {
 
 class _LoadoutScreenState extends State<LoadoutScreen> {
   late SaveData _saveData;
+  int _step = 0; // 0 = weapons, 1 = pets
 
   @override
   void initState() {
@@ -36,130 +38,107 @@ class _LoadoutScreenState extends State<LoadoutScreen> {
     _saveData = SaveManager.load();
   }
 
-  // Catalog statico armi (mirror del catalog in shop_screen — qui solo
-  // per visualizzazione/selezione loadout).
   static const _weaponCatalog = [
-    _WeaponEntry('basic', 'BASIC', 'Doppia fila gialla'),
-    _WeaponEntry('triple', 'TRIPLE', '3 colpi bianchi'),
-    _WeaponEntry('spread', 'SPREAD', '5 colpi a ventaglio'),
-    _WeaponEntry('ricochet', 'RICOCHET', 'Rimbalzano sui muri'),
-    _WeaponEntry('homing', 'HOMING', 'Missili inseguitori'),
-    _WeaponEntry('plasma', 'PLASMA', 'Orb AoE viola'),
-    _WeaponEntry('laser', 'LASER', 'Raggio continuo'),
+    _WeaponEntry('basic', 'BASIC'),
+    _WeaponEntry('triple', 'TRIPLE'),
+    _WeaponEntry('spread', 'SPREAD'),
+    _WeaponEntry('ricochet', 'RICOCH.'),
+    _WeaponEntry('homing', 'HOMING'),
+    _WeaponEntry('plasma', 'PLASMA'),
+    _WeaponEntry('laser', 'LASER'),
   ];
 
   void _selectWeapon(String id) {
     if (!_saveData.unlockedWeapons.contains(id)) return;
-    setState(() {
-      _saveData.startingWeapon = id;
-    });
+    setState(() => _saveData.startingWeapon = id);
     SaveManager.save(_saveData);
   }
 
   void _selectPet(String id) {
-    // 'none' sempre disponibile; altri pet richiedono unlock dallo shop.
     if (id != 'none' && !_saveData.unlockedPets.contains(id)) return;
-    setState(() {
-      _saveData.activePet = id;
-    });
+    setState(() => _saveData.activePet = id);
     SaveManager.save(_saveData);
+  }
+
+  void _next() {
+    setState(() => _step = 1);
+  }
+
+  void _backStep() {
+    if (_step == 1) {
+      setState(() => _step = 0);
+    } else {
+      widget.onBack();
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final isWeaponsStep = _step == 0;
     return Scaffold(
       backgroundColor: Colors.black,
       body: SafeArea(
         child: Column(
           children: [
-            // Header con back + titolo + start
+            // Header
             Padding(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(10),
               child: Row(
                 children: [
-                  NeonBackButton(onTap: widget.onBack),
+                  NeonBackButton(onTap: _backStep),
                   const SizedBox(width: 12),
-                  const Expanded(
+                  Expanded(
                     child: Text(
-                      'LOADOUT',
+                      isWeaponsStep ? 'LOADOUT — ARMA' : 'LOADOUT — PET',
                       textAlign: TextAlign.center,
-                      style: TextStyle(
+                      style: const TextStyle(
                         color: Colors.white,
-                        fontSize: 24,
+                        fontSize: 18,
                         fontWeight: FontWeight.w900,
                         fontFamily: 'monospace',
-                        letterSpacing: 6,
+                        letterSpacing: 4,
                       ),
                     ),
                   ),
-                  const SizedBox(width: 48), // bilancia il back btn
+                  // Step indicator (1/2 o 2/2)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                          color: NeonColors.cyan.withValues(alpha: 0.5)),
+                    ),
+                    child: Text(
+                      isWeaponsStep ? '1/2' : '2/2',
+                      style: const TextStyle(
+                        color: NeonColors.cyan,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w900,
+                        fontFamily: 'monospace',
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
-            // Content scrollable
+            // Content (no scroll)
             Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const _SectionTitle(label: 'ARMA DI PARTENZA'),
-                    const SizedBox(height: 8),
-                    Wrap(
-                      spacing: 10,
-                      runSpacing: 10,
-                      children: _weaponCatalog
-                          .map((w) => _LoadoutCard(
-                                title: w.displayName,
-                                subtitle: w.description,
-                                isSelected: _saveData.startingWeapon == w.id,
-                                isUnlocked:
-                                    _saveData.unlockedWeapons.contains(w.id),
-                                color: NeonColors.cyan,
-                                onTap: () => _selectWeapon(w.id),
-                              ))
-                          .toList(),
-                    ),
-                    const SizedBox(height: 28),
-                    const _SectionTitle(label: 'PET COMPANION'),
-                    const SizedBox(height: 8),
-                    Wrap(
-                      spacing: 10,
-                      runSpacing: 10,
-                      children: [
-                        _LoadoutCard(
-                          title: 'NESSUNO',
-                          subtitle: 'Solo, no pet',
-                          isSelected: _saveData.activePet == 'none',
-                          isUnlocked: true,
-                          color: const Color(0xFF888888),
-                          onTap: () => _selectPet('none'),
-                        ),
-                        ...kPetCatalog.map((p) => _LoadoutCard(
-                              title: p.displayName,
-                              subtitle: p.description,
-                              isSelected: _saveData.activePet == p.id,
-                              isUnlocked:
-                                  _saveData.unlockedPets.contains(p.id),
-                              color: p.color,
-                              onTap: () => _selectPet(p.id),
-                            )),
-                      ],
-                    ),
-                    const SizedBox(height: 32),
-                  ],
-                ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                child:
+                    isWeaponsStep ? _buildWeaponsGrid() : _buildPetsGrid(),
               ),
             ),
-            // Footer START button
+            // Footer button
             Padding(
-              padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
+              padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
               child: GestureDetector(
-                onTap: widget.onConfirm,
+                onTap: isWeaponsStep ? _next : widget.onConfirm,
                 child: Container(
-                  height: 56,
+                  height: 48,
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(10),
                     color: NeonColors.green.withValues(alpha: 0.12),
                     border: Border.all(
                         color: NeonColors.green.withValues(alpha: 0.7),
@@ -167,15 +146,15 @@ class _LoadoutScreenState extends State<LoadoutScreen> {
                     boxShadow: [
                       BoxShadow(
                           color: NeonColors.green.withValues(alpha: 0.4),
-                          blurRadius: 14)
+                          blurRadius: 12)
                     ],
                   ),
                   alignment: Alignment.center,
-                  child: const Text(
-                    'AVVIA PARTITA',
-                    style: TextStyle(
+                  child: Text(
+                    isWeaponsStep ? 'AVANTI' : 'AVVIA PARTITA',
+                    style: const TextStyle(
                       color: NeonColors.green,
-                      fontSize: 18,
+                      fontSize: 16,
                       fontWeight: FontWeight.w900,
                       fontFamily: 'monospace',
                       letterSpacing: 4,
@@ -189,54 +168,75 @@ class _LoadoutScreenState extends State<LoadoutScreen> {
       ),
     );
   }
-}
 
-class _WeaponEntry {
-  final String id;
-  final String displayName;
-  final String description;
-  const _WeaponEntry(this.id, this.displayName, this.description);
-}
+  Widget _buildWeaponsGrid() {
+    return GridView.count(
+      crossAxisCount: 4,
+      crossAxisSpacing: 8,
+      mainAxisSpacing: 8,
+      childAspectRatio: 1.0,
+      physics: const NeverScrollableScrollPhysics(),
+      children: _weaponCatalog
+          .map((w) => _MiniCard(
+                title: w.displayName,
+                isSelected: _saveData.startingWeapon == w.id,
+                isUnlocked: _saveData.unlockedWeapons.contains(w.id),
+                color: NeonColors.cyan,
+                iconLetter: w.displayName.substring(0, 1),
+                onTap: () => _selectWeapon(w.id),
+              ))
+          .toList(),
+    );
+  }
 
-class _SectionTitle extends StatelessWidget {
-  final String label;
-  const _SectionTitle({required this.label});
-  @override
-  Widget build(BuildContext context) {
-    return Row(
+  Widget _buildPetsGrid() {
+    return GridView.count(
+      crossAxisCount: 4,
+      crossAxisSpacing: 8,
+      mainAxisSpacing: 8,
+      childAspectRatio: 1.0,
+      physics: const NeverScrollableScrollPhysics(),
       children: [
-        Container(
-          width: 4,
-          height: 22,
-          color: NeonColors.cyan,
+        _MiniCard(
+          title: 'NESSUNO',
+          isSelected: _saveData.activePet == 'none',
+          isUnlocked: true,
+          color: const Color(0xFF888888),
+          iconLetter: '–',
+          onTap: () => _selectPet('none'),
         ),
-        const SizedBox(width: 10),
-        Text(
-          label,
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 14,
-            fontWeight: FontWeight.w900,
-            fontFamily: 'monospace',
-            letterSpacing: 3,
-          ),
-        ),
+        ...kPetCatalog.map((p) => _MiniCard(
+              title: p.displayName,
+              isSelected: _saveData.activePet == p.id,
+              isUnlocked: _saveData.unlockedPets.contains(p.id),
+              color: p.color,
+              iconLetter: p.iconCode,
+              onTap: () => _selectPet(p.id),
+            )),
       ],
     );
   }
 }
 
-class _LoadoutCard extends StatelessWidget {
+class _WeaponEntry {
+  final String id;
+  final String displayName;
+  const _WeaponEntry(this.id, this.displayName);
+}
+
+/// Card compatto loadout: badge lettera + nome short + lock icon se locked.
+/// Dimensione gestita dal parent grid (childAspectRatio 1.0).
+class _MiniCard extends StatelessWidget {
   final String title;
-  final String subtitle;
+  final String iconLetter;
   final bool isSelected;
   final bool isUnlocked;
   final Color color;
   final VoidCallback onTap;
 
-  const _LoadoutCard({
+  const _MiniCard({
     required this.title,
-    required this.subtitle,
+    required this.iconLetter,
     required this.isSelected,
     required this.isUnlocked,
     required this.color,
@@ -246,63 +246,63 @@ class _LoadoutCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final disabled = !isUnlocked;
-    final effectiveColor = disabled ? const Color(0xFF555555) : color;
+    final eff = disabled ? const Color(0xFF555555) : color;
     return GestureDetector(
       onTap: disabled ? null : onTap,
       child: Container(
-        width: 160,
-        padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(8),
           color: isSelected
-              ? effectiveColor.withValues(alpha: 0.18)
-              : effectiveColor.withValues(alpha: 0.05),
+              ? eff.withValues(alpha: 0.22)
+              : eff.withValues(alpha: 0.06),
           border: Border.all(
-              color:
-                  effectiveColor.withValues(alpha: isSelected ? 0.95 : 0.35),
-              width: isSelected ? 2.5 : 1),
+              color: eff.withValues(alpha: isSelected ? 0.95 : 0.4),
+              width: isSelected ? 2.2 : 1),
           boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                      color: effectiveColor.withValues(alpha: 0.5),
-                      blurRadius: 12)
-                ]
+              ? [BoxShadow(color: eff.withValues(alpha: 0.5), blurRadius: 10)]
               : null,
         ),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(
-              title,
-              style: TextStyle(
-                color: effectiveColor,
-                fontSize: 14,
-                fontWeight: FontWeight.w900,
-                fontFamily: 'monospace',
-                letterSpacing: 2,
+            // Badge lettera grande (icon)
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: eff.withValues(alpha: 0.2),
+                border: Border.all(color: eff, width: 1.5),
+              ),
+              alignment: Alignment.center,
+              child: Text(
+                iconLetter,
+                style: TextStyle(
+                  color: eff,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w900,
+                  fontFamily: 'monospace',
+                ),
               ),
             ),
             const SizedBox(height: 4),
             Text(
-              subtitle,
+              title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                color: effectiveColor.withValues(alpha: 0.6),
-                fontSize: 10,
+                color: eff,
+                fontSize: 9,
+                fontWeight: FontWeight.w900,
                 fontFamily: 'monospace',
-                height: 1.2,
+                letterSpacing: 1,
               ),
             ),
             if (disabled)
-              Padding(
-                padding: const EdgeInsets.only(top: 6),
-                child: Text(
-                  'LOCKED (shop)',
-                  style: TextStyle(
-                    color: Colors.amber.withValues(alpha: 0.7),
-                    fontSize: 9,
-                    fontFamily: 'monospace',
-                  ),
-                ),
+              Icon(
+                Icons.lock,
+                size: 10,
+                color: Colors.amber.withValues(alpha: 0.7),
               ),
           ],
         ),

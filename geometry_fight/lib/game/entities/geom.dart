@@ -74,12 +74,19 @@ class Geom extends PositionComponent
     if (game.waveSystem.activeModifier == WaveModifier.magnetic) {
       magnetRange *= 2.0;
     }
-    // CollectPet (Geometry Wars 3 style): boost passivo +150px sul raggio
-    // magnet → pet "raccoglie" geom anche lontani senza che il player
-    // debba avvicinarsi. Stacka sopra magnetic modifier + power-up.
-    if (game.activePet != null &&
-        game.activePet!.def.type == PetType.collect) {
-      magnetRange += 150.0;
+    // CollectPet (Geometry Wars 3 style): doppio boost.
+    //   1) +250px sul magnetRange globale (era 150 — utente "non funziona",
+    //      bumpato per visibilità immediata).
+    //   2) Pet-locale: se il geom è entro 250px dal pet (NON dal player),
+    //      lo agganciamo comunque → effetto "il pet aspira geom da lontano
+    //      e li trascina al player". Senza questo, geom lontani dal player
+    //      restavano fermi finché il player non si avvicinava.
+    final pet = game.activePet;
+    if (pet != null && pet.def.type == PetType.collect) {
+      magnetRange += 250.0;
+      if (!_attracted && pet.position.distanceTo(position) < 250.0) {
+        _attracted = true;
+      }
     }
 
     if (dist < magnetRange) {
