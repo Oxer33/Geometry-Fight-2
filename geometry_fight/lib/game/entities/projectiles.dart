@@ -449,25 +449,32 @@ class LaserBeam extends PositionComponent
         Rect.fromLTWH(-coreW * 0.4, coneLen, coreW * 0.8, pulseLen),
         _laserCorePaint);
 
-    // ─── 8 PLASMA COMETS — coprono TUTTO il fascio dalla punta cono ───
-    const cometCount = 8;
+    // ─── DUAL-STREAM PLASMA — copertura continua del fascio ───
+    // Iter 4 (fix utente "ancora non è per tutta la linea"):
+    //   - Iter 3: 8 comets uniformi → spacing 150px → 115px gap visibile.
+    //   - Iter 4: 16 primarie (spacing 75px) + 16 secondarie phase-shift 0.5
+    //     (spacing effettivo ~37px) + trail 5 sfere → percezione continua
+    //     dalla punta cono fino al fondo del beam senza tratti spenti.
+    const cometCount = 16;
     const cometSpeed = 850.0;
-    final cometR = 7 * sizeMultiplier;
+    final cometR = 5.5 * sizeMultiplier;
     final fullLen = laserBeamLength.toDouble();
+    final stepLen = fullLen / cometCount;
+
+    // PRIMARY STREAM — 16 comete grandi (halo + mid + nucleus + trail).
     for (int i = 0; i < cometCount; i++) {
-      final raw =
-          _pulsePhase * cometSpeed + i * fullLen / cometCount;
+      final raw = _pulsePhase * cometSpeed + i * stepLen;
       final py = raw % fullLen; // parte da 0 (punta cono)
 
-      // Trail: 3 sfere fading dietro
-      for (int t = 1; t <= 3; t++) {
-        final trailY = py - t * (cometR * 0.9);
+      // Trail: 5 sfere fading dietro (era 3 → estese per coprire gap residui).
+      for (int t = 1; t <= 5; t++) {
+        final trailY = py - t * cometR;
         if (trailY < 0) continue;
-        final trailAlpha = 0.55 * (1.0 - t / 4.0);
+        final trailAlpha = 0.55 * (1.0 - t / 6.0);
         _laserPulsePaint.color =
             const Color(0xFFFF3322).withValues(alpha: trailAlpha);
         canvas.drawCircle(
-            Offset(0, trailY), cometR * (1.0 - t * 0.22), _laserPulsePaint);
+            Offset(0, trailY), cometR * (1.0 - t * 0.16), _laserPulsePaint);
       }
 
       // Halo esterno rosso
@@ -482,6 +489,21 @@ class LaserBeam extends PositionComponent
       _laserPulsePaint.color =
           const Color(0xFFFFFFFF).withValues(alpha: 0.95);
       canvas.drawCircle(Offset(0, py), cometR * 0.45, _laserPulsePaint);
+    }
+
+    // SECONDARY STREAM — 16 puntini phase-shift +0.5 step (cade nel mezzo
+    // del gap tra comete primarie) → riempie ogni "dark zone" del fascio.
+    // Più piccoli per non distrarre dalle comete principali.
+    final secR = 2.8 * sizeMultiplier;
+    for (int i = 0; i < cometCount; i++) {
+      final raw = _pulsePhase * cometSpeed + (i + 0.5) * stepLen;
+      final py = raw % fullLen;
+      _laserPulsePaint.color =
+          const Color(0xFFFF6633).withValues(alpha: 0.7);
+      canvas.drawCircle(Offset(0, py), secR * 1.4, _laserPulsePaint);
+      _laserPulsePaint.color =
+          const Color(0xFFFFEEAA).withValues(alpha: 0.95);
+      canvas.drawCircle(Offset(0, py), secR * 0.6, _laserPulsePaint);
     }
 
     // ─── ELECTRIC CRACKLE (5 puntini bianchi sui bordi del beam) ───

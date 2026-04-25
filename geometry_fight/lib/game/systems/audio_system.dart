@@ -108,6 +108,19 @@ class AudioSystem {
   static int _lastHapticMs = 0;
   static const _hapticMinIntervalMs = 120;
 
+  // ─── Burst-aware throttle per playEnemyDeath ───
+  // Megaswarm wave + boss minion (300+ mob simultanei) può scatenare 100+
+  // kill/sec. Senza burst-detection: 8 vibrazioni/sec costanti per 30s →
+  // affaticamento utente + drain batteria; suoni a 20/sec → audio mud
+  // distorto. Con burst-detection: dopo soglia, haptic rallenta a ~3 Hz e
+  // volume sound dimezzato per evitare clipping.
+  // O(1) ring counter: reset quando finestra scade, no list/scan.
+  static int _enemyDeathBurstCount = 0;
+  static int _enemyDeathBurstStartMs = 0;
+  static const _enemyDeathBurstWindowMs = 250;   // finestra rolling
+  static const _enemyDeathBurstThreshold = 6;    // >6 in 250ms = burst
+  static const _burstHapticMinIntervalMs = 300;  // ~3 Hz durante burst
+
   static bool _canHaptic() {
     if (!_vibrationEnabled) return false;
     final now = DateTime.now().millisecondsSinceEpoch;
@@ -222,19 +235,38 @@ class AudioSystem {
     if (_canHaptic()) HapticFeedback.selectionClick();
   }
 
-  /// Nemico ucciso — usa pool mp3 custom (4 AudioPlayer riutilizzati in
-  /// round-robin) per evitare alloc di un nuovo player ad ogni kill, che
-  /// causava lag progressivo con 100+ kill/min.
-  /// Cooldown 50ms gates spam, haptic ha throttle dedicato (~8 Hz).
+  /// Nemico ucciso — pool mp3 custom (4 AudioPlayer round-robin) per
+  /// evitare alloc nuovi player ad ogni kill (lag progressivo a 100+
+  /// kill/min). Cooldown 50ms gates spam sound; burst-detection
+  /// (vedi `_enemyDeathBurstThreshold`) rallenta haptic a 3Hz e dimezza
+  /// volume durante megaswarm/spawn boss simultanei → no audio mud, no
+  /// vibration fatigue, no battery drain.
   static void playEnemyDeath() {
-    if (!_initialized || _sfxVolume <= 0) {
-      if (_canHaptic()) HapticFeedback.lightImpact();
-      return;
+    if (!_vibrationEnabled && (!_initialized || _sfxVolume <= 0)) return;
+
+    final now = DateTime.now().millisecondsSinceEpoch;
+    // Reset finestra burst quando scade (O(1), no list).
+    if (now - _enemyDeathBurstStartMs > _enemyDeathBurstWindowMs) {
+      _enemyDeathBurstStartMs = now;
+      _enemyDeathBurstCount = 0;
     }
-    if (_canPlay('enemy_death')) {
-      _enemyDeathMp3Pool?.play(volume: _sfxVolume * 0.6);
+    _enemyDeathBurstCount++;
+    final inBurst = _enemyDeathBurstCount > _enemyDeathBurstThreshold;
+
+    // Suono: gate cooldown + volume ridotto in burst (clipping protection).
+    if (_initialized && _sfxVolume > 0 && _canPlay('enemy_death')) {
+      final volScale = inBurst ? 0.35 : 0.6;
+      _enemyDeathMp3Pool?.play(volume: _sfxVolume * volScale);
     }
-    if (_canHaptic()) HapticFeedback.lightImpact();
+
+    // Haptic: throttle adattivo. Idle=120ms (8Hz), burst=300ms (3Hz).
+    if (_vibrationEnabled) {
+      final minMs = inBurst ? _burstHapticMinIntervalMs : _hapticMinIntervalMs;
+      if (now - _lastHapticMs >= minMs) {
+        _lastHapticMs = now;
+        HapticFeedback.lightImpact();
+      }
+    }
   }
 
   /// Geom raccolto — pool (alta frequenza)
@@ -358,6 +390,12 @@ class AudioSystem {
   static void stopAll() {
     _initialized = false;
     _lastPlayTime.clear();
+    // Reset burst counter + last haptic ts: evita stato stale cross-session
+    // (ad es. burst attivo a fine partita → menù → nuova partita con
+    // throttle ancora aggressivo per i primi 250ms).
+    _enemyDeathBurstCount = 0;
+    _enemyDeathBurstStartMs = 0;
+    _lastHapticMs = 0;
     final toDispose = <Future<void>>[];
     // Flame pool (AudioPool) non hanno Future da dispose. I nostri _Mp3Pool sì.
     try { _shootPool?.dispose(); } catch (_) {}

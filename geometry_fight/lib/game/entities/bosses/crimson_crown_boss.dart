@@ -33,7 +33,9 @@ class CrimsonCrownBoss extends BossBase {
 
   CrimsonCrownBoss()
       : super(
-          hp: 400,
+          // +50% HP (era 400, ora 600) — richiesta utente:
+          // "crimson crown deve avere il 50% in piu degli hp".
+          hp: 600,
           bossName: 'CRIMSON CROWN',
           pointValue: 5000,
           neonColor: NeonColors.orange,
