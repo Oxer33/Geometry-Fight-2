@@ -1413,6 +1413,15 @@ class GeometryFightGame extends FlameGame
     player.setWeaponFromId(saveData.startingWeapon);
     world.add(player);
 
+    // Pet companion: respawn al restart (fix caveman-review: prima attivePet
+    // restava reference stale alla vecchia istanza distrutta dal world reset).
+    final petType = petTypeById(saveData.activePet);
+    activePet = createPet(petType);
+    if (activePet != null) {
+      activePet!.position = player.position + Vector2(40, 0);
+      world.add(activePet!);
+    }
+
     // Re-apply modifiers (glass_cannon, speed_demon, etc.)
     _applyModifiers();
 

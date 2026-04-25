@@ -4,6 +4,7 @@ import 'package:flame/components.dart';
 import '../../../data/constants.dart';
 import '../../../data/pet_types.dart';
 import '../../game_world.dart';
+import '../enemies/black_hole_enemy.dart';
 import '../enemies/enemy_base.dart';
 import '../player.dart';
 import '../projectiles.dart';
@@ -56,11 +57,21 @@ abstract class PetBase extends PositionComponent
   }
 
   // ── helper condivisi ────────────────────────────────────────────────────
+  /// True se il nemico è un target valido per pet auto-kill (Sweep/Ram).
+  /// Esclude BlackHole (instakill banalizzerebbe wave VOID FIELD + boss
+  /// void mechanics) e nemici in spawn-invuln (fair-play: aspetta che si
+  /// materializzino).
+  static bool isValidPetTarget(EnemyBase e) {
+    if (e is BlackHoleEnemy) return false;
+    if (e.isSpawnInvulnerable) return false;
+    return true;
+  }
+
   EnemyBase? findNearestEnemy({double maxDist = 600}) {
     EnemyBase? best;
     double bestD = maxDist;
     for (final c in game.world.children) {
-      if (c is EnemyBase) {
+      if (c is EnemyBase && isValidPetTarget(c)) {
         final d = c.position.distanceTo(position);
         if (d < bestD) {
           bestD = d;
@@ -152,8 +163,9 @@ class SweepPet extends PetBase {
     position = game.player.position +
         Vector2(math.cos(ang), math.sin(ang)) * _orbitRadius;
     // Kill check: instakill nemico entro 16px dal pet.
+    // Esclude BlackHole + nemici in spawn-invuln (vedi `isValidPetTarget`).
     for (final c in game.world.children) {
-      if (c is EnemyBase) {
+      if (c is EnemyBase && PetBase.isValidPetTarget(c)) {
         if (c.position.distanceTo(position) < 16) {
           c.takeDamage(999, isArea: true);
         }

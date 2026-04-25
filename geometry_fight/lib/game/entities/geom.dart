@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
 import '../../data/constants.dart';
+import '../../data/pet_types.dart';
 import '../../data/wave_configs.dart';
 import '../game_world.dart';
 import 'player.dart';
@@ -72,6 +73,13 @@ class Geom extends PositionComponent
     // "loot vacuum". Stacka sopra magnet power-up + upgrade.
     if (game.waveSystem.activeModifier == WaveModifier.magnetic) {
       magnetRange *= 2.0;
+    }
+    // CollectPet (Geometry Wars 3 style): boost passivo +150px sul raggio
+    // magnet → pet "raccoglie" geom anche lontani senza che il player
+    // debba avvicinarsi. Stacka sopra magnetic modifier + power-up.
+    if (game.activePet != null &&
+        game.activePet!.def.type == PetType.collect) {
+      magnetRange += 150.0;
     }
 
     if (dist < magnetRange) {
