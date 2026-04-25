@@ -452,9 +452,14 @@ class LaserBeam extends PositionComponent
     // ─── DUAL-STREAM PLASMA — copertura continua del fascio ───
     // Iter 4 (fix utente "ancora non è per tutta la linea"):
     //   - Iter 3: 8 comets uniformi → spacing 150px → 115px gap visibile.
-    //   - Iter 4: 16 primarie (spacing 75px) + 16 secondarie phase-shift 0.5
-    //     (spacing effettivo ~37px) + trail 5 sfere → percezione continua
-    //     dalla punta cono fino al fondo del beam senza tratti spenti.
+    //   - Iter 4: 16 primarie (spacing 75px) + 16 secondarie con offset
+    //     spaziale costante +0.5*stepLen (~37.5px) → la stream secondaria
+    //     viaggia sempre 37.5px avanti rispetto alla primaria a stessa
+    //     velocità, dando densità uniforme di 32 nodi/beam in qualsiasi
+    //     istante. Trail 5 sfere → percezione continua punta-cono → fondo
+    //     senza tratti spenti. NB: stessa velocità è intenzionale —
+    //     velocità diverse causerebbero allineamenti periodici (32→16
+    //     nodi sovrapposti → gap di 75px temporanei).
     const cometCount = 16;
     const cometSpeed = 850.0;
     final cometR = 5.5 * sizeMultiplier;
@@ -491,10 +496,13 @@ class LaserBeam extends PositionComponent
       canvas.drawCircle(Offset(0, py), cometR * 0.45, _laserPulsePaint);
     }
 
-    // SECONDARY STREAM — 16 puntini phase-shift +0.5 step (cade nel mezzo
-    // del gap tra comete primarie) → riempie ogni "dark zone" del fascio.
-    // Più piccoli per non distrarre dalle comete principali.
-    final secR = 2.8 * sizeMultiplier;
+    // SECONDARY STREAM — 16 puntini con offset spaziale +0.5 step (cade
+    // nel mezzo del gap tra comete primarie) → riempie ogni "dark zone"
+    // del fascio. Più piccoli per non distrarre dalle comete principali.
+    // Bumpato 2.8→3.2 (review caveman): nucleus secR*0.6 a sizeMultiplier=1
+    // era 1.68px → rischio sub-pixel disappear su low-DPI; ora 1.92px →
+    // più affidabile mantenendo gerarchia visiva con primarie.
+    final secR = 3.2 * sizeMultiplier;
     for (int i = 0; i < cometCount; i++) {
       final raw = _pulsePhase * cometSpeed + (i + 0.5) * stepLen;
       final py = raw % fullLen;

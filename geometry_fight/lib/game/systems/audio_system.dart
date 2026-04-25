@@ -120,14 +120,23 @@ class AudioSystem {
   static const _enemyDeathBurstWindowMs = 250;   // finestra rolling
   static const _enemyDeathBurstThreshold = 6;    // >6 in 250ms = burst
   static const _burstHapticMinIntervalMs = 300;  // ~3 Hz durante burst
+  // Const cooldown key per playEnemyDeath — evita string-literal sparso
+  // (review caveman-pass: "magic string in _canPlay").
+  static const _enemyDeathCooldownKey = 'enemy_death';
 
-  static bool _canHaptic() {
+  /// Throttle haptic con intervallo arbitrario (ms). Centralizza l'accesso
+  /// a `_lastHapticMs` così i caller (default `_canHaptic()` o burst-mode
+  /// in `playEnemyDeath`) condividono lo stesso state e qualunque logica
+  /// futura (telemetry, frame-budget guard) si applica uniformemente.
+  static bool _canHapticAt(int minMs) {
     if (!_vibrationEnabled) return false;
     final now = DateTime.now().millisecondsSinceEpoch;
-    if (now - _lastHapticMs < _hapticMinIntervalMs) return false;
+    if (now - _lastHapticMs < minMs) return false;
     _lastHapticMs = now;
     return true;
   }
+
+  static bool _canHaptic() => _canHapticAt(_hapticMinIntervalMs);
 
   /// Inizializza il sistema audio: crea pool per suoni frequenti WAV e
   /// pre-carica gli altri (inclusi i nuovi mp3 dell'utente).
@@ -254,19 +263,16 @@ class AudioSystem {
     final inBurst = _enemyDeathBurstCount > _enemyDeathBurstThreshold;
 
     // Suono: gate cooldown + volume ridotto in burst (clipping protection).
-    if (_initialized && _sfxVolume > 0 && _canPlay('enemy_death')) {
+    if (_initialized && _sfxVolume > 0 && _canPlay(_enemyDeathCooldownKey)) {
       final volScale = inBurst ? 0.35 : 0.6;
       _enemyDeathMp3Pool?.play(volume: _sfxVolume * volScale);
     }
 
-    // Haptic: throttle adattivo. Idle=120ms (8Hz), burst=300ms (3Hz).
-    if (_vibrationEnabled) {
-      final minMs = inBurst ? _burstHapticMinIntervalMs : _hapticMinIntervalMs;
-      if (now - _lastHapticMs >= minMs) {
-        _lastHapticMs = now;
-        HapticFeedback.lightImpact();
-      }
-    }
+    // Haptic: throttle adattivo via helper centralizzato. Idle=120ms (8Hz),
+    // burst=300ms (3Hz). `_canHapticAt` aggiorna `_lastHapticMs` solo se
+    // passa il gate → resta source-of-truth per chiunque legga lo state.
+    final hapticMinMs = inBurst ? _burstHapticMinIntervalMs : _hapticMinIntervalMs;
+    if (_canHapticAt(hapticMinMs)) HapticFeedback.lightImpact();
   }
 
   /// Geom raccolto — pool (alta frequenza)
