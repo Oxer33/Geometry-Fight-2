@@ -24,20 +24,42 @@ class GateEnemy extends PositionComponent
   double _phase = 0;
   late Vector2 _moveDir;
   final double _speed = 60;
-  // +50% rispetto a prima (era 50): bilanciere più grande e leggibile
-  final double _gateWidth = 75.0;
-  // Esplosione +50% rispetto al precedente 27 (era 80 originale): impatto più
-  // cinematico quando il player attraversa il wire — rimane comunque più
-  // chirurgica dell'originale.
-  final double _explosionRadius = 40.5;
+  // +50% iter 2 (richiesta utente "bilanciere 50% più grande"): era 75 →
+  // ora 112.5. Bilanciere ancora più grande/leggibile + hitbox riallineati
+  // al visivo (vedi onLoad e sphere/wire kill radius doc sotto).
+  final double _gateWidth = 112.5;
+  // Esplosione +50% iter 2 (era 40.5 → 60.75) per coerenza con scala globale.
+  // killRadiusMultiplier 1.5 invariato → killRadius effettivo ≈ 91 px/sphere.
+  final double _explosionRadius = 60.75;
   final Color neonColor = const Color(0xFFFF6600);
+
+  // Endpoint kill radius: distanza player-sfera-centro che uccide il player.
+  // OLD: 27 (≈3× visual sphere r=9 → death zone "invisibile" troppo ampia,
+  //      utente percepiva "hitbox imperfetta delle estremità").
+  // NEW: visual sphere r (14) + player hurtbox (8) = 22 → fair death zone
+  //      che combacia col contorno visivo della sfera arancio.
+  static const double _endpointKillRadius = 22.0;
+  // Wire kill radius: distanza player-segmento per trigger esplosione gate.
+  // Wire visual half-thickness (glow 13.5/2 ≈ 7) + player hurtbox 8 = 15.
+  // Mantenuto a 15 perché coincide con la half-thickness del glow stroke +50%.
+  static const double _wireKillRadius = 15.0;
+  // Visual sphere radius (cerchio arancio fluo). +50% iter 2: era 9 → 14.
+  static const double _sphereVisualR = 14.0;
+  // Sphere hitbox radius (per bullet reflect): visual r + small buffer per
+  // non perdere riflessioni vicine al bordo visivo. OLD 15 (>>visual=9 → hitbox
+  // 67% più grande del visivo, riflessi "magici" oltre il contorno). NEW 16
+  // (visual+2). Hitbox quasi allineata al cerchio arancio = riflessione visuale
+  // accurata. Risolve "hitbox imperfetta" segnalata dall'utente.
+  static const double _sphereHitboxR = 16.0;
 
   // Cooldown anti-spam: impedisce trigger multipli ravvicinati
   double _cooldown = 4.0;
   double _lifetime = 30.0;
 
-  // +50% rispetto a prima (era 60): coerente con _gateWidth
-  GateEnemy() : super(size: Vector2(90, 90), anchor: Anchor.center) {
+  // Size component bbox +66% iter 2 (era 90×90 → 150×150). Necessario per
+  // contenere _gateWidth=112.5 + 2×sphere visual r=14 = 140.5 con margine.
+  // 150 dà ~9px buffer per pulse FX delle sfere.
+  GateEnemy() : super(size: Vector2(150, 150), anchor: Anchor.center) {
     final r = math.Random();
     final angle = r.nextDouble() * math.pi * 2;
     _moveDir = Vector2(math.cos(angle), math.sin(angle));
@@ -52,11 +74,13 @@ class GateEnemy extends PositionComponent
 
   @override
   Future<void> onLoad() async {
-    // Hitbox +50% rispetto a prima (radius era 10): coerente col nuovo size.
-    _sphereHitbox1 = CircleHitbox(radius: 15, anchor: Anchor.center)
-      ..position = size / 2;
-    _sphereHitbox2 = CircleHitbox(radius: 15, anchor: Anchor.center)
-      ..position = size / 2;
+    // Hitbox sphere allineato a visual+2 buffer (vedi _sphereHitboxR doc).
+    _sphereHitbox1 =
+        CircleHitbox(radius: _sphereHitboxR, anchor: Anchor.center)
+          ..position = size / 2;
+    _sphereHitbox2 =
+        CircleHitbox(radius: _sphereHitboxR, anchor: Anchor.center)
+          ..position = size / 2;
     add(_sphereHitbox1);
     add(_sphereHitbox2);
   }
@@ -136,8 +160,10 @@ class GateEnemy extends PositionComponent
       final d2 = playerPos.distanceTo(sphere2);
 
       // ZONA 1 — Endpoint (sfere arancioni): player tocca → muore, gate sopravvive.
-      // Raggio +50% (era 18): coerente col gate più grande.
-      if (d1 < 27 || d2 < 27) {
+      // Raggio = visual sphere r + player hurtbox = 22 (vedi _endpointKillRadius).
+      // OLD 27 era ~3× visual r=9 → death zone troppo ampia, "hitbox imperfetta".
+      // NEW 22 = 14+8 → death zone visivamente onesta.
+      if (d1 < _endpointKillRadius || d2 < _endpointKillRadius) {
         if (!game.player.isInvincible) {
           game.player.takeDamage();
         }
@@ -148,9 +174,9 @@ class GateEnemy extends PositionComponent
       // ZONA 2 — Wire bianco centrale: distanza punto-segmento piccola
       // (player è sulla linea tra le due sfere, lontano dagli endpoint).
       // Gate esplode, player illeso (reward del risk/reward).
-      // Raggio wire +50% (era 10): gate visivamente più grande.
+      // Raggio = wire half-glow + player hurtbox = 15 (vedi _wireKillRadius).
       final distToWire = _pointToSegmentDistance(playerPos, sphere1, sphere2);
-      if (distToWire < 15) {
+      if (distToWire < _wireKillRadius) {
         _triggerExplosion();
       }
     }
@@ -238,10 +264,10 @@ class GateEnemy extends PositionComponent
     final s1x = math.cos(perpAngle) * halfW;
     final s1y = math.sin(perpAngle) * halfW;
 
-    // Glow linea: bianco con pulsing (+50% spessore)
+    // Glow linea: bianco con pulsing. Spessore +50% iter 2 (era 9 → 13.5).
     final pulse = 0.4 + math.sin(_phase * 4) * 0.35;
     _glowPaint.color = const Color(0xFFFFFFFF).withValues(alpha: 0.3);
-    _glowPaint.strokeWidth = 9;
+    _glowPaint.strokeWidth = 13.5;
     _glowPaint.style = PaintingStyle.stroke;
     _glowPaint.maskFilter = null;
     canvas.drawLine(
@@ -250,9 +276,9 @@ class GateEnemy extends PositionComponent
       _glowPaint,
     );
 
-    // Linea principale: bianco fluo (+50% spessore)
+    // Linea principale: bianco fluo. Spessore +50% iter 2 (era 3 → 4.5).
     _linePaint.color = const Color(0xFFFFFFFF).withValues(alpha: 0.8);
-    _linePaint.strokeWidth = 3;
+    _linePaint.strokeWidth = 4.5;
     _linePaint.style = PaintingStyle.stroke;
     canvas.drawLine(
       Offset(cx + s1x, cy + s1y),
@@ -260,24 +286,24 @@ class GateEnemy extends PositionComponent
       _linePaint,
     );
 
-    // Sfera 1: arancio fosforescente con pulsing rapido (+50% raggio)
+    // Sfera 1: arancio fosforescente con pulsing. Visual r 9 → 14 (+50%).
     _spherePaint.color = neonColor.withValues(alpha: pulse);
     _spherePaint.style = PaintingStyle.fill;
-    canvas.drawCircle(Offset(cx + s1x, cy + s1y), 9, _spherePaint);
+    canvas.drawCircle(Offset(cx + s1x, cy + s1y), _sphereVisualR, _spherePaint);
 
     // Sfera 2
-    canvas.drawCircle(Offset(cx - s1x, cy - s1y), 9, _spherePaint);
+    canvas.drawCircle(Offset(cx - s1x, cy - s1y), _sphereVisualR, _spherePaint);
 
-    // Nucleo sfere (bianco, +50% raggio)
+    // Nucleo sfere (bianco, +50% raggio: 3.75 → 5.6).
     _spherePaint.color = const Color(0xFFFFFFFF).withValues(alpha: 0.7);
-    canvas.drawCircle(Offset(cx + s1x, cy + s1y), 3.75, _spherePaint);
-    canvas.drawCircle(Offset(cx - s1x, cy - s1y), 3.75, _spherePaint);
+    canvas.drawCircle(Offset(cx + s1x, cy + s1y), 5.6, _spherePaint);
+    canvas.drawCircle(Offset(cx - s1x, cy - s1y), 5.6, _spherePaint);
 
-    // Particelle lungo la linea (energia, +50% raggio)
+    // Particelle lungo la linea (energia, +50% raggio: 3 → 4.5).
     final particlePos = math.sin(_phase * 2) * 0.5 + 0.5;
     final px = cx + s1x * (1 - 2 * particlePos);
     final py = cy + s1y * (1 - 2 * particlePos);
     _spherePaint.color = const Color(0xFFFFFFFF).withValues(alpha: 0.6);
-    canvas.drawCircle(Offset(px, py), 3, _spherePaint);
+    canvas.drawCircle(Offset(px, py), 4.5, _spherePaint);
   }
 }

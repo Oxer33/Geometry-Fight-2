@@ -612,6 +612,44 @@ class WaveSystem {
     return _Formation.values[(wave * 7 + groupIndex * 3) % _Formation.values.length];
   }
 
+  /// Traduce SpawnFormation pubblico (in wave_configs.dart) → _Formation
+  /// privato di questo file. Mantiene il privato come single-source-of-truth
+  /// per i builder geometrici, mentre wave_configs può specificare hint senza
+  /// doverli importare.
+  _Formation _translateSpawnFormation(SpawnFormation s) {
+    switch (s) {
+      case SpawnFormation.ring: return _Formation.ring;
+      case SpawnFormation.diamond: return _Formation.diamond;
+      case SpawnFormation.cross: return _Formation.cross;
+      case SpawnFormation.triangle: return _Formation.triangle;
+      case SpawnFormation.flower: return _Formation.flower;
+      case SpawnFormation.star5: return _Formation.star5;
+      case SpawnFormation.pinwheel: return _Formation.pinwheel;
+      case SpawnFormation.comet: return _Formation.comet;
+      case SpawnFormation.infinity8: return _Formation.infinity8;
+      case SpawnFormation.doubleSpiral: return _Formation.doubleSpiral;
+      case SpawnFormation.honeycomb: return _Formation.honeycomb;
+      case SpawnFormation.wShape: return _Formation.wShape;
+      case SpawnFormation.hexagon: return _Formation.hexagon;
+      case SpawnFormation.tripleRing: return _Formation.tripleRing;
+      case SpawnFormation.sineWave: return _Formation.sineWave;
+      case SpawnFormation.cascade: return _Formation.cascade;
+      case SpawnFormation.squareRing: return _Formation.squareRing;
+      case SpawnFormation.burst: return _Formation.burst;
+      case SpawnFormation.arrowHead: return _Formation.arrowHead;
+      case SpawnFormation.scatter: return _Formation.scatter;
+      case SpawnFormation.doublering: return _Formation.doublering;
+      case SpawnFormation.vArrow: return _Formation.vArrow;
+      case SpawnFormation.xShape: return _Formation.xShape;
+      case SpawnFormation.arc: return _Formation.arc;
+      case SpawnFormation.zigzag: return _Formation.zigzag;
+      case SpawnFormation.borderLine: return _Formation.borderLine;
+      case SpawnFormation.playerRing: return _Formation.playerRing;
+      case SpawnFormation.playerDoubleRing: return _Formation.playerDoubleRing;
+      case SpawnFormation.playerEncircle: return _Formation.playerEncircle;
+    }
+  }
+
   /// Spawna un gruppo di nemici in una formazione geometrica.
   /// In classic mode usa la formazione assegnata alla wave/gruppo.
   /// In altri modi sceglie casualmente tra le 25 formazioni.
@@ -635,9 +673,25 @@ class WaveSystem {
       return;
     }
 
-    final formation = (_mode == GameMode.classic)
-        ? _classicFormation(currentWave, _spawnIndex)
-        : _Formation.values[_formRng.nextInt(_Formation.values.length)];
+    // Signature wave override: il `WaveSpawn.formation` (se settato) ha
+    // priorità sul lookup `_classicFormation`. Permette wave hand-curated
+    // con design unico (vedi `_signatureWaveOverride` in wave_configs.dart).
+    // NB: il caller incrementa `_spawnIndex` DOPO questa call → l'indice
+    // corrente del gruppo in spawn è `_spawnIndex` (stesso che usa
+    // `_classicFormation` sotto).
+    final groupIdx = _spawnIndex;
+    final spawnFormationHint = _currentConfig != null &&
+            groupIdx < _currentConfig!.spawns.length
+        ? _currentConfig!.spawns[groupIdx].formation
+        : null;
+    final _Formation formation;
+    if (spawnFormationHint != null) {
+      formation = _translateSpawnFormation(spawnFormationHint);
+    } else if (_mode == GameMode.classic) {
+      formation = _classicFormation(currentWave, _spawnIndex);
+    } else {
+      formation = _Formation.values[_formRng.nextInt(_Formation.values.length)];
+    }
 
     // Clamp usa effectiveArena per rispettare `tiny_arena` modifier.
     // Prima usava arenaWidth/Height full → enemy spawnavano fuori view
