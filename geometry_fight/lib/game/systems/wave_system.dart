@@ -96,8 +96,19 @@ class WaveSystem {
     // Richiesta design: in modalità classica ogni gruppo (tipo nemico) arriva
     // a cadenza fissa, così la wave è più leggibile.
     if (_mode == GameMode.classic) {
-      // HASTE modifier (vedi WaveModifier.haste): -40% delay → ondate
-      // ravvicinate, sensazione "no respiro".
+      // SIGNATURE WAVE: se il PROSSIMO spawn ha un formation hint, è una wave
+      // hand-curated (vedi `_signatureWaveOverride`) → rispetta il `delay`
+      // esplicito invece di schiacciare tutto a `classicWaveGroupDelaySeconds`.
+      // Senza questo: ENCIRCLE 2.5s/PINCER 0.1s/KAMIKAZE HELL 2.5s collassano
+      // tutti a 1.2s → ritmo signature distrutto.
+      final nextSpawn = (_currentConfig != null &&
+              _spawnIndex < _currentConfig!.spawns.length)
+          ? _currentConfig!.spawns[_spawnIndex]
+          : null;
+      if (nextSpawn?.formation != null) {
+        return _scaledSpawnDelay(nextSpawn!.delay);
+      }
+      // Archetype wave classic: HASTE modifier (-40%) o constante.
       final base = classicWaveGroupDelaySeconds;
       if (activeModifier == WaveModifier.haste) {
         return base * 0.6;

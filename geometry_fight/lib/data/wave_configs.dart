@@ -434,8 +434,9 @@ WaveModifier _pickModifier(
 WaveConfig? _signatureWaveOverride(int wave) {
   switch (wave) {
     // ── WAVE 6 — ENCIRCLE RUSH ──────────────────────────────────────────
-    // Cerchi di drone attorno al player ogni 2.5s. Player deve dodgeare
-    // il chiuso continuo da ogni direzione.
+    // Cerchi di drone attorno al player ogni 2.5s. Delays sono BETWEEN-GROUPS
+    // (gap dal precedente), non absolute-from-start. Vedi
+    // `_delayBeforeNextGroup` in wave_system.dart.
     case 6:
       return const WaveConfig(
         waveNumber: 6,
@@ -445,14 +446,14 @@ WaveConfig? _signatureWaveOverride(int wave) {
           WaveSpawn(EnemyType.drone, 16,
               formation: SpawnFormation.playerRing, delay: 2.5),
           WaveSpawn(EnemyType.drone, 18,
-              formation: SpawnFormation.playerRing, delay: 5.0),
+              formation: SpawnFormation.playerRing, delay: 2.5),
           WaveSpawn(EnemyType.drone, 20,
-              formation: SpawnFormation.playerDoubleRing, delay: 7.5),
+              formation: SpawnFormation.playerDoubleRing, delay: 2.5),
         ],
       );
 
     // ── WAVE 13 — KAMIKAZE STORM ────────────────────────────────────────
-    // Solo kamikaze (rossi triangolari). Ondate da bordi alternati.
+    // Ondate kamikaze borderLine ogni 3s.
     case 13:
       return const WaveConfig(
         waveNumber: 13,
@@ -462,14 +463,14 @@ WaveConfig? _signatureWaveOverride(int wave) {
           WaveSpawn(EnemyType.kamikaze, 20,
               formation: SpawnFormation.borderLine, delay: 3.0),
           WaveSpawn(EnemyType.kamikaze, 22,
-              formation: SpawnFormation.borderLine, delay: 6.0),
+              formation: SpawnFormation.borderLine, delay: 3.0),
           WaveSpawn(EnemyType.kamikaze, 24,
-              formation: SpawnFormation.scatter, delay: 9.0),
+              formation: SpawnFormation.scatter, delay: 3.0),
         ],
       );
 
     // ── WAVE 18 — BLACKHOLE FIELD ───────────────────────────────────────
-    // Solo black holes scattered + piccola ondata drone per liberare aree.
+    // Black holes 4s + 4s gap, poi drone scatter 3s dopo.
     case 18:
       return const WaveConfig(
         waveNumber: 18,
@@ -479,12 +480,12 @@ WaveConfig? _signatureWaveOverride(int wave) {
           WaveSpawn(EnemyType.blackHole, 4,
               formation: SpawnFormation.diamond, delay: 4.0),
           WaveSpawn(EnemyType.drone, 30,
-              formation: SpawnFormation.scatter, delay: 7.0),
+              formation: SpawnFormation.scatter, delay: 3.0),
         ],
       );
 
     // ── WAVE 27 — DODGER STORM ──────────────────────────────────────────
-    // Solo phantom (mob "verdi" che schivano i proiettili).
+    // Phantom hexagon + doublering + scatter ogni 4s.
     case 27:
       return const WaveConfig(
         waveNumber: 27,
@@ -494,12 +495,12 @@ WaveConfig? _signatureWaveOverride(int wave) {
           WaveSpawn(EnemyType.phantom, 30,
               formation: SpawnFormation.doublering, delay: 4.0),
           WaveSpawn(EnemyType.phantom, 36,
-              formation: SpawnFormation.scatter, delay: 8.0),
+              formation: SpawnFormation.scatter, delay: 4.0),
         ],
       );
 
     // ── WAVE 33 — MIRROR ARMY ───────────────────────────────────────────
-    // Solo mirror enemies (riflettono i proiettili player).
+    // Mirror cross + squareRing + hexagon ogni 4s.
     case 33:
       return const WaveConfig(
         waveNumber: 33,
@@ -509,12 +510,12 @@ WaveConfig? _signatureWaveOverride(int wave) {
           WaveSpawn(EnemyType.mirror, 14,
               formation: SpawnFormation.squareRing, delay: 4.0),
           WaveSpawn(EnemyType.mirror, 16,
-              formation: SpawnFormation.hexagon, delay: 8.0),
+              formation: SpawnFormation.hexagon, delay: 4.0),
         ],
       );
 
     // ── WAVE 38 — MINE FIELD ────────────────────────────────────────────
-    // Mine ovunque + qualche laser turret. Player deve muoversi piano.
+    // Mine scatter + honeycomb 3.5s gap + laser turret cross 3s gap.
     case 38:
       return const WaveConfig(
         waveNumber: 38,
@@ -524,13 +525,13 @@ WaveConfig? _signatureWaveOverride(int wave) {
           WaveSpawn(EnemyType.mine, 35,
               formation: SpawnFormation.honeycomb, delay: 3.5),
           WaveSpawn(EnemyType.laserTurret, 6,
-              formation: SpawnFormation.cross, delay: 6.5),
+              formation: SpawnFormation.cross, delay: 3.0),
         ],
       );
 
     // ── WAVE 47 — PINCER SIEGE ──────────────────────────────────────────
-    // 2 ondate kamikaze borderLine simultanee (delay tiny offset 0.1s) →
-    // pincer da bordi opposti.
+    // 2 ondate kamikaze borderLine ravvicinate (0.1s) → pincer simultaneo
+    // da 2 lati. Poi 3.9s gap + secondo pincer + 3.9s + finale scatter.
     case 47:
       return const WaveConfig(
         waveNumber: 47,
@@ -540,16 +541,16 @@ WaveConfig? _signatureWaveOverride(int wave) {
           WaveSpawn(EnemyType.kamikaze, 24,
               formation: SpawnFormation.borderLine, delay: 0.1),
           WaveSpawn(EnemyType.kamikaze, 28,
-              formation: SpawnFormation.borderLine, delay: 4.0),
+              formation: SpawnFormation.borderLine, delay: 3.9),
           WaveSpawn(EnemyType.kamikaze, 28,
-              formation: SpawnFormation.borderLine, delay: 4.1),
+              formation: SpawnFormation.borderLine, delay: 0.1),
           WaveSpawn(EnemyType.kamikaze, 32,
-              formation: SpawnFormation.scatter, delay: 8.0),
+              formation: SpawnFormation.scatter, delay: 3.9),
         ],
       );
 
     // ── WAVE 53 — TANK PARADE ───────────────────────────────────────────
-    // Titan + shield enemy advance lento. Player deve smontare difese.
+    // Titan ring + shield cross + titan triangle ogni 3.5s.
     case 53:
       return const WaveConfig(
         waveNumber: 53,
@@ -559,12 +560,12 @@ WaveConfig? _signatureWaveOverride(int wave) {
           WaveSpawn(EnemyType.shieldEnemy, 12,
               formation: SpawnFormation.cross, delay: 3.5),
           WaveSpawn(EnemyType.titan, 10,
-              formation: SpawnFormation.triangle, delay: 7.0),
+              formation: SpawnFormation.triangle, delay: 3.5),
         ],
       );
 
     // ── WAVE 58 — PROTON STORM ──────────────────────────────────────────
-    // Proton (mini fast) + qualche black hole come hazard.
+    // Proton scatter + black hole hazard 3s gap + proton tripleRing 3s gap.
     case 58:
       return const WaveConfig(
         waveNumber: 58,
@@ -574,12 +575,12 @@ WaveConfig? _signatureWaveOverride(int wave) {
           WaveSpawn(EnemyType.blackHole, 3,
               formation: SpawnFormation.triangle, delay: 3.0),
           WaveSpawn(EnemyType.proton, 50,
-              formation: SpawnFormation.tripleRing, delay: 6.0),
+              formation: SpawnFormation.tripleRing, delay: 3.0),
         ],
       );
 
     // ── WAVE 67 — ENCIRCLE HARD ─────────────────────────────────────────
-    // Variante hardcore di wave 6: drone + weaver in cerchi attorno player.
+    // Variante hardcore di wave 6: drone+weaver ring/encircle ogni 2.5s.
     case 67:
       return const WaveConfig(
         waveNumber: 67,
@@ -589,16 +590,16 @@ WaveConfig? _signatureWaveOverride(int wave) {
           WaveSpawn(EnemyType.weaver, 12,
               formation: SpawnFormation.playerRing, delay: 2.5),
           WaveSpawn(EnemyType.drone, 20,
-              formation: SpawnFormation.playerRing, delay: 5.0),
+              formation: SpawnFormation.playerRing, delay: 2.5),
           WaveSpawn(EnemyType.weaver, 14,
-              formation: SpawnFormation.playerDoubleRing, delay: 7.5),
+              formation: SpawnFormation.playerDoubleRing, delay: 2.5),
           WaveSpawn(EnemyType.drone, 24,
-              formation: SpawnFormation.playerEncircle, delay: 10.0),
+              formation: SpawnFormation.playerEncircle, delay: 2.5),
         ],
       );
 
     // ── WAVE 73 — KAMIKAZE HELL ─────────────────────────────────────────
-    // Solo kamikaze, ondate continue 2.5s con count crescente.
+    // Ondate kamikaze relentless ogni 2.5s, count crescente.
     case 73:
       return const WaveConfig(
         waveNumber: 73,
@@ -608,16 +609,16 @@ WaveConfig? _signatureWaveOverride(int wave) {
           WaveSpawn(EnemyType.kamikaze, 32,
               formation: SpawnFormation.borderLine, delay: 2.5),
           WaveSpawn(EnemyType.kamikaze, 34,
-              formation: SpawnFormation.borderLine, delay: 5.0),
+              formation: SpawnFormation.borderLine, delay: 2.5),
           WaveSpawn(EnemyType.kamikaze, 36,
-              formation: SpawnFormation.scatter, delay: 7.5),
+              formation: SpawnFormation.scatter, delay: 2.5),
           WaveSpawn(EnemyType.kamikaze, 40,
-              formation: SpawnFormation.vArrow, delay: 10.0),
+              formation: SpawnFormation.vArrow, delay: 2.5),
         ],
       );
 
     // ── WAVE 78 — MIRROR FORTRESS ───────────────────────────────────────
-    // Mirror + shield combo: difese pesanti, riflessione + tank.
+    // Mirror multi-form ogni 3.5s + shield finale 3s.
     case 78:
       return const WaveConfig(
         waveNumber: 78,
@@ -627,14 +628,14 @@ WaveConfig? _signatureWaveOverride(int wave) {
           WaveSpawn(EnemyType.mirror, 18,
               formation: SpawnFormation.squareRing, delay: 3.5),
           WaveSpawn(EnemyType.mirror, 20,
-              formation: SpawnFormation.cross, delay: 7.0),
+              formation: SpawnFormation.cross, delay: 3.5),
           WaveSpawn(EnemyType.shieldEnemy, 8,
-              formation: SpawnFormation.cross, delay: 10.0),
+              formation: SpawnFormation.cross, delay: 3.0),
         ],
       );
 
     // ── WAVE 87 — VOID FIELD ────────────────────────────────────────────
-    // Black hole denso + proton dispersi.
+    // Blackhole hexagon + proton scatter 4s + blackhole cross 4s + proton 3s.
     case 87:
       return const WaveConfig(
         waveNumber: 87,
@@ -644,14 +645,14 @@ WaveConfig? _signatureWaveOverride(int wave) {
           WaveSpawn(EnemyType.proton, 30,
               formation: SpawnFormation.scatter, delay: 4.0),
           WaveSpawn(EnemyType.blackHole, 4,
-              formation: SpawnFormation.cross, delay: 8.0),
+              formation: SpawnFormation.cross, delay: 4.0),
           WaveSpawn(EnemyType.proton, 40,
-              formation: SpawnFormation.tripleRing, delay: 11.0),
+              formation: SpawnFormation.tripleRing, delay: 3.0),
         ],
       );
 
     // ── WAVE 93 — DODGER NIGHTMARE ──────────────────────────────────────
-    // Phantom mass scaling: ondate sempre più grandi, dodge enemy stress.
+    // Phantom mass scaling 30→45 ogni 3.5s.
     case 93:
       return const WaveConfig(
         waveNumber: 93,
@@ -661,9 +662,9 @@ WaveConfig? _signatureWaveOverride(int wave) {
           WaveSpawn(EnemyType.phantom, 35,
               formation: SpawnFormation.doublering, delay: 3.5),
           WaveSpawn(EnemyType.phantom, 40,
-              formation: SpawnFormation.scatter, delay: 7.0),
+              formation: SpawnFormation.scatter, delay: 3.5),
           WaveSpawn(EnemyType.phantom, 45,
-              formation: SpawnFormation.tripleRing, delay: 10.5),
+              formation: SpawnFormation.tripleRing, delay: 3.5),
         ],
       );
 

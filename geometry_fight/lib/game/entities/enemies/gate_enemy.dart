@@ -118,28 +118,41 @@ class GateEnemy extends PositionComponent
     // Movimento
     position += _moveDir * _speed * dt;
 
-    // Rimbalzo sui muri
+    // Rimbalzo sui muri.
+    // Buffer = halfWidth (56.25) + sphere visual r (14) = 70.25, round up 71
+    // → sfera estrema NON esce dall'arena anche con gate ruotato lungo l'asse
+    // X o Y. Prima era 20: con gate +50% size, le sfere uscivano fino a ~50px
+    // dall'arena prima del bounce (gate center bounceava troppo presto perché
+    // il check usava solo posizione del centro).
+    const double kBounceBuffer = 71.0;
     if (game.isTunnelMode) {
       final camY = game.camera.viewfinder.position.y;
       final halfH = game.tunnelHeight / 2;
-      if (position.y <= camY - halfH + 20 || position.y >= camY + halfH - 20) {
+      if (position.y <= camY - halfH + kBounceBuffer ||
+          position.y >= camY + halfH - kBounceBuffer) {
         _moveDir.y = -_moveDir.y;
-        position.y = position.y.clamp(camY - halfH + 20, camY + halfH - 20);
+        position.y = position.y.clamp(
+            camY - halfH + kBounceBuffer, camY + halfH - kBounceBuffer);
       }
       // Despawn se dietro la camera
-      final cameraLeft = game.camera.viewfinder.position.x - game.size.x / 2 - 200;
+      final cameraLeft =
+          game.camera.viewfinder.position.x - game.size.x / 2 - 200;
       if (position.x < cameraLeft) {
         removeFromParent();
         return;
       }
     } else {
-      if (position.x <= 20 || position.x >= arenaWidth - 20) {
+      if (position.x <= kBounceBuffer ||
+          position.x >= arenaWidth - kBounceBuffer) {
         _moveDir.x = -_moveDir.x;
-        position.x = position.x.clamp(20, arenaWidth - 20);
+        position.x =
+            position.x.clamp(kBounceBuffer, arenaWidth - kBounceBuffer);
       }
-      if (position.y <= 20 || position.y >= arenaHeight - 20) {
+      if (position.y <= kBounceBuffer ||
+          position.y >= arenaHeight - kBounceBuffer) {
         _moveDir.y = -_moveDir.y;
-        position.y = position.y.clamp(20, arenaHeight - 20);
+        position.y =
+            position.y.clamp(kBounceBuffer, arenaHeight - kBounceBuffer);
       }
     }
 
