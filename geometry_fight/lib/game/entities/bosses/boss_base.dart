@@ -21,7 +21,9 @@ abstract class BossBase extends PositionComponent
 
   // Sistema spawn nemici durante boss fight
   double _minionSpawnTimer = 2.0; // Timer iniziale prima del primo spawn
-  static const double _minionSpawnInterval = bossMinionSpawnInterval;
+  // Override-able per-boss (richiesta utente: variabile per balancing
+  // per-singolo-boss in futuro). Default = bossMinionSpawnInterval (10s).
+  double get minionSpawnInterval => bossMinionSpawnInterval;
   static final _bossRandom = math.Random();
 
   // ═══════════════════════════════════════════════════════════════════════
@@ -125,10 +127,12 @@ abstract class BossBase extends PositionComponent
 
     updateBoss(effectiveDt);
 
-    // Spawn nemici a ondate regolari durante il boss fight
+    // Spawn nemici a ondate regolari durante il boss fight.
+    // Phase scaling ridotto (era -0.8/phase) per rispettare il min 10s.
     _minionSpawnTimer -= effectiveDt;
     if (_minionSpawnTimer <= 0) {
-      _minionSpawnTimer = (_minionSpawnInterval - currentPhase * 0.8).clamp(1.0, _minionSpawnInterval);
+      final iv = minionSpawnInterval;
+      _minionSpawnTimer = (iv - currentPhase * 1.0).clamp(iv * 0.6, iv);
       _spawnMinions();
     }
 
@@ -271,11 +275,11 @@ abstract class BossBase extends PositionComponent
     if (!allowMinionSpawn) return;
     final types = colorMatchedMinions;
     if (types.isEmpty) return;
-    // Richiesta utente: triplicato (era 10/30/50 → ora 30/90/150).
+    // Richiesta utente: dimezzato dal triplo (30/90/150 → 15/45/75).
     final baseCount = switch (currentPhase) {
-      0 => 30,
-      1 => 90,
-      _ => 150,
+      0 => 15,
+      1 => 45,
+      _ => 75,
     };
     // Scala count per weight medio (banal=3× → target più grosso).
     int totalWeight = 0;
@@ -349,13 +353,22 @@ abstract class BossBase extends PositionComponent
     // Controlla quanti nemici ci sono già — se troppi, non spawnare
     if (game.enemyCount >= bossMinionEnemyCap) return;
 
-    // Triplicato (richiesta utente): era 3/5/7/9 → ora 9/15/21/27 per fase.
-    final baseCount = 9 + currentPhase * 6;
+    // Dimezzato dal triplo (richiesta utente): 9/15/21/27 → 5/8/11/14.
+    final baseCount = 5 + currentPhase * 3;
     final types = colorMatchedMinions;
     if (types.isEmpty) return;
+    // Bias 70% verso mob "semplici" (drone/swarmDrone/kamikaze) come
+    // richiesto, 30% colorMatched specifico per identità del boss.
+    const simplePool = [
+      EnemyType.drone,
+      EnemyType.swarmDrone,
+      EnemyType.kamikaze,
+    ];
 
     for (int i = 0; i < baseCount; i++) {
-      final type = types[_bossRandom.nextInt(types.length)];
+      final isSimple = _bossRandom.nextDouble() < 0.7;
+      final pool = isSimple ? simplePool : types;
+      final type = pool[_bossRandom.nextInt(pool.length)];
       final angle = _bossRandom.nextDouble() * math.pi * 2;
       // Cluster stretto (richiesta utente "molto vicini al boss").
       final dist = 40 + _bossRandom.nextDouble() * 60;

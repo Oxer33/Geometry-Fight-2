@@ -37,7 +37,10 @@ const int bossMinionEnemyCap = 45;          // Max nemici attivi prima di skippa
 // Separato dal cap regolare così le ondate non vengono clippate dal pool
 // di minion regolari già a schermo.
 const int bossBigWaveCap = 150;
-const double bossMinionSpawnInterval = 3.5; // Secondi tra ondate minion base
+// Secondi tra ondate minion base — richiesta utente "almeno 10 secondi
+// tra uno spawn e l'altro". Subclass possono override `minionSpawnInterval`
+// per balancing per-boss specifico (es. swarm queen più frequente).
+const double bossMinionSpawnInterval = 10.0;
 
 // Camera
 const double cameraSmoothing = 0.12;

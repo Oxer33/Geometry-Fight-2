@@ -111,6 +111,14 @@ class MusicManager {
       await resume();
       return;
     }
+    // Mode change (bgm/idle → intro): forza stop esplicito.
+    // Fix "menu senza musica al ritorno": il player era paused da
+    // game_screen.dispose() con source bgm; chiamare bgm.play(introTrack)
+    // direttamente da paused state su Android falliva silently. stop()
+    // libera lo state prima del nuovo play.
+    if (_mode != _Mode.intro && (_isPaused() || _isActuallyPlaying())) {
+      await stop();
+    }
     _mode = _Mode.intro;
     await _playFromIntroBag();
   }
@@ -123,6 +131,10 @@ class MusicManager {
     if (_mode == _Mode.bgm && _isPaused()) {
       await resume();
       return;
+    }
+    // Mode change (intro/idle → bgm): forza stop esplicito (vedi sopra).
+    if (_mode != _Mode.bgm && (_isPaused() || _isActuallyPlaying())) {
+      await stop();
     }
     _mode = _Mode.bgm;
     await _playFromBgmBag();

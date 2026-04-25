@@ -19,7 +19,9 @@ import '../projectiles.dart';
 // Costanti di tuning (tirate dopo caveman-review per budget bullet/s).
 // Sweep a 0.14s = 7 bullet/s (era 0.08=12.5). In fase 2, sweep+refract+rainbow
 // totale ≈ 20 bullet/s, gestibile su device medi.
-const double _kSweepInterval = 0.14;
+// User "alcuni boss sparano troppi proiettili": era 0.14s (7 bullet/sec)
+// → ora 0.35s (~3/sec), più gestibile.
+const double _kSweepInterval = 0.35;
 const double _kTriAngle1 = math.pi * 2 / 3; // 120°
 const double _kTriAngle2 = math.pi * 4 / 3; // 240°
 

@@ -439,21 +439,23 @@ class LaserBeam extends PositionComponent
         Rect.fromLTWH(-coreW * 0.4, coneLen, coreW * 0.8, pulseLen),
         _laserCorePaint);
 
-    // ─── 5 PLASMA COMETS (più piccoli + più distribuiti) ───
-    // Era 3 grossi → ora 5 piccoli spaziati ogni 1/5 del beam → coprono
-    // tutta la lunghezza del fascio invece di sembrare ammassati.
-    const cometCount = 5;
+    // ─── 8 PLASMA COMETS — coprono TUTTO il fascio dalla punta cono ───
+    // User feedback: pulse "solo in alcuni tratti, deve partire dalla
+    // punta del triangolo". Ora 8 comets spaziati ogni 1/8 del beam
+    // FULL length (incluso cono) → copertura continua y=0 → laserBeamLength.
+    const cometCount = 8;
     const cometSpeed = 850.0;
-    final cometR = 7 * sizeMultiplier; // era 14 → metà
+    final cometR = 7 * sizeMultiplier;
+    final fullLen = laserBeamLength.toDouble();
     for (int i = 0; i < cometCount; i++) {
       final raw =
-          _pulsePhase * cometSpeed + i * pulseLen / cometCount;
-      final py = coneLen + (raw % pulseLen);
+          _pulsePhase * cometSpeed + i * fullLen / cometCount;
+      final py = raw % fullLen; // parte da 0 (punta cono)
 
-      // Trail: 3 sfere fading (era 4) — più snelli per coerenza
+      // Trail: 3 sfere fading dietro
       for (int t = 1; t <= 3; t++) {
         final trailY = py - t * (cometR * 0.9);
-        if (trailY < coneLen) continue;
+        if (trailY < 0) continue; // clamp dietro la punta del cono
         final trailAlpha = 0.55 * (1.0 - t / 4.0);
         _laserPulsePaint.color =
             const Color(0xFFFF3322).withValues(alpha: trailAlpha);
