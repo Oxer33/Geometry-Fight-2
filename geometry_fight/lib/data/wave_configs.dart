@@ -68,15 +68,106 @@ class WaveSpawn {
   const WaveSpawn(this.type, this.count, {this.delay = 0});
 }
 
+/// Modificatore globale per una wave classic.
+///
+/// Cambia stat/comportamento dei mob spawnati durante la wave per dare
+/// varietà strategica e ridurre la "ripetitività" delle wave (richiesta
+/// utente: "il sistema delle wave è ancora un pò banale").
+///
+/// Implementazione: ogni mob legge il modifier da [GeometryFightGame.spawnEnemy]
+/// → applica multiplier su `hp`/`speed`/visual. Score+geom multiplier
+/// applicati lato `ScoreSystem.addKill` / drop logic. Banner mostrato
+/// in HUD a wave-start.
+///
+/// Solo modalità classica: tunnel/zen/boss-rush/time-attack restano
+/// vanilla per non rompere il loro balancing.
+enum WaveModifier {
+  /// Nessun modifier (default). Wave normale.
+  none,
+
+  /// Mob più veloci (+35% speed). Aumenta pressione movimento.
+  frenzy,
+
+  /// Mob più resistenti (×1.6 HP). Più colpi per kill.
+  tank,
+
+  /// Mob fragili (×0.4 HP) ma punti ×1.6. High-risk/reward arcade.
+  glass,
+
+  /// Doppio drop geom (×2 geomValue). Wave "farm" rara.
+  loot,
+
+  /// +50% mob count. Più caos visivo, focus dodge.
+  blitz,
+
+  /// Spawn delay -40%. Ondate quasi simultanee, no respiro.
+  haste,
+
+  /// Magnete geom raddoppiato (radius ×2). Wave "loot vacuum".
+  magnetic,
+
+  /// HP ×1.3 + speed ×0.75. Tank lenti, easy hit ma drag-out.
+  iron,
+}
+
+/// Display name + tag color per HUD banner.
+extension WaveModifierUi on WaveModifier {
+  String get displayName {
+    switch (this) {
+      case WaveModifier.none: return '';
+      case WaveModifier.frenzy: return 'FRENZY';
+      case WaveModifier.tank: return 'TANK';
+      case WaveModifier.glass: return 'GLASS';
+      case WaveModifier.loot: return 'LOOT';
+      case WaveModifier.blitz: return 'BLITZ';
+      case WaveModifier.haste: return 'HASTE';
+      case WaveModifier.magnetic: return 'MAGNETIC';
+      case WaveModifier.iron: return 'IRON';
+    }
+  }
+
+  String get tagline {
+    switch (this) {
+      case WaveModifier.none: return '';
+      case WaveModifier.frenzy: return 'mob +35% velocità';
+      case WaveModifier.tank: return 'mob ×1.6 HP';
+      case WaveModifier.glass: return 'mob ×0.4 HP, punti ×1.6';
+      case WaveModifier.loot: return 'doppi geom drop';
+      case WaveModifier.blitz: return '+50% nemici';
+      case WaveModifier.haste: return 'ondate ravvicinate';
+      case WaveModifier.magnetic: return 'magnete geom ×2';
+      case WaveModifier.iron: return 'tank lenti';
+    }
+  }
+
+  /// Hex color per banner (ARGB 0xAARRGGBB).
+  int get tagColorArgb {
+    switch (this) {
+      case WaveModifier.none: return 0xFFFFFFFF;
+      case WaveModifier.frenzy: return 0xFFFF6633;
+      case WaveModifier.tank: return 0xFF3388FF;
+      case WaveModifier.glass: return 0xFFFF00AA;
+      case WaveModifier.loot: return 0xFFFFD700;
+      case WaveModifier.blitz: return 0xFFFFAA00;
+      case WaveModifier.haste: return 0xFF00FFCC;
+      case WaveModifier.magnetic: return 0xFF00FFFF;
+      case WaveModifier.iron: return 0xFF888888;
+    }
+  }
+}
+
 class WaveConfig {
   final int waveNumber;
   final List<WaveSpawn> spawns;
   final BossType? boss;
+  /// Modificatore globale (solo classic mode, non-boss). Default `none`.
+  final WaveModifier modifier;
 
   const WaveConfig({
     required this.waveNumber,
     required this.spawns,
     this.boss,
+    this.modifier = WaveModifier.none,
   });
 }
 
@@ -141,6 +232,8 @@ List<WaveConfig> generateWaveConfigs() {
   final configs = <WaveConfig>[];
   // Ring buffer ultimi 3 archetipi scelti → no ripetizione consecutiva.
   final history = <int>[];
+  // Ring buffer modifier — evita 2 wave consecutive con stesso modifier.
+  final modHistory = <int>[];
 
   for (int wave = 1; wave <= 100; wave++) {
     // Boss wave: ogni wave multipla di 5.
@@ -173,15 +266,89 @@ List<WaveConfig> generateWaveConfigs() {
             ))
         .toList();
 
+    // ═══════════════════════════════════════════════════════════════
+    // COMBO WAVE — wave 12+ (post-onboarding) hanno chance di chain di
+    // un SECONDO archetipo. Riduce la sensazione "1 archetipo = 1 wave"
+    // → più dinamica intra-wave (richiesta utente: "wave system banale").
+    // Trigger deterministico (no RNG runtime): wave % 4 == 2 (12, 16, 22,
+    // 26, ecc.) → 25% delle wave non-boss. Skip pre-boss (wave % 5 == 4)
+    // perché già MEGASWARM-saturated.
+    // ═══════════════════════════════════════════════════════════════
+    final isPreBossWave = wave % 5 == 4;
+    if (wave >= 12 && wave % 4 == 2 && !isPreBossWave) {
+      final secondArchetype = _pickArchetype(wave + 1000, history);
+      // Offset temporale: secondo archetipo arriva DOPO il primo —
+      // somma del delay max del primo + 4s buffer per dare respiro.
+      final firstMaxDelay = spawns.fold<double>(
+          0.0, (m, s) => s.delay > m ? s.delay : m);
+      final secondaryOffset = firstMaxDelay + 4.0;
+      // Scala counts second archetype a 60% per evitare overflow caos.
+      for (final s in secondArchetype.generator(wave)) {
+        spawns.add(WaveSpawn(
+          s.type,
+          ((s.count * 2) * 0.6).round().clamp(1, 200),
+          delay: s.delay + secondaryOffset,
+        ));
+      }
+    }
+
     // Gate hazard raro: 1 ogni 10 wave non-boss (11, 21, 31, ...).
     if (wave >= 11 && wave % 10 == 1) {
       spawns.add(WaveSpawn(EnemyType.gate, 1, delay: 10));
     }
 
-    configs.add(WaveConfig(waveNumber: wave, spawns: spawns));
+    // ═══════════════════════════════════════════════════════════════
+    // WAVE MODIFIER — cambia regole della wave (FRENZY/TANK/GLASS/etc).
+    // Picker: deterministico sul wave#, history-aware (no 2 consecutivi
+    // uguali), skip wave 1-3 (onboarding pulito) e pre-boss (climax già
+    // intenso). Probabilità ~50% → metà wave non-boss vanilla, metà
+    // hanno una "regola speciale".
+    // ═══════════════════════════════════════════════════════════════
+    final modifier = _pickModifier(wave, modHistory, isPreBossWave);
+
+    configs.add(WaveConfig(
+      waveNumber: wave,
+      spawns: spawns,
+      modifier: modifier,
+    ));
   }
 
   return configs;
+}
+
+/// Picker modifier deterministico. Fattori:
+/// - Wave 1-3: sempre `none` (onboarding senza distrazioni).
+/// - Pre-boss (wave % 5 == 4): sempre `none` (climax già intenso).
+/// - Wave % 2 == 1: sempre `none` (alternanza vanilla / modificata →
+///   ritmo "easy / spice / easy / spice" più digeribile).
+/// - Resto: pick weighted dal pool [frenzy/tank/glass/loot/blitz/haste/
+///   shadow/iron] usando hash deterministico, skip ultimi 2 in history.
+WaveModifier _pickModifier(
+    int wave, List<int> history, bool isPreBoss) {
+  if (wave <= 3) return WaveModifier.none;
+  if (isPreBoss) return WaveModifier.none;
+  if (wave % 2 == 1) return WaveModifier.none;
+
+  // Pool indices su WaveModifier.values, escluso `none` (idx 0).
+  const total = 8; // 8 modifier non-none
+  final pool = <int>[];
+  for (int i = 1; i <= total; i++) {
+    if (history.contains(i)) continue;
+    pool.add(i);
+  }
+  if (pool.isEmpty) {
+    history.clear();
+    for (int i = 1; i <= total; i++) {
+      pool.add(i);
+    }
+  }
+
+  // Hash deterministico → riproducibile (replay safe), variabile per
+  // wave#. Stesso seed Knuth multiplier usato in `_pickArchetype`.
+  final pickIdx = pool[(wave * 2654435761) % pool.length];
+  history.add(pickIdx);
+  if (history.length > 2) history.removeAt(0);
+  return WaveModifier.values[pickIdx];
 }
 
 /// Archetype: blueprint per generare gli spawn di una wave non-boss.

@@ -654,9 +654,39 @@ class GeometryFightGame extends FlameGame
 
     // Applica moltiplicatori di difficoltà a HP e velocità
     // Tutti i mob sono il 20% più lenti di base
-    enemy.hp = (enemy.hp * diffConfig.enemyHpMultiplier);
+    var hpMul = diffConfig.enemyHpMultiplier;
+    var speedMul = diffConfig.enemySpeedMultiplier * 0.8;
+    var geomMul = 1.0;
+
+    // ── WAVE MODIFIER (solo classic, applicato sopra le difficoltà) ──────
+    // Dà alle wave classic una "regola speciale" senza riscrivere il
+    // balancing per-difficoltà. Stack-multiplied: difficoltà base + modifier.
+    final waveMod = waveSystem.activeModifier;
+    switch (waveMod) {
+      case WaveModifier.frenzy:
+        speedMul *= 1.35;
+      case WaveModifier.tank:
+        hpMul *= 1.6;
+      case WaveModifier.glass:
+        hpMul *= 0.4; // score×1.6 applicato in onEnemyKilled
+      case WaveModifier.iron:
+        hpMul *= 1.3;
+        speedMul *= 0.75;
+      case WaveModifier.loot:
+        geomMul = 2.0;
+      case WaveModifier.none:
+      case WaveModifier.blitz:    // count handled in WaveSystem._scaledSpawnCount
+      case WaveModifier.haste:    // delay handled in WaveSystem._delayBeforeNextGroup
+      case WaveModifier.magnetic: // magnet radius handled in geom.dart
+        break;
+    }
+
+    enemy.hp = enemy.hp * hpMul;
     enemy.maxHp = enemy.hp;
-    enemy.speed = (enemy.speed * diffConfig.enemySpeedMultiplier * 0.8);
+    enemy.speed = enemy.speed * speedMul;
+    if (geomMul != 1.0) {
+      enemy.geomValue = (enemy.geomValue * geomMul).round();
+    }
 
     enemy.position = pos;
     // Tunnel mode: i mob compaiono OLTRE il margine destro (vedi
@@ -847,7 +877,12 @@ class GeometryFightGame extends FlameGame
 
   void onEnemyKilled(EnemyBase enemy) {
     AudioSystem.playEnemyDeath();
-    scoreSystem.addKill(enemy.pointValue, enemy.position);
+    // GLASS modifier: score ×1.6 (compensa hp ×0.4 high-risk/reward).
+    final waveMod = waveSystem.activeModifier;
+    final pointsBoosted = waveMod == WaveModifier.glass
+        ? (enemy.pointValue * 1.6).round()
+        : enemy.pointValue;
+    scoreSystem.addKill(pointsBoosted, enemy.position);
     sessionKills++;
 
     // Track max multiplier per achievement

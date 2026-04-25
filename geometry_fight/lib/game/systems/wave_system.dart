@@ -78,7 +78,13 @@ class WaveSystem {
       date.year * 10000 + date.month * 100 + date.day;
 
   int _scaledSpawnCount(int baseCount) {
-    final scaled = (baseCount * game.diffConfig.enemyCountMultiplier).round();
+    var mult = game.diffConfig.enemyCountMultiplier;
+    // BLITZ modifier: +50% mob count. Applicato qui per propagarsi a TUTTE
+    // le formation spawn/borderLine/normal pathway senza touchpoints multipli.
+    if (activeModifier == WaveModifier.blitz) {
+      mult *= 1.5;
+    }
+    final scaled = (baseCount * mult).round();
     return scaled.clamp(1, 500);
   }
 
@@ -90,9 +96,22 @@ class WaveSystem {
     // Richiesta design: in modalità classica ogni gruppo (tipo nemico) arriva
     // a cadenza fissa, così la wave è più leggibile.
     if (_mode == GameMode.classic) {
-      return classicWaveGroupDelaySeconds;
+      // HASTE modifier (vedi WaveModifier.haste): -40% delay → ondate
+      // ravvicinate, sensazione "no respiro".
+      final base = classicWaveGroupDelaySeconds;
+      if (activeModifier == WaveModifier.haste) {
+        return base * 0.6;
+      }
+      return base;
     }
     return _scaledSpawnDelay(_currentConfig!.spawns[_spawnIndex].delay);
+  }
+
+  /// Modificatore attivo della wave corrente. `none` se nessun modifier o
+  /// se la wave non è classic (tunnel/zen/boss-rush/time-attack vanilla).
+  WaveModifier get activeModifier {
+    if (_mode != GameMode.classic) return WaveModifier.none;
+    return _currentConfig?.modifier ?? WaveModifier.none;
   }
 
   /// Reset stato tunnel per nuova partita

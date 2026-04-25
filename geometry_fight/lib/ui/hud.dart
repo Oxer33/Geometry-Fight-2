@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math' as math;
 import 'package:flame/components.dart' show Vector2;
 import 'package:flutter/material.dart';
+import '../data/wave_configs.dart';
 import '../game/game_world.dart';
 import '../game/entities/enemies/enemy_base.dart';
 import '../game/entities/bosses/boss_base.dart';
@@ -83,6 +84,7 @@ class _GameHudState extends State<GameHud> {
                       wave: game.waveSystem.currentWave,
                       enemyCount: game.enemyCount,
                       isBossWave: game.bossCount > 0,
+                      modifier: game.waveSystem.activeModifier,
                     ),
                   ),
                 ),
@@ -505,44 +507,107 @@ class _WaveIndicator extends StatelessWidget {
   final int wave;
   final int enemyCount;
   final bool isBossWave;
+  final WaveModifier modifier;
 
-  const _WaveIndicator({required this.wave, required this.enemyCount, required this.isBossWave});
+  const _WaveIndicator({
+    required this.wave,
+    required this.enemyCount,
+    required this.isBossWave,
+    this.modifier = WaveModifier.none,
+  });
 
   @override
   Widget build(BuildContext context) {
-    final color = isBossWave ? const Color(0xFFFF2244) : const Color(0xFF4488FF);
+    final color =
+        isBossWave ? const Color(0xFFFF2244) : const Color(0xFF4488FF);
+    final hasModifier = modifier != WaveModifier.none;
+    final modColor = Color(modifier.tagColorArgb);
 
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withValues(alpha: 0.3), width: 1),
-        color: color.withValues(alpha: 0.08),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (isBossWave)
-            Padding(
-              padding: const EdgeInsets.only(right: 4),
-              child: Icon(Icons.warning_amber,
-                  color: color.withValues(alpha: 0.8), size: 14),
-            ),
-          Text(
-            isBossWave ? 'BOSS WAVE $wave' : 'WAVE $wave',
-            style: TextStyle(
-              color: color.withValues(alpha: 0.9),
-              fontSize: 13,
-              fontWeight: FontWeight.bold,
-              fontFamily: 'monospace',
-              letterSpacing: 2,
-              shadows: [
-                Shadow(color: color.withValues(alpha: 0.5), blurRadius: 6),
-              ],
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        // Riga 1 — wave number / boss tag.
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: color.withValues(alpha: 0.3), width: 1),
+            color: color.withValues(alpha: 0.08),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (isBossWave)
+                Padding(
+                  padding: const EdgeInsets.only(right: 4),
+                  child: Icon(Icons.warning_amber,
+                      color: color.withValues(alpha: 0.8), size: 14),
+                ),
+              Text(
+                isBossWave ? 'BOSS WAVE $wave' : 'WAVE $wave',
+                style: TextStyle(
+                  color: color.withValues(alpha: 0.9),
+                  fontSize: 13,
+                  fontWeight: FontWeight.bold,
+                  fontFamily: 'monospace',
+                  letterSpacing: 2,
+                  shadows: [
+                    Shadow(color: color.withValues(alpha: 0.5), blurRadius: 6),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        // Riga 2 — modifier banner (solo se attivo, classic non-boss).
+        if (hasModifier && !isBossWave)
+          Padding(
+            padding: const EdgeInsets.only(top: 3),
+            child: Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(8),
+                border:
+                    Border.all(color: modColor.withValues(alpha: 0.5), width: 1),
+                color: modColor.withValues(alpha: 0.12),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.bolt,
+                      color: modColor.withValues(alpha: 0.9), size: 11),
+                  const SizedBox(width: 3),
+                  Text(
+                    modifier.displayName,
+                    style: TextStyle(
+                      color: modColor,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w900,
+                      fontFamily: 'monospace',
+                      letterSpacing: 2,
+                      shadows: [
+                        Shadow(
+                            color: modColor.withValues(alpha: 0.7),
+                            blurRadius: 5),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    modifier.tagline,
+                    style: TextStyle(
+                      color: modColor.withValues(alpha: 0.65),
+                      fontSize: 9,
+                      fontFamily: 'monospace',
+                      letterSpacing: 1,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
-        ],
-      ),
+      ],
     );
   }
 }

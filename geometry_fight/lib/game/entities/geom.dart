@@ -3,6 +3,7 @@ import 'dart:ui';
 import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
 import '../../data/constants.dart';
+import '../../data/wave_configs.dart';
 import '../game_world.dart';
 import 'player.dart';
 
@@ -65,7 +66,13 @@ class Geom extends PositionComponent
     // Raggio base passivo (80px) + upgrade + power-up (stackano)
     const double baseAttractionRange = 80.0;
     final upgradeRange = game.saveData.magnetRange;
-    final magnetRange = (player.hasMagnet ? magnetRadius : baseAttractionRange) + upgradeRange;
+    var magnetRange =
+        (player.hasMagnet ? magnetRadius : baseAttractionRange) + upgradeRange;
+    // MAGNETIC modifier (vedi WaveModifier.magnetic): radius ×2 → wave
+    // "loot vacuum". Stacka sopra magnet power-up + upgrade.
+    if (game.waveSystem.activeModifier == WaveModifier.magnetic) {
+      magnetRange *= 2.0;
+    }
 
     if (dist < magnetRange) {
       _attracted = true;
