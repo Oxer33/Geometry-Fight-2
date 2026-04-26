@@ -109,9 +109,12 @@ class _LoadoutScreenState extends State<LoadoutScreen> {
                       border: Border.all(
                           color: NeonColors.cyan.withValues(alpha: 0.5)),
                     ),
-                    child: Text(
-                      isWeaponsStep ? '1/2' : '2/2',
-                      style: const TextStyle(
+                    child: const Text(
+                      // Loadout è step 4/5 del wizard pre-game (mode→diff→
+                      // mods→loadout→summary). Sub-step interno (arma/pet)
+                      // mostrato come label nel titolo header.
+                      '4/5',
+                      style: TextStyle(
                         color: NeonColors.cyan,
                         fontSize: 12,
                         fontWeight: FontWeight.w900,
