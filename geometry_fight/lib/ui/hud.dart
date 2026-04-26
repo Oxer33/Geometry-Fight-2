@@ -223,11 +223,16 @@ class _GameHudState extends State<GameHud> {
   }
 
   bool _hasActivePowerUps() {
+    // BUG FIX (utente: "a volte quando prendo dei power up non mi compare la
+    // barra in alto a sinistra"): il check escludeva `firePowerTimer` ma
+    // `_PowerUpBar` lo renderizzava. Risultato: con SOLO firePower attivo,
+    // `_hasActivePowerUps` ritornava false → bar nascosta → timer invisibile.
     return game.player.rapidFireTimer > 0 ||
         game.player.overdriveTimer > 0 ||
         game.player.magnetTimer > 0 ||
         game.player.weaponTimer > 0 ||
-        game.player.timeSlowTimer > 0;
+        game.player.timeSlowTimer > 0 ||
+        game.player.firePowerTimer > 0;
   }
 }
 
