@@ -220,14 +220,15 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
     _game.onGameOver = null;
     _game.onPause = null;
     AudioSystem.stopAll();
-    // Pause() invece di stop(): al rientro menu, `playIntro()` swappa la
-    // sorgente atomicamente (bgm.play di un intro track sostituisce il
-    // gameplay track in memoria). stop() in dispose racing con menu.
-    // playIntro era la causa del bug "torno al menù non parte nessuna
-    // canzone": il stop nativo completava DOPO il play dell'intro → FlameAudio
-    // vedeva il player in "stopping" e droppava silenziosamente il play.
-    // Pause è istantanea, no race.
-    unawaited(MusicManager.pause());
+    // stop() invece di pause(): pause() unawaited può completare DOPO
+    // main_menu.playIntro+play → la pause "ritardata" mette in pausa l'intro
+    // appena partito → silenzio menu (utente: "spesso al ritorno menu musica
+    // non si sente").
+    // playIntro è ora simplified (vedi music_manager.dart): chiama sempre
+    // stop+play su mode change → no più race con paused state. dispose può
+    // safely fire stop() — il _stopInFlight viene awaited dentro _playTrack
+    // del menu, gap audio ~80ms accettabile vs silenzio totale.
+    unawaited(MusicManager.stop());
     super.dispose();
   }
 

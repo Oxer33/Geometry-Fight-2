@@ -101,46 +101,34 @@ class MusicManager {
   }
 
   /// Avvia modalità INTRO. Pesca un brano random tra i 3 intro.
-  /// Idempotente: se già in intro e sta davvero suonando → no-op. Se era in
-  /// intro ma paused (lifecycle) → resume() invece di ripartire. Se mode
-  /// diverso O nessuna sorgente attiva → pesca nuova canzone dal bag.
+  ///
+  /// FIX BUG "menu senza musica al ritorno" (utente: "spesso quando torno nel
+  /// menù a fine partita la musica non si sente"):
+  ///
+  /// PRIMA: 4 early-return state-based (intro+playing, intro+paused, mode
+  /// change con stop conditionale). Race con `game_screen.dispose()` pause()
+  /// unawaited: playIntro vedeva stato ambiguo (`_mode==bgm` + `isPlaying`
+  /// true se pause Future non ancora completato) → no-op → silenzio menu.
+  ///
+  /// ORA: fast-path SOLO se mode già intro E playing; altrimenti FORZA
+  /// stop+play sempre. Robust contro race (stop awaited con timeout). Gap
+  /// audio ~80ms accettabile vs silenzio totale.
   static Future<void> playIntro() async {
     if (!_initialized) return;
     if (_mode == _Mode.intro && _isActuallyPlaying()) return;
-    if (_mode == _Mode.intro && _isPaused()) {
-      await resume();
-      return;
-    }
-    // Mode change (bgm/idle → intro): forza stop esplicito.
-    // Fix "menu senza musica al ritorno": il player era paused da
-    // game_screen.dispose() con source bgm; chiamare bgm.play(introTrack)
-    // direttamente da paused state Android falliva silently. stop()
-    // libera lo state prima del nuovo play.
-    // ORDER: setta _mode PRIMA di stop() — così listener async che vedono
-    // _mode in mezzo trovano già intro, non transient idle.
+    await stop();
     _mode = _Mode.intro;
-    if (_isPaused() || _isActuallyPlaying()) {
-      await stop();
-      _mode = _Mode.intro; // stop() resetta a idle → ripristina
-    }
     await _playFromIntroBag();
   }
 
   /// Avvia modalità BGM. Pesca dal shuffle bag dei 40 brani gameplay.
-  /// Idempotente: playing → no-op; paused → resume; altro → nuova canzone.
+  /// Stessa logica fix di `playIntro` — fast-path SOLO se già playing in
+  /// modalità target, altrimenti hard-reset stop+play.
   static Future<void> playBgm() async {
     if (!_initialized) return;
     if (_mode == _Mode.bgm && _isActuallyPlaying()) return;
-    if (_mode == _Mode.bgm && _isPaused()) {
-      await resume();
-      return;
-    }
-    // Mode change (intro/idle → bgm): forza stop esplicito (vedi sopra).
+    await stop();
     _mode = _Mode.bgm;
-    if (_isPaused() || _isActuallyPlaying()) {
-      await stop();
-      _mode = _Mode.bgm; // stop() resetta a idle → ripristina
-    }
     await _playFromBgmBag();
   }
 
@@ -217,6 +205,8 @@ class MusicManager {
   }
 
   /// true se il player è paused (sorgente caricata ma ferma).
+  /// Mantenuto per debug/telemetry futura (es. resume() lifecycle).
+  // ignore: unused_element
   static bool _isPaused() => _player.state == PlayerState.paused;
 
   static void _refillIntroBag() {
