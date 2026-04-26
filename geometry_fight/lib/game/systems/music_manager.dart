@@ -102,34 +102,44 @@ class MusicManager {
 
   /// Avvia modalità INTRO. Pesca un brano random tra i 3 intro.
   ///
-  /// FIX BUG "menu senza musica al ritorno" (utente: "spesso quando torno nel
-  /// menù a fine partita la musica non si sente"):
-  ///
-  /// PRIMA: 4 early-return state-based (intro+playing, intro+paused, mode
-  /// change con stop conditionale). Race con `game_screen.dispose()` pause()
-  /// unawaited: playIntro vedeva stato ambiguo (`_mode==bgm` + `isPlaying`
-  /// true se pause Future non ancora completato) → no-op → silenzio menu.
-  ///
-  /// ORA: fast-path SOLO se mode già intro E playing; altrimenti FORZA
-  /// stop+play sempre. Robust contro race (stop awaited con timeout). Gap
-  /// audio ~80ms accettabile vs silenzio totale.
+  /// Lifecycle robust contro silent fail di Android MediaPlayer:
+  /// dopo il primo play, verifica entro 200ms che il player sia
+  /// `PlayerState.playing`; se NO, retry una volta dal bag. Senza
+  /// questo, un fail silenzioso (setSource error, OOM, file lock) lasciava
+  /// l'utente in silenzio fino al prossimo playIntro manuale.
   static Future<void> playIntro() async {
     if (!_initialized) return;
     if (_mode == _Mode.intro && _isActuallyPlaying()) return;
     await stop();
     _mode = _Mode.intro;
     await _playFromIntroBag();
+    await _verifyPlayingOrRetry(_Mode.intro);
   }
 
-  /// Avvia modalità BGM. Pesca dal shuffle bag dei 40 brani gameplay.
-  /// Stessa logica fix di `playIntro` — fast-path SOLO se già playing in
-  /// modalità target, altrimenti hard-reset stop+play.
+  /// Avvia modalità BGM. Stessa lifecycle robusta di `playIntro`.
   static Future<void> playBgm() async {
     if (!_initialized) return;
     if (_mode == _Mode.bgm && _isActuallyPlaying()) return;
     await stop();
     _mode = _Mode.bgm;
     await _playFromBgmBag();
+    await _verifyPlayingOrRetry(_Mode.bgm);
+  }
+
+  /// Post-play verify: aspetta 200ms (state transition Android) e se
+  /// il player NON è in `playing`, fa retry singolo dal bag corrispondente.
+  /// Defense contro silent failure di `bgm.play` (caught dentro `_playTrack`
+  /// → return true ma senza music partita).
+  static Future<void> _verifyPlayingOrRetry(_Mode expected) async {
+    await Future.delayed(const Duration(milliseconds: 200));
+    if (_mode != expected) return; // mode cambiato durante verify, abort
+    if (_isActuallyPlaying()) return; // success
+    debugPrint('MusicManager: post-play verify FAIL ($expected) → retry');
+    if (expected == _Mode.intro) {
+      await _playFromIntroBag();
+    } else if (expected == _Mode.bgm) {
+      await _playFromBgmBag();
+    }
   }
 
   /// Skip immediato al prossimo brano. Mantiene la modalità corrente.
@@ -154,15 +164,23 @@ class MusicManager {
   static Future<void>? _stopInFlight;
 
   /// Ferma completamente. Resetta la modalità a idle.
-  /// Fix "menu senza musica": forza reset di `_playInFlight` + increment
-  /// `_playSeq` per invalidare qualsiasi _playTrack in volo. Senza questo,
-  /// un playTrack rimasto stuck con `_playInFlight=true` blocca tutte le
-  /// chiamate successive → playIntro al rientro menu diventa no-op.
+  ///
+  /// Caveman-review fix: NON resettiamo più `_playInFlight = false`. Era
+  /// "circuit breaker" per _playTrack stuck, ma rilasciava il mutex mentre
+  /// un _playTrack legittimo era in flight → race con NUOVO playIntro che
+  /// entrava prima del finally del vecchio _playTrack. Sostituito da
+  /// `.timeout(5s)` su `bgm.play` dentro `_playTrack` (vedi sotto): timeout
+  /// genera TimeoutException → catch → finally rilascia mutex correttamente.
+  ///
+  /// `_playSeq++` mantiene la semantica di invalidazione del play in volo:
+  /// la check `if (seq != _playSeq) return true;` dopo bgm.play marca il
+  /// vecchio come superseded senza side-effect.
   static Future<void> stop() async {
     _mode = _Mode.idle;
     _playSeq++;
-    _playInFlight = false;
-    final stopFuture = FlameAudio.bgm.stop().catchError((Object _) {});
+    final stopFuture = FlameAudio.bgm.stop().catchError((Object e) {
+      debugPrint('MusicManager: bgm.stop error: $e');
+    });
     _stopInFlight = stopFuture;
     try {
       await stopFuture;
@@ -203,11 +221,6 @@ class MusicManager {
   static bool _isActuallyPlaying() {
     return _player.state == PlayerState.playing;
   }
-
-  /// true se il player è paused (sorgente caricata ma ferma).
-  /// Mantenuto per debug/telemetry futura (es. resume() lifecycle).
-  // ignore: unused_element
-  static bool _isPaused() => _player.state == PlayerState.paused;
 
   static void _refillIntroBag() {
     _introBag
@@ -292,7 +305,14 @@ class MusicManager {
       // NO stop() esplicito prima del play: audioplayers.play() swappa la
       // sorgente atomicamente. Un stop() intermedio scatena completion spuri
       // → doppia pesca dal bag → music stuck.
-      await FlameAudio.bgm.play(relativePath, volume: AudioSystem.bgmVolume);
+      //
+      // Timeout 5s su `bgm.play`: circuit breaker per Android MediaPlayer
+      // hang (raro ma possibile su low-end devices o quando il file system
+      // risponde lentamente). Senza timeout, hang → mutex stuck → nessuna
+      // playIntro/playBgm successiva funziona finché app restart.
+      await FlameAudio.bgm
+          .play(relativePath, volume: AudioSystem.bgmVolume)
+          .timeout(const Duration(seconds: 5));
 
       // Superseded: un altro _playTrack è arrivato nel frattempo.
       if (seq != _playSeq) return true;
