@@ -221,9 +221,12 @@ class _NavigationWrapperState extends State<NavigationWrapper> {
           onConfirm: (diff) {
             // Step 2/5 → 3/5 modificatori.
             setState(() => _selectedDifficulty = diff);
-            // Pre-fill modifier list from saveData (sticky tra sessioni).
-            _selectedModifiers =
-                List<String>.from(SaveManager.load().activeModifiers);
+            // Modifier list parte VUOTA ogni partita (utente: "me ne
+            // ritrovo 3 preselezionati sempre"). Sticky behavior precedente
+            // (load da saveData.activeModifiers) confondeva: utente vedeva
+            // mods scelti in partita precedente già attivi e doveva
+            // deselezionarli. Reset a [] = scelta esplicita ogni game.
+            _selectedModifiers = <String>[];
             _navigateTo(AppScreen.modifiersSelect);
           },
         );
