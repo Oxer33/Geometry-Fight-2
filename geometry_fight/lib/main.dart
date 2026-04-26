@@ -146,7 +146,10 @@ class _NavigationWrapperState extends State<NavigationWrapper> {
   // Persistono in memoria attraverso le 5 step screens.
   Difficulty _selectedDifficulty = Difficulty.normal;
   GameMode _selectedMode = GameMode.classic;
-  List<String> _selectedModifiers = const [];
+  // Defensive `<String>[]` invece di `const []`: una const list non sarebbe
+  // modificabile in-place se qualche callback futuro tentasse `add/remove`
+  // invece di reassign. Evita "Unsupported operation" runtime error.
+  List<String> _selectedModifiers = <String>[];
 
   void _navigateTo(AppScreen screen) {
     setState(() => _currentScreen = screen);
@@ -251,9 +254,15 @@ class _NavigationWrapperState extends State<NavigationWrapper> {
           onStart: () async {
             // Persist modifiers in saveData prima del game start: GameWorld
             // li legge da `saveData.activeModifiers` in onLoad.
-            final sd = SaveManager.load();
-            sd.activeModifiers = _selectedModifiers;
-            await SaveManager.save(sd);
+            // Try/catch difensivo: se SaveManager.save fallisce (Hive lock,
+            // disk full), non blocchiamo navigazione → game parte comunque
+            // con i modifiers in memory (saveData ricaricato in onLoad
+            // ricaderà sui vecchi valori se save fallita, accettabile).
+            try {
+              final sd = SaveManager.load();
+              sd.activeModifiers = _selectedModifiers;
+              await SaveManager.save(sd);
+            } catch (_) {}
             if (!mounted) return;
             _navigateTo(AppScreen.game);
           },
