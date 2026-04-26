@@ -15,7 +15,10 @@ import 'ui/screens/game_screen.dart';
 import 'ui/screens/shop_screen.dart';
 import 'ui/screens/settings_screen.dart';
 import 'ui/screens/mode_select_screen.dart';
+import 'ui/screens/difficulty_select_screen.dart';
+import 'ui/screens/modifiers_select_screen.dart';
 import 'ui/screens/loadout_screen.dart';
+import 'ui/screens/summary_screen.dart';
 import 'ui/screens/leaderboard_screen.dart';
 import 'ui/screens/splash_screen.dart';
 import 'ui/screens/stats_screen.dart';
@@ -112,7 +115,22 @@ class GeometryFightApp extends StatelessWidget {
   }
 }
 
-enum AppScreen { splash, mainMenu, modeSelect, loadout, game, shop, settings, leaderboard, stats, achievements }
+enum AppScreen {
+  splash,
+  mainMenu,
+  // Pre-game wizard 5 step (richiesta utente: schermate dedicate).
+  modeSelect,        // 1/5 — solo modalità + scroll arrow
+  difficultySelect,  // 2/5 — solo difficoltà
+  modifiersSelect,   // 3/5 — solo modificatori
+  loadout,           // 4/5 — arma + pet (2 step interno)
+  summary,           // 5/5 — riepilogo + multipliers + START
+  game,
+  shop,
+  settings,
+  leaderboard,
+  stats,
+  achievements,
+}
 
 class NavigationWrapper extends StatefulWidget {
   const NavigationWrapper({super.key});
@@ -124,9 +142,11 @@ class NavigationWrapper extends StatefulWidget {
 class _NavigationWrapperState extends State<NavigationWrapper> {
   AppScreen _currentScreen = AppScreen.splash;
 
-  // Parametri di gioco selezionati
+  // Parametri di gioco selezionati durante il wizard pre-game.
+  // Persistono in memoria attraverso le 5 step screens.
   Difficulty _selectedDifficulty = Difficulty.normal;
   GameMode _selectedMode = GameMode.classic;
+  List<String> _selectedModifiers = const [];
 
   void _navigateTo(AppScreen screen) {
     setState(() => _currentScreen = screen);
@@ -184,19 +204,59 @@ class _NavigationWrapperState extends State<NavigationWrapper> {
         return ModeSelectScreen(
           key: const ValueKey('modeSelect'),
           onBack: () => _navigateTo(AppScreen.mainMenu),
-          onStart: (mode, difficulty) {
-            // Pre-game step: vai a Loadout (richiesta utente: "schermata che fa
-            // scegliere il loadout ovvero arma e pet"). Poi loadout → game.
-            _selectedMode = mode;
-            _selectedDifficulty = difficulty;
+          onConfirm: (mode) {
+            // Step 1/5 → 2/5 difficoltà.
+            setState(() => _selectedMode = mode);
+            _navigateTo(AppScreen.difficultySelect);
+          },
+        );
+      case AppScreen.difficultySelect:
+        return DifficultySelectScreen(
+          key: const ValueKey('difficultySelect'),
+          initial: _selectedDifficulty,
+          onBack: () => _navigateTo(AppScreen.modeSelect),
+          onConfirm: (diff) {
+            // Step 2/5 → 3/5 modificatori.
+            setState(() => _selectedDifficulty = diff);
+            // Pre-fill modifier list from saveData (sticky tra sessioni).
+            _selectedModifiers =
+                List<String>.from(SaveManager.load().activeModifiers);
+            _navigateTo(AppScreen.modifiersSelect);
+          },
+        );
+      case AppScreen.modifiersSelect:
+        return ModifiersSelectScreen(
+          key: const ValueKey('modifiersSelect'),
+          initial: _selectedModifiers,
+          onBack: () => _navigateTo(AppScreen.difficultySelect),
+          onConfirm: (mods) {
+            // Step 3/5 → 4/5 loadout.
+            setState(() => _selectedModifiers = mods);
             _navigateTo(AppScreen.loadout);
           },
         );
       case AppScreen.loadout:
         return LoadoutScreen(
           key: const ValueKey('loadout'),
-          onBack: () => _navigateTo(AppScreen.modeSelect),
-          onConfirm: () => _navigateTo(AppScreen.game),
+          onBack: () => _navigateTo(AppScreen.modifiersSelect),
+          onConfirm: () => _navigateTo(AppScreen.summary),
+        );
+      case AppScreen.summary:
+        return SummaryScreen(
+          key: const ValueKey('summary'),
+          mode: _selectedMode,
+          difficulty: _selectedDifficulty,
+          activeModifiers: _selectedModifiers,
+          onBack: () => _navigateTo(AppScreen.loadout),
+          onStart: () async {
+            // Persist modifiers in saveData prima del game start: GameWorld
+            // li legge da `saveData.activeModifiers` in onLoad.
+            final sd = SaveManager.load();
+            sd.activeModifiers = _selectedModifiers;
+            await SaveManager.save(sd);
+            if (!mounted) return;
+            _navigateTo(AppScreen.game);
+          },
         );
       case AppScreen.game:
         return GameScreen(

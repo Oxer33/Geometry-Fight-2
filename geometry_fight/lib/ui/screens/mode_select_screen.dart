@@ -4,15 +4,20 @@ import '../../data/save_data.dart';
 import '../widgets/neon_back_button.dart';
 import 'modifiers_screen.dart';
 
-/// Schermata di selezione modalità di gioco e difficoltà.
+/// Schermata di selezione modalità di gioco (richiesta utente: split del
+/// flow pre-game in screens dedicate). Solo MODE selection — difficoltà
+/// + modificatori + loadout + summary in screens separate.
+///
+/// onConfirm passa solo la `GameMode` scelta. Il resto del wizard pre-game
+/// è gestito da `main.dart` _navigateTo().
 class ModeSelectScreen extends StatefulWidget {
   final VoidCallback onBack;
-  final void Function(GameMode mode, Difficulty difficulty) onStart;
+  final void Function(GameMode mode) onConfirm;
 
   const ModeSelectScreen({
     super.key,
     required this.onBack,
-    required this.onStart,
+    required this.onConfirm,
   });
 
   @override
@@ -22,7 +27,8 @@ class ModeSelectScreen extends StatefulWidget {
 class _ModeSelectScreenState extends State<ModeSelectScreen>
     with TickerProviderStateMixin {
   GameMode _selectedMode = GameMode.classic;
-  Difficulty _selectedDifficulty = Difficulty.normal;
+  // ignore: unused_field
+  final Difficulty _selectedDifficulty = Difficulty.normal;
   List<String> _activeModifiers = [];
   late final SaveData _saveData;
 
@@ -81,42 +87,90 @@ class _ModeSelectScreenState extends State<ModeSelectScreen>
                 // Header
                 _buildHeader(entrance, glow),
 
-                // Contenuto scrollabile
+                // Step indicator (1/5)
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 16, vertical: 4),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                              color: Colors.cyanAccent.withValues(alpha: 0.5)),
+                        ),
+                        child: const Text(
+                          '1/5',
+                          style: TextStyle(
+                            color: Colors.cyanAccent,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w900,
+                            fontFamily: 'monospace',
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // Mode list orizzontale (con scroll arrow indicator)
                 Expanded(
-                  child: SingleChildScrollView(
+                  child: Padding(
                     padding: const EdgeInsets.all(16),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // === MODALITÀ DI GIOCO ===
                         _buildSectionLabel('MODALITÀ', Icons.gamepad_rounded,
                             Colors.cyanAccent, entrance, 0.1),
                         const SizedBox(height: 8),
-                        _buildModeList(saveData, entrance, glow),
-
-                        const SizedBox(height: 20),
-
-                        // === DIFFICOLTÀ ===
-                        _buildSectionLabel('DIFFICOLTÀ', Icons.speed_rounded,
-                            const Color(0xFFFF8800), entrance, 0.2),
-                        const SizedBox(height: 8),
-                        _buildDifficultyList(entrance, glow),
-
-                        const SizedBox(height: 16),
-
-                        // === MODIFICATORI ===
-                        _buildModifiersButton(entrance, glow),
-
-                        const SizedBox(height: 16),
-
-                        // === RIEPILOGO ===
-                        _buildSummary(entrance, glow),
+                        // Stack: lista + freccia destra fade indicator
+                        // (richiesta utente: "freccia verso destra che indica
+                        // che lo screen è scrollabile orizontalmente").
+                        Expanded(
+                          child: Stack(
+                            children: [
+                              _buildModeList(saveData, entrance, glow),
+                              Positioned(
+                                right: 0,
+                                top: 0,
+                                bottom: 0,
+                                child: IgnorePointer(
+                                  child: Container(
+                                    width: 50,
+                                    decoration: BoxDecoration(
+                                      gradient: LinearGradient(
+                                        begin: Alignment.centerLeft,
+                                        end: Alignment.centerRight,
+                                        colors: [
+                                          Colors.transparent,
+                                          Colors.black
+                                              .withValues(alpha: 0.85),
+                                        ],
+                                      ),
+                                    ),
+                                    alignment: Alignment.centerRight,
+                                    padding: const EdgeInsets.only(right: 4),
+                                    child: Icon(
+                                      Icons.chevron_right,
+                                      color: Colors.cyanAccent.withValues(
+                                          alpha: 0.6 + 0.4 * glow),
+                                      size: 36,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
                       ],
                     ),
                   ),
                 ),
 
-                // Pulsante START
+                // Pulsante AVANTI (era START)
                 _buildStartButton(entrance, startPulse),
               ],
             );
@@ -241,33 +295,9 @@ class _ModeSelectScreenState extends State<ModeSelectScreen>
     );
   }
 
-  Widget _buildDifficultyList(double entrance, double glow) {
-    final e = ((entrance - 0.25) / 0.75).clamp(0.0, 1.0);
-    return Opacity(
-      opacity: e,
-      child: Transform.translate(
-        offset: Offset(0, 15 * (1 - e)),
-        child: SizedBox(
-          height: 85,
-          child: ListView(
-            scrollDirection: Axis.horizontal,
-            children: Difficulty.values.map((diff) {
-              final config = difficultyConfigs[diff]!;
-              final isSelected = _selectedDifficulty == diff;
-              return _NeonDifficultyCard(
-                config: config,
-                difficulty: diff,
-                isSelected: isSelected,
-                glow: glow,
-                onTap: () => setState(() => _selectedDifficulty = diff),
-              );
-            }).toList(),
-          ),
-        ),
-      ),
-    );
-  }
+  // Removed _buildDifficultyList: difficoltà ora in DifficultySelectScreen.
 
+  // ignore: unused_element
   Widget _buildModifiersButton(double entrance, double glow) {
     final e = ((entrance - 0.35) / 0.65).clamp(0.0, 1.0);
     final hasModifiers = _activeModifiers.isNotEmpty;
@@ -352,6 +382,7 @@ class _ModeSelectScreenState extends State<ModeSelectScreen>
     );
   }
 
+  // ignore: unused_element
   Widget _buildSummary(double entrance, double glow) {
     final e = ((entrance - 0.4) / 0.6).clamp(0.0, 1.0);
     final modeConfig = gameModeConfigs[_selectedMode]!;
@@ -455,13 +486,10 @@ class _ModeSelectScreenState extends State<ModeSelectScreen>
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: GestureDetector(
-            onTap: () async {
-              _saveData.activeModifiers = _activeModifiers;
-              // Await save: modifiers persistono prima della transizione.
-              // Prima: fire-and-forget → crash mid-wave perdeva i modifiers.
-              await SaveManager.save(_saveData);
-              if (!mounted) return;
-              widget.onStart(_selectedMode, _selectedDifficulty);
+            onTap: () {
+              // Solo MODE selection — diff/mods/loadout/summary in screens
+              // dedicate (vedi main.dart routing).
+              widget.onConfirm(_selectedMode);
             },
             child: Container(
               width: double.infinity,
@@ -491,7 +519,7 @@ class _ModeSelectScreenState extends State<ModeSelectScreen>
               ),
               child: const Center(
                 child: Text(
-                  'INIZIA PARTITA',
+                  'AVANTI',
                   style: TextStyle(
                     color: Colors.cyanAccent,
                     fontSize: 18,
@@ -639,6 +667,7 @@ class _NeonModeCard extends StatelessWidget {
 }
 
 // ==================== NEON DIFFICULTY CARD ====================
+// ignore: unused_element
 class _NeonDifficultyCard extends StatelessWidget {
   final DifficultyConfig config;
   final Difficulty difficulty;
