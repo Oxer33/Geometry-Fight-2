@@ -170,50 +170,54 @@ class _LoadoutScreenState extends State<LoadoutScreen> {
   }
 
   Widget _buildWeaponsGrid() {
-    return GridView.count(
-      crossAxisCount: 4,
-      crossAxisSpacing: 8,
-      mainAxisSpacing: 8,
-      childAspectRatio: 1.6,
-      physics: const NeverScrollableScrollPhysics(),
-      children: _weaponCatalog
-          .map((w) => _MiniCard(
-                title: w.displayName,
-                isSelected: _saveData.startingWeapon == w.id,
-                isUnlocked: _saveData.unlockedWeapons.contains(w.id),
-                color: NeonColors.cyan,
-                iconLetter: w.displayName.substring(0, 1),
-                onTap: () => _selectWeapon(w.id),
-              ))
-          .toList(),
+    // Wrap con SizedBox espliciti — risolve overflow precedente del GridView
+    // childAspectRatio (cards ~200px tall × 2 rows = 400px > available 358px
+    // → row 2 tagliata da footer button). Fixed 145×80 + Wrap = altezza
+    // garantita ~170px sempre dentro available. Stile match _NeonModeCard.
+    return Center(
+      child: Wrap(
+        spacing: 10,
+        runSpacing: 10,
+        alignment: WrapAlignment.center,
+        children: _weaponCatalog
+            .map((w) => _NeonLoadoutCard(
+                  title: w.displayName,
+                  isSelected: _saveData.startingWeapon == w.id,
+                  isUnlocked: _saveData.unlockedWeapons.contains(w.id),
+                  color: NeonColors.cyan,
+                  iconLetter: w.displayName.substring(0, 1),
+                  onTap: () => _selectWeapon(w.id),
+                ))
+            .toList(),
+      ),
     );
   }
 
   Widget _buildPetsGrid() {
-    return GridView.count(
-      crossAxisCount: 4,
-      crossAxisSpacing: 8,
-      mainAxisSpacing: 8,
-      childAspectRatio: 1.6,
-      physics: const NeverScrollableScrollPhysics(),
-      children: [
-        _MiniCard(
-          title: 'NESSUNO',
-          isSelected: _saveData.activePet == 'none',
-          isUnlocked: true,
-          color: const Color(0xFF888888),
-          iconLetter: '–',
-          onTap: () => _selectPet('none'),
-        ),
-        ...kPetCatalog.map((p) => _MiniCard(
-              title: p.displayName,
-              isSelected: _saveData.activePet == p.id,
-              isUnlocked: _saveData.unlockedPets.contains(p.id),
-              color: p.color,
-              iconLetter: p.iconCode,
-              onTap: () => _selectPet(p.id),
-            )),
-      ],
+    return Center(
+      child: Wrap(
+        spacing: 10,
+        runSpacing: 10,
+        alignment: WrapAlignment.center,
+        children: [
+          _NeonLoadoutCard(
+            title: 'NESSUNO',
+            isSelected: _saveData.activePet == 'none',
+            isUnlocked: true,
+            color: const Color(0xFF888888),
+            iconLetter: '–',
+            onTap: () => _selectPet('none'),
+          ),
+          ...kPetCatalog.map((p) => _NeonLoadoutCard(
+                title: p.displayName,
+                isSelected: _saveData.activePet == p.id,
+                isUnlocked: _saveData.unlockedPets.contains(p.id),
+                color: p.color,
+                iconLetter: p.iconCode,
+                onTap: () => _selectPet(p.id),
+              )),
+        ],
+      ),
     );
   }
 }
@@ -224,9 +228,10 @@ class _WeaponEntry {
   const _WeaponEntry(this.id, this.displayName);
 }
 
-/// Card compatto loadout: badge lettera + nome short + lock icon se locked.
-/// Dimensione gestita dal parent grid (childAspectRatio 1.0).
-class _MiniCard extends StatelessWidget {
+/// Card neon loadout — match stile `_NeonModeCard` (mode_select_screen).
+/// SizedBox 145×80 fixed → niente overflow su 2 rows + footer button.
+/// Layout: badge lettera 28×28 + Text colonna (title + lock) padding 10.
+class _NeonLoadoutCard extends StatelessWidget {
   final String title;
   final String iconLetter;
   final bool isSelected;
@@ -234,7 +239,7 @@ class _MiniCard extends StatelessWidget {
   final Color color;
   final VoidCallback onTap;
 
-  const _MiniCard({
+  const _NeonLoadoutCard({
     required this.title,
     required this.iconLetter,
     required this.isSelected,
@@ -249,61 +254,124 @@ class _MiniCard extends StatelessWidget {
     final eff = disabled ? const Color(0xFF555555) : color;
     return GestureDetector(
       onTap: disabled ? null : onTap,
-      child: Container(
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 250),
+        width: 145,
+        height: 80,
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(8),
-          color: isSelected
-              ? eff.withValues(alpha: 0.22)
-              : eff.withValues(alpha: 0.06),
+          borderRadius: BorderRadius.circular(10),
+          gradient: isSelected
+              ? LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    eff.withValues(alpha: 0.22),
+                    eff.withValues(alpha: 0.06),
+                  ],
+                )
+              : LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    eff.withValues(alpha: 0.08),
+                    Colors.black.withValues(alpha: 0.2),
+                  ],
+                ),
           border: Border.all(
-              color: eff.withValues(alpha: isSelected ? 0.95 : 0.4),
-              width: isSelected ? 2.2 : 1),
+            color: isSelected
+                ? eff.withValues(alpha: 0.95)
+                : eff.withValues(alpha: 0.35),
+            width: isSelected ? 2 : 1,
+          ),
           boxShadow: isSelected
-              ? [BoxShadow(color: eff.withValues(alpha: 0.5), blurRadius: 10)]
+              ? [
+                  BoxShadow(
+                      color: eff.withValues(alpha: 0.45),
+                      blurRadius: 14,
+                      spreadRadius: -2)
+                ]
               : null,
         ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+        child: Row(
           children: [
-            // Badge lettera grande (icon)
+            // Badge lettera con glow
             Container(
-              width: 32,
-              height: 32,
+              width: 36,
+              height: 36,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: eff.withValues(alpha: 0.2),
-                border: Border.all(color: eff, width: 1.5),
+                color: eff.withValues(alpha: 0.18),
+                border: Border.all(color: eff, width: 1.6),
+                boxShadow: isSelected
+                    ? [
+                        BoxShadow(
+                            color: eff.withValues(alpha: 0.5),
+                            blurRadius: 8)
+                      ]
+                    : null,
               ),
               alignment: Alignment.center,
               child: Text(
                 iconLetter,
                 style: TextStyle(
                   color: eff,
-                  fontSize: 16,
+                  fontSize: 17,
                   fontWeight: FontWeight.w900,
                   fontFamily: 'monospace',
                 ),
               ),
             ),
-            const SizedBox(height: 4),
-            Text(
-              title,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                color: eff,
-                fontSize: 9,
-                fontWeight: FontWeight.w900,
-                fontFamily: 'monospace',
-                letterSpacing: 1,
+            const SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: eff,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w900,
+                      fontFamily: 'monospace',
+                      letterSpacing: 1.5,
+                      shadows: isSelected
+                          ? [
+                              Shadow(
+                                  color: eff.withValues(alpha: 0.5),
+                                  blurRadius: 4)
+                            ]
+                          : null,
+                    ),
+                  ),
+                  if (disabled)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 3),
+                      child: Row(
+                        children: [
+                          Icon(Icons.lock,
+                              size: 9,
+                              color:
+                                  Colors.amber.withValues(alpha: 0.7)),
+                          const SizedBox(width: 3),
+                          Text(
+                            'SHOP',
+                            style: TextStyle(
+                              color:
+                                  Colors.amber.withValues(alpha: 0.7),
+                              fontSize: 8,
+                              fontFamily: 'monospace',
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                ],
               ),
             ),
-            if (disabled)
-              Icon(
-                Icons.lock,
-                size: 10,
-                color: Colors.amber.withValues(alpha: 0.7),
-              ),
           ],
         ),
       ),
