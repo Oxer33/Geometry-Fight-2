@@ -702,6 +702,11 @@ class GeometryFightGame extends FlameGame
       enemy.geomValue = (enemy.geomValue * geomMul).round();
     }
 
+    // Modifier giant_mode: nemici 2× più grandi (richiesta utente).
+    if (hasModifier('giant_mode')) {
+      enemy.size.scale(2.0);
+    }
+
     enemy.position = pos;
     // Tunnel mode: i mob compaiono OLTRE il margine destro (vedi
     // `_randomSpawnPosition`), quindi lo spawn invuln flash è invisibile e
@@ -1273,12 +1278,16 @@ class GeometryFightGame extends FlameGame
       }
     }
 
-    // Danneggia anche i boss nel raggio
+    // Danneggia anche i boss nel raggio. PASS isArea: true così boss con
+    // shield-meccaniche (es. NexusPrime con satelliti) accettano il danno
+    // tramite il branch AoE invece di bloccarlo come direct hit.
+    // Bug pre-fix: senza isArea, NexusPrime takeDamage cadeva nel ramo
+    // "_aliveSatellites > 0 && !isArea" → return early → boss invuln.
     final bosses = world.children.whereType<BossBase>().toList();
     for (final boss in bosses) {
       final dist = boss.position.distanceTo(player.position);
       if (dist < bombRadius) {
-        boss.takeDamage(50); // Danno significativo ai boss
+        boss.takeDamage(50, isArea: true);
       }
     }
 

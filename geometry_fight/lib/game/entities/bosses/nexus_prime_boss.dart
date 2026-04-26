@@ -14,7 +14,10 @@ class _NexusSatellite {
   Vector2 offset = Vector2.zero();
   bool alive = true;
   double deathPulse = 0;
-  double hp = 20; // HP per satellite — laser tick chip progressive.
+  // HP per satellite. Iter: 20 → 8 (utente: shield troppo tanky, sembrava
+  // boss invuln). 4 sat × 8 hp = 32 hit basic con damage 1 → ~4s a fire
+  // rate 8/s = break sostenibile.
+  double hp = 8;
 }
 
 /// NEXUS PRIME - Boss che crea portali e si teletrasporta attraverso l'arena.
@@ -84,27 +87,28 @@ class NexusPrimeBoss extends BossBase {
 
   @override
   void takeDamage(double amount, {bool isArea = false}) {
-    // Scudo (richiesta utente "non prende danni dal laser"):
-    // - Direct hit bloccato SOLO se satelliti vivi (bullet intercettati in
-    //   updateBoss, qui non dovrebbero arrivare, ma guard difensivo).
-    // - AoE (laser/plasma/bomba) → danno PIENO al boss + chip ai satelliti.
-    //   Prima bloccava 50% → laser molto lento. Ora laser danneggia normale.
-    if (_aliveSatellites > 0) {
-      if (isArea) {
-        super.takeDamage(amount, isArea: true);
-        final alive = _satellites.where((s) => s.alive).toList();
-        if (alive.isNotEmpty) {
-          final perSat = amount / alive.length;
-          for (final s in alive) {
-            s.hp -= perSat;
-            if (s.hp <= 0) _killSatellite(s);
-          }
+    // Logica scudo semplificata (utente: "non prende danno ne da bombe ne
+    // dalle armi"):
+    //
+    // 1. Bullet che ARRIVANO QUI sono già passati l'intercept satellitare in
+    //    updateBoss (raggio _satelliteHitR=18px). Se siamo qui, hanno
+    //    bypassato lo scudo → danno applicato pieno al boss.
+    // 2. AoE (laser/plasma/bomba) → danno pieno al boss + chip ai satelliti
+    //    vivi (l'esplosione tocca anche lo scudo).
+    //
+    // Prima: !isArea + sat_alive → return early → nessun bullet poteva mai
+    // colpire il core (anche quelli che mancavano i satelliti). Bug fixed.
+    super.takeDamage(amount, isArea: isArea);
+    if (isArea && _aliveSatellites > 0) {
+      final alive = _satellites.where((s) => s.alive).toList();
+      if (alive.isNotEmpty) {
+        final perSat = amount / alive.length;
+        for (final s in alive) {
+          s.hp -= perSat;
+          if (s.hp <= 0) _killSatellite(s);
         }
       }
-      // Non-AoE bloccato dai satelliti (player deve sparare dritto).
-      return;
     }
-    super.takeDamage(amount, isArea: isArea);
   }
 
   void _killSatellite(_NexusSatellite s) {

@@ -47,10 +47,14 @@ class OrbiterEnemy extends EnemyBase {
       position += toTarget.normalized() * speed * dt;
     }
 
-    // Spara periodicamente
+    // Spara periodicamente.
+    // Iter: interval 1.8s → 5.4s (3× più lento — richiesta utente:
+    // "il mob giallo che spara pallini gialli deve sparare un terzo
+    // di adesso"). Orbiter è arancio fluo (#FF9933) percepito come
+    // giallo dall'utente.
     _shootTimer -= dt;
     if (_shootTimer <= 0) {
-      _shootTimer = 1.8;
+      _shootTimer = 5.4;
       _shootAtPlayer();
     }
   }

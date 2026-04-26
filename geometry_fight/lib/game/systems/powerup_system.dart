@@ -47,6 +47,9 @@ class PowerUpSystem {
   }
 
   void spawnRandomPowerUp(Vector2 position) {
+    // Modifier no_powerups (PURISTA): skip ogni spawn powerup. Effettivo
+    // sia per timer-based sia per drop da kill (entrambi passano qui).
+    if (game.hasModifier('no_powerups')) return;
     // Selezione pesata per rarità
     final type = PowerUpRarityConfig.rollWeighted(_random);
     final powerUp = PowerUp(type: type);

@@ -174,7 +174,7 @@ class _LoadoutScreenState extends State<LoadoutScreen> {
       crossAxisCount: 4,
       crossAxisSpacing: 8,
       mainAxisSpacing: 8,
-      childAspectRatio: 1.0,
+      childAspectRatio: 1.6,
       physics: const NeverScrollableScrollPhysics(),
       children: _weaponCatalog
           .map((w) => _MiniCard(
@@ -194,7 +194,7 @@ class _LoadoutScreenState extends State<LoadoutScreen> {
       crossAxisCount: 4,
       crossAxisSpacing: 8,
       mainAxisSpacing: 8,
-      childAspectRatio: 1.0,
+      childAspectRatio: 1.6,
       physics: const NeverScrollableScrollPhysics(),
       children: [
         _MiniCard(

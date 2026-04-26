@@ -298,6 +298,9 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
     final dir = direction.normalized();
     double damageMultiplier = game.saveData.damageMultiplier;
     if (hasFirePower) damageMultiplier *= 2.0;
+    // Modifier glass_cannon: 3× danno (e 1 sola vita, applicata in
+    // _applyModifiers). Wired qui per ogni weapon type.
+    if (game.hasModifier('glass_cannon')) damageMultiplier *= 3.0;
     const pierce = false;
     final basicColor = hasFirePower ? const Color(0xFFFF3300) : NeonColors.bulletYellow;
 
@@ -405,13 +408,17 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
       Vector2? offset,
       bool pierce = false,
       WeaponType weaponType = WeaponType.basic}) {
+    // Modifier ricochet_world: tutti i bullet rimbalzano 5 volte (era 0-2).
+    // Override `maxBounces` se attivo, indipendentemente dal weapon type.
+    final effBounces =
+        game.hasModifier('ricochet_world') ? 5 : maxBounces;
     final bullet = PlayerBullet(
       direction: dir,
       weaponType: weaponType,
       speed: speed,
       damage: damage,
       color: color,
-      maxBounces: maxBounces,
+      maxBounces: effBounces,
       pierce: pierce,
       sizeMultiplier: hasFirePower ? 2.0 : 1.0,
     );

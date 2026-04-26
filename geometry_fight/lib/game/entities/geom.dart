@@ -74,6 +74,12 @@ class Geom extends PositionComponent
     if (game.waveSystem.activeModifier == WaveModifier.magnetic) {
       magnetRange *= 2.0;
     }
+    // Pre-game modifier `magnet_king` (RE MAGNETE): raggio enorme +600px
+    // assoluto (richiesta utente: "geom volano verso di te"). Stacka sopra
+    // wave-modifier + power-up.
+    if (game.hasModifier('magnet_king')) {
+      magnetRange += 600.0;
+    }
     // CollectPet (Geometry Wars 3 style): doppio boost.
     //   1) +250px sul magnetRange globale (era 150 — utente "non funziona",
     //      bumpato per visibilità immediata).
