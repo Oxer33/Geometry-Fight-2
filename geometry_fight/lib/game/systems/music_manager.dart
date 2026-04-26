@@ -126,12 +126,15 @@ class MusicManager {
     await _verifyPlayingOrRetry(_Mode.bgm);
   }
 
-  /// Post-play verify: aspetta 200ms (state transition Android) e se
+  /// Post-play verify: aspetta 100ms (state transition Android) e se
   /// il player NON è in `playing`, fa retry singolo dal bag corrispondente.
   /// Defense contro silent failure di `bgm.play` (caught dentro `_playTrack`
   /// → return true ma senza music partita).
+  ///
+  /// Delay ridotto 200→100ms: riduce latenza menu cold-start senza
+  /// compromettere reliability (Android state propagation è ~50ms tipico).
   static Future<void> _verifyPlayingOrRetry(_Mode expected) async {
-    await Future.delayed(const Duration(milliseconds: 200));
+    await Future.delayed(const Duration(milliseconds: 100));
     if (_mode != expected) return; // mode cambiato durante verify, abort
     if (_isActuallyPlaying()) return; // success
     debugPrint('MusicManager: post-play verify FAIL ($expected) → retry');
@@ -306,13 +309,14 @@ class MusicManager {
       // sorgente atomicamente. Un stop() intermedio scatena completion spuri
       // → doppia pesca dal bag → music stuck.
       //
-      // Timeout 5s su `bgm.play`: circuit breaker per Android MediaPlayer
-      // hang (raro ma possibile su low-end devices o quando il file system
-      // risponde lentamente). Senza timeout, hang → mutex stuck → nessuna
-      // playIntro/playBgm successiva funziona finché app restart.
+      // Timeout 2s su `bgm.play`: circuit breaker per Android MediaPlayer
+      // hang (raro ma possibile su low-end devices o filesystem slow).
+      // Ridotto 5→2s: recovery più veloce (verify-retry parte ~100ms dopo,
+      // se il primo play non parte la retry kick-in entro 2.1s totale invece
+      // di 5.1s).
       await FlameAudio.bgm
           .play(relativePath, volume: AudioSystem.bgmVolume)
-          .timeout(const Duration(seconds: 5));
+          .timeout(const Duration(seconds: 2));
 
       // Superseded: un altro _playTrack è arrivato nel frattempo.
       if (seq != _playSeq) return true;
