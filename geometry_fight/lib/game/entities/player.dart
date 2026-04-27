@@ -195,15 +195,27 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
       position.y = position.y.clamp(15, arenaHeight - 15);
     }
 
-    // Aim direction
+    // Aim direction.
+    // Rotation logic (iter 4):
+    //  - Se il player sta sparando (fire button OR aim stick attivo) E non è
+    //    pacifist → la nave si gira verso lo shoot direction (aim stick).
+    //  - Altrimenti → la nave si gira verso la direzione di movimento (riusa
+    //    `moveDir` calcolato sopra, che considera già `controlsInverted`).
+    //  - In idle (no input) → mantiene rotazione corrente.
     final aimDir = game.aimInput;
-    if (aimDir.length > 0) {
+    final wantsToShoot = !game.isPacifistMode &&
+        (game.isShooting || aimDir.length > 0.3);
+    if (wantsToShoot && aimDir.length > 0) {
       _rotation = math.atan2(aimDir.y, aimDir.x) + math.pi / 2;
+    } else if (moveDir.length > 0.1) {
+      _rotation = math.atan2(moveDir.y, moveDir.x) + math.pi / 2;
     }
 
     // Shooting (usa realDt per non essere rallentato dallo slow-mo)
     _fireTimer -= realDt;
-    if ((game.isShooting || aimDir.length > 0.3) && _fireTimer <= 0) {
+    // Pacifism mode: shooting completamente bloccato (regola GW2 Pacifism).
+    if (!game.isPacifistMode &&
+        (game.isShooting || aimDir.length > 0.3) && _fireTimer <= 0) {
       // Direction default: se il giocatore preme fire senza mirare, usa
       // l'orientamento della nave (_rotation) invece di hardcoded "su".
       // Prima: ship che guardava est sparava sempre a nord → disconnect
@@ -575,6 +587,23 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
             0.3,
           ) ??
           const Color(0xFFE8F8FF);
+    } else if (skinId == 'voidwalker') {
+      // Corpo viola scurissimo, glow viola ereditato da baseColor.
+      bodyColor = const Color(0xFF14001F);
+    } else if (skinId == 'tactical') {
+      // Corpo acciaio scuro con tint blu — placche militari.
+      bodyColor = const Color(0xFF334455);
+    } else if (skinId == 'prism') {
+      // Cristallo bianco-trasparente con tint colorato leggero.
+      final hue = (_energyPhase * 30) % 360;
+      bodyColor = Color.lerp(
+            const Color(0xFFFFFFFF),
+            HSVColor.fromAHSV(1, hue, 0.5, 1).toColor(),
+            0.25,
+          ) ?? const Color(0xFFFFFFFF);
+    } else if (skinId == 'aurora') {
+      // Aurora: corpo brillante ma più chiaro del glow per leggibilità.
+      bodyColor = baseColor.withValues(alpha: 0.85);
     }
     if (isInvincible) {
       final blink = ((_invincibleTimer * 12).toInt() % 2 == 0);
@@ -583,6 +612,14 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
       paint.color = bodyColor;
     }
     _drawShipBody(canvas, paint, 1.0);
+
+    // Phoenix overlay: ali infuocate + embers (utente: "skin phoenix mi
+    // fa vedere la navicella rossa, non é come quella che vedo nello shop").
+    // Aggiungo wings + embers SOPRA al body per matchare _drawPhoenixShip
+    // dello shop preview. Mirror della logica di shop_screen.dart.
+    if (skinId == 'phoenix') {
+      _renderPhoenixOverlay(canvas, cx, cy);
+    }
 
     // Bordo rosso luminoso per stealth (si legge sulla fill quasi nera)
     if (skinId == 'stealth' && !isInvincible) {
@@ -611,11 +648,15 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
   /// Scia luminosa dietro la nave durante il movimento.
   /// Colore deriva dal trail equipaggiato nello shop (activeTrail):
   /// normal=cyan, fire=arancio, ice=azzurro, plasma=viola, rainbow=HSV ciclico.
+  // Trail size multiplier (iter 4): +30% richiesto utente per leggibilità.
+  // Applicato anche allo shop _TrailPreviewPainter per coerenza visuale.
+  static const double _trailSizeMultiplier = 1.3;
+
   void _renderTrail(Canvas canvas, double cx, double cy) {
     if (_trail.isEmpty) return;
     for (int i = 0; i < _trail.length; i++) {
       final alpha = (1.0 - i / _maxTrailLength) * 0.4;
-      final trailSize = (1.0 - i / _maxTrailLength) * 3;
+      final trailSize = (1.0 - i / _maxTrailLength) * 3 * _trailSizeMultiplier;
       final offset = _trail[i] - position;
       final color = hasOverdrive
           ? _getRainbowColor(_energyPhase + i * 0.3)
@@ -656,6 +697,32 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
         return const Color(0xFF8888CC);
       case 'omega':
         return const Color(0xFFFFD700);
+      case 'phoenix':
+        return const Color(0xFFFF5500);
+      case 'cyber':
+        return const Color(0xFF00FF66);
+      case 'voidwalker':
+        return const Color(0xFFAA44FF);
+      case 'aurora':
+        // Cycle ciano→rosa→verde, simile a crystal ma più saturato.
+        final step = ((_energyPhase * 25) / 5).floor() % 72;
+        if (_crystalHueStep != step || _crystalColorCache == null) {
+          _crystalHueStep = step;
+          _crystalColorCache =
+              HSVColor.fromAHSV(1, (step * 5.0 + 120) % 360, 0.7, 1).toColor();
+        }
+        return _crystalColorCache!;
+      case 'tactical':
+        return const Color(0xFF6688AA);
+      case 'prism':
+        // Rotazione hue veloce → bianco apparente con flash colorati.
+        final step = ((_energyPhase * 40) / 5).floor() % 72;
+        if (_crystalHueStep != step || _crystalColorCache == null) {
+          _crystalHueStep = step;
+          _crystalColorCache =
+              HSVColor.fromAHSV(1, step * 5.0, 0.6, 1).toColor();
+        }
+        return _crystalColorCache!;
       case 'classic':
       default:
         return NeonColors.cyan;
@@ -677,6 +744,32 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
         return HSVColor.fromAHSV(
                 1, ((_energyPhase * 60) + index * 25) % 360, 1, 1)
             .toColor();
+      case 'comet':
+        // Testa bianca (vicino nave), coda arancio → nero.
+        if (index < 3) return const Color(0xFFFFFFFF);
+        final t = (index / _maxTrailLength).clamp(0.0, 1.0);
+        return Color.lerp(const Color(0xFFFFCC66), const Color(0xFF441100), t)!;
+      case 'inferno':
+        // 3 layer fuoco alternati: rosso/arancio/giallo.
+        final layer = index % 3;
+        final hue = layer == 0 ? 0.0 : (layer == 1 ? 25.0 : 50.0);
+        return HSVColor.fromAHSV(1, hue, 1, 1).toColor();
+      case 'void':
+        // Particelle scure + sparkle viola brillante ogni 5.
+        return index % 5 == 0
+            ? const Color(0xFFEE88FF)
+            : const Color(0xFF330055);
+      case 'quantum':
+        // Coppie cyan/magenta alternate.
+        return (index ~/ 2) % 2 == 0
+            ? const Color(0xFF00FFCC)
+            : const Color(0xFFFF00CC);
+      case 'galaxy':
+        // Hue shift cosmico viola→rosa.
+        final ghue = (240 + index * 6) % 360;
+        return HSVColor.fromAHSV(1, ghue.toDouble(), 0.6, 1).toColor();
+      case 'lightning':
+        return const Color(0xFFFFFF88);
       case 'normal':
       default:
         return NeonColors.cyan;
@@ -851,6 +944,64 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
   double _cachedPathScale = -1;
   bool _cachedPathOmega = false;
   Path? _cachedShipPath;
+
+  /// Phoenix overlay: ali infuocate + ember orbitanti, mirror dello
+  /// `_drawPhoenixShip` dello shop preview. Renderizzato SOPRA al body
+  /// standard per dare il "wings of fire" look promesso nello shop.
+  ///
+  /// Usa Paint() locali (non shared) → render path raro (skin-specifico)
+  /// e i Paint sono leggeri.
+  static final Paint _phoenixWingFill = Paint();
+  static final Paint _phoenixWingStroke = Paint()
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 1.5;
+  static final Paint _phoenixEmber = Paint();
+  static final Paint _phoenixGlow = Paint();
+
+  void _renderPhoenixOverlay(Canvas canvas, double cx, double cy) {
+    canvas.save();
+    canvas.translate(cx, cy);
+    canvas.rotate(_rotation);
+    final s = 1.0;
+    final wingPhase = math.sin(_energyPhase * 3) * 0.3 + 1.0;
+
+    // Glow esterno fuoco arancione
+    _phoenixGlow.color = const Color(0xFFFF8800).withValues(alpha: 0.3);
+    canvas.drawCircle(Offset.zero, 24 * s * wingPhase, _phoenixGlow);
+
+    // Ali sinistra/destra (forma piuma con quadratic bezier)
+    for (final side in [-1.0, 1.0]) {
+      final wing = Path()
+        ..moveTo(0, -10 * s)
+        ..quadraticBezierTo(
+            side * 18 * s * wingPhase, -8 * s, side * 22 * s * wingPhase, 4 * s)
+        ..quadraticBezierTo(
+            side * 16 * s * wingPhase, 6 * s, side * 8 * s, 8 * s)
+        ..lineTo(0, 4 * s)
+        ..close();
+      _phoenixWingFill.color =
+          const Color(0xFFFF2200).withValues(alpha: 0.7);
+      canvas.drawPath(wing, _phoenixWingFill);
+      _phoenixWingStroke.color =
+          const Color(0xFFFF8800).withValues(alpha: 0.5);
+      canvas.drawPath(wing, _phoenixWingStroke);
+    }
+
+    // Embers orbitanti
+    for (int i = 0; i < 8; i++) {
+      final ang = i * math.pi / 4 + _energyPhase * 0.8;
+      final dist = 18 * s + math.sin(_energyPhase * 2 + i) * 4;
+      final ex = math.cos(ang) * dist;
+      final ey = math.sin(ang) * dist;
+      final emberPulse =
+          (math.sin(_energyPhase * 4 + i) * 0.3 + 0.7).clamp(0.2, 1.0);
+      _phoenixEmber.color =
+          const Color(0xFFFFCC44).withValues(alpha: emberPulse);
+      canvas.drawCircle(Offset(ex, ey), 1.4, _phoenixEmber);
+    }
+
+    canvas.restore();
+  }
 
   /// Disegna il corpo della nave: forma a freccia dettagliata con ali.
   /// Omega skin usa una stella a 4 punte (forma unica descritta nello shop).

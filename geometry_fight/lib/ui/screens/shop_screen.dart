@@ -178,6 +178,12 @@ class _ShopScreenState extends State<ShopScreen>
       _SkinDef('crystal', 'Crystal', 1000, 'Diamante prismatico — riflessi arcobaleno', const Color(0xFFAADDFF)),
       _SkinDef('ghost', 'Ghost', 1500, 'Semi-trasparente con scia di particelle', const Color(0xFF8888CC)),
       _SkinDef('omega', 'Omega', 3000, 'Stella a 4 punte dorata — forma unica', const Color(0xFFFFD700)),
+      _SkinDef('phoenix', 'Phoenix', 2500, 'Ali di fuoco con piume di brace — rinasce dalle ceneri', const Color(0xFFFF5500)),
+      _SkinDef('cyber', 'Cyber', 2000, 'Mesh circuiti neon verde — overlay digitale animato', const Color(0xFF00FF66)),
+      _SkinDef('voidwalker', 'Voidwalker', 3500, 'Nucleo viola sospeso nel vuoto — alone etereo', const Color(0xFFAA44FF)),
+      _SkinDef('aurora', 'Aurora', 2500, 'Boreale: ciano/rosa/verde che fluiscono', const Color(0xFF66FFCC)),
+      _SkinDef('tactical', 'Tactical', 1500, 'Corazza militare grigio/blu — placche corazzate', const Color(0xFF6688AA)),
+      _SkinDef('prism', 'Prism', 4000, 'Cristallo poligonale — rifrazione arcobaleno multipla', const Color(0xFFFFFFFF)),
     ];
 
     return _buildPreviewGrid(
@@ -213,6 +219,12 @@ class _ShopScreenState extends State<ShopScreen>
       _TrailDef('ice', 'Ice', 200, 'Cristalli di ghiaccio scintillanti', const Color(0xFF88DDFF)),
       _TrailDef('plasma', 'Plasma', 200, 'Energia plasma viola pulsante', const Color(0xFFCC00FF)),
       _TrailDef('rainbow', 'Rainbow', 200, 'Colori che cambiano continuamente', NeonColors.cyan),
+      _TrailDef('comet', 'Comet', 800, 'Testa luminosa con coda che si spegne lentamente', const Color(0xFFFFFFCC)),
+      _TrailDef('inferno', 'Inferno', 1200, 'Fuoco multi-strato con braci che schizzano', const Color(0xFFFF3300)),
+      _TrailDef('void', 'Void', 1500, 'Vortice oscuro che risucchia particelle viola', const Color(0xFF8800FF)),
+      _TrailDef('quantum', 'Quantum', 1500, 'Particelle accoppiate in superposizione cromatica', const Color(0xFF00FFCC)),
+      _TrailDef('galaxy', 'Galaxy', 2000, 'Stelle che spiraleggiano con polvere cosmica', const Color(0xFFCCAAFF)),
+      _TrailDef('lightning', 'Lightning', 1500, 'Archi elettrici a zigzag tra i punti scia', const Color(0xFFFFFF44)),
     ];
 
     return _buildPreviewGrid(
@@ -545,62 +557,192 @@ class _ShopScreenState extends State<ShopScreen>
       _ModeDef('zenMode', 'Zen Mode', 1000, 'Vite infinite — gioca senza stress, esplora tutto', Icons.spa, const Color(0xFF88CCFF)),
       _ModeDef('tunnel', 'Tunnel', 3000, 'Scorrimento laterale in un tunnel infinito', Icons.straighten, NeonColors.purple),
       _ModeDef('endlessBoss', 'Boss Infiniti', 3500, 'Boss dopo boss senza fine — solo per esperti', Icons.repeat, const Color(0xFFFF00AA)),
+      _ModeDef('pacifist', 'Pacifist', 1500, 'Niente colpi! Sopravvivi con i Gate (GW Pacifism)', Icons.spa_outlined, const Color(0xFF77FFD4)),
     ];
 
-    return GridView.builder(
-      padding: const EdgeInsets.all(16),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        childAspectRatio: 2.8,
-        mainAxisSpacing: 8,
-        crossAxisSpacing: 8,
-      ),
-      itemCount: modes.length,
-      itemBuilder: (context, index) {
-        final item = modes[index];
-        final owned = _saveData.unlockedModes.contains(item.id);
+    // Single-column list con card grosse: icona+nome+descrizione+stato.
+    // Glow pulsante sui posseduti, "NEW" badge su Pacifist (ultima aggiunta).
+    return AnimatedBuilder(
+      animation: _previewController,
+      builder: (context, _) {
+        final pulse = (math.sin(_previewController.value * math.pi * 2) * 0.5 + 0.5);
+        return ListView.builder(
+          padding: const EdgeInsets.all(14),
+          itemCount: modes.length,
+          itemBuilder: (context, index) {
+            final item = modes[index];
+            final owned = _saveData.unlockedModes.contains(item.id);
+            final canAfford = _saveData.goldGeoms >= item.cost;
+            final isNew = item.id == 'pacifist';
 
-        return Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(
-              color: owned
-                  ? item.color.withValues(alpha: 0.4)
-                  : Colors.white.withValues(alpha: 0.1),
-            ),
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                item.color.withValues(alpha: owned ? 0.08 : 0.02),
-                Colors.transparent,
-              ],
-            ),
-          ),
-          child: Row(
-            children: [
-              Icon(item.icon, color: item.color.withValues(alpha: owned ? 0.8 : 0.3), size: 22),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.start,
+            // Border glow alpha pulsa per gli item posseduti
+            final borderAlpha = owned ? 0.35 + pulse * 0.25 : 0.12;
+            final fillAlpha = owned ? 0.10 + pulse * 0.04 : 0.03;
+
+            return Container(
+              margin: const EdgeInsets.only(bottom: 10),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: item.color.withValues(alpha: borderAlpha),
+                  width: owned ? 1.5 : 1,
+                ),
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    item.color.withValues(alpha: fillAlpha),
+                    Colors.black.withValues(alpha: 0.4),
+                    Colors.transparent,
+                  ],
+                  stops: const [0.0, 0.6, 1.0],
+                ),
+                boxShadow: owned
+                    ? [
+                        BoxShadow(
+                          color: item.color.withValues(alpha: 0.15 + pulse * 0.1),
+                          blurRadius: 12,
+                          spreadRadius: 1,
+                        ),
+                      ]
+                    : null,
+              ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                child: Row(
                   children: [
-                    Text(item.name, style: TextStyle(
-                      color: owned ? item.color : Colors.white54,
-                      fontSize: 11, fontWeight: FontWeight.bold, fontFamily: 'monospace',
-                    )),
-                    const SizedBox(height: 2),
+                    // Icona dentro cerchio glowing
+                    Container(
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: item.color.withValues(alpha: owned ? 0.6 : 0.2),
+                          width: 1.2,
+                        ),
+                        gradient: RadialGradient(
+                          colors: [
+                            item.color.withValues(alpha: owned ? 0.2 : 0.05),
+                            Colors.transparent,
+                          ],
+                        ),
+                      ),
+                      child: Icon(
+                        item.icon,
+                        color: item.color.withValues(alpha: owned ? 1.0 : 0.4),
+                        size: 24,
+                      ),
+                    ),
+                    const SizedBox(width: 14),
+                    // Name + description
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Row(
+                            children: [
+                              Text(
+                                item.name.toUpperCase(),
+                                style: TextStyle(
+                                  color: owned ? item.color : Colors.white70,
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                  fontFamily: 'monospace',
+                                  letterSpacing: 1.5,
+                                  shadows: owned
+                                      ? [
+                                          Shadow(
+                                            color: item.color
+                                                .withValues(alpha: 0.6),
+                                            blurRadius: 6,
+                                          ),
+                                        ]
+                                      : null,
+                                ),
+                              ),
+                              if (isNew) ...[
+                                const SizedBox(width: 8),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 5, vertical: 1),
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(3),
+                                    color: const Color(0xFFFFD700)
+                                        .withValues(alpha: 0.15 + pulse * 0.15),
+                                    border: Border.all(
+                                      color: const Color(0xFFFFD700)
+                                          .withValues(alpha: 0.7),
+                                      width: 0.8,
+                                    ),
+                                  ),
+                                  child: const Text(
+                                    'NEW',
+                                    style: TextStyle(
+                                      color: Color(0xFFFFD700),
+                                      fontSize: 8,
+                                      fontFamily: 'monospace',
+                                      fontWeight: FontWeight.bold,
+                                      letterSpacing: 1,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            item.description,
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.5),
+                              fontSize: 10,
+                              fontFamily: 'monospace',
+                              height: 1.3,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    // Cost / unlocked badge
                     if (owned)
-                      Text('UNLOCKED', style: TextStyle(
-                        color: Colors.greenAccent.withValues(alpha: 0.6),
-                        fontSize: 8, fontFamily: 'monospace',
-                      ))
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(6),
+                          color: Colors.greenAccent.withValues(alpha: 0.08),
+                          border: Border.all(
+                            color: Colors.greenAccent.withValues(alpha: 0.4),
+                            width: 0.8,
+                          ),
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.check_circle_outline,
+                                color: Colors.greenAccent, size: 12),
+                            SizedBox(width: 4),
+                            Text(
+                              'UNLOCKED',
+                              style: TextStyle(
+                                color: Colors.greenAccent,
+                                fontSize: 9,
+                                fontWeight: FontWeight.bold,
+                                fontFamily: 'monospace',
+                                letterSpacing: 1,
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
                     else
                       _PurchaseButton(
                         cost: item.cost,
-                        canAfford: _saveData.goldGeoms >= item.cost,
+                        canAfford: canAfford,
                         color: item.color,
                         onTap: () {
                           _purchase(item.id, item.cost, () {
@@ -613,8 +755,8 @@ class _ShopScreenState extends State<ShopScreen>
                   ],
                 ),
               ),
-            ],
-          ),
+            );
+          },
         );
       },
     );
@@ -1249,6 +1391,18 @@ class _SkinPreviewPainter extends CustomPainter {
   static final Paint _orbitingParticlePaint = Paint();
   static final Paint _orbitingLinePaint = Paint()..strokeWidth = 0.5;
 
+  // Iter 4 fix (caveman-review): paint generici riusabili per le 6 nuove skin
+  // (phoenix/cyber/voidwalker/aurora/tactical/prism). Prima ognuna allocava
+  // 5-14 Paint() per frame → ~70 alloc totale/frame su preview attive. Ora si
+  // mutano color/strokeWidth in place. NB: dopo l'uso lo strokeWidth NON
+  // viene resettato — chi viene dopo deve risettare prima dell'uso.
+  static final Paint _gFill = Paint();
+  static final Paint _gStroke = Paint()..style = PaintingStyle.stroke;
+  static final Paint _gGlowBlur = Paint()
+    ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 12);
+  static final Paint _gGlowBlurSm = Paint()
+    ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
+
   final String skinId;
   final Color color;
   final double time;
@@ -1305,6 +1459,24 @@ class _SkinPreviewPainter extends CustomPainter {
         break;
       case 'omega':
         _drawOmegaShip(canvas, scale, color);
+        break;
+      case 'phoenix':
+        _drawPhoenixShip(canvas, scale, color);
+        break;
+      case 'cyber':
+        _drawCyberShip(canvas, scale, color);
+        break;
+      case 'voidwalker':
+        _drawVoidwalkerShip(canvas, scale, color);
+        break;
+      case 'aurora':
+        _drawAuroraShip(canvas, scale, color);
+        break;
+      case 'tactical':
+        _drawTacticalShip(canvas, scale, color);
+        break;
+      case 'prism':
+        _drawPrismShip(canvas, scale, color);
         break;
       default:
         _drawClassicShip(canvas, scale, color);
@@ -1621,6 +1793,311 @@ class _SkinPreviewPainter extends CustomPainter {
     }
   }
 
+  void _drawPhoenixShip(Canvas canvas, double s, Color c) {
+    // Ali infuocate aperte: corpo centrale + due grandi ali piumate.
+    final wingPhase = math.sin(time * 3) * 0.3 + 1.0;
+    // Glow esterno fuoco — usa _gGlowBlur cache (blur radius 12, ok per fuoco).
+    _gGlowBlur.color = const Color(0xFFFF8800).withValues(alpha: 0.35);
+    canvas.drawCircle(Offset.zero, 24 * s * wingPhase, _gGlowBlur);
+
+    // Ali sinistra/destra (forma piuma)
+    for (final side in [-1.0, 1.0]) {
+      final wing = Path()
+        ..moveTo(0, -10 * s)
+        ..quadraticBezierTo(
+            side * 18 * s * wingPhase, -8 * s, side * 22 * s * wingPhase, 4 * s)
+        ..quadraticBezierTo(
+            side * 16 * s * wingPhase, 6 * s, side * 8 * s, 8 * s)
+        ..lineTo(0, 4 * s)
+        ..close();
+      _gFill.color = const Color(0xFFFF2200).withValues(alpha: 0.7);
+      canvas.drawPath(wing, _gFill);
+      _gStroke
+        ..color = const Color(0xFFFF8800).withValues(alpha: 0.5)
+        ..strokeWidth = 1.5;
+      canvas.drawPath(wing, _gStroke);
+    }
+
+    // Corpo centrale dorato/rosso
+    final body = Path()
+      ..moveTo(0, -16 * s)
+      ..lineTo(4 * s, -2 * s)
+      ..lineTo(3 * s, 10 * s)
+      ..lineTo(-3 * s, 10 * s)
+      ..lineTo(-4 * s, -2 * s)
+      ..close();
+    _gFill.color = c;
+    canvas.drawPath(body, _gFill);
+    _gStroke
+      ..color = const Color(0xFFFFDD00).withValues(alpha: 0.8)
+      ..strokeWidth = 1.0;
+    canvas.drawPath(body, _gStroke);
+
+    // Brace particles attorno
+    for (int i = 0; i < 8; i++) {
+      final ang = i * math.pi / 4 + time * 0.8;
+      final dist = 18 * s + math.sin(time * 2 + i) * 4;
+      final ex = math.cos(ang) * dist;
+      final ey = math.sin(ang) * dist;
+      final emberPulse = (math.sin(time * 4 + i) * 0.3 + 0.7).clamp(0.2, 1.0);
+      _gFill.color = const Color(0xFFFFCC44).withValues(alpha: emberPulse);
+      canvas.drawCircle(Offset(ex, ey), 1.4, _gFill);
+    }
+  }
+
+  void _drawCyberShip(Canvas canvas, double s, Color c) {
+    // Classic ship con overlay griglia circuiti + scanline.
+    _gFill.color = c.withValues(alpha: 0.85);
+    _drawShipPath(canvas, s, _gFill);
+
+    // Scanline orizzontale che scorre
+    final scanY = ((time * 30) % 32) - 16;
+    _gStroke
+      ..color = const Color(0xFF00FFAA).withValues(alpha: 0.6)
+      ..strokeWidth = 1.0;
+    canvas.drawLine(
+        Offset(-15 * s, scanY * s), Offset(15 * s, scanY * s), _gStroke);
+
+    // Griglia circuiti interna
+    _gStroke
+      ..color = const Color(0xFF00FF66).withValues(alpha: 0.4)
+      ..strokeWidth = 0.5;
+    for (double y = -12 * s; y <= 12 * s; y += 4 * s) {
+      canvas.drawLine(Offset(-12 * s, y), Offset(12 * s, y), _gStroke);
+    }
+    for (double x = -10 * s; x <= 10 * s; x += 4 * s) {
+      canvas.drawLine(Offset(x, -12 * s), Offset(x, 12 * s), _gStroke);
+    }
+
+    // Bordo neon brillante
+    _gStroke
+      ..color = const Color(0xFF00FF88)
+      ..strokeWidth = 1.4;
+    _drawShipPath(canvas, s, _gStroke);
+
+    // Nodi pulsanti agli incroci griglia
+    final nodes = [
+      Offset(-8 * s, -4 * s),
+      Offset(8 * s, -4 * s),
+      Offset(0, 0),
+      Offset(-4 * s, 8 * s),
+      Offset(4 * s, 8 * s),
+    ];
+    for (int i = 0; i < nodes.length; i++) {
+      final pulse = (math.sin(time * 6 + i * 1.2) * 0.4 + 0.6).clamp(0.2, 1.0);
+      _gFill.color = const Color(0xFF00FFAA).withValues(alpha: pulse);
+      canvas.drawCircle(nodes[i], 2.0, _gFill);
+    }
+  }
+
+  void _drawVoidwalkerShip(Canvas canvas, double s, Color c) {
+    // Corpo nero traslucido + nucleo viola pulsante + alone etereo.
+    final corePulse = math.sin(time * 2) * 0.2 + 1.0;
+
+    // Alone esterno viola — uso _gGlowBlur (blur 12, vicino al desiderato 18).
+    _gGlowBlur.color = c.withValues(alpha: 0.25 * corePulse);
+    canvas.drawCircle(Offset.zero, 20 * s, _gGlowBlur);
+
+    // Corpo nave nero quasi opaco
+    _gFill.color = const Color(0xFF0A0014);
+    _drawShipPath(canvas, s, _gFill);
+
+    // Bordo viola luminoso
+    _gStroke
+      ..color = c
+      ..strokeWidth = 1.3;
+    _drawShipPath(canvas, s, _gStroke);
+
+    // Nucleo centrale viola — uso _gGlowBlurSm (blur 4 = perfetto).
+    _gGlowBlurSm.color = c.withValues(alpha: 0.8);
+    canvas.drawCircle(Offset(0, 2 * s), 4 * s * corePulse, _gGlowBlurSm);
+    _gFill.color = const Color(0xE6FFFFFF);
+    canvas.drawCircle(Offset(0, 2 * s), 2 * s, _gFill);
+
+    // Particelle ombra che orbitano
+    _gFill.color = c.withValues(alpha: 0.4);
+    for (int i = 0; i < 6; i++) {
+      final ang = -time * 1.5 + i * math.pi / 3;
+      final dist = 14 * s + math.sin(time + i) * 2;
+      final px = math.cos(ang) * dist;
+      final py = math.sin(ang) * dist;
+      canvas.drawCircle(Offset(px, py), 1.5, _gFill);
+    }
+  }
+
+  // Cached aurora paint con shader (shader RIcreato per frame perché dipende
+  // da time/colors, ma il Paint object è riusato).
+  static final Paint _auroraBodyPaint = Paint();
+
+  void _drawAuroraShip(Canvas canvas, double s, Color _) {
+    // Body shape classic, colore boreale che fluisce ciano→rosa→verde.
+    final h1 = (time * 40) % 360;
+    final h2 = (h1 + 80) % 360;
+    final h3 = (h1 + 160) % 360;
+    final color1 = HSVColor.fromAHSV(1, h1, 0.7, 1).toColor();
+    final color2 = HSVColor.fromAHSV(1, h2, 0.7, 1).toColor();
+    final color3 = HSVColor.fromAHSV(1, h3, 0.7, 1).toColor();
+
+    // Glow esterno multi-strato — uso _gGlowBlur (blur 12, ok per 14 e 10).
+    _gGlowBlur.color = color1.withValues(alpha: 0.18);
+    canvas.drawCircle(Offset.zero, 22 * s, _gGlowBlur);
+    _gGlowBlur.color = color2.withValues(alpha: 0.18);
+    canvas.drawCircle(Offset.zero, 18 * s, _gGlowBlur);
+
+    // Corpo: gradient verticale aurora — shader necessariamente per-frame
+    // (dipende da time-shifted hue), ma riusiamo Paint object cached.
+    final rect = Rect.fromCenter(
+        center: Offset.zero, width: 30 * s, height: 30 * s);
+    final shader = LinearGradient(
+      begin: Alignment.topCenter,
+      end: Alignment.bottomCenter,
+      colors: [color1, color2, color3],
+    ).createShader(rect);
+    _auroraBodyPaint.shader = shader;
+    _drawShipPath(canvas, s, _auroraBodyPaint);
+    // Reset shader dopo l'uso (i paint generici non hanno shader).
+    _auroraBodyPaint.shader = null;
+
+    // Bordo bianco luminoso
+    _gStroke
+      ..color = Colors.white.withValues(alpha: 0.6)
+      ..strokeWidth = 1.0;
+    _drawShipPath(canvas, s, _gStroke);
+
+    // Cockpit
+    _gFill.color = Colors.white.withValues(alpha: 0.9);
+    canvas.drawCircle(Offset(0, -4 * s), 2.5 * s, _gFill);
+
+    // Veli lucenti laterali (effetto aurora)
+    _gStroke.strokeWidth = 0.8;
+    for (int i = 0; i < 3; i++) {
+      final yOff = -8 * s + i * 6 * s;
+      _gStroke.color =
+          HSVColor.fromAHSV(0.3, (h1 + i * 40) % 360, 0.8, 1).toColor();
+      canvas.drawLine(
+          Offset(-12 * s, yOff), Offset(12 * s, yOff), _gStroke);
+    }
+  }
+
+  void _drawTacticalShip(Canvas canvas, double s, Color c) {
+    // Classic shape con placche corazzate + chevron militari.
+    _gFill.color = const Color(0xFF334455);
+    _drawShipPath(canvas, s, _gFill);
+
+    // Strisce blu chevron sulle ali
+    _gStroke
+      ..color = c
+      ..strokeWidth = 1.5;
+    canvas.drawLine(Offset(-9 * s, 4 * s), Offset(-5 * s, -2 * s), _gStroke);
+    canvas.drawLine(Offset(-9 * s, 7 * s), Offset(-5 * s, 1 * s), _gStroke);
+    canvas.drawLine(Offset(9 * s, 4 * s), Offset(5 * s, -2 * s), _gStroke);
+    canvas.drawLine(Offset(9 * s, 7 * s), Offset(5 * s, 1 * s), _gStroke);
+
+    // Placca centrale con bordo
+    final platePath = Path()
+      ..moveTo(-3 * s, -8 * s)
+      ..lineTo(3 * s, -8 * s)
+      ..lineTo(2 * s, 6 * s)
+      ..lineTo(-2 * s, 6 * s)
+      ..close();
+    _gFill.color = const Color(0xFF223344);
+    canvas.drawPath(platePath, _gFill);
+    _gStroke
+      ..color = c
+      ..strokeWidth = 1.0;
+    canvas.drawPath(platePath, _gStroke);
+
+    // Bordo esterno blu acciaio
+    _gStroke
+      ..color = c.withValues(alpha: 0.9)
+      ..strokeWidth = 1.5;
+    _drawShipPath(canvas, s, _gStroke);
+
+    // Hatch warning (rosso lampeggiante)
+    final warnPulse = (math.sin(time * 5) > 0) ? 0.9 : 0.2;
+    _gFill.color = const Color(0xFFFF3344).withValues(alpha: warnPulse);
+    canvas.drawCircle(Offset(0, -4 * s), 1.6, _gFill);
+
+    // Rivetti angolari
+    _gFill.color = Colors.white.withValues(alpha: 0.4);
+    for (final p in [
+      Offset(-10 * s, 9 * s),
+      Offset(10 * s, 9 * s),
+      Offset(-3 * s, -10 * s),
+      Offset(3 * s, -10 * s)
+    ]) {
+      canvas.drawCircle(p, 0.8, _gFill);
+    }
+  }
+
+  // Cached prism paint con shader sweep (shader rebuilt per frame).
+  static final Paint _prismFacetPaint = Paint()..style = PaintingStyle.fill;
+
+  void _drawPrismShip(Canvas canvas, double s, Color _) {
+    // Cristallo poligonale 8 facce con rifrazione multi-color.
+    final hue = (time * 60) % 360;
+    final c1 = HSVColor.fromAHSV(1, hue, 1, 1).toColor();
+    final c2 = HSVColor.fromAHSV(1, (hue + 120) % 360, 1, 1).toColor();
+    final c3 = HSVColor.fromAHSV(1, (hue + 240) % 360, 1, 1).toColor();
+
+    // Forma 8-faced gem
+    final path = Path();
+    for (int i = 0; i < 8; i++) {
+      final ang = i * math.pi / 4 - math.pi / 2;
+      final r = (i % 2 == 0 ? 16.0 : 10.0) * s;
+      final x = math.cos(ang) * r;
+      final y = math.sin(ang) * r;
+      if (i == 0) {
+        path.moveTo(x, y);
+      } else {
+        path.lineTo(x, y);
+      }
+    }
+    path.close();
+
+    // Glow rifrazione triplo — uso _gGlowBlur (12 vs desiderato 14, ok).
+    _gGlowBlur.color = c1.withValues(alpha: 0.3);
+    canvas.drawPath(path, _gGlowBlur);
+
+    // Corpo bianco translucido
+    _gFill.color = Colors.white.withValues(alpha: 0.4);
+    canvas.drawPath(path, _gFill);
+
+    // Faccette interne con shader gradient (sweep necessariamente per-frame).
+    final rect = path.getBounds();
+    _prismFacetPaint
+      ..shader = SweepGradient(
+        center: Alignment.center,
+        colors: [c1, c2, c3, c1],
+        stops: const [0, 0.33, 0.66, 1],
+      ).createShader(rect)
+      ..color = Colors.white.withValues(alpha: 0.5);
+    canvas.drawPath(path, _prismFacetPaint);
+    _prismFacetPaint.shader = null;
+
+    // Linee facette dal centro
+    _gStroke
+      ..color = Colors.white.withValues(alpha: 0.7)
+      ..strokeWidth = 0.8;
+    for (int i = 0; i < 8; i++) {
+      final ang = i * math.pi / 4 - math.pi / 2;
+      final r = (i % 2 == 0 ? 16.0 : 10.0) * s;
+      canvas.drawLine(
+          Offset.zero, Offset(math.cos(ang) * r, math.sin(ang) * r), _gStroke);
+    }
+
+    // Bordo bianco brillante
+    _gStroke
+      ..color = Colors.white.withValues(alpha: 0.95)
+      ..strokeWidth = 1.2;
+    canvas.drawPath(path, _gStroke);
+
+    // Centro sparkle pulsante
+    final sparklePulse = math.sin(time * 4) * 0.3 + 0.7;
+    _gFill.color = Colors.white;
+    canvas.drawCircle(Offset.zero, 3 * s * sparklePulse, _gFill);
+  }
+
   @override
   bool shouldRepaint(covariant _SkinPreviewPainter old) => old.time != time;
 }
@@ -1697,11 +2174,113 @@ class _TrailPreviewPainter extends CustomPainter {
           trailAlpha = progress * 0.5;
           trailSize = progress * 3.5;
           break;
+        case 'comet':
+          // Testa luminosa bianca, coda che si raffredda da bianco→arancio→nero.
+          if (progress > 0.85) {
+            trailColor = Colors.white;
+            trailSize = progress * 6;
+          } else {
+            trailColor = Color.lerp(const Color(0xFF441100),
+                const Color(0xFFFFCC66), progress)!;
+            trailSize = progress * 4;
+          }
+          trailAlpha = progress * 0.7;
+          break;
+        case 'inferno':
+          // 3 layer di fuoco: rosso scuro, arancio, giallo brillante al centro.
+          final layer = i % 3;
+          final layerHue = layer == 0 ? 0.0 : (layer == 1 ? 25.0 : 50.0);
+          trailColor = HSVColor.fromAHSV(1, layerHue, 1, 1).toColor();
+          trailAlpha = progress * 0.55;
+          trailSize = progress * (3 + layer * 0.8) +
+              math.sin(time * 10 + i * 0.7) * 1.2;
+          // Brace che schizza orizzontalmente
+          if (i % 4 == 0 && progress > 0.3) {
+            final emberX = tx + math.sin(time * 5 + i) * 8;
+            final emberY = ty + math.cos(time * 4 + i) * 6;
+            _trailBodyPaint.color =
+                const Color(0xFFFFAA00).withValues(alpha: progress * 0.4);
+            canvas.drawCircle(Offset(emberX, emberY), 1.2, _trailBodyPaint);
+          }
+          break;
+        case 'void':
+          // Particelle scure che si attorcigliano + sparkle viola brillante.
+          final swirl = math.sin(time * 3 + i * 0.4) * 6;
+          trailColor = i % 5 == 0
+              ? const Color(0xFFEE88FF)
+              : const Color(0xFF330055);
+          trailAlpha = progress * 0.6;
+          trailSize = progress * 3.5;
+          // Glow viola attorno
+          _trailBodyPaint.color =
+              const Color(0xFF8800FF).withValues(alpha: progress * 0.15);
+          canvas.drawCircle(
+              Offset(tx + swirl, ty), trailSize * 3, _trailBodyPaint);
+          break;
+        case 'quantum':
+          // Coppie di particelle in superposizione: alternano cyan/magenta.
+          final pair = (i ~/ 2) % 2;
+          trailColor = pair == 0
+              ? const Color(0xFF00FFCC)
+              : const Color(0xFFFF00CC);
+          trailAlpha = progress * 0.5;
+          trailSize = progress * 3;
+          // Particella entangled offset
+          final entangleOffset = (i % 2 == 0) ? 4.0 : -4.0;
+          _trailBodyPaint.color = (pair == 0
+                  ? const Color(0xFFFF00CC)
+                  : const Color(0xFF00FFCC))
+              .withValues(alpha: trailAlpha * 0.7);
+          canvas.drawCircle(Offset(tx + entangleOffset, ty + entangleOffset),
+              trailSize * 0.7, _trailBodyPaint);
+          break;
+        case 'galaxy':
+          // Stelle che pulsano + polvere cosmica viola/rosa.
+          final twinkle =
+              (math.sin(time * 5 + i * 0.9) * 0.5 + 0.5).clamp(0.2, 1.0);
+          final hue = ((240 + i * 6) % 360).toDouble();
+          trailColor = HSVColor.fromAHSV(1, hue, 0.6, 1).toColor();
+          trailAlpha = progress * 0.55 * twinkle;
+          trailSize = progress * 3.5 * twinkle + 0.5;
+          // Polvere cosmica diffusa
+          if (i % 2 == 0) {
+            _trailBodyPaint.color =
+                const Color(0xFFCC88FF).withValues(alpha: progress * 0.1);
+            canvas.drawCircle(
+                Offset(tx, ty), trailSize * 4, _trailBodyPaint);
+          }
+          break;
+        case 'lightning':
+          // Zigzag elettrico: punti shiftati alternativamente + arco tra punti.
+          final zigzag = (i % 2 == 0 ? 1 : -1) * 3.0;
+          trailColor = const Color(0xFFFFFF88);
+          trailAlpha = progress * 0.7;
+          trailSize = progress * 2.5;
+          // Arco tra punti consecutivi
+          if (i > 0 && i < trailCount) {
+            final prevTT = pathT - (i - 1) * 0.04;
+            final prevX = cx + math.cos(prevTT) * 50;
+            final prevY = cy + math.sin(prevTT * 2) * 30 -
+                ((i - 1) % 2 == 0 ? 1 : -1) * 3;
+            _trailBodyPaint
+              ..color = const Color(0xFFFFFFAA)
+                  .withValues(alpha: progress * 0.5)
+              ..style = PaintingStyle.stroke
+              ..strokeWidth = 1.2;
+            canvas.drawLine(
+                Offset(prevX, prevY), Offset(tx + zigzag, ty), _trailBodyPaint);
+            _trailBodyPaint.style = PaintingStyle.fill;
+          }
+          break;
         default: // normal
           trailColor = NeonColors.cyan;
           trailAlpha = progress * 0.35;
           trailSize = progress * 3;
       }
+
+      // Iter 4: trail size +30% per match con in-game (player._trailSizeMultiplier).
+      // Applicato globalmente al final size così tutti i case scalano coerenti.
+      trailSize *= 1.3;
 
       if (trailSize > 0.5) {
         final paint = _trailBodyPaint
@@ -1892,33 +2471,37 @@ class _WeaponPreviewPainter extends CustomPainter {
     }
   }
 
-  void _drawParallelBullets(Canvas canvas, double cx, double shipY, double rate, double speed) {
-    final bulletPaint = Paint()..color = color;
+  /// Mirror del render PlayerBullet in-game (projectiles.dart L150-175):
+  /// glow r=4 + body r=3 + core bianco r=1.2. Senza questo helper i bullet
+  /// nel preview shop apparivano simpler (solo glow+body senza nucleo) →
+  /// utente: "armi nello shop devono vedersi uguali a come sono in game".
+  void _drawInGameBullet(Canvas canvas, double x, double y, double alpha) {
     final glowPaint = Paint()
-      ..color = color.withValues(alpha: 0.3)
+      ..color = color.withValues(alpha: alpha * 0.35)
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
+    canvas.drawCircle(Offset(x, y), 4, glowPaint);
+    canvas.drawCircle(
+        Offset(x, y), 3, Paint()..color = color.withValues(alpha: alpha));
+    canvas.drawCircle(
+        Offset(x, y),
+        1.2,
+        Paint()
+          ..color = const Color(0xFFFFFFFF).withValues(alpha: alpha * 0.7));
+  }
 
+  void _drawParallelBullets(Canvas canvas, double cx, double shipY, double rate, double speed) {
     for (int i = 0; i < 12; i++) {
       final spawnTime = (time / rate + i * 0.5) % 8;
       final y = shipY - 22 - spawnTime * speed * 0.3;
       if (y < 10 || y > shipY - 10) continue;
       final alpha = ((shipY - 22 - y) / (shipY - 32)).clamp(0.0, 1.0);
-
       for (final xOff in [-6.0, 6.0]) {
-        bulletPaint.color = color.withValues(alpha: alpha);
-        glowPaint.color = color.withValues(alpha: alpha * 0.3);
-        canvas.drawCircle(Offset(cx + xOff, y), 3, glowPaint);
-        canvas.drawCircle(Offset(cx + xOff, y), 1.5, bulletPaint);
+        _drawInGameBullet(canvas, cx + xOff, y, alpha);
       }
     }
   }
 
   void _drawTripleBullets(Canvas canvas, double cx, double shipY, double rate, double speed) {
-    final bulletPaint = Paint()..color = color;
-    final glowPaint = Paint()
-      ..color = color.withValues(alpha: 0.3)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
-
     // Triplo sparo con angolo ristretto (~12° totali)
     const angles = [-0.105, 0.0, 0.105];
     for (int i = 0; i < 15; i++) {
@@ -1931,20 +2514,12 @@ class _WeaponPreviewPainter extends CustomPainter {
         final bx = cx + math.sin(angle) * dist;
         final by = shipY - 22 - math.cos(angle) * dist;
         if (by < 10 || by > shipY - 10) continue;
-        bulletPaint.color = color.withValues(alpha: alpha);
-        glowPaint.color = color.withValues(alpha: alpha * 0.3);
-        canvas.drawCircle(Offset(bx, by), 3, glowPaint);
-        canvas.drawCircle(Offset(bx, by), 1.5, bulletPaint);
+        _drawInGameBullet(canvas, bx, by, alpha);
       }
     }
   }
 
   void _drawFanBullets(Canvas canvas, double cx, double shipY, double rate, double speed) {
-    final bulletPaint = Paint()..color = color;
-    final glowPaint = Paint()
-      ..color = color.withValues(alpha: 0.3)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
-
     // Spread in-game: 5 bullets, angoli [-0.12, -0.06, 0, +0.06, +0.12] (player.dart).
     final angles = [-0.12, -0.06, 0.0, 0.06, 0.12];
     for (int wave = 0; wave < 5; wave++) {
@@ -1957,11 +2532,7 @@ class _WeaponPreviewPainter extends CustomPainter {
         final by = shipY - 22 - math.cos(angle) * dist;
         if (by < 5 || by > shipY - 10) continue;
         final alpha = (1.0 - waveTime / 3).clamp(0.0, 1.0);
-
-        bulletPaint.color = color.withValues(alpha: alpha);
-        glowPaint.color = color.withValues(alpha: alpha * 0.3);
-        canvas.drawCircle(Offset(bx, by), 2.5, glowPaint);
-        canvas.drawCircle(Offset(bx, by), 1.2, bulletPaint);
+        _drawInGameBullet(canvas, bx, by, alpha);
       }
     }
   }
