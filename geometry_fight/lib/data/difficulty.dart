@@ -233,7 +233,9 @@ const Map<GameMode, GameModeConfig> gameModeConfigs = {
     name: 'WAVES',
     description: 'Solo triangoli rossi cardinali. Rari buchi neri. Test puro di dodge.',
     icon: '🔻',
-    unlockCost: 1200,
+    // 800g: progressione coerente. Pacifist=1500 più punitive (no spari);
+    // Waves più diretto (spari + dodge) → 800 entry-level dopo TimeAttack.
+    unlockCost: 800,
     hasBosses: false,
     hasWaves: true,
     infiniteWaves: true,

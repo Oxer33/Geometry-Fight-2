@@ -82,8 +82,8 @@ abstract class BossBase extends PositionComponent
   @override
   Future<void> onLoad() async {
     // Hitbox proporzionato al visivo del boss (vedi doc hitboxRadiusFactor).
-    final hitboxRadius =
-        math.max(size.x, size.y) / 2 * hitboxRadiusFactor;
+    // Tutti i boss hanno bbox quadrato → size.x diretto (math.max ridondante).
+    final hitboxRadius = size.x / 2 * hitboxRadiusFactor;
     add(CircleHitbox(radius: hitboxRadius, anchor: Anchor.center)
       ..position = size / 2);
   }

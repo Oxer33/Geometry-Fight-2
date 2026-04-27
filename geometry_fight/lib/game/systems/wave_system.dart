@@ -376,30 +376,37 @@ class WaveSystem {
   /// Mantenuti SOLO mob non-letali: drone/swarmDrone/snake. NO kamikaze, mine,
   /// splitter, weaver, glitch, blackHole, tesla, etc.
   /// Waves mode (richiesta utente "solo mob rossi a triangolo, sx/dx + su/giù,
-  /// rare blackhole"). Solo kamikaze in formation borderLine + black hole
-  /// occasionali.
+  /// rare blackhole"). Solo kamikaze spawnati da bordi arena + black hole
+  /// occasionali in posizioni FISSE lontane dal player.
   ///
   /// Scaling:
-  /// - kamikaze count: 8 + wave × 3 (clamp 8..80)
-  /// - blackhole: ogni 5 wave, 1 + wave/10 (max 4)
+  /// - kamikaze count per ondata: 8 + wave × 3 (cap implicito tramite
+  ///   `_scaledSpawnCount`).
+  /// - 2 ondate per wave (delay 0 + 3s) per pressione continua.
+  /// - blackhole: ogni 5 wave, 1 + wave/10 (max 4).
   ///
-  /// Borderline formation forza spawn dai bordi → kamikaze caricano
-  /// cardinale (sx/dx/su/giù) come da meccanica `_pickCardinalDirection`
-  /// in kamikaze_enemy.dart.
+  /// `borderLine` formation spawna dai bordi (sx/dx/su/giù entry points).
+  /// Il movimento cardinale del kamikaze è gestito SEPARATAMENTE da
+  /// `_pickCardinalDirection` in kamikaze_enemy.dart, che sceglie l'asse
+  /// maggiore verso il player dopo la fase di idle/charging (~1.5s).
   WaveConfig _generateWavesMode(int wave) {
-    final kamikazeCount = (8 + wave * 3).clamp(8, 80);
+    // Cap singolo via `_scaledSpawnCount.clamp(1, 500)`. Qui solo formula.
+    final kamikazeCount = 8 + wave * 3;
     final spawns = <WaveSpawn>[
       WaveSpawn(EnemyType.kamikaze, kamikazeCount,
           formation: SpawnFormation.borderLine),
-      // Secondo wave kamikaze a 3s offset per pressione continua
       WaveSpawn(EnemyType.kamikaze, kamikazeCount,
           formation: SpawnFormation.borderLine, delay: 3.0),
     ];
-    // Black hole rari: ogni 5 wave (5, 10, 15, ...). Count crescente.
+    // Black hole rari: ogni 5 wave. Formation `cross` per posizionamento
+    // FISSO ai 4 punti cardinali lontani dal centro (era `scatter` random
+    // → BH potevano spawnare adiacenti al player → tutti i kamikaze
+    // aspirati → death-explosion del BH uccideva il player). Cross =
+    // safe distance.
     if (wave > 0 && wave % 5 == 0) {
       final bhCount = (1 + wave ~/ 10).clamp(1, 4);
       spawns.add(WaveSpawn(EnemyType.blackHole, bhCount,
-          formation: SpawnFormation.scatter, delay: 5.0));
+          formation: SpawnFormation.cross, delay: 5.0));
     }
     return WaveConfig(waveNumber: wave, spawns: spawns);
   }

@@ -47,6 +47,12 @@ class CrimsonCrownBoss extends BossBase {
   List<EnemyType> get colorMatchedMinions =>
       const [EnemyType.kamikaze, EnemyType.swarmDrone, EnemyType.splitter];
 
+  // CrimsonCrown ha orbi orbitanti che estendono il visivo verso il bordo
+  // bbox (size 100). Override 0.7 → 0.85 → bullet ricochet/homing
+  // colpiscono il body senza "pass-through" sull'edge.
+  @override
+  double get hitboxRadiusFactor => 0.85;
+
   @override
   int getPhase() {
     if (healthPercent < 0.25) return 2;

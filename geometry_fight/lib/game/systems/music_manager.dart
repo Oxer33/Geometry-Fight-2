@@ -134,7 +134,12 @@ class MusicManager {
   /// Caveman-fix race-aware: se `_playInFlight` è ancora true al primo
   /// check, l'original _playTrack è ancora await su bgm.play (potrebbe
   /// partire a momenti). Retry prematuro causerebbe bag thrash +
-  /// potenziale doppio-play. Grace period extra 200ms prima del retry.
+  /// potenziale doppio-play. Grace period extra 200ms.
+  ///
+  /// SE dopo 300ms il mutex è ANCORA occupato → bgm.play sta hangando
+  /// (verrà recovered dal `.timeout(2s)` in `_playTrack`). NON facciamo
+  /// retry da qui — il timeout cleanup + `_onTrackComplete` listener
+  /// gestiscono il recovery senza creare 2 _playTrack paralleli.
   static Future<void> _verifyPlayingOrRetry(_Mode expected) async {
     await Future.delayed(const Duration(milliseconds: 100));
     if (_mode != expected) return; // mode cambiato durante verify, abort
@@ -146,6 +151,11 @@ class MusicManager {
       await Future.delayed(const Duration(milliseconds: 200));
       if (_mode != expected) return;
       if (_isActuallyPlaying()) return;
+      // Se mutex ANCORA occupato dopo 300ms totali, original sta hangando.
+      // Bail-out: il timeout 2s in `_playTrack` lo finalizzerà → cleanup
+      // automatico via finally. Lanciare un retry da qui creerebbe
+      // _playTrack parallelo (race su bgm.play simultanei).
+      if (_playInFlight) return;
     }
 
     debugPrint('MusicManager: post-play verify FAIL ($expected) → retry');
@@ -183,8 +193,8 @@ class MusicManager {
   /// "circuit breaker" per _playTrack stuck, ma rilasciava il mutex mentre
   /// un _playTrack legittimo era in flight → race con NUOVO playIntro che
   /// entrava prima del finally del vecchio _playTrack. Sostituito da
-  /// `.timeout(5s)` su `bgm.play` dentro `_playTrack` (vedi sotto): timeout
-  /// genera TimeoutException → catch → finally rilascia mutex correttamente.
+  /// `.timeout(2s)` su `bgm.play` dentro `_playTrack`: timeout genera
+  /// TimeoutException → catch → finally rilascia mutex correttamente.
   ///
   /// `_playSeq++` mantiene la semantica di invalidazione del play in volo:
   /// la check `if (seq != _playSeq) return true;` dopo bgm.play marca il

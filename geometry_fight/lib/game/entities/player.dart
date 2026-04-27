@@ -619,12 +619,16 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
     } else {
       paint.color = bodyColor;
     }
-    _drawShipBody(canvas, paint, 1.0);
+    // Phoenix renderizza body central custom + wings → skip lo standard
+    // ship body (forma a freccia). Caveman-fix: prima il body standard era
+    // sempre disegnato → in-game si vedeva freccia + wings, mentre shop
+    // ha solo body central + wings. Mismatch eliminato.
+    if (skinId != 'phoenix') {
+      _drawShipBody(canvas, paint, 1.0);
+    }
 
-    // Phoenix overlay: ali infuocate + embers (utente: "skin phoenix mi
-    // fa vedere la navicella rossa, non é come quella che vedo nello shop").
-    // Aggiungo wings + embers SOPRA al body per matchare _drawPhoenixShip
-    // dello shop preview. Mirror della logica di shop_screen.dart.
+    // Phoenix overlay completo (body central + wings + embers + glow).
+    // Mirror di `_drawPhoenixShip` shop preview.
     if (skinId == 'phoenix') {
       _renderPhoenixOverlay(canvas, cx, cy);
     }
@@ -994,6 +998,21 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
           const Color(0xFFFF8800).withValues(alpha: 0.5);
       canvas.drawPath(wing, _phoenixWingStroke);
     }
+
+    // Body central dorato/rosso — mirror del body in `_drawPhoenixShip`
+    // (shop_screen). Standalone (no fallback al ship body standard).
+    final body = Path()
+      ..moveTo(0, -16)
+      ..lineTo(4, -2)
+      ..lineTo(3, 10)
+      ..lineTo(-3, 10)
+      ..lineTo(-4, -2)
+      ..close();
+    _phoenixWingFill.color = const Color(0xFFFF5500);
+    canvas.drawPath(body, _phoenixWingFill);
+    _phoenixWingStroke.color =
+        const Color(0xFFFFDD00).withValues(alpha: 0.8);
+    canvas.drawPath(body, _phoenixWingStroke);
 
     // Embers orbitanti
     for (int i = 0; i < 8; i++) {
