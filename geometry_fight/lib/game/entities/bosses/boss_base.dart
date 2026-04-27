@@ -64,11 +64,26 @@ abstract class BossBase extends PositionComponent
   })  : maxHp = hp,
         super(size: size ?? Vector2(100, 100), anchor: Anchor.center);
 
+  /// Factor del raggio hitbox rispetto a `max(size)/2`. Default 0.7.
+  ///
+  /// Audit hitbox boss (richiesta utente "controllo approfondito"):
+  /// PRIMA factor era 0.95 → hitbox quasi tangente al bbox del componente.
+  /// Visivamente i boss hanno shape complessi (triangoli, hexagoni) con
+  /// extent reale << bbox. Es. PrismHunter triangle vertici a r=28 ma
+  /// hitbox r=52 (110/2×0.95) → "invisible damage" 24px oltre il visivo.
+  ///
+  /// 0.7 = compromise sicuro tra accuracy e generosità: copre il visivo
+  /// medio dei boss square-bbox con shape inscritta senza essere troppo
+  /// stretto (sotto 0.6 alcuni boss diventano "troppo piccoli da colpire").
+  /// Boss con visivi più estesi (es. TheGrid 200×200, SwarmMother body
+  /// largo) override il getter per allargare il hitbox al loro extent.
+  double get hitboxRadiusFactor => 0.7;
+
   @override
   Future<void> onLoad() async {
-    // Hitbox proporzionato alla dimensione visiva del boss (95%)
-    // Usa il raggio più grande tra x e y per coprire tutta la forma
-    final hitboxRadius = math.max(size.x, size.y) / 2 * 0.95;
+    // Hitbox proporzionato al visivo del boss (vedi doc hitboxRadiusFactor).
+    final hitboxRadius =
+        math.max(size.x, size.y) / 2 * hitboxRadiusFactor;
     add(CircleHitbox(radius: hitboxRadius, anchor: Anchor.center)
       ..position = size / 2);
   }

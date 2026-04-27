@@ -131,12 +131,23 @@ class MusicManager {
   /// Defense contro silent failure di `bgm.play` (caught dentro `_playTrack`
   /// → return true ma senza music partita).
   ///
-  /// Delay ridotto 200→100ms: riduce latenza menu cold-start senza
-  /// compromettere reliability (Android state propagation è ~50ms tipico).
+  /// Caveman-fix race-aware: se `_playInFlight` è ancora true al primo
+  /// check, l'original _playTrack è ancora await su bgm.play (potrebbe
+  /// partire a momenti). Retry prematuro causerebbe bag thrash +
+  /// potenziale doppio-play. Grace period extra 200ms prima del retry.
   static Future<void> _verifyPlayingOrRetry(_Mode expected) async {
     await Future.delayed(const Duration(milliseconds: 100));
     if (_mode != expected) return; // mode cambiato durante verify, abort
     if (_isActuallyPlaying()) return; // success
+
+    // Mutex ancora occupato → original _playTrack non ancora completato.
+    // Aspetta 200ms extra invece di retry-now (race protection).
+    if (_playInFlight) {
+      await Future.delayed(const Duration(milliseconds: 200));
+      if (_mode != expected) return;
+      if (_isActuallyPlaying()) return;
+    }
+
     debugPrint('MusicManager: post-play verify FAIL ($expected) → retry');
     if (expected == _Mode.intro) {
       await _playFromIntroBag();

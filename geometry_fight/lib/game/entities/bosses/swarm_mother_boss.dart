@@ -34,6 +34,11 @@ class SwarmMotherBoss extends BossBase {
   List<EnemyType> get colorMatchedMinions =>
       const [EnemyType.kamikaze, EnemyType.splitter, EnemyType.swarmDrone];
 
+  // SwarmMother body grande (180×180) con multiple wings/spawn → visivo
+  // copre ~85% della bbox. Override 0.7 → 0.85.
+  @override
+  double get hitboxRadiusFactor => 0.85;
+
   @override
   int getPhase() {
     if (healthPercent > 0.7) return 0;

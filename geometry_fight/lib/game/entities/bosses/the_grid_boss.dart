@@ -50,6 +50,12 @@ class TheGridBoss extends BossBase {
   List<EnemyType> get colorMatchedMinions =>
       const [EnemyType.drone, EnemyType.decoy];
 
+  // TheGrid renderizza una griglia che copre quasi tutto il bbox 200x200
+  // (visual border quasi tangente alla bbox). Override factor a 0.85
+  // per coprire l'extent visivo (default 0.7 lo renderebbe troppo piccolo).
+  @override
+  double get hitboxRadiusFactor => 0.85;
+
   @override
   int getPhase() {
     if (healthPercent > 0.6) return 0;

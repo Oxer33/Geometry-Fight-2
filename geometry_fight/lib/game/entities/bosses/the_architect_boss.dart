@@ -31,6 +31,11 @@ class TheArchitectBoss extends BossBase {
   List<EnemyType> get colorMatchedMinions =>
       const [EnemyType.tesla, EnemyType.glitch, EnemyType.laserTurret];
 
+  // TheArchitect struttura modulare 160×160 con appendici → visivo ~80%
+  // della bbox. Override 0.7 → 0.8.
+  @override
+  double get hitboxRadiusFactor => 0.8;
+
   @override
   int getPhase() {
     if (healthPercent > 0.6) return 0;
