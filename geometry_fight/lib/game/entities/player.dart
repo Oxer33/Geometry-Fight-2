@@ -497,6 +497,14 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
   void takeDamage() {
     if (isInvincible) return;
 
+    // Pacifist defensive cap (iter 6): regola GW2 = 1 vita fissa. Se per
+    // qualunque path lives è stato bumped a >1 (powerup pickup non bloccato,
+    // modifier edge case), normalizziamo PRIMA del decrement → primo hit
+    // garantisce morte.
+    if (game.isPacifistMode && lives > 1) {
+      lives = 1;
+    }
+
     if (hasShield) {
       shieldHits--;
       if (shieldHits <= 0) {
@@ -956,28 +964,28 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
     ..style = PaintingStyle.stroke
     ..strokeWidth = 1.5;
   static final Paint _phoenixEmber = Paint();
-  static final Paint _phoenixGlow = Paint();
+  // Glow con blur — match shop preview (`_gGlowBlur`).
+  static final Paint _phoenixGlow = Paint()
+    ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 12);
 
   void _renderPhoenixOverlay(Canvas canvas, double cx, double cy) {
     canvas.save();
     canvas.translate(cx, cy);
     canvas.rotate(_rotation);
-    final s = 1.0;
     final wingPhase = math.sin(_energyPhase * 3) * 0.3 + 1.0;
 
-    // Glow esterno fuoco arancione
+    // Glow esterno fuoco arancione (blurred per match shop preview)
     _phoenixGlow.color = const Color(0xFFFF8800).withValues(alpha: 0.3);
-    canvas.drawCircle(Offset.zero, 24 * s * wingPhase, _phoenixGlow);
+    canvas.drawCircle(Offset.zero, 24 * wingPhase, _phoenixGlow);
 
     // Ali sinistra/destra (forma piuma con quadratic bezier)
     for (final side in [-1.0, 1.0]) {
       final wing = Path()
-        ..moveTo(0, -10 * s)
+        ..moveTo(0, -10)
         ..quadraticBezierTo(
-            side * 18 * s * wingPhase, -8 * s, side * 22 * s * wingPhase, 4 * s)
-        ..quadraticBezierTo(
-            side * 16 * s * wingPhase, 6 * s, side * 8 * s, 8 * s)
-        ..lineTo(0, 4 * s)
+            side * 18 * wingPhase, -8, side * 22 * wingPhase, 4)
+        ..quadraticBezierTo(side * 16 * wingPhase, 6, side * 8, 8)
+        ..lineTo(0, 4)
         ..close();
       _phoenixWingFill.color =
           const Color(0xFFFF2200).withValues(alpha: 0.7);
@@ -990,7 +998,7 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
     // Embers orbitanti
     for (int i = 0; i < 8; i++) {
       final ang = i * math.pi / 4 + _energyPhase * 0.8;
-      final dist = 18 * s + math.sin(_energyPhase * 2 + i) * 4;
+      final dist = 18 + math.sin(_energyPhase * 2 + i) * 4;
       final ex = math.cos(ang) * dist;
       final ey = math.sin(ang) * dist;
       final emberPulse =

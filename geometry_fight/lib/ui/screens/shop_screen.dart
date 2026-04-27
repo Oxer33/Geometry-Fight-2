@@ -2475,18 +2475,22 @@ class _WeaponPreviewPainter extends CustomPainter {
   /// glow r=4 + body r=3 + core bianco r=1.2. Senza questo helper i bullet
   /// nel preview shop apparivano simpler (solo glow+body senza nucleo) →
   /// utente: "armi nello shop devono vedersi uguali a come sono in game".
+  ///
+  /// Static Paint cache (caveman-fix perf): prima creavamo 3 Paint() per call,
+  /// con 12-15 bullet × 6+ weapon previews × 60fps = ~12k alloc/sec sprecate.
+  static final Paint _ingameBulletGlow = Paint()
+    ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
+  static final Paint _ingameBulletBody = Paint();
+  static final Paint _ingameBulletCore = Paint();
+
   void _drawInGameBullet(Canvas canvas, double x, double y, double alpha) {
-    final glowPaint = Paint()
-      ..color = color.withValues(alpha: alpha * 0.35)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
-    canvas.drawCircle(Offset(x, y), 4, glowPaint);
-    canvas.drawCircle(
-        Offset(x, y), 3, Paint()..color = color.withValues(alpha: alpha));
-    canvas.drawCircle(
-        Offset(x, y),
-        1.2,
-        Paint()
-          ..color = const Color(0xFFFFFFFF).withValues(alpha: alpha * 0.7));
+    _ingameBulletGlow.color = color.withValues(alpha: alpha * 0.35);
+    canvas.drawCircle(Offset(x, y), 4, _ingameBulletGlow);
+    _ingameBulletBody.color = color.withValues(alpha: alpha);
+    canvas.drawCircle(Offset(x, y), 3, _ingameBulletBody);
+    _ingameBulletCore.color =
+        const Color(0xFFFFFFFF).withValues(alpha: alpha * 0.7);
+    canvas.drawCircle(Offset(x, y), 1.2, _ingameBulletCore);
   }
 
   void _drawParallelBullets(Canvas canvas, double cx, double shipY, double rate, double speed) {
