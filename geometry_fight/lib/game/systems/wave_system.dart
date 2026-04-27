@@ -168,6 +168,10 @@ class WaveSystem {
         _currentConfig = _generateEndlessBossWave(wave);
       case GameMode.dailyChallenge:
         _currentConfig = _generateDailyChallengeWave(wave);
+      case GameMode.pacifist:
+        _currentConfig = _generatePacifistWave(wave);
+      case GameMode.waves:
+        _currentConfig = _generateWavesMode(wave);
       case GameMode.classic:
         _currentConfig = _configs.firstWhere(
           (c) => c.waveNumber == wave,
@@ -264,10 +268,14 @@ class WaveSystem {
       }
     }
 
-    // Check if wave is complete (SOLO dopo il delay post-spawn)
+    // Check if wave is complete (SOLO dopo il delay post-spawn).
+    // Pacifist: skip enemyCount==0 → player non spara, drone possono accumulare
+    // se gate li mancano. Senza skip, wave deadlock. Continuous wave flow ok
+    // perché _maxActiveEnemies cap evita esplosione count.
     if (_allSpawned) {
       _postSpawnDelay -= dt;
-      if (_postSpawnDelay <= 0 && game.enemyCount == 0) {
+      final canComplete = game.enemyCount == 0 || _mode == GameMode.pacifist;
+      if (_postSpawnDelay <= 0 && canComplete) {
         _completeWave();
       }
     }
@@ -282,7 +290,8 @@ class WaveSystem {
     // Delay tra wave dipende dalla modalità (in secondi).
     // Classic ridotto 2.0→1.0 (richiesta utente: ritmo più serrato).
     double delaySec;
-    if (_mode == GameMode.survival || _mode == GameMode.tunnel) {
+    if (_mode == GameMode.survival || _mode == GameMode.tunnel ||
+        _mode == GameMode.pacifist) {
       delaySec = 0.5;
     } else if (_mode == GameMode.bossRush) {
       delaySec = 3.0;
@@ -349,6 +358,76 @@ class WaveSystem {
     ];
     if (wave >= 3) spawns.add(WaveSpawn(EnemyType.mine, (4 + wave * 2).clamp(4, 20), delay: 1));
     if (wave >= 5) spawns.add(WaveSpawn(EnemyType.splitter, (wave * 2 ~/ 3).clamp(1, 10), delay: 2));
+    return WaveConfig(waveNumber: wave, spawns: spawns);
+  }
+
+  /// Pacifist (Geometry Wars: Retro Evolved 2 — Pacifism mode).
+  /// Player non spara, 1 vita, 0 bombe. Solo Grunt (drone) lenti che caricano
+  /// dritti verso il player. Gate spawnano in continuazione: il player deve
+  /// attraversarli per esplosioni a catena.
+  /// Combo successive di gate triggerati a breve distanza temporale → punti
+  /// moltiplicati + AoE più ampia (gestito in game_world + gate_enemy).
+  ///
+  /// Iter 6 rebalance:
+  /// - Gate count DIMEZZATO (era 2-4, ora 1-2). Cresce molto lento (~ogni 8w).
+  /// - Drone count cresce più aggressivo (era 6-60, ora 6-100, +33% rate).
+  /// - Wave 5+: aggiunti swarmDrone (mini-grunts veloci che inseguono player).
+  /// - Wave 10+: aggiunti snake (serpentina che vaga, non insegue direttamente).
+  /// Mantenuti SOLO mob non-letali: drone/swarmDrone/snake. NO kamikaze, mine,
+  /// splitter, weaver, glitch, blackHole, tesla, etc.
+  /// Waves mode (richiesta utente "solo mob rossi a triangolo, sx/dx + su/giù,
+  /// rare blackhole"). Solo kamikaze in formation borderLine + black hole
+  /// occasionali.
+  ///
+  /// Scaling:
+  /// - kamikaze count: 8 + wave × 3 (clamp 8..80)
+  /// - blackhole: ogni 5 wave, 1 + wave/10 (max 4)
+  ///
+  /// Borderline formation forza spawn dai bordi → kamikaze caricano
+  /// cardinale (sx/dx/su/giù) come da meccanica `_pickCardinalDirection`
+  /// in kamikaze_enemy.dart.
+  WaveConfig _generateWavesMode(int wave) {
+    final kamikazeCount = (8 + wave * 3).clamp(8, 80);
+    final spawns = <WaveSpawn>[
+      WaveSpawn(EnemyType.kamikaze, kamikazeCount,
+          formation: SpawnFormation.borderLine),
+      // Secondo wave kamikaze a 3s offset per pressione continua
+      WaveSpawn(EnemyType.kamikaze, kamikazeCount,
+          formation: SpawnFormation.borderLine, delay: 3.0),
+    ];
+    // Black hole rari: ogni 5 wave (5, 10, 15, ...). Count crescente.
+    if (wave > 0 && wave % 5 == 0) {
+      final bhCount = (1 + wave ~/ 10).clamp(1, 4);
+      spawns.add(WaveSpawn(EnemyType.blackHole, bhCount,
+          formation: SpawnFormation.scatter, delay: 5.0));
+    }
+    return WaveConfig(waveNumber: wave, spawns: spawns);
+  }
+
+  WaveConfig _generatePacifistWave(int wave) {
+    // Drone count cresce aggressivo con la wave (cap 100 per perf, sotto 150).
+    final droneCount = (6 + wave * 4).clamp(6, 100);
+    // Gate count DIMEZZATO: 1 base, +1 ogni 8 wave, max 2.
+    final gateCount = (1 + wave ~/ 8).clamp(1, 2);
+    final spawns = <WaveSpawn>[
+      // Drone burst iniziale
+      WaveSpawn(EnemyType.drone, droneCount ~/ 2),
+      // Gate spawnano subito per dare al player risk/reward immediato
+      WaveSpawn(EnemyType.gate, gateCount, delay: 0.8),
+      // Secondo burst di drone
+      WaveSpawn(EnemyType.drone, droneCount ~/ 2, delay: 1.5),
+    ];
+    // Wave 5+: swarmDrone (piccoli grunts veloci, follower) — solo follower.
+    if (wave >= 5) {
+      final swarmCount = (wave ~/ 2).clamp(1, 12);
+      spawns.add(WaveSpawn(EnemyType.swarmDrone, swarmCount, delay: 2.5));
+    }
+    // Wave 10+: snake (serpentina che vaga, non insegue direttamente) —
+    // varietà visiva, basso pericolo (pattern prevedibile = facile schivare).
+    if (wave >= 10) {
+      final snakeCount = (1 + wave ~/ 15).clamp(1, 2);
+      spawns.add(WaveSpawn(EnemyType.snake, snakeCount, delay: 3.0));
+    }
     return WaveConfig(waveNumber: wave, spawns: spawns);
   }
 

@@ -109,6 +109,10 @@ enum GameMode {
   tunnel,
   endlessBoss,
   dailyChallenge,
+  pacifist,
+  // GW2:RE Waves mode — solo kamikaze (triangoli rossi cardinali, movimento
+  // sx/dx + su/giù), rare blackhole. Ondate crescenti, no boss, no other mob.
+  waves,
 }
 
 /// Configurazione per ogni modalità di gioco
@@ -208,5 +212,31 @@ const Map<GameMode, GameModeConfig> gameModeConfigs = {
     hasBosses: true,
     hasWaves: true,
     infiniteWaves: false,
+  ),
+  // Pacifism iconica di Geometry Wars: Retro Evolved 2.
+  // No spari, 1 vita, 0 bombe. Solo grunt blu lenti. Sopravvivi attraversando
+  // i Gate per esplosioni a catena. Combo successive = punti × moltiplicatore.
+  GameMode.pacifist: GameModeConfig(
+    name: 'PACIFISTA',
+    description: 'Niente colpi, niente bombe. Sopravvivi attraversando i Gate per esplosioni a catena.',
+    icon: '🕊️',
+    unlockCost: 1500,
+    hasBosses: false,
+    hasWaves: true,
+    infiniteWaves: true,
+    pauseBetweenWaves: false,
+  ),
+  // Waves: ispirata GW2:RE Waves mode. Solo kamikaze (triangoli rossi
+  // cardinali, sx/dx + su/giù). Rare blackhole ogni 5 wave. No boss.
+  // Wave count crescente → mastery del dodge cardinale.
+  GameMode.waves: GameModeConfig(
+    name: 'WAVES',
+    description: 'Solo triangoli rossi cardinali. Rari buchi neri. Test puro di dodge.',
+    icon: '🔻',
+    unlockCost: 1200,
+    hasBosses: false,
+    hasWaves: true,
+    infiniteWaves: true,
+    pauseBetweenWaves: false,
   ),
 };

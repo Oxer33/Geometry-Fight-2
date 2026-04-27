@@ -94,16 +94,19 @@ class SummaryScreen extends StatelessWidget {
                       sub: '×${diffCfg.scoreMultiplier.toStringAsFixed(2)} score · '
                           'HP ×${diffCfg.enemyHpMultiplier} · '
                           'SPD ×${diffCfg.enemySpeedMultiplier}'),
-                  _section('ARMA',
-                      saveData.startingWeapon.toUpperCase(),
-                      NeonColors.bulletYellow),
-                  _section(
-                      'PET',
-                      saveData.activePet == 'none'
-                          ? 'NESSUNO'
-                          : (petDefById(saveData.activePet)?.displayName ??
-                              saveData.activePet.toUpperCase()),
-                      NeonColors.pink),
+                  // Pacifist: skip ARMA + PET (non si spara, no pet).
+                  if (mode != GameMode.pacifist) ...[
+                    _section('ARMA',
+                        saveData.startingWeapon.toUpperCase(),
+                        NeonColors.bulletYellow),
+                    _section(
+                        'PET',
+                        saveData.activePet == 'none'
+                            ? 'NESSUNO'
+                            : (petDefById(saveData.activePet)?.displayName ??
+                                saveData.activePet.toUpperCase()),
+                        NeonColors.pink),
+                  ],
                   _modifiersSection(),
                   const SizedBox(height: 12),
                   _multiplierBreakdown(diffCfg.scoreMultiplier, modScore,
@@ -159,6 +162,8 @@ class SummaryScreen extends StatelessWidget {
       case GameMode.survival: return 'SURVIVAL';
       case GameMode.endlessBoss: return 'ENDLESS BOSS';
       case GameMode.dailyChallenge: return 'DAILY';
+      case GameMode.pacifist: return 'PACIFIST';
+      case GameMode.waves: return 'WAVES';
     }
   }
 
