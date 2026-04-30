@@ -10,12 +10,15 @@ import '../widgets/neon_back_button.dart';
 /// multiplier preview. Selezione persiste in main.dart `_selectedDifficulty`.
 class DifficultySelectScreen extends StatefulWidget {
   final Difficulty initial;
+  // Iter 6: mode param per nascondere "Vite" chip in pacifist (1 vita fissa).
+  final GameMode mode;
   final VoidCallback onBack;
   final void Function(Difficulty diff) onConfirm;
 
   const DifficultySelectScreen({
     super.key,
     required this.initial,
+    required this.mode,
     required this.onBack,
     required this.onConfirm,
   });
@@ -155,8 +158,10 @@ class _DifficultySelectScreenState extends State<DifficultySelectScreen> {
                                 _statChip(
                                     'SPD ×${cfg.enemySpeedMultiplier}',
                                     color),
-                                _statChip('Vite ${cfg.startingLives}',
-                                    color),
+                                // Pacifist: 1 vita fissa, chip "Vite" inutile.
+                                if (widget.mode != GameMode.pacifist)
+                                  _statChip('Vite ${cfg.startingLives}',
+                                      color),
                               ],
                             ),
                           ],

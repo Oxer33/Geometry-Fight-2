@@ -93,10 +93,10 @@ class AudioSystem {
   // Path constants — tutti gli FX sotto fx/, music sotto bgm/ e intro/.
   // Centralizzati per facilitare future modifiche.
   static const _fxShoot = 'fx/shoot.wav';
-  static const _fxEnemyDeath = 'fx/mob_killed.mp3'; // Nuovo: era enemy_death.wav
-  static const _fxBossKilled = 'fx/boss_killed.mp3'; // Nuovo
-  static const _fxPlayerDeath = 'fx/player_death.mp3'; // Nuovo
-  static const _fxGameOverExplosion = 'fx/gameover_explosion.mp3'; // Nuovo
+  static const _fxEnemyDeath = 'fx/mob_killed.mp3';
+  static const _fxBossKilled = 'fx/boss_killed.mp3';
+  static const _fxPlayerDeath = 'fx/player_death.mp3';
+  static const _fxGameOverExplosion = 'fx/gameover_explosion.mp3';
   static const _fxGeom = 'fx/geom.wav';
   static const _fxBomb = 'fx/bomb.wav';
   static const _fxPowerUp = 'fx/powerup.wav';

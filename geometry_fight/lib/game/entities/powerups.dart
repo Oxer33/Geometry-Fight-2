@@ -166,12 +166,16 @@ class PowerUp extends PositionComponent
       case PowerUpType.overdrive:
         player.overdriveTimer = powerUpDuration;
       case PowerUpType.smartBomb:
+        // Pacifist mode: nessuna bomba (regola GW2 Pacifism). No-op pickup.
+        if (player.game.isPacifistMode) break;
         if (player.bombs < player.game.saveData.bombCapacity) {
           player.bombs++;
         }
       case PowerUpType.scoreMultiplier:
         player.game.scoreSystem.addGeoms(10);
       case PowerUpType.extraLife:
+        // Pacifist mode: 1-life rule (regola GW2 Pacifism). No-op pickup.
+        if (player.game.isPacifistMode) break;
         player.lives++;
         AudioSystem.playExtraLife();
       case PowerUpType.firePower:

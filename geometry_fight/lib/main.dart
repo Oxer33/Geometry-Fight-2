@@ -209,14 +209,28 @@ class _NavigationWrapperState extends State<NavigationWrapper> {
           onBack: () => _navigateTo(AppScreen.mainMenu),
           onConfirm: (mode) {
             // Step 1/5 → 2/5 difficoltà.
-            setState(() => _selectedMode = mode);
-            _navigateTo(AppScreen.difficultySelect);
+            // Pacifist: skip difficulty (combo Pacifist+Nightmare = unwinnable
+            // perché drone speed ×1.5, player no shoot, lives=1). Forziamo
+            // Normal e saltiamo direttamente a modifiersSelect.
+            setState(() {
+              _selectedMode = mode;
+              if (mode == GameMode.pacifist) {
+                _selectedDifficulty = Difficulty.normal;
+                _selectedModifiers = <String>[];
+              }
+            });
+            if (mode == GameMode.pacifist) {
+              _navigateTo(AppScreen.modifiersSelect);
+            } else {
+              _navigateTo(AppScreen.difficultySelect);
+            }
           },
         );
       case AppScreen.difficultySelect:
         return DifficultySelectScreen(
           key: const ValueKey('difficultySelect'),
           initial: _selectedDifficulty,
+          mode: _selectedMode,
           onBack: () => _navigateTo(AppScreen.modeSelect),
           onConfirm: (diff) {
             // Step 2/5 → 3/5 modificatori.
@@ -234,11 +248,20 @@ class _NavigationWrapperState extends State<NavigationWrapper> {
         return ModifiersSelectScreen(
           key: const ValueKey('modifiersSelect'),
           initial: _selectedModifiers,
-          onBack: () => _navigateTo(AppScreen.difficultySelect),
+          // Pacifist: difficulty step skipped → back va direttamente a mode.
+          onBack: () => _navigateTo(_selectedMode == GameMode.pacifist
+              ? AppScreen.modeSelect
+              : AppScreen.difficultySelect),
           onConfirm: (mods) {
             // Step 3/5 → 4/5 loadout.
+            // Pacifist: skip loadout (no shooting → arma irrilevante; pet
+            // disabilitato in game_world). Vai diretto a summary.
             setState(() => _selectedModifiers = mods);
-            _navigateTo(AppScreen.loadout);
+            if (_selectedMode == GameMode.pacifist) {
+              _navigateTo(AppScreen.summary);
+            } else {
+              _navigateTo(AppScreen.loadout);
+            }
           },
         );
       case AppScreen.loadout:
@@ -253,7 +276,10 @@ class _NavigationWrapperState extends State<NavigationWrapper> {
           mode: _selectedMode,
           difficulty: _selectedDifficulty,
           activeModifiers: _selectedModifiers,
-          onBack: () => _navigateTo(AppScreen.loadout),
+          // Pacifist: loadout skipped → back va a modifiersSelect.
+          onBack: () => _navigateTo(_selectedMode == GameMode.pacifist
+              ? AppScreen.modifiersSelect
+              : AppScreen.loadout),
           onStart: () async {
             // Persist modifiers in saveData prima del game start: GameWorld
             // li legge da `saveData.activeModifiers` in onLoad.

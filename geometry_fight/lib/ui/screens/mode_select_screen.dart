@@ -437,10 +437,13 @@ class _ModeSelectScreenState extends State<ModeSelectScreen>
               const SizedBox(height: 4),
               Row(
                 children: [
-                  _summaryChip(Icons.favorite_rounded, 'Vite: ${diffConfig.startingLives}', diffColor),
-                  const SizedBox(width: 8),
-                  _summaryChip(Icons.flash_on_rounded, 'Bombe: ${diffConfig.startingBombs}', diffColor),
-                  const SizedBox(width: 8),
+                  // Pacifist: 1 vita fissa, 0 bombe → nascondi chips inutili.
+                  if (_selectedMode != GameMode.pacifist) ...[
+                    _summaryChip(Icons.favorite_rounded, 'Vite: ${diffConfig.startingLives}', diffColor),
+                    const SizedBox(width: 8),
+                    _summaryChip(Icons.flash_on_rounded, 'Bombe: ${diffConfig.startingBombs}', diffColor),
+                    const SizedBox(width: 8),
+                  ],
                   _summaryChip(Icons.close_fullscreen_rounded, 'x${diffConfig.scoreMultiplier.toStringAsFixed(0)}', diffColor),
                 ],
               ),

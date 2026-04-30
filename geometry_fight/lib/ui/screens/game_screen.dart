@@ -282,11 +282,13 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
           // === PULSANTE BOMBA (lato destro, sopra il joystick aim) ===
           // bottom alzato di ~50px così il pollice destro arriva senza ostacolo
           // dal joystick aim (richiesta utente — bomba prima inarrivabile).
-          Positioned(
-            bottom: 140,
-            right: 20,
-            child: _BombButton(onPressed: () => _game.bombPressed = true),
-          ),
+          // Pacifist: nessun bottone bomba (regola GW2 Pacifism — 0 bombe).
+          if (!_game.isPacifistMode)
+            Positioned(
+              bottom: 140,
+              right: 20,
+              child: _BombButton(onPressed: () => _game.bombPressed = true),
+            ),
 
           // === PULSANTE PAUSA (lato destro, sopra il tasto bomba) ===
           Positioned(

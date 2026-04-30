@@ -47,6 +47,8 @@ class PowerUpSystem {
   }
 
   void spawnRandomPowerUp(Vector2 position) {
+    // Pacifist: nessun powerup (regola GW2 Pacifism — sopravvivenza pura).
+    if (game.isPacifistMode) return;
     // Modifier no_powerups (PURISTA): skip ogni spawn powerup. Effettivo
     // sia per timer-based sia per drop da kill (entrambi passano qui).
     if (game.hasModifier('no_powerups')) return;

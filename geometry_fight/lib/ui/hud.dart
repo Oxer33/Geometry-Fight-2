@@ -67,6 +67,7 @@ class _GameHudState extends State<GameHud> {
                   geoms: game.scoreSystem.geoms,
                   hasShield: game.player.hasShield,
                   isZenMode: game.isZenMode,
+                  isPacifistMode: game.isPacifistMode,
                   deaths: game.sessionDeaths,
                 ),
               ),
@@ -362,6 +363,7 @@ class _StatusPanel extends StatelessWidget {
   final int geoms;
   final bool hasShield;
   final bool isZenMode;
+  final bool isPacifistMode;
   final int deaths;
 
   const _StatusPanel({
@@ -370,6 +372,7 @@ class _StatusPanel extends StatelessWidget {
     required this.geoms,
     required this.hasShield,
     required this.isZenMode,
+    required this.isPacifistMode,
     required this.deaths,
   });
 
@@ -380,8 +383,10 @@ class _StatusPanel extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.end,
         mainAxisSize: MainAxisSize.min,
         children: [
+          // Pacifist: nessun counter vite/bombe (1 vita fissa, 0 bombe).
           // Zen mode: contatore morti invece di vite.
-          if (isZenMode)
+          if (isPacifistMode) const SizedBox.shrink()
+          else if (isZenMode)
             Row(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -443,35 +448,38 @@ class _StatusPanel extends StatelessWidget {
                 ),
               ],
             ),
-          const SizedBox(height: 4),
-          // Bombe con icone cerchio rosso
-          Row(
-            mainAxisSize: MainAxisSize.min,
-            children: List.generate(
-              bombs,
-              (i) => Padding(
-                padding: const EdgeInsets.only(left: 3),
-                child: Container(
-                  width: 10,
-                  height: 10,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Colors.redAccent.withValues(alpha: 0.3),
-                    border: Border.all(
-                      color: Colors.redAccent.withValues(alpha: 0.7),
-                      width: 1,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.redAccent.withValues(alpha: 0.3),
-                        blurRadius: 4,
+          // Pacifist: nasconde gap + bombs row (0 bombs sempre).
+          if (!isPacifistMode) ...[
+            const SizedBox(height: 4),
+            // Bombe con icone cerchio rosso
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: List.generate(
+                bombs,
+                (i) => Padding(
+                  padding: const EdgeInsets.only(left: 3),
+                  child: Container(
+                    width: 10,
+                    height: 10,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.redAccent.withValues(alpha: 0.3),
+                      border: Border.all(
+                        color: Colors.redAccent.withValues(alpha: 0.7),
+                        width: 1,
                       ),
-                    ],
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.redAccent.withValues(alpha: 0.3),
+                          blurRadius: 4,
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
+          ],
           const SizedBox(height: 4),
           // Geomi raccolti
           Row(

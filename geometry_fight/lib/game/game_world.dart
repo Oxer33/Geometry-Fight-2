@@ -190,6 +190,23 @@ class GeometryFightGame extends FlameGame
   double tunnelTargetHeight = 420;
   bool get isTunnelMode => gameMode == GameMode.tunnel;
 
+  /// Pacifist (GW2 Pacifism mode): player non spara, 1 vita, 0 bombe.
+  /// Solo grunt + gate. Combo gate per scoring.
+  bool get isPacifistMode => gameMode == GameMode.pacifist;
+
+  /// Combo gate corrente (Pacifism scoring). Si incrementa ad ogni
+  /// gate triggerato entro `_gateComboWindow` secondi dal precedente.
+  /// Reset a 0 quando il timer scade.
+  int gateCombo = 0;
+  double gateComboTimer = 0;
+  static const double _gateComboWindow = 4.0;
+  /// AoE multiplier scaling con combo (gate_enemy.dart legge questo per
+  /// allargare il raggio di kill). 1.0 base, +0.15 per combo, max 2.5x.
+  double get gateComboAoeMultiplier =>
+      (1.0 + gateCombo * 0.15).clamp(1.0, 2.5);
+  /// Score multiplier scaling con combo. 1× per primo gate, fino a 10×.
+  int get gateComboScoreMultiplier => gateCombo.clamp(1, 10);
+
   /// Riferimento al TunnelRenderer attivo (null se non tunnel mode).
   /// Esposto per permettere a proiettili/mob di fare collision-check con
   /// i muri rossi (richiesta utente: impenetrabili da tutti gli entità).
@@ -275,11 +292,16 @@ class GeometryFightGame extends FlameGame
     world.add(player);
 
     // Pet companion (Geometry Wars 3 style drone). Solo se loadout != 'none'.
-    final petType = petTypeById(saveData.activePet);
-    activePet = createPet(petType);
-    if (activePet != null) {
-      activePet!.position = player.position + Vector2(40, 0);
-      world.add(activePet!);
+    // Pacifist mode: nessun pet (pet attaccano nemici → rompe regola Pacifism).
+    if (!isPacifistMode) {
+      final petType = petTypeById(saveData.activePet);
+      activePet = createPet(petType);
+      if (activePet != null) {
+        activePet!.position = player.position + Vector2(40, 0);
+        world.add(activePet!);
+      }
+    } else {
+      activePet = null;
     }
 
     // Applica modificatori
@@ -330,6 +352,16 @@ class GeometryFightGame extends FlameGame
       }
     }
 
+    // Pacifism gate combo: timer decay → reset combo allo scadere.
+    // Usa dt reale (non scaledDt) perché la combo è esperienza giocatore.
+    if (gateComboTimer > 0) {
+      gateComboTimer -= dt;
+      if (gateComboTimer <= 0) {
+        gateCombo = 0;
+        gateComboTimer = 0;
+      }
+    }
+
     // Update keyboard input
     _updateKeyboardInput();
 
@@ -355,8 +387,9 @@ class GeometryFightGame extends FlameGame
     // Vite extra per soglie punteggio (10K, 100K, 1M, 10M, 100M, 1B).
     // extraLivesThisFrame conta TUTTE le soglie attraversate in un singolo
     // tick (es. boss kill che salta 9K → 200K = 2 vite, non 1).
+    // Pacifist: NO extra lives da score (regola GW2 = 1 vita fissa).
     final livesGained = scoreSystem.extraLivesThisFrame;
-    if (livesGained > 0) {
+    if (livesGained > 0 && !isPacifistMode) {
       player.lives += livesGained;
       triggerScreenShake(3, 0.1);
     }
@@ -1077,6 +1110,13 @@ class GeometryFightGame extends FlameGame
 
   /// Chiamato quando una wave viene completata (dal WaveSystem)
   void onWaveComplete() {
+    // Pacifist: no concept di "wave perfetta" (modalità continua, non a wave).
+    // Skip Perfect Wave display + bonus geom + streak counter.
+    if (isPacifistMode) {
+      _hitThisWave = false;
+      consecutivePerfectWaves = 0;
+      return;
+    }
     if (!_hitThisWave) {
       // PERFECT WAVE! Nessun colpo subito durante la wave
       showPerfectWave = true;
@@ -1218,6 +1258,31 @@ class GeometryFightGame extends FlameGame
     }
     // Applica il moltiplicatore score dai modifier (glass_cannon 3×, bullet_hell 2×, ecc.)
     scoreSystem.modifierMultiplier = modifierScoreMultiplier;
+
+    // Pacifist mode override: 1 vita, 0 bombe (Pacifism GW2 hard-coded).
+    // Override DOPO i modifier perché alcuni (es. infinite_bombs) potrebbero
+    // dare bombe → in pacifist non servono comunque (no shooting → no bomb fire).
+    if (isPacifistMode) {
+      player.lives = 1;
+      player.bombs = 0;
+    }
+  }
+
+  /// Chiamato da GateEnemy.`_triggerExplosion()`. Solo in pacifist mode
+  /// applica la combo (scoring + AoE). Negli altri modi (survival, signature
+  /// wave classic) il gate scoring rimane invariato — gestito direttamente
+  /// dal gate stesso. Ritorna true se combo applicata.
+  void onGateExplosion(int killCount, Vector2 pos) {
+    if (!isPacifistMode) return;
+    gateCombo++;
+    gateComboTimer = _gateComboWindow;
+    if (killCount > 0) {
+      // Pacifism scoring: base 25 + 10 per kill, × combo multiplier (1-10×).
+      // Boost rispetto a survival per dare drama alle catene gate.
+      final basePts = 25 + killCount * 10;
+      final pts = basePts * gateComboScoreMultiplier;
+      scoreSystem.addKill(pts, pos);
+    }
   }
 
   bool hasModifier(String id) => activeModifiers.contains(id);
@@ -1369,6 +1434,11 @@ class GeometryFightGame extends FlameGame
     _tunnelShrinkStartHeight = 420;
     tunnelBossesKilled = 0;
     _chaosTimer = 10.0;
+    // Reset Pacifism gate combo state — campi sopravvivono restart se game
+    // world non viene ricreato (resetGame mid-session) → senza reset, prima
+    // gate post-restart partirebbe con AoE/score multiplier dal session prima.
+    gateCombo = 0;
+    gateComboTimer = 0;
     _bombExplosionTimers = null;
     _bombExplosionPos = null;
     _deathExplosionTimers = null;
@@ -1424,11 +1494,16 @@ class GeometryFightGame extends FlameGame
 
     // Pet companion: respawn al restart (fix caveman-review: prima attivePet
     // restava reference stale alla vecchia istanza distrutta dal world reset).
-    final petType = petTypeById(saveData.activePet);
-    activePet = createPet(petType);
-    if (activePet != null) {
-      activePet!.position = player.position + Vector2(40, 0);
-      world.add(activePet!);
+    // Pacifist: niente pet (regola Pacifism = no offensiva).
+    if (!isPacifistMode) {
+      final petType = petTypeById(saveData.activePet);
+      activePet = createPet(petType);
+      if (activePet != null) {
+        activePet!.position = player.position + Vector2(40, 0);
+        world.add(activePet!);
+      }
+    } else {
+      activePet = null;
     }
 
     // Re-apply modifiers (glass_cannon, speed_demon, etc.)
