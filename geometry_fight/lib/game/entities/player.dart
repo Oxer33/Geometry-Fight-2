@@ -660,25 +660,26 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
   /// Scia luminosa dietro la nave durante il movimento.
   /// Colore deriva dal trail equipaggiato nello shop (activeTrail):
   /// normal=cyan, fire=arancio, ice=azzurro, plasma=viola, rainbow=HSV ciclico.
-  // Trail size multiplier (iter 4): +30% richiesto utente per leggibilità.
-  // Applicato anche allo shop _TrailPreviewPainter per coerenza visuale.
-  static const double _trailSizeMultiplier = 1.3;
+  // Trail size multiplier (iter 5): 1.3 → 2.0 (utente: "non si vedono bene
+  // i trails, quasi invisibile"). +54% size + alpha boost in _renderTrail.
+  static const double _trailSizeMultiplier = 2.0;
 
   void _renderTrail(Canvas canvas, double cx, double cy) {
     if (_trail.isEmpty) return;
     for (int i = 0; i < _trail.length; i++) {
-      final alpha = (1.0 - i / _maxTrailLength) * 0.4;
+      // Alpha base 0.4 → 0.85: trail era quasi trasparente, ora visibile.
+      final alpha = (1.0 - i / _maxTrailLength) * 0.85;
       final trailSize = (1.0 - i / _maxTrailLength) * 3 * _trailSizeMultiplier;
       final offset = _trail[i] - position;
       final color = hasOverdrive
           ? _getRainbowColor(_energyPhase + i * 0.3)
           : _getTrailColor(i);
-      // Soft glow senza blur — cerchio più grande, alpha ridotta
-      _trailPaint.color = color.withValues(alpha: alpha * 0.5);
+      // Glow esterno più ampio + alpha boost (0.5 → 0.7) per scia leggibile
+      _trailPaint.color = color.withValues(alpha: alpha * 0.7);
       _trailPaint.maskFilter = null;
       canvas.drawCircle(
         Offset(cx + offset.x, cy + offset.y),
-        trailSize * 1.8,
+        trailSize * 2.0,
         _trailPaint,
       );
       _trailPaint.color = color.withValues(alpha: alpha);
