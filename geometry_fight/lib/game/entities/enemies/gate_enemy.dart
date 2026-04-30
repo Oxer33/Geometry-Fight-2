@@ -23,14 +23,18 @@ class GateEnemy extends PositionComponent
     with HasGameReference<GeometryFightGame>, CollisionCallbacks {
   double _phase = 0;
   late Vector2 _moveDir;
+  // Target direction: si aggiorna istantaneamente al wall hit, _moveDir lerp
+  // verso questo per simulare turn fisico di un grosso oggetto (no snap 180°).
+  late Vector2 _targetDir;
   final double _speed = 60;
   // +50% iter 2 (richiesta utente "bilanciere 50% più grande"): era 75 →
   // ora 112.5. Bilanciere ancora più grande/leggibile + hitbox riallineati
   // al visivo (vedi onLoad e sphere/wire kill radius doc sotto).
   final double _gateWidth = 112.5;
-  // Esplosione +50% iter 2 (era 40.5 → 60.75) per coerenza con scala globale.
-  // killRadiusMultiplier 1.5 invariato → killRadius effettivo ≈ 91 px/sphere.
-  final double _explosionRadius = 60.75;
+  // Esplosione iter 6: -30% rispetto a iter 4 (richiesta utente "troppo
+  // grande"). 182.25 × 0.7 = 127.575. Kill effettivo ≈ 191 px base,
+  // ~478 px con combo Pacifism max (×2.5 AoE multiplier).
+  final double _explosionRadius = 127.575;
   final Color neonColor = const Color(0xFFFF6600);
 
   // Endpoint kill radius: distanza player-sfera-centro che uccide il player.
@@ -54,7 +58,10 @@ class GateEnemy extends PositionComponent
 
   // Cooldown anti-spam: impedisce trigger multipli ravvicinati
   double _cooldown = 4.0;
-  double _lifetime = 30.0;
+  // Gate non despawnano mai per timer (richiesta utente: "I gate non devono
+  // mai despawnare in nessuna modalità"). L'unico despawn è via player
+  // crossing → `_triggerExplosion` → `removeFromParent`. Tunnel mode:
+  // despawn solo se dietro la camera (vedi update()).
 
   // Size component bbox +66% iter 2 (era 90×90 → 150×150). Necessario per
   // contenere _gateWidth=112.5 + 2×sphere visual r=14 = 140.5 con margine.
@@ -63,6 +70,7 @@ class GateEnemy extends PositionComponent
     final r = math.Random();
     final angle = r.nextDouble() * math.pi * 2;
     _moveDir = Vector2(math.cos(angle), math.sin(angle));
+    _targetDir = _moveDir.clone();
   }
 
   // Hitbox solo sulle due sfere endpoint per reflect proiettili.
@@ -109,31 +117,30 @@ class GateEnemy extends PositionComponent
     super.update(dt);
     _phase += dt * 4;
     if (_cooldown > 0) _cooldown -= dt;
-    _lifetime -= dt;
-    if (_lifetime <= 0) {
-      removeFromParent();
-      return;
-    }
+    // Lifetime timer rimosso (richiesta utente). Gate persiste fino a
+    // crossing player o despawn off-camera (tunnel mode).
 
     // Movimento
     position += _moveDir * _speed * dt;
 
-    // Rimbalzo sui muri.
-    // Buffer = halfWidth (56.25) + sphere visual r (14) = 70.25, round up 71
-    // → sfera estrema NON esce dall'arena anche con gate ruotato lungo l'asse
-    // X o Y. Prima era 20: con gate +50% size, le sfere uscivano fino a ~50px
-    // dall'arena prima del bounce (gate center bounceava troppo presto perché
-    // il check usava solo posizione del centro).
+    // Rimbalzo sui muri (smooth turn — iter 4).
+    // _targetDir si flippa istantaneamente al hit, _moveDir lerp verso target
+    // a rate ~5/s → turn naturale ~0.4s invece di snap 180°. Posizione clamp
+    // mantenuta: durante turn il gate è "spinto" contro il muro mentre ruota.
+    // Buffer = halfWidth (56.25) + sphere visual r (14) = 70.25, round up 71.
     const double kBounceBuffer = 71.0;
     if (game.isTunnelMode) {
       final camY = game.camera.viewfinder.position.y;
       final halfH = game.tunnelHeight / 2;
-      if (position.y <= camY - halfH + kBounceBuffer ||
-          position.y >= camY + halfH - kBounceBuffer) {
-        _moveDir.y = -_moveDir.y;
-        position.y = position.y.clamp(
-            camY - halfH + kBounceBuffer, camY + halfH - kBounceBuffer);
+      // Flip target solo se ancora puntato VERSO il muro (evita ri-flip
+      // continuo mentre gate ancora dentro buffer durante turn).
+      if (position.y <= camY - halfH + kBounceBuffer && _targetDir.y < 0) {
+        _targetDir.y = -_targetDir.y;
+      } else if (position.y >= camY + halfH - kBounceBuffer && _targetDir.y > 0) {
+        _targetDir.y = -_targetDir.y;
       }
+      position.y = position.y.clamp(
+          camY - halfH + kBounceBuffer, camY + halfH - kBounceBuffer);
       // Despawn se dietro la camera
       final cameraLeft =
           game.camera.viewfinder.position.x - game.size.x / 2 - 200;
@@ -142,18 +149,29 @@ class GateEnemy extends PositionComponent
         return;
       }
     } else {
-      if (position.x <= kBounceBuffer ||
-          position.x >= arenaWidth - kBounceBuffer) {
-        _moveDir.x = -_moveDir.x;
-        position.x =
-            position.x.clamp(kBounceBuffer, arenaWidth - kBounceBuffer);
+      if (position.x <= kBounceBuffer && _targetDir.x < 0) {
+        _targetDir.x = -_targetDir.x;
+      } else if (position.x >= arenaWidth - kBounceBuffer && _targetDir.x > 0) {
+        _targetDir.x = -_targetDir.x;
       }
-      if (position.y <= kBounceBuffer ||
-          position.y >= arenaHeight - kBounceBuffer) {
-        _moveDir.y = -_moveDir.y;
-        position.y =
-            position.y.clamp(kBounceBuffer, arenaHeight - kBounceBuffer);
+      position.x = position.x.clamp(kBounceBuffer, arenaWidth - kBounceBuffer);
+
+      if (position.y <= kBounceBuffer && _targetDir.y < 0) {
+        _targetDir.y = -_targetDir.y;
+      } else if (position.y >= arenaHeight - kBounceBuffer && _targetDir.y > 0) {
+        _targetDir.y = -_targetDir.y;
       }
+      position.y = position.y.clamp(kBounceBuffer, arenaHeight - kBounceBuffer);
+    }
+
+    // Lerp smooth: _moveDir ruota verso _targetDir a ~5/s. Quando target ==
+    // current, lerp è no-op. Durante turn il gate decelera lateralmente e
+    // accelera nella nuova direzione → effetto fisicamente plausibile.
+    final lerpRate = (dt * 5).clamp(0.0, 1.0);
+    _moveDir.x += (_targetDir.x - _moveDir.x) * lerpRate;
+    _moveDir.y += (_targetDir.y - _moveDir.y) * lerpRate;
+    if (_moveDir.length > 0.01) {
+      _moveDir.normalize();
     }
 
     // Aggiorna posizione hitbox sulle sfere (ogni frame, perché il gate ruota
@@ -209,8 +227,11 @@ class GateEnemy extends PositionComponent
     // BOOM! Uccidi tutti i nemici nel raggio di UNA delle due esplosioni
     // (raggio ridotto di 1/3 rispetto a prima). Moltiplicatore separato
     // dal raggio visivo per calibrazione indipendente.
+    // AoE combo multiplier: in Pacifism mode cresce con la combo (1.0-2.5×).
+    // In altre modalità è sempre 1.0 (combo non si incrementa fuori pacifist).
     const killRadiusMultiplier = 1.5;
-    final killRadius = _explosionRadius * killRadiusMultiplier; // ~60 px per sfera
+    final aoeMult = game.gateComboAoeMultiplier;
+    final killRadius = _explosionRadius * killRadiusMultiplier * aoeMult;
     final enemies = game.world.children.whereType<EnemyBase>().toList();
     int killCount = 0;
     for (final enemy in enemies) {
@@ -248,18 +269,25 @@ class GateEnemy extends PositionComponent
       game.grid.applyForce(sphere2, _explosionRadius * 3, 1500);
     }
 
-    // Bonus punti per gate kill
-    if (killCount > 0) {
+    // Bonus punti per gate kill.
+    // Pacifism mode: dispatch a `onGateExplosion` per applicare combo
+    // multiplier + tracking timer. Altre modalità: scoring base diretto.
+    if (game.isPacifistMode) {
+      game.onGateExplosion(killCount, position);
+    } else if (killCount > 0) {
       game.scoreSystem.addKill(killCount * 5, position);
     }
 
     removeFromParent();
   }
 
-  // Paint cache
+  // Paint cache (iter 6: refactor con più paints riusabili).
   static final _spherePaint = Paint();
   static final _linePaint = Paint();
   static final _glowPaint = Paint();
+  static final _haloPaint = Paint();
+  static final _arcPaint = Paint()..style = PaintingStyle.stroke;
+  static final _sparkPaint = Paint();
 
   @override
   void render(Canvas canvas) {
@@ -276,47 +304,90 @@ class GateEnemy extends PositionComponent
     // Posizioni sfere (relative al centro del componente)
     final s1x = math.cos(perpAngle) * halfW;
     final s1y = math.sin(perpAngle) * halfW;
+    final sphere1 = Offset(cx + s1x, cy + s1y);
+    final sphere2 = Offset(cx - s1x, cy - s1y);
 
-    // Glow linea: bianco con pulsing. Spessore +50% iter 2 (era 9 → 13.5).
     final pulse = 0.4 + math.sin(_phase * 4) * 0.35;
-    _glowPaint.color = const Color(0xFFFFFFFF).withValues(alpha: 0.3);
-    _glowPaint.strokeWidth = 13.5;
+    final fastPulse = 0.5 + math.sin(_phase * 8) * 0.5;
+
+    // ── 1. HALO ESTERNO sfere (alone soft +50% raggio, gradient pulsante) ──
+    _haloPaint.color = neonColor.withValues(alpha: 0.10 + pulse * 0.08);
+    _haloPaint.maskFilter = null;
+    canvas.drawCircle(sphere1, _sphereVisualR * 2.4, _haloPaint);
+    canvas.drawCircle(sphere2, _sphereVisualR * 2.4, _haloPaint);
+
+    // ── 2. WIRE GLOW (bianco soft sotto la linea principale) ──
+    _glowPaint.color = const Color(0xFFFFFFFF).withValues(alpha: 0.25 + pulse * 0.15);
+    _glowPaint.strokeWidth = 16.0;
     _glowPaint.style = PaintingStyle.stroke;
-    _glowPaint.maskFilter = null;
-    canvas.drawLine(
-      Offset(cx + s1x, cy + s1y),
-      Offset(cx - s1x, cy - s1y),
-      _glowPaint,
-    );
+    canvas.drawLine(sphere1, sphere2, _glowPaint);
 
-    // Linea principale: bianco fluo. Spessore +50% iter 2 (era 3 → 4.5).
-    _linePaint.color = const Color(0xFFFFFFFF).withValues(alpha: 0.8);
-    _linePaint.strokeWidth = 4.5;
+    // ── 3. WIRE color shift cyan → bianco (segmento gradient simulato) ──
+    // 3 strati: ciano largo, bianco medio, core bianco brillante.
     _linePaint.style = PaintingStyle.stroke;
-    canvas.drawLine(
-      Offset(cx + s1x, cy + s1y),
-      Offset(cx - s1x, cy - s1y),
-      _linePaint,
-    );
+    _linePaint.color = const Color(0xFF66FFFF).withValues(alpha: 0.5);
+    _linePaint.strokeWidth = 8.0;
+    canvas.drawLine(sphere1, sphere2, _linePaint);
+    _linePaint.color = const Color(0xFFFFFFFF).withValues(alpha: 0.85);
+    _linePaint.strokeWidth = 4.5;
+    canvas.drawLine(sphere1, sphere2, _linePaint);
+    _linePaint.color = const Color(0xFFFFFFFF).withValues(alpha: 1.0);
+    _linePaint.strokeWidth = 1.8;
+    canvas.drawLine(sphere1, sphere2, _linePaint);
 
-    // Sfera 1: arancio fosforescente con pulsing. Visual r 9 → 14 (+50%).
+    // ── 4. ENERGY ARCS rotanti attorno alle sfere ──
+    // Anelli orbitanti (piccoli archi che ruotano a velocità diverse).
+    _arcPaint.color = neonColor.withValues(alpha: 0.6);
+    _arcPaint.strokeWidth = 1.2;
+    for (final centerPt in [sphere1, sphere2]) {
+      final orbitR = _sphereVisualR * 1.5;
+      final rect = Rect.fromCircle(center: centerPt, radius: orbitR);
+      // Arco 1
+      canvas.drawArc(
+          rect, _phase * 1.5, math.pi * 0.6, false, _arcPaint);
+      // Arco 2 contro-rotante
+      canvas.drawArc(
+          rect, -_phase * 2 + math.pi, math.pi * 0.5, false, _arcPaint);
+    }
+
+    // ── 5. SFERE arancioni con pulsing ──
     _spherePaint.color = neonColor.withValues(alpha: pulse);
     _spherePaint.style = PaintingStyle.fill;
-    canvas.drawCircle(Offset(cx + s1x, cy + s1y), _sphereVisualR, _spherePaint);
+    canvas.drawCircle(sphere1, _sphereVisualR, _spherePaint);
+    canvas.drawCircle(sphere2, _sphereVisualR, _spherePaint);
 
-    // Sfera 2
-    canvas.drawCircle(Offset(cx - s1x, cy - s1y), _sphereVisualR, _spherePaint);
+    // ── 6. NUCLEO bianco sfere ──
+    _spherePaint.color = const Color(0xFFFFFFFF).withValues(alpha: 0.85);
+    canvas.drawCircle(sphere1, 5.6, _spherePaint);
+    canvas.drawCircle(sphere2, 5.6, _spherePaint);
 
-    // Nucleo sfere (bianco, +50% raggio: 3.75 → 5.6).
-    _spherePaint.color = const Color(0xFFFFFFFF).withValues(alpha: 0.7);
-    canvas.drawCircle(Offset(cx + s1x, cy + s1y), 5.6, _spherePaint);
-    canvas.drawCircle(Offset(cx - s1x, cy - s1y), 5.6, _spherePaint);
+    // ── 7. SPARK CRACKLES (microsparks animati attorno endpoint) ──
+    _sparkPaint.color =
+        const Color(0xFFFFFFFF).withValues(alpha: fastPulse * 0.7);
+    for (int i = 0; i < 4; i++) {
+      final sparkAng = _phase * 3 + i * math.pi / 2;
+      final sparkDist = _sphereVisualR + 4 + math.sin(_phase * 5 + i) * 2;
+      for (final centerPt in [sphere1, sphere2]) {
+        final sx = centerPt.dx + math.cos(sparkAng) * sparkDist;
+        final sy = centerPt.dy + math.sin(sparkAng) * sparkDist;
+        canvas.drawCircle(Offset(sx, sy), 1.0, _sparkPaint);
+      }
+    }
 
-    // Particelle lungo la linea (energia, +50% raggio: 3 → 4.5).
-    final particlePos = math.sin(_phase * 2) * 0.5 + 0.5;
-    final px = cx + s1x * (1 - 2 * particlePos);
-    final py = cy + s1y * (1 - 2 * particlePos);
-    _spherePaint.color = const Color(0xFFFFFFFF).withValues(alpha: 0.6);
-    canvas.drawCircle(Offset(px, py), 4.5, _spherePaint);
+    // ── 8. PARTICELLE lungo wire (3 in fase sfasata + scia bianca) ──
+    _spherePaint.color = const Color(0xFFFFFFFF).withValues(alpha: 0.85);
+    for (int i = 0; i < 3; i++) {
+      final t = ((math.sin(_phase * 2 + i * 2.0) * 0.5 + 0.5));
+      final pX = cx + s1x * (1 - 2 * t);
+      final pY = cy + s1y * (1 - 2 * t);
+      // Glow soft particella
+      _spherePaint.color =
+          const Color(0xFF66FFFF).withValues(alpha: 0.4);
+      canvas.drawCircle(Offset(pX, pY), 5.5, _spherePaint);
+      // Core bianca brillante
+      _spherePaint.color =
+          const Color(0xFFFFFFFF).withValues(alpha: 0.9);
+      canvas.drawCircle(Offset(pX, pY), 2.5, _spherePaint);
+    }
   }
 }

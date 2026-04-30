@@ -107,9 +107,11 @@ class TheGridBoss extends BossBase {
       }
     }
 
-    // Phase 3: Laser sweep (con wind-up telegraph — richiesta utente)
+    // Phase 3: Laser sweep 20° (richiesta utente "spazzare un angolo di
+    // soli 20°"). Era π·2/3 rad/s × 3s = 360° (giro completo). Ora
+    // π/18 rad/s × 2s = 0.349 rad = 20° esatti.
     if (currentPhase >= 2 && _laserActive) {
-      _laserAngle += dt * math.pi * 2 / 3; // Full rotation in 3s
+      _laserAngle += dt * math.pi / 18;
       _laserTimer -= dt;
       if (_laserTimer <= 0) {
         _laserActive = false;
@@ -137,7 +139,8 @@ class TheGridBoss extends BossBase {
       if (_laserTelegraphTimer <= 0) {
         // Fire: attiva sweep vero.
         _laserActive = true;
-        _laserTimer = 3.0;
+        // Duration 3.0 → 2.0s per matchare 20° totali (rate π/18 × 2s).
+        _laserTimer = 2.0;
       }
     }
 

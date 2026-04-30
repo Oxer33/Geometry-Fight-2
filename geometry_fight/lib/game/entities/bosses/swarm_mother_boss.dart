@@ -120,7 +120,9 @@ class SwarmMotherBoss extends BossBase {
         _laserTelegraphTimer -= dt;
         if (_laserTelegraphTimer <= 0) {
           _laserActive = true;
-          _laserTimer = 3.0;
+          // Duration ridotta 3.0→2.0s per matchare 20° totali (rate π/18
+          // × 2s = 20°, vedi commento in update sotto).
+          _laserTimer = 2.0;
         }
       }
 
@@ -136,7 +138,10 @@ class SwarmMotherBoss extends BossBase {
       }
 
       if (_laserActive) {
-        _laserAngle += dt * math.pi * 2 / 3;
+        // Sweep angle: 20° totale (richiesta utente "spazzare un angolo
+        // di soli 20°"). Era π·2/3 rad/s × 3s = 360° (giro completo).
+        // Ora π/18 rad/s × 2s = 0.349 rad = 20° esatti.
+        _laserAngle += dt * math.pi / 18;
         _laserTimer -= dt;
         if (_laserTimer <= 0) {
           _laserActive = false;

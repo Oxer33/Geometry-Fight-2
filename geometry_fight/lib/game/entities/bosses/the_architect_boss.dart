@@ -11,9 +11,8 @@ class TheArchitectBoss extends BossBase {
   double _buildTimer = 3;
   double _phase = 0;
   final List<_Structure> _structures = [];
-  double _wallAttackTimer = 6;
   double _bossShootTimer = 0.6;
-  // Shared rng — evita alloc in _buildStructure/_wallAttack.
+  // Shared rng — evita alloc in _buildStructure.
   static final math.Random _rng = math.Random();
 
   TheArchitectBoss()
@@ -93,14 +92,11 @@ class TheArchitectBoss extends BossBase {
       }
     }
 
-    // Wall attack (phase 1+)
-    if (currentPhase >= 1) {
-      _wallAttackTimer -= dt;
-      if (_wallAttackTimer <= 0) {
-        _wallAttackTimer = 6.0;
-        _wallAttack();
-      }
-    }
+    // Wall attack DISABILITATO (richiesta utente "Qualche boss spawna dei
+    // proiettili da bordo arena a schiera e non dovrebbe"). `_wallAttack`
+    // spawnava 15 bullet a 400-500px dal player a wall verso interno → era
+    // letto come "proiettili da bordo arena a schiera". Boss usa solo
+    // structures + boss-shoot in fase 2 (vedi sotto).
 
     // Phase 2: Structures shoot faster and boss shoots too
     if (currentPhase >= 2) {
@@ -137,35 +133,8 @@ class TheArchitectBoss extends BossBase {
     }
   }
 
-  void _wallAttack() {
-    // Create a wall of bullets
-    final horizontal = _rng.nextBool();
-    for (int i = 0; i < 15; i++) {
-      Vector2 bulletPos;
-      Vector2 bulletDir;
-      if (horizontal) {
-        bulletPos = Vector2(
-          playerPosition.x - 400 + i * 53,
-          playerPosition.y - 500,
-        );
-        bulletDir = Vector2(0, 1);
-      } else {
-        bulletPos = Vector2(
-          playerPosition.x - 500,
-          playerPosition.y - 400 + i * 53,
-        );
-        bulletDir = Vector2(1, 0);
-      }
-
-      // Leave gaps
-      if (i == 5 || i == 9) continue;
-
-      final bullet = EnemyBullet(
-          direction: bulletDir, speed: 200, color: NeonColors.electricBlue);
-      bullet.position = bulletPos;
-      game.world.add(bullet);
-    }
-  }
+  // _wallAttack rimosso (richiesta utente: no proiettili da bordo arena
+  // a schiera). Boss ora attacca solo via structures + boss-shoot.
 
   // Signature FX paints
   static final _blueprintPaint = Paint()..style = PaintingStyle.stroke;

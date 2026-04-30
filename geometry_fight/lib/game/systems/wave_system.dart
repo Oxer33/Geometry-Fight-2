@@ -274,7 +274,11 @@ class WaveSystem {
     // perché _maxActiveEnemies cap evita esplosione count.
     if (_allSpawned) {
       _postSpawnDelay -= dt;
-      final canComplete = game.enemyCount == 0 || _mode == GameMode.pacifist;
+      // Pacifist + Waves: skip enemyCount==0 → ondate continue, sempre
+      // ravvicinate (richiesta utente per Waves "molto più ravvicinate").
+      final canComplete = game.enemyCount == 0 ||
+          _mode == GameMode.pacifist ||
+          _mode == GameMode.waves;
       if (_postSpawnDelay <= 0 && canComplete) {
         _completeWave();
       }
@@ -293,6 +297,9 @@ class WaveSystem {
     if (_mode == GameMode.survival || _mode == GameMode.tunnel ||
         _mode == GameMode.pacifist) {
       delaySec = 0.5;
+    } else if (_mode == GameMode.waves) {
+      // Waves: ondate continue molto ravvicinate (richiesta utente).
+      delaySec = 0.2;
     } else if (_mode == GameMode.bossRush) {
       delaySec = 3.0;
     } else {
@@ -391,22 +398,31 @@ class WaveSystem {
   /// maggiore verso il player dopo la fase di idle/charging (~1.5s).
   WaveConfig _generateWavesMode(int wave) {
     // Cap singolo via `_scaledSpawnCount.clamp(1, 500)`. Qui solo formula.
-    final kamikazeCount = 8 + wave * 3;
+    // Mix dei DUE triangoli rossi (utente: "spawnano i cerchi rossi invece
+    // dei triangoli rossi dell'altro tipo" → proton era SBAGLIATO, è una
+    // sfera. Sostituito con swarmDrone, l'altro triangolo rosso del game).
+    // - kamikaze (cardinali rosso) — movimento sx/dx + su/giù
+    // - swarmDrone (rosa-rosso, follower veloce) — varietà aggressiva
+    // Split 60/40 per onda. 4 ondate ravvicinate (delay 1.5s).
+    final totalCount = 8 + wave * 3;
+    final kamikazeCount = (totalCount * 0.6).round();
+    final swarmCount = totalCount - kamikazeCount;
     final spawns = <WaveSpawn>[
       WaveSpawn(EnemyType.kamikaze, kamikazeCount,
           formation: SpawnFormation.borderLine),
+      WaveSpawn(EnemyType.swarmDrone, swarmCount,
+          formation: SpawnFormation.borderLine, delay: 1.5),
       WaveSpawn(EnemyType.kamikaze, kamikazeCount,
-          formation: SpawnFormation.borderLine, delay: 3.0),
+          formation: SpawnFormation.borderLine, delay: 1.5),
+      WaveSpawn(EnemyType.swarmDrone, swarmCount,
+          formation: SpawnFormation.borderLine, delay: 1.5),
     ];
     // Black hole rari: ogni 5 wave. Formation `cross` per posizionamento
-    // FISSO ai 4 punti cardinali lontani dal centro (era `scatter` random
-    // → BH potevano spawnare adiacenti al player → tutti i kamikaze
-    // aspirati → death-explosion del BH uccideva il player). Cross =
-    // safe distance.
+    // FISSO ai 4 punti cardinali lontani dal centro.
     if (wave > 0 && wave % 5 == 0) {
       final bhCount = (1 + wave ~/ 10).clamp(1, 4);
       spawns.add(WaveSpawn(EnemyType.blackHole, bhCount,
-          formation: SpawnFormation.cross, delay: 5.0));
+          formation: SpawnFormation.cross, delay: 2.5));
     }
     return WaveConfig(waveNumber: wave, spawns: spawns);
   }
@@ -1426,10 +1442,13 @@ class WaveSystem {
     final eW = game.effectiveArenaWidth;
     final eH = game.effectiveArenaHeight;
     const edgePad = 40.0;    // distanza dal bordo perpendicolare (dentro arena)
-    // sidePad 140 (era 60) — richiesta utente: "non partono dall'angolo
-    // lasciando spazio al player sia negli angoli che tra i mob e il bordo".
-    // Clamp sidePad quando arena è tiny così non resta nessuno slot libero.
-    final sidePad = math.min(140.0, math.min(eW, eH) * 0.25);
+    // sidePad: distanza dagli angoli. Modalità classic/zen/etc lasciano
+    // 140px buffer per dare spazio al player.
+    // Waves mode (richiesta utente "spawnano lungo TUTTO il bordo, anche
+    // angoli"): sidePad ridotto a 20 → triangoli partono da quasi-angolo.
+    final double sidePad = _mode == GameMode.waves
+        ? 20.0
+        : math.min(140.0, math.min(eW, eH) * 0.25);
 
     final positions = <Vector2>[];
     final n = math.max(1, count);
