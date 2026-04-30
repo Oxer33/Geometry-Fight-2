@@ -558,6 +558,7 @@ class _ShopScreenState extends State<ShopScreen>
       _ModeDef('tunnel', 'Tunnel', 3000, 'Scorrimento laterale in un tunnel infinito', Icons.straighten, NeonColors.purple),
       _ModeDef('endlessBoss', 'Boss Infiniti', 3500, 'Boss dopo boss senza fine — solo per esperti', Icons.repeat, const Color(0xFFFF00AA)),
       _ModeDef('pacifist', 'Pacifist', 1500, 'Niente colpi! Sopravvivi con i Gate (GW Pacifism)', Icons.spa_outlined, const Color(0xFF77FFD4)),
+      _ModeDef('waves', 'Waves', 800, 'Solo triangoli rossi cardinali. Rari buchi neri. Dodge puro.', Icons.change_history, const Color(0xFFFF3344)),
     ];
 
     // Single-column list con card grosse: icona+nome+descrizione+stato.
@@ -2278,13 +2279,14 @@ class _TrailPreviewPainter extends CustomPainter {
           trailSize = progress * 3;
       }
 
-      // Iter 4: trail size +30% per match con in-game (player._trailSizeMultiplier).
-      // Applicato globalmente al final size così tutti i case scalano coerenti.
-      trailSize *= 1.3;
-
+      // Iter 5 (utente "trails quasi invisibili"): bump 1.3 → 2.0 per
+      // match con in-game `player._trailSizeMultiplier`. Applicato
+      // globalmente al final size così tutti i case scalano coerenti.
+      trailSize *= 2.0;
+      // Alpha clamp upper 0.6 → 0.85 → match player render.
       if (trailSize > 0.5) {
         final paint = _trailBodyPaint
-          ..color = trailColor.withValues(alpha: trailAlpha.clamp(0.01, 0.6));
+          ..color = trailColor.withValues(alpha: trailAlpha.clamp(0.01, 0.85));
         canvas.drawCircle(Offset(tx, ty), trailSize, paint);
 
         // Glow
