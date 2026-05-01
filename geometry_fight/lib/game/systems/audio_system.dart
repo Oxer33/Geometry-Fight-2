@@ -251,9 +251,21 @@ class AudioSystem {
 
   /// Wrapper per FlameAudio.play che tracka il player. Usato da `_playRare` e
   /// `_tryDirectThenPool`.
+  ///
+  /// Race-safe: se `stopAll()` ha flippato `_initialized=false` mentre la
+  /// `FlameAudio.play(...)` Future era in flight, il player risolto viene
+  /// stopped+disposed immediatamente (senza essere aggiunto alla lista, che
+  /// è già stata svuotata). Senza questa guard, player orphan persistevano
+  /// nel menù post game-exit.
   static void _playTracked(String asset, double volume) {
     try {
       FlameAudio.play(asset, volume: volume).then<void>((player) {
+        if (!_initialized) {
+          // stopAll() chiamato durante FlameAudio.play in flight → kill subito.
+          try { player.stop(); } catch (_) {}
+          try { player.dispose(); } catch (_) {}
+          return;
+        }
         _trackedRarePlayers.add(player);
         // Auto-cleanup quando il track finisce naturalmente.
         player.onPlayerComplete.first.then((_) {
@@ -379,6 +391,12 @@ class AudioSystem {
     try {
       FlameAudio.play(asset, volume: volume).then<void>(
         (player) {
+          // Race-safe: stopAll() durante FlameAudio.play in flight → kill.
+          if (!_initialized) {
+            try { player.stop(); } catch (_) {}
+            try { player.dispose(); } catch (_) {}
+            return;
+          }
           _trackedRarePlayers.add(player);
           player.onPlayerComplete.first.then((_) {
             _trackedRarePlayers.remove(player);
