@@ -184,6 +184,11 @@ class _ShopScreenState extends State<ShopScreen>
       _SkinDef('aurora', 'Aurora', 2500, 'Boreale: ciano/rosa/verde che fluiscono', const Color(0xFF66FFCC)),
       _SkinDef('tactical', 'Tactical', 1500, 'Corazza militare grigio/blu — placche corazzate', const Color(0xFF6688AA)),
       _SkinDef('prism', 'Prism', 4000, 'Cristallo poligonale — rifrazione arcobaleno multipla', const Color(0xFFFFFFFF)),
+      _SkinDef('tron', 'Tron', 3000, 'Body nero con linee neon ciano — circuit grid digitale', const Color(0xFF00DDFF)),
+      _SkinDef('samurai', 'Samurai', 3500, 'Corazza nera con dettagli oro/rosso — onore e battaglia', const Color(0xFFFFAA00)),
+      _SkinDef('rosegold', 'RoseGold', 2500, 'Metallico rosa-oro — eleganza moderna', const Color(0xFFFFAACC)),
+      _SkinDef('ninja', 'Ninja', 2000, 'Grigio ombra con accenti shuriken — silenzioso e letale', const Color(0xFF445566)),
+      _SkinDef('glitch', 'Glitch', 4500, 'RGB chromatic shift — aberration animata', const Color(0xFFFF0066)),
     ];
 
     return _buildPreviewGrid(
@@ -225,6 +230,11 @@ class _ShopScreenState extends State<ShopScreen>
       _TrailDef('quantum', 'Quantum', 1500, 'Particelle accoppiate in superposizione cromatica', const Color(0xFF00FFCC)),
       _TrailDef('galaxy', 'Galaxy', 2000, 'Stelle che spiraleggiano con polvere cosmica', const Color(0xFFCCAAFF)),
       _TrailDef('lightning', 'Lightning', 1500, 'Archi elettrici a zigzag tra i punti scia', const Color(0xFFFFFF44)),
+      _TrailDef('nebula', 'Nebula', 1800, 'Nuvola spaziale ciano/magenta che pulsa', const Color(0xFF44CCFF)),
+      _TrailDef('prism', 'Prism', 2200, 'Spettro completo che scorre lungo la scia', const Color(0xFFFF66FF)),
+      _TrailDef('hologram', 'Hologram', 1700, 'RGB chromatic aberration in stile glitch', const Color(0xFFFF2244)),
+      _TrailDef('biolume', 'Biolumin', 1600, 'Bioluminescenza acquatica verde/ciano', const Color(0xFF00FFAA)),
+      _TrailDef('neonpulse', 'NeonPulse', 1900, 'Anelli neon expanding bianco-ciano', const Color(0xFF66FFFF)),
     ];
 
     return _buildPreviewGrid(
@@ -1479,6 +1489,21 @@ class _SkinPreviewPainter extends CustomPainter {
       case 'prism':
         _drawPrismShip(canvas, scale, color);
         break;
+      case 'tron':
+        _drawTronShip(canvas, scale, color);
+        break;
+      case 'samurai':
+        _drawSamuraiShip(canvas, scale, color);
+        break;
+      case 'rosegold':
+        _drawRoseGoldShip(canvas, scale, color);
+        break;
+      case 'ninja':
+        _drawNinjaShip(canvas, scale, color);
+        break;
+      case 'glitch':
+        _drawGlitchShip(canvas, scale, color);
+        break;
       default:
         _drawClassicShip(canvas, scale, color);
     }
@@ -2099,6 +2124,151 @@ class _SkinPreviewPainter extends CustomPainter {
     canvas.drawCircle(Offset.zero, 3 * s * sparklePulse, _gFill);
   }
 
+  // ─── NEW SKINS (iter 7) ──────────────────────────────────────────────
+
+  void _drawTronShip(Canvas canvas, double s, Color c) {
+    // Body nero con linee neon ciano (circuit grid).
+    _gFill.color = const Color(0xFF000A14);
+    _drawShipPath(canvas, s, _gFill);
+    // Linee circuit luminose ciano sui bordi
+    _gStroke
+      ..color = c
+      ..strokeWidth = 1.4;
+    _drawShipPath(canvas, s, _gStroke);
+    // Griglia circuit interna orizzontale
+    _gStroke
+      ..color = c.withValues(alpha: 0.5)
+      ..strokeWidth = 0.6;
+    for (double y = -10 * s; y <= 10 * s; y += 4 * s) {
+      canvas.drawLine(Offset(-9 * s, y), Offset(9 * s, y), _gStroke);
+    }
+    // Glow scanline scorrevole
+    final scanY = ((time * 25) % 28) - 14;
+    _gStroke
+      ..color = c.withValues(alpha: 0.85)
+      ..strokeWidth = 1.0;
+    canvas.drawLine(
+        Offset(-12 * s, scanY * s), Offset(12 * s, scanY * s), _gStroke);
+    // Cockpit nodo brillante
+    _gFill.color = c;
+    canvas.drawCircle(Offset(0, -4 * s), 1.6 * s, _gFill);
+  }
+
+  void _drawSamuraiShip(Canvas canvas, double s, Color c) {
+    // Body nero opaco
+    _gFill.color = const Color(0xFF1A0A05);
+    _drawShipPath(canvas, s, _gFill);
+    // Bordo oro
+    _gStroke
+      ..color = c
+      ..strokeWidth = 1.6;
+    _drawShipPath(canvas, s, _gStroke);
+    // Strisce diagonali rosse (battle stripes)
+    _gStroke
+      ..color = const Color(0xFFFF2244)
+      ..strokeWidth = 1.2;
+    canvas.drawLine(Offset(-6 * s, -4 * s), Offset(6 * s, 4 * s), _gStroke);
+    canvas.drawLine(Offset(-6 * s, 4 * s), Offset(6 * s, -4 * s), _gStroke);
+    // Cockpit oro
+    _gFill.color = c;
+    canvas.drawCircle(Offset(0, -3 * s), 2 * s, _gFill);
+    // Sparkle accenti sulle ali
+    final pulse = math.sin(time * 3) * 0.3 + 0.7;
+    _gFill.color = const Color(0xFFFFDD00).withValues(alpha: pulse);
+    canvas.drawCircle(Offset(-10 * s, 8 * s), 1.4, _gFill);
+    canvas.drawCircle(Offset(10 * s, 8 * s), 1.4, _gFill);
+  }
+
+  void _drawRoseGoldShip(Canvas canvas, double s, Color c) {
+    // Gradiente metallico pink → gold
+    _gGlowBlur.color = c.withValues(alpha: 0.4);
+    canvas.drawCircle(Offset.zero, 18 * s, _gGlowBlur);
+    _gFill.color = c;
+    _drawShipPath(canvas, s, _gFill);
+    // Highlight metallico oro chiaro top
+    _gFill.color = const Color(0xFFFFE099).withValues(alpha: 0.6);
+    final highlight = Path()
+      ..moveTo(0, -12 * s)
+      ..lineTo(3 * s, -4 * s)
+      ..lineTo(-3 * s, -4 * s)
+      ..close();
+    canvas.drawPath(highlight, _gFill);
+    // Bordo sottile rosa scuro
+    _gStroke
+      ..color = const Color(0xFFCC6688)
+      ..strokeWidth = 0.8;
+    _drawShipPath(canvas, s, _gStroke);
+    // Cockpit gem brillante
+    _gFill.color = const Color(0xFFFFFFFF);
+    canvas.drawCircle(Offset(0, -3 * s), 1.8 * s, _gFill);
+  }
+
+  void _drawNinjaShip(Canvas canvas, double s, Color c) {
+    // Body grigio-blu scurissimo
+    _gFill.color = const Color(0xFF1A1F2A);
+    _drawShipPath(canvas, s, _gFill);
+    // Bordo sottile grigio-blu
+    _gStroke
+      ..color = c
+      ..strokeWidth = 0.8;
+    _drawShipPath(canvas, s, _gStroke);
+    // Shuriken accent rotante al centro
+    final shurikenAng = time * 2;
+    canvas.save();
+    canvas.translate(0, 2 * s);
+    canvas.rotate(shurikenAng);
+    final shuriken = Path();
+    for (int i = 0; i < 4; i++) {
+      final a = i * math.pi / 2;
+      shuriken
+        ..moveTo(0, 0)
+        ..lineTo(math.cos(a) * 4 * s, math.sin(a) * 4 * s)
+        ..lineTo(math.cos(a + 0.4) * 1.5 * s,
+            math.sin(a + 0.4) * 1.5 * s);
+    }
+    _gStroke
+      ..color = c.withValues(alpha: 0.85)
+      ..strokeWidth = 0.9;
+    canvas.drawPath(shuriken, _gStroke);
+    canvas.restore();
+    // Cockpit minuscolo
+    _gFill.color = c.withValues(alpha: 0.7);
+    canvas.drawCircle(Offset(0, -4 * s), 1.2 * s, _gFill);
+  }
+
+  void _drawGlitchShip(Canvas canvas, double s, Color c) {
+    // RGB chromatic aberration: 3 copie body offset.
+    final glitchPhase = (time * 8) % 1.0;
+    final shift = (glitchPhase < 0.1) ? 3.0 : 1.5;
+    // R offset left
+    canvas.save();
+    canvas.translate(-shift * s, 0);
+    _gFill.color = const Color(0xFFFF0066).withValues(alpha: 0.7);
+    _drawShipPath(canvas, s, _gFill);
+    canvas.restore();
+    // G offset right
+    canvas.save();
+    canvas.translate(shift * s, 0);
+    _gFill.color = const Color(0xFF00FF66).withValues(alpha: 0.7);
+    _drawShipPath(canvas, s, _gFill);
+    canvas.restore();
+    // B body central
+    _gFill.color = const Color(0xFF0066FF).withValues(alpha: 0.85);
+    _drawShipPath(canvas, s, _gFill);
+    // Bordo bianco
+    _gStroke
+      ..color = Colors.white.withValues(alpha: 0.9)
+      ..strokeWidth = 0.7;
+    _drawShipPath(canvas, s, _gStroke);
+    // Glitch scanline orizzontale random
+    if (glitchPhase < 0.15) {
+      final glitchY = (time * 40) % 26 - 13;
+      _gFill.color = Colors.white.withValues(alpha: 0.6);
+      canvas.drawRect(
+          Rect.fromLTWH(-12 * s, glitchY * s, 24 * s, 1.5), _gFill);
+    }
+  }
+
   @override
   bool shouldRepaint(covariant _SkinPreviewPainter old) => old.time != time;
 }
@@ -2270,6 +2440,70 @@ class _TrailPreviewPainter extends CustomPainter {
               ..strokeWidth = 1.2;
             canvas.drawLine(
                 Offset(prevX, prevY), Offset(tx + zigzag, ty), _trailBodyPaint);
+            _trailBodyPaint.style = PaintingStyle.fill;
+          }
+          break;
+        case 'nebula':
+          // Nuvola cyan/magenta — pulse sinusoidale.
+          final tn = (math.sin(time * 1.5 + i * 0.4) * 0.5 + 0.5);
+          trailColor = Color.lerp(
+              const Color(0xFF00DDFF), const Color(0xFFFF44CC), tn)!;
+          trailAlpha = progress * 0.65;
+          trailSize = progress * 4 + 1;
+          // Soft glow attorno
+          _trailBodyPaint.color =
+              trailColor.withValues(alpha: progress * 0.15);
+          canvas.drawCircle(Offset(tx, ty), trailSize * 2.5, _trailBodyPaint);
+          break;
+        case 'prism':
+          // Spettro completo scrolling lungo la scia.
+          final phue = ((time * 30) + i * 18) % 360;
+          trailColor = HSVColor.fromAHSV(1, phue.toDouble(), 0.95, 1).toColor();
+          trailAlpha = progress * 0.7;
+          trailSize = progress * 3.5;
+          break;
+        case 'hologram':
+          // Chromatic aberration RGB.
+          final ch = i % 3;
+          trailColor = ch == 0
+              ? const Color(0xFFFF2244)
+              : (ch == 1
+                  ? const Color(0xFF22FFAA)
+                  : const Color(0xFF2244FF));
+          trailAlpha = progress * 0.6;
+          trailSize = progress * 3;
+          // Scanline glitch occasionale
+          if (i % 4 == 0 && progress > 0.3) {
+            _trailBodyPaint.color =
+                Colors.white.withValues(alpha: progress * 0.3);
+            canvas.drawLine(
+                Offset(tx - 8, ty), Offset(tx + 8, ty), _trailBodyPaint);
+          }
+          break;
+        case 'biolume':
+          // Bioluminescenza pulse verde/ciano.
+          final bpulse =
+              (math.sin(time * 3 + i * 0.6) * 0.4 + 0.6).clamp(0.4, 1.0);
+          trailColor = HSVColor.fromAHSV(bpulse, 160 + (i % 3) * 10.0, 0.9, 1)
+              .toColor();
+          trailAlpha = progress * 0.6;
+          trailSize = progress * 3.5;
+          break;
+        case 'neonpulse':
+          // Anelli neon expanding bianco/ciano.
+          final tp = (math.sin(time * 5 + i * 0.5) * 0.5 + 0.5);
+          trailColor = Color.lerp(
+              const Color(0xFF00FFFF), const Color(0xFFFFFFFF), tp)!;
+          trailAlpha = progress * 0.7;
+          trailSize = progress * 3.5;
+          // Anello esterno pulsante
+          if (i % 2 == 0 && progress > 0.2) {
+            _trailBodyPaint
+              ..color = trailColor.withValues(alpha: progress * 0.25)
+              ..style = PaintingStyle.stroke
+              ..strokeWidth = 1.2;
+            canvas.drawCircle(
+                Offset(tx, ty), trailSize * 2.2 + tp * 3, _trailBodyPaint);
             _trailBodyPaint.style = PaintingStyle.fill;
           }
           break;

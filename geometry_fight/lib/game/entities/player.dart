@@ -612,6 +612,21 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
     } else if (skinId == 'aurora') {
       // Aurora: corpo brillante ma più chiaro del glow per leggibilità.
       bodyColor = baseColor.withValues(alpha: 0.85);
+    } else if (skinId == 'tron') {
+      // Body nero, glow ciano (baseColor) → effetto circuit.
+      bodyColor = const Color(0xFF000A14);
+    } else if (skinId == 'samurai') {
+      // Corpo nero opaco, glow oro/rosso (baseColor + accenti).
+      bodyColor = const Color(0xFF1A0A05);
+    } else if (skinId == 'rosegold') {
+      // Pink-gold body brillante, glow stesso colore.
+      bodyColor = baseColor.withValues(alpha: 0.92);
+    } else if (skinId == 'ninja') {
+      // Body grigio scurissimo, glow grigio-blu sottile (baseColor).
+      bodyColor = const Color(0xFF1A1F2A);
+    } else if (skinId == 'glitch') {
+      // Body bianco con glow RGB animato → effetto chromatic shift.
+      bodyColor = const Color(0xFFEEEEEE);
     }
     if (isInvincible) {
       final blink = ((_invincibleTimer * 12).toInt() % 2 == 0);
@@ -619,11 +634,9 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
     } else {
       paint.color = bodyColor;
     }
-    // Phoenix renderizza body central custom + wings → skip lo standard
-    // ship body (forma a freccia). Caveman-fix: prima il body standard era
-    // sempre disegnato → in-game si vedeva freccia + wings, mentre shop
-    // ha solo body central + wings. Mismatch eliminato.
-    if (skinId != 'phoenix') {
+    // Phoenix + glitch hanno render custom completo → skip lo standard
+    // ship body. Match shop preview esatto.
+    if (skinId != 'phoenix' && skinId != 'glitch') {
       _drawShipBody(canvas, paint, 1.0);
     }
 
@@ -631,6 +644,11 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
     // Mirror di `_drawPhoenixShip` shop preview.
     if (skinId == 'phoenix') {
       _renderPhoenixOverlay(canvas, cx, cy);
+    }
+    // Glitch overlay: 3 copie body offset RGB chromatic aberration.
+    // Mirror di `_drawGlitchShip` shop preview.
+    if (skinId == 'glitch') {
+      _renderGlitchOverlay(canvas, paint);
     }
 
     // Bordo rosso luminoso per stealth (si legge sulla fill quasi nera)
@@ -667,27 +685,43 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
   void _renderTrail(Canvas canvas, double cx, double cy) {
     if (_trail.isEmpty) return;
     for (int i = 0; i < _trail.length; i++) {
-      // Alpha base 0.4 → 0.85: trail era quasi trasparente, ora visibile.
-      final alpha = (1.0 - i / _maxTrailLength) * 0.85;
-      final trailSize = (1.0 - i / _maxTrailLength) * 3 * _trailSizeMultiplier;
+      // Alpha curva sqrt → testa scia molto brillante, coda fade graduale
+      // (più organico del lineare). Iter 6: multi-layer + sparkle.
+      final t = (i / _maxTrailLength).clamp(0.0, 1.0);
+      final fade = 1.0 - t;
+      final alpha = (fade * fade * 0.95 + fade * 0.05).clamp(0.0, 0.95);
+      final trailSize = fade * 3.5 * _trailSizeMultiplier;
       final offset = _trail[i] - position;
       final color = hasOverdrive
           ? _getRainbowColor(_energyPhase + i * 0.3)
           : _getTrailColor(i);
-      // Glow esterno più ampio + alpha boost (0.5 → 0.7) per scia leggibile
-      _trailPaint.color = color.withValues(alpha: alpha * 0.7);
+      final tx = cx + offset.x;
+      final ty = cy + offset.y;
+
+      // Layer 1: glow esterno ampio.
+      _trailPaint.color = color.withValues(alpha: alpha * 0.5);
       _trailPaint.maskFilter = null;
-      canvas.drawCircle(
-        Offset(cx + offset.x, cy + offset.y),
-        trailSize * 2.0,
-        _trailPaint,
-      );
+      canvas.drawCircle(Offset(tx, ty), trailSize * 2.4, _trailPaint);
+      // Layer 2: body principale.
       _trailPaint.color = color.withValues(alpha: alpha);
-      canvas.drawCircle(
-        Offset(cx + offset.x, cy + offset.y),
-        trailSize,
-        _trailPaint,
-      );
+      canvas.drawCircle(Offset(tx, ty), trailSize * 1.1, _trailPaint);
+      // Layer 3: nucleo bianco (solo testa scia, fade rapido).
+      if (t < 0.5) {
+        _trailPaint.color =
+            const Color(0xFFFFFFFF).withValues(alpha: alpha * (0.6 - t));
+        canvas.drawCircle(Offset(tx, ty), trailSize * 0.45, _trailPaint);
+      }
+      // Sparkle: dot offset deterministico via `_energyPhase` (monotonic
+      // clock — `_trailTimer` veniva resettato a 0 ad ogni insert in update,
+      // che dava sparkle scattering invece di rotazione fluida).
+      if (i % 3 == 0 && fade > 0.25) {
+        final sparkAng = _energyPhase * 4 + i * 1.3;
+        final sx = tx + math.cos(sparkAng) * trailSize * 0.8;
+        final sy = ty + math.sin(sparkAng) * trailSize * 0.8;
+        _trailPaint.color =
+            const Color(0xFFFFFFFF).withValues(alpha: alpha * 0.7);
+        canvas.drawCircle(Offset(sx, sy), 1.2, _trailPaint);
+      }
     }
   }
 
@@ -727,6 +761,25 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
         return _crystalColorCache!;
       case 'tactical':
         return const Color(0xFF6688AA);
+      // ─── NEW SKINS (iter 7) ──────────────────────────────────────
+      case 'tron':
+        // Bright cyan circuit lines su body nero.
+        return const Color(0xFF00DDFF);
+      case 'samurai':
+        // Oro con accenti rossi.
+        return const Color(0xFFFFAA00);
+      case 'rosegold':
+        // Pink/gold metallico.
+        return const Color(0xFFFFAACC);
+      case 'ninja':
+        // Dark grey con bordi sottili.
+        return const Color(0xFF445566);
+      case 'glitch':
+        // RGB shift animato — chromatic aberration glitchy.
+        final gphase = (_energyPhase * 8).floor() % 3;
+        if (gphase == 0) return const Color(0xFFFF0066);
+        if (gphase == 1) return const Color(0xFF00FF66);
+        return const Color(0xFF0066FF);
       case 'prism':
         // Rotazione hue veloce → bianco apparente con flash colorati.
         final step = ((_energyPhase * 40) / 5).floor() % 72;
@@ -783,6 +836,33 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
         return HSVColor.fromAHSV(1, ghue.toDouble(), 0.6, 1).toColor();
       case 'lightning':
         return const Color(0xFFFFFF88);
+      // ─── NEW TRAILS (iter 7) ──────────────────────────────────────
+      case 'nebula':
+        // Cloud cyan/magenta blend morbido — modulazione sinusoidale.
+        final tn = (math.sin(_energyPhase * 1.5 + index * 0.4) * 0.5 + 0.5);
+        return Color.lerp(
+            const Color(0xFF00DDFF), const Color(0xFFFF44CC), tn)!;
+      case 'prism':
+        // Spettro completo lento, colori saturi ben separati.
+        final phue = ((_energyPhase * 30) + index * 18) % 360;
+        return HSVColor.fromAHSV(1, phue.toDouble(), 0.95, 1).toColor();
+      case 'hologram':
+        // Chromatic aberration: alterna RGB tra punti scia.
+        final ch = index % 3;
+        if (ch == 0) return const Color(0xFFFF2244); // R
+        if (ch == 1) return const Color(0xFF22FFAA); // G
+        return const Color(0xFF2244FF); // B
+      case 'biolume':
+        // Bioluminescenza: ciano/verde con pulse.
+        final pulse = (math.sin(_energyPhase * 3 + index * 0.6) * 0.4 + 0.6)
+            .clamp(0.4, 1.0);
+        return HSVColor.fromAHSV(pulse, 160 + (index % 3) * 10.0, 0.9, 1)
+            .toColor();
+      case 'neonpulse':
+        // Anelli neon expanding: cyan-bianco con pulse rapido.
+        final tp = (math.sin(_energyPhase * 5 + index * 0.5) * 0.5 + 0.5);
+        return Color.lerp(
+            const Color(0xFF00FFFF), const Color(0xFFFFFFFF), tp)!;
       case 'normal':
       default:
         return NeonColors.cyan;
@@ -1029,6 +1109,50 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
     }
 
     canvas.restore();
+  }
+
+  /// Glitch overlay: 3 copie ship offset RGB. Mirror di `_drawGlitchShip`
+  /// shop preview.
+  static final Paint _glitchPaint = Paint();
+
+  void _renderGlitchOverlay(Canvas canvas, Paint paint) {
+    final cx = size.x / 2;
+    final cy = size.y / 2;
+    final glitchPhase = (_energyPhase * 8) % 1.0;
+    final shift = (glitchPhase < 0.1) ? 3.0 : 1.5;
+
+    // R copy left
+    canvas.save();
+    canvas.translate(-shift, 0);
+    _glitchPaint.color = const Color(0xFFFF0066).withValues(alpha: 0.7);
+    _drawShipBody(canvas, _glitchPaint, 1.0);
+    canvas.restore();
+    // Reset translate via additional save (Flame _drawShipBody handles its own)
+
+    canvas.save();
+    canvas.translate(shift, 0);
+    _glitchPaint.color = const Color(0xFF00FF66).withValues(alpha: 0.7);
+    _drawShipBody(canvas, _glitchPaint, 1.0);
+    canvas.restore();
+
+    // B body central
+    _glitchPaint.color = const Color(0xFF0066FF).withValues(alpha: 0.85);
+    _drawShipBody(canvas, _glitchPaint, 1.0);
+
+    // Bordo bianco
+    final stroke = Paint()
+      ..color = const Color(0xFFFFFFFF).withValues(alpha: 0.9)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 0.7;
+    _drawShipBody(canvas, stroke, 1.0);
+
+    // Glitch scanline orizzontale random
+    if (glitchPhase < 0.15) {
+      final glitchY = (_energyPhase * 40) % 26 - 13;
+      _glitchPaint.color = const Color(0xFFFFFFFF).withValues(alpha: 0.6);
+      canvas.drawRect(
+          Rect.fromLTWH(cx - 12, cy + glitchY, 24, 1.5), _glitchPaint);
+    }
   }
 
   /// Disegna il corpo della nave: forma a freccia dettagliata con ali.
