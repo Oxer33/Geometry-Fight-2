@@ -56,6 +56,13 @@ class _Mp3Pool {
 
   Future<void> dispose() async {
     for (final p in _players) {
+      // stop() prima di dispose: interrompe `resume()` in flight, evita
+      // race dove player suona ancora dopo dispose. Prima dispose-only
+      // → suoni MP3 (mob_killed/boss_killed/player_death) continuavano
+      // nel menu post game-over (utente: "esplosioni nel menù").
+      try {
+        await p.stop();
+      } catch (_) {}
       try {
         await p.dispose();
       } catch (_) {}
@@ -236,13 +243,31 @@ class AudioSystem {
     return true;
   }
 
+  /// Lista dei player creati da `FlameAudio.play` (rari): tracciati per poter
+  /// essere stoppati in `stopAll`, altrimenti continuano a suonare nel menu
+  /// dopo l'uscita dalla partita (utente: "esplosioni nel menù"). Auto-purge
+  /// post `onPlayerComplete` per evitare memory growth.
+  static final List<AudioPlayer> _trackedRarePlayers = [];
+
+  /// Wrapper per FlameAudio.play che tracka il player. Usato da `_playRare` e
+  /// `_tryDirectThenPool`.
+  static void _playTracked(String asset, double volume) {
+    try {
+      FlameAudio.play(asset, volume: volume).then<void>((player) {
+        _trackedRarePlayers.add(player);
+        // Auto-cleanup quando il track finisce naturalmente.
+        player.onPlayerComplete.first.then((_) {
+          _trackedRarePlayers.remove(player);
+        }).catchError((Object _) {});
+      }, onError: (Object _, StackTrace _) {});
+    } catch (_) {}
+  }
+
   /// Suono raro via FlameAudio.play (OK perché chiamato poche volte per partita)
   static void _playRare(String file, {double volumeScale = 1.0}) {
     if (!_initialized || _sfxVolume <= 0) return;
     if (!_canPlay(file)) return;
-    try {
-      FlameAudio.play(file, volume: _sfxVolume * volumeScale);
-    } catch (_) {}
+    _playTracked(file, _sfxVolume * volumeScale);
   }
 
   /// Sparo — pool (alta frequenza)
@@ -295,16 +320,17 @@ class AudioSystem {
     } catch (_) {}
   }
 
-  /// Esplosione bomba (raro) — haptic forte bypassa throttle (evento raro e forte)
+  /// Esplosione bomba (raro). Haptic con throttle 200ms (era bypass) →
+  /// evita doppia vibrazione se bomba + player-hit ravvicinati.
   static void playBombExplosion() {
     _playRare(_fxBomb);
-    if (_vibrationEnabled) HapticFeedback.heavyImpact();
+    if (_canHapticAt(200)) HapticFeedback.heavyImpact();
   }
 
-  /// Player colpito (raro) — haptic forte bypassa throttle
+  /// Player colpito (raro). Haptic throttle 200ms.
   static void playPlayerHit() {
     _playRare(_fxPlayerHit);
-    if (_vibrationEnabled) HapticFeedback.mediumImpact();
+    if (_canHapticAt(200)) HapticFeedback.mediumImpact();
   }
 
   /// Power-up raccolto (raro)
@@ -313,16 +339,16 @@ class AudioSystem {
     if (_canHaptic()) HapticFeedback.selectionClick();
   }
 
-  /// Boss spawna (raro)
+  /// Boss spawna (raro). Haptic throttle 200ms.
   static void playBossSpawn() {
     _playRare(_fxBossSpawn);
-    if (_vibrationEnabled) HapticFeedback.heavyImpact();
+    if (_canHapticAt(200)) HapticFeedback.heavyImpact();
   }
 
-  /// Wave completata (raro)
+  /// Wave completata (raro). Haptic throttle 200ms.
   static void playWaveComplete() {
     _playRare(_fxWaveComplete);
-    if (_vibrationEnabled) HapticFeedback.mediumImpact();
+    if (_canHapticAt(200)) HapticFeedback.mediumImpact();
   }
 
   /// Perfect wave (raro) — chiave cooldown separata da playWaveComplete
@@ -331,10 +357,8 @@ class AudioSystem {
     final now = DateTime.now().millisecondsSinceEpoch;
     if (now - (_lastPlayTime['perfect_wave'] ?? 0) < _minIntervalMs) return;
     _lastPlayTime['perfect_wave'] = now;
-    try {
-      FlameAudio.play(_fxWaveComplete, volume: _sfxVolume);
-    } catch (_) {}
-    if (_vibrationEnabled) HapticFeedback.heavyImpact();
+    _playTracked(_fxWaveComplete, _sfxVolume);
+    if (_canHapticAt(200)) HapticFeedback.heavyImpact();
   }
 
   /// Helper: prova direct `FlameAudio.play`, su failure (sync O async)
@@ -354,7 +378,12 @@ class AudioSystem {
     }
     try {
       FlameAudio.play(asset, volume: volume).then<void>(
-        (_) {},
+        (player) {
+          _trackedRarePlayers.add(player);
+          player.onPlayerComplete.first.then((_) {
+            _trackedRarePlayers.remove(player);
+          }).catchError((Object _) {});
+        },
         onError: (Object _, StackTrace _) {
           poolFallback();
         },
@@ -365,7 +394,7 @@ class AudioSystem {
   }
 
   /// Game over (raro) — esplosione drammatica gameover_explosion.mp3
-  /// + tono game_over.wav legacy in coda. Haptic forte (evento finale).
+  /// + tono game_over.wav legacy in coda. Haptic throttle 200ms.
   static void playGameOver() {
     if (_sfxVolume > 0 && _canPlay(_fxGameOverExplosion)) {
       final boosted = (_sfxVolume * 1.1).clamp(0.0, 1.0);
@@ -373,30 +402,30 @@ class AudioSystem {
           _gameOverExplosionMp3Pool);
     }
     _playRare(_fxGameOver, volumeScale: 0.6);
-    if (_vibrationEnabled) HapticFeedback.heavyImpact();
+    if (_canHapticAt(200)) HapticFeedback.heavyImpact();
   }
 
-  /// Player death — direct play (raro evento per vita persa).
+  /// Player death — direct play. Haptic throttle 200ms (evita doppia
+  /// vibrazione se player muore + boss/bomb in stesso frame).
   static void playPlayerDeath() {
     if (_sfxVolume > 0 && _canPlay(_fxPlayerDeath)) {
       _tryDirectThenPool(_fxPlayerDeath, _sfxVolume, _playerDeathMp3Pool);
     }
-    if (_vibrationEnabled) HapticFeedback.heavyImpact();
+    if (_canHapticAt(200)) HapticFeedback.heavyImpact();
   }
 
-  /// Boss killed — fanfara di vittoria. Direct play primary (rare event),
-  /// pool fallback su failure.
+  /// Boss killed — fanfara di vittoria. Haptic throttle 200ms.
   static void playBossKilled() {
     if (_sfxVolume > 0 && _canPlay(_fxBossKilled)) {
       _tryDirectThenPool(_fxBossKilled, _sfxVolume, _bossKilledMp3Pool);
     }
-    if (_vibrationEnabled) HapticFeedback.heavyImpact();
+    if (_canHapticAt(200)) HapticFeedback.heavyImpact();
   }
 
-  /// Extra life (raro)
+  /// Extra life (raro). Haptic throttle 200ms.
   static void playExtraLife() {
     _playRare(_fxExtraLife);
-    if (_vibrationEnabled) HapticFeedback.mediumImpact();
+    if (_canHapticAt(200)) HapticFeedback.mediumImpact();
   }
 
   /// Ferma tutti i suoni e rilascia risorse.
@@ -413,6 +442,18 @@ class AudioSystem {
     _enemyDeathBurstCount = 0;
     _enemyDeathBurstStartMs = 0;
     _lastHapticMs = 0;
+
+    // Stop + dispose dei FlameAudio.play orphan players (utente: "esplosioni
+    // nel menù"). Senza questo, suoni gameOver/bossKilled/playerDeath/bomb/
+    // bossSpawn che erano in flight quando user esce dalla partita
+    // continuavano a suonare in background.
+    final rareSnapshot = List<AudioPlayer>.from(_trackedRarePlayers);
+    _trackedRarePlayers.clear();
+    for (final p in rareSnapshot) {
+      try { p.stop(); } catch (_) {}
+      try { p.dispose(); } catch (_) {}
+    }
+
     final toDispose = <Future<void>>[];
     // Flame pool (AudioPool) non hanno Future da dispose. I nostri _Mp3Pool sì.
     try { _shootPool?.dispose(); } catch (_) {}
