@@ -79,8 +79,9 @@ class AstralSentinelBoss extends BossBase {
 
   @override
   int getPhase() {
-    if (healthPercent < 0.30) return 2;
-    if (healthPercent < 0.60) return 1;
+    // ENRAGE @ 40% (richiesta utente "fase enrage deve iniziare a 40%").
+    if (healthPercent < 0.40) return 2;
+    if (healthPercent < 0.70) return 1;
     return 0;
   }
 

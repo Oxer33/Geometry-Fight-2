@@ -190,9 +190,20 @@ class CollectPet extends PetBase {
     }
     final to = _wanderTarget - position;
     if (to.length > 1) position += to.normalized() * 380 * dt;
-    // NB: l'effetto "magnet" del pet è gestito in `geom.dart` via check
-    // `pet.position.distanceTo(geom) < 250` → flag `_attracted = true`.
-    // Più pulito del teletrasporto (smooth pull invece di snap).
+
+    // Physical pickup (utente: "deve proprio andare in giro e fisicamente
+    // raccogliere i geom"). Geom entro 25px → collect direct + remove.
+    // Pet contribuisce al gold sessione bypassando magnet logic player.
+    final pickups = <Geom>[];
+    for (final c in game.world.children) {
+      if (c is Geom && c.position.distanceTo(position) < 25) {
+        pickups.add(c);
+      }
+    }
+    for (final g in pickups) {
+      game.collectGeom(g.value);
+      g.removeFromParent();
+    }
   }
 
   // ─── render: hexagon cyan con cerchio ring rotante ───

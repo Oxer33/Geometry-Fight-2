@@ -41,7 +41,8 @@ class VoidKrakenBoss extends BossBase {
 
   VoidKrakenBoss()
       : super(
-          hp: 750,
+          // HP +50% (utente: "deve avere 50% in più di vita"). 750 → 1125.
+          hp: 1125,
           bossName: 'VOID KRAKEN',
           pointValue: 7500,
           neonColor: NeonColors.purple,
@@ -55,8 +56,9 @@ class VoidKrakenBoss extends BossBase {
 
   @override
   int getPhase() {
-    if (healthPercent < 0.25) return 2;
-    if (healthPercent < 0.60) return 1;
+    if (healthPercent < 0.40) return 2;
+    // ENRAGE @ 40% (utente)
+    if (healthPercent < 0.70) return 1;
     return 0;
   }
 

@@ -52,19 +52,43 @@ class BlackHoleEnemy extends EnemyBase {
 
     if (!_activated) return;
 
-    // Attract nearby enemies (NOT player, NOT player bullets)
+    // Attract nearby enemies + PLAYER (utente: "buchi neri non attraggono
+    // il player, attrazione long-range sempre maggiore se ci si avvicina").
     final toAbsorb = <EnemyBase>[];
     for (final child in game.world.children) {
       if (child is EnemyBase && child != this) {
-        // Black holes cannot absorb other black holes
         if (child is BlackHoleEnemy) continue;
         final toHole = position - child.position;
-        // Raggio +50% (250→375) e forza +50% (60→90) — richiesta utente.
         if (toHole.length > 0 && toHole.length < 375) {
           child.position += toHole.normalized() * 90 * dt;
           if (toHole.length < 15) {
             toAbsorb.add(child);
           }
+        }
+      }
+    }
+    // Player attraction: long-range (600px) + force quadratica con proximity
+    // (più vicino → MOLTO più forte). Skip se invincible/dead.
+    if (!game.player.isInvincible && game.player.lives > 0) {
+      final toHole = position - game.player.position;
+      const playerPullRadius = 600.0;
+      if (toHole.length > 1 && toHole.length < playerPullRadius) {
+        final proximity = 1.0 - (toHole.length / playerPullRadius);
+        // 60 base + 240*p² → 60 al bordo, 300 vicino centro.
+        final force = 60.0 + proximity * proximity * 240.0;
+        game.player.position += toHole.normalized() * force * dt;
+        // Clamp post-pull (mirror void_kraken): evita trascinamento fuori
+        // arena/tunnel se BH spawnato vicino al bordo.
+        if (game.isTunnelMode) {
+          final camY = game.camera.viewfinder.position.y;
+          final halfH = game.tunnelHeight / 2;
+          game.player.position.y = game.player.position.y
+              .clamp(camY - halfH + 10, camY + halfH - 10);
+        } else {
+          game.player.position.x =
+              game.player.position.x.clamp(10.0, arenaWidth - 10);
+          game.player.position.y =
+              game.player.position.y.clamp(10.0, arenaHeight - 10);
         }
       }
     }

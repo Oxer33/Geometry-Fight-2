@@ -34,8 +34,8 @@ class ChronoWraithBoss extends BossBase {
 
   @override
   int getPhase() {
-    if (healthPercent > 0.65) return 0;
-    if (healthPercent > 0.35) return 1;
+    if (healthPercent > 0.70) return 0;
+    if (healthPercent > 0.4) return 1;
     return 2;
   }
 

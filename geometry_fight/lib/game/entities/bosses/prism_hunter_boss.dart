@@ -48,7 +48,8 @@ class PrismHunterBoss extends BossBase {
 
   PrismHunterBoss()
       : super(
-          hp: 600,
+          // HP DOUBLED (utente: "deve avere il doppio degli hp"). Era 600.
+          hp: 1200,
           bossName: 'PRISM HUNTER',
           pointValue: 6500,
           neonColor: NeonColors.cyan,
@@ -62,8 +63,8 @@ class PrismHunterBoss extends BossBase {
 
   @override
   int getPhase() {
-    if (healthPercent < 0.30) return 2;
-    if (healthPercent < 0.60) return 1;
+    if (healthPercent < 0.40) return 2;
+    if (healthPercent < 0.70) return 1;
     return 0;
   }
 

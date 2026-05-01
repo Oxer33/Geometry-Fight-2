@@ -55,8 +55,9 @@ class CrimsonCrownBoss extends BossBase {
 
   @override
   int getPhase() {
-    if (healthPercent < 0.25) return 2;
-    if (healthPercent < 0.50) return 1;
+    // ENRAGE @ 40% (richiesta utente).
+    if (healthPercent < 0.40) return 2;
+    if (healthPercent < 0.70) return 1;
     return 0;
   }
 

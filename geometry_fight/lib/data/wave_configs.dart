@@ -274,7 +274,8 @@ List<WaveConfig> generateWaveConfigs() {
   final configs = <WaveConfig>[];
   // Ring buffer ultimi 3 archetipi scelti → no ripetizione consecutiva.
   final history = <int>[];
-  // Ring buffer modifier — evita 2 wave consecutive con stesso modifier.
+  // Ring buffer modifier — unreached dopo disable auto-modifier (utente).
+  // ignore: unused_local_variable
   final modHistory = <int>[];
 
   for (int wave = 1; wave <= 100; wave++) {
@@ -373,7 +374,11 @@ List<WaveConfig> generateWaveConfigs() {
     // intenso). Probabilità ~50% → metà wave non-boss vanilla, metà
     // hanno una "regola speciale".
     // ═══════════════════════════════════════════════════════════════
-    final modifier = _pickModifier(wave, modHistory, isPreBossWave);
+    // AUTO-MODIFIER DISABILITATO (utente: "card modificatore tra un livello
+    // e l'altro della modalità classica non va bene"). Solo i modificatori
+    // SELEZIONATI manualmente pre-game si applicano. `_pickModifier` +
+    // `modHistory` ora unreached ma kept in file.
+    const modifier = WaveModifier.none;
 
     configs.add(WaveConfig(
       waveNumber: wave,
@@ -392,6 +397,9 @@ List<WaveConfig> generateWaveConfigs() {
 ///   ritmo "easy / spice / easy / spice" più digeribile).
 /// - Resto: pick weighted dal pool [frenzy/tank/glass/loot/blitz/haste/
 ///   shadow/iron] usando hash deterministico, skip ultimi 2 in history.
+// Auto-modifier disabilitato in classic (utente). Funzione mantenuta per
+// futuro re-enable o modalità che la richiedano.
+// ignore: unused_element
 WaveModifier _pickModifier(
     int wave, List<int> history, bool isPreBoss) {
   if (wave <= 3) return WaveModifier.none;

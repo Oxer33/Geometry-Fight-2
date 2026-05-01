@@ -41,9 +41,10 @@ class SwarmMotherBoss extends BossBase {
 
   @override
   int getPhase() {
+    // ENRAGE @ 40% (richiesta utente). 4-phase preserved.
     if (healthPercent > 0.7) return 0;
-    if (healthPercent > 0.4) return 1;
-    if (healthPercent > 0.2) return 2;
+    if (healthPercent > 0.55) return 1;
+    if (healthPercent > 0.40) return 2;
     return 3;
   }
 

@@ -678,9 +678,9 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
   /// Scia luminosa dietro la nave durante il movimento.
   /// Colore deriva dal trail equipaggiato nello shop (activeTrail):
   /// normal=cyan, fire=arancio, ice=azzurro, plasma=viola, rainbow=HSV ciclico.
-  // Trail size multiplier (iter 5): 1.3 → 2.0 (utente: "non si vedono bene
-  // i trails, quasi invisibile"). +54% size + alpha boost in _renderTrail.
-  static const double _trailSizeMultiplier = 2.0;
+  // Trail size multiplier — iter 6 (utente "i trails devono essere grandi
+  // la metà"): 2.0 → 1.0. Halve size, alpha boost preservato.
+  static const double _trailSizeMultiplier = 1.0;
 
   void _renderTrail(Canvas canvas, double cx, double cy) {
     if (_trail.isEmpty) return;

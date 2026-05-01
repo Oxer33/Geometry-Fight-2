@@ -57,8 +57,8 @@ class NexusPrimeBoss extends BossBase {
 
   @override
   int getPhase() {
-    if (healthPercent > 0.6) return 0;
-    if (healthPercent > 0.3) return 1;
+    if (healthPercent > 0.7) return 0;
+    if (healthPercent > 0.4) return 1;
     return 2;
   }
 

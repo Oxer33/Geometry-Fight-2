@@ -78,9 +78,9 @@ class EternityEngineBoss extends BossBase {
 
   @override
   int getPhase() {
-    if (healthPercent > 0.75) return 0;
-    if (healthPercent > 0.50) return 1;
-    if (healthPercent > 0.25) return 2;
+    if (healthPercent > 0.85) return 0;
+    if (healthPercent > 0.70) return 1;
+    if (healthPercent > 0.40) return 2;
     return 3;
   }
 

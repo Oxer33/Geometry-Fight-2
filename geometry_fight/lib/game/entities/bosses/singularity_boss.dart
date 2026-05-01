@@ -11,6 +11,7 @@ class SingularityBoss extends BossBase {
   double _pullTimer = 3.33; // +50% frequenza (era 5, richiesta utente)
   double _cloneTimer = 8;
   double _vortexTimer = 12;
+  // ignore: unused_field
   double _blackRainTimer = 4.0;
   bool _pulling = false;
   // Shared rng — evita alloc in _spawnClones/_blackRain.
@@ -49,8 +50,8 @@ class SingularityBoss extends BossBase {
 
   @override
   int getPhase() {
-    if (healthPercent > 0.6) return 0;
-    if (healthPercent > 0.3) return 1;
+    if (healthPercent > 0.7) return 0;
+    if (healthPercent > 0.4) return 1;
     return 2;
   }
 
@@ -120,14 +121,9 @@ class SingularityBoss extends BossBase {
 
     }
 
-    // Black rain (phase 2, periodic)
-    if (currentPhase >= 2) {
-      _blackRainTimer -= dt;
-      if (_blackRainTimer <= 0) {
-        _blackRainTimer = 4.0;
-        _blackRain();
-      }
-    }
+    // Black rain RIMOSSA (utente: "spawna pioggia di pallini rossi che vanno
+    // dall'alto al basso, non devono esserci"). Method `_blackRain` orfano
+    // sotto ma unreachable.
   }
 
   void _doPulse() {
@@ -166,6 +162,7 @@ class SingularityBoss extends BossBase {
     }
   }
 
+  // ignore: unused_element
   void _blackRain() {
     for (int i = 0; i < 5; i++) {
       final x = playerPosition.x + (_rng.nextDouble() - 0.5) * 400;
