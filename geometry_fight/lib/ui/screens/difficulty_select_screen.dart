@@ -86,7 +86,15 @@ class _DifficultySelectScreenState extends State<DifficultySelectScreen> {
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: ListView(
+                child: GridView.count(
+                  // Iter 10 (utente): 4 card lista verticale → griglia 2×2
+                  // senza scroll. Rimossa description + chip HP/SPD/Vite.
+                  // Solo nome + score multiplier per card.
+                  crossAxisCount: 2,
+                  crossAxisSpacing: 12,
+                  mainAxisSpacing: 12,
+                  childAspectRatio: 2.0,
+                  physics: const NeverScrollableScrollPhysics(),
                   children: Difficulty.values.map((d) {
                     final cfg = difficultyConfigs[d]!;
                     final selected = _sel == d;
@@ -94,7 +102,6 @@ class _DifficultySelectScreenState extends State<DifficultySelectScreen> {
                     return GestureDetector(
                       onTap: () => setState(() => _sel = d),
                       child: Container(
-                        margin: const EdgeInsets.only(bottom: 10),
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(10),
@@ -114,55 +121,28 @@ class _DifficultySelectScreenState extends State<DifficultySelectScreen> {
                               : null,
                         ),
                         child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
-                            Row(
-                              children: [
-                                Text(
-                                  cfg.name,
-                                  style: TextStyle(
-                                    color: color,
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w900,
-                                    fontFamily: 'monospace',
-                                    letterSpacing: 3,
-                                  ),
-                                ),
-                                const Spacer(),
-                                Text(
-                                  '×${cfg.scoreMultiplier.toStringAsFixed(1)} score',
-                                  style: TextStyle(
-                                    color: color.withValues(alpha: 0.8),
-                                    fontSize: 11,
-                                    fontFamily: 'monospace',
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 6),
                             Text(
-                              cfg.description,
+                              cfg.name,
+                              textAlign: TextAlign.center,
                               style: TextStyle(
-                                color: Colors.white.withValues(alpha: 0.7),
-                                fontSize: 11,
+                                color: color,
+                                fontSize: 18,
+                                fontWeight: FontWeight.w900,
                                 fontFamily: 'monospace',
-                                height: 1.3,
+                                letterSpacing: 3,
                               ),
                             ),
                             const SizedBox(height: 6),
-                            Wrap(
-                              spacing: 8,
-                              children: [
-                                _statChip('HP ×${cfg.enemyHpMultiplier}',
-                                    color),
-                                _statChip(
-                                    'SPD ×${cfg.enemySpeedMultiplier}',
-                                    color),
-                                // Pacifist: 1 vita fissa, chip "Vite" inutile.
-                                if (widget.mode != GameMode.pacifist)
-                                  _statChip('Vite ${cfg.startingLives}',
-                                      color),
-                              ],
+                            Text(
+                              '×${cfg.scoreMultiplier.toStringAsFixed(1)} score',
+                              style: TextStyle(
+                                color: color.withValues(alpha: 0.8),
+                                fontSize: 12,
+                                fontFamily: 'monospace',
+                              ),
                             ),
                           ],
                         ),
@@ -214,21 +194,5 @@ class _DifficultySelectScreenState extends State<DifficultySelectScreen> {
     }
   }
 
-  Widget _statChip(String label, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(4),
-        border: Border.all(color: color.withValues(alpha: 0.3)),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(
-          color: color.withValues(alpha: 0.9),
-          fontSize: 9,
-          fontFamily: 'monospace',
-        ),
-      ),
-    );
-  }
+  // _statChip rimosso (utente: card minimal senza chip HP/SPD/Vite).
 }
