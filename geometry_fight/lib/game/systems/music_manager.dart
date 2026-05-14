@@ -31,14 +31,17 @@ class MusicManager {
   static StreamSubscription<void>? _completeSub;
 
   /// Asset paths relativi a `assets/audio/` (prefix gestito da flame_audio).
+  /// Intro: 4 track (era 3, +1 da Songs 2 — Intro Geometry Fight.mp3).
   static const List<String> _introTracks = [
     'intro/intro_01.mp3',
     'intro/intro_02.mp3',
     'intro/intro_03.mp3',
+    'intro/intro_04.mp3',
   ];
 
+  /// BGM: 93 track (era 40, +53 da Songs 2 — 52 numerati + 1 unnumbered).
   static final List<String> _bgmTracks = [
-    for (int i = 1; i <= 40; i++)
+    for (int i = 1; i <= 93; i++)
       'bgm/bgm_${i.toString().padLeft(2, '0')}.mp3',
   ];
 
