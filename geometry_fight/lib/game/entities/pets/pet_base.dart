@@ -93,16 +93,15 @@ class AttackPet extends PetBase {
 
   @override
   void onPetUpdate(double dt) {
-    final target = game.player.position +
+    // Snap istantaneo a target relativo al player (utente: "droni seguano
+    // player istantaneo senza delay"). Era lerp 200px/s che laggava ad
+    // alta velocità player.
+    position = game.player.position +
         Vector2(math.cos(phase * 1.2), math.sin(phase * 1.2)) * 50;
-    final to = target - position;
-    if (to.length > 1) position += to.normalized() * 200 * dt;
 
     _shootTimer -= dt;
     if (_shootTimer <= 0) {
       _shootTimer = _shootInterval;
-      // Clone: cachedAim è ref mutata ogni frame da update(); senza clone
-      // bullet onLoad async potrebbe leggere aim del frame successivo.
       final dir = cachedAim.clone();
       final bullet = PlayerBullet(
           direction: dir,
@@ -333,9 +332,9 @@ class DefendPet extends PetBase {
   void onPetUpdate(double dt) {
     final aim = cachedAim;
     final back = -aim;
-    final target = game.player.position + back * 45;
-    final to = target - position;
-    if (to.length > 1) position += to.normalized() * 250 * dt;
+    // Snap istantaneo dietro al player (utente: "drone defend lento, droni
+    // istantanei senza delay"). Era lerp 250px/s che laggava.
+    position = game.player.position + back * 45;
 
     _shootTimer -= dt;
     if (_shootTimer <= 0) {

@@ -42,24 +42,23 @@ class PhantomEnemy extends EnemyBase {
   void updateBehavior(double dt) {
     _phaseTimer += dt;
 
-    // Phase cycle: visible 2s, fade 0.5s, invisible 1.5s, fade in 0.5s.
-    // `_visible` gate del takeDamage: flippa TRUE appena opacity >= 0.5
-    // (metà fade-in) così il player può colpire il phantom che sta rientrando,
-    // invece di vederlo materializzarsi immune fino a opacity pieno.
+    // Phase cycle: full 2s, fade 0.5s, semi-transparent 1.5s, fade-in 0.5s.
+    // Utente: "trasparenti al 50%, totalmente invisibili impossibili da
+    // dodgare". Phase low-opacity 0.1 → 0.5, `_visible` sempre true così
+    // damageable + leggibili. Hitbox sempre attiva.
     final cycle = _phaseTimer % 4.5;
     if (cycle < 2.0) {
       _visible = true;
       _opacity = 1.0;
     } else if (cycle < 2.5) {
-      _opacity = 1.0 - (cycle - 2.0) / 0.5;
+      _opacity = 1.0 - (cycle - 2.0) / 0.5 * 0.5; // 1.0 → 0.5
       _visible = true;
     } else if (cycle < 4.0) {
-      _visible = false;
-      _opacity = 0.1;
+      _visible = true;
+      _opacity = 0.5; // semi-transparent, NON invisibile
     } else {
-      _opacity = (cycle - 4.0) / 0.5;
-      // Fade-in: bersaglio valido a metà rientro (opacity >= 0.5).
-      _visible = _opacity >= 0.5;
+      _opacity = 0.5 + (cycle - 4.0) / 0.5 * 0.5; // 0.5 → 1.0
+      _visible = true;
     }
 
     // Gate hitbox: quando invisibile, disattiva collisioni — prima la hitbox

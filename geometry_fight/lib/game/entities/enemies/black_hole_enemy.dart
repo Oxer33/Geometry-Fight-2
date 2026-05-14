@@ -74,8 +74,8 @@ class BlackHoleEnemy extends EnemyBase {
       const playerPullRadius = 600.0;
       if (toHole.length > 1 && toHole.length < playerPullRadius) {
         final proximity = 1.0 - (toHole.length / playerPullRadius);
-        // 60 base + 240*p² → 60 al bordo, 300 vicino centro.
-        final force = 60.0 + proximity * proximity * 240.0;
+        // Nerf -30% (utente). Base 60→42, quad 240→168 → 42 bordo, 210 centro.
+        final force = 42.0 + proximity * proximity * 168.0;
         game.player.position += toHole.normalized() * force * dt;
         // Clamp post-pull (mirror void_kraken): evita trascinamento fuori
         // arena/tunnel se BH spawnato vicino al bordo.

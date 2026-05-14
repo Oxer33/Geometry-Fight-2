@@ -93,7 +93,9 @@ class _DifficultySelectScreenState extends State<DifficultySelectScreen> {
                   crossAxisCount: 2,
                   crossAxisSpacing: 12,
                   mainAxisSpacing: 12,
-                  childAspectRatio: 2.0,
+                  // childAspectRatio 2.0 → 3.2 (utente: card troppo grandi,
+                  // devono rientrare tutte nello schermo senza scroll).
+                  childAspectRatio: 3.2,
                   physics: const NeverScrollableScrollPhysics(),
                   children: Difficulty.values.map((d) {
                     final cfg = difficultyConfigs[d]!;
