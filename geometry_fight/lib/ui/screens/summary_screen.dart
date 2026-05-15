@@ -160,10 +160,10 @@ class SummaryScreen extends StatelessWidget {
       case GameMode.bossRush: return 'BOSS RUSH';
       case GameMode.timeAttack: return 'TIME ATTACK';
       case GameMode.survival: return 'SURVIVAL';
-      case GameMode.endlessBoss: return 'ENDLESS BOSS';
       case GameMode.dailyChallenge: return 'DAILY';
       case GameMode.pacifist: return 'PACIFIST';
       case GameMode.waves: return 'WAVES';
+      case GameMode.gravityInferno: return 'GRAVITY INFERNO';
     }
   }
 

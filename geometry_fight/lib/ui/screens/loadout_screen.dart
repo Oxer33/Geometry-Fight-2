@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../../data/constants.dart';
 import '../../data/pet_types.dart';
@@ -217,6 +218,7 @@ class _LoadoutScreenState extends State<LoadoutScreen> {
                 isUnlocked: _saveData.unlockedPets.contains(p.id),
                 color: p.color,
                 iconLetter: p.iconCode,
+                petType: p.type,
                 onTap: () => _selectPet(p.id),
               )),
         ],
@@ -241,6 +243,9 @@ class _NeonLoadoutCard extends StatelessWidget {
   final bool isUnlocked;
   final Color color;
   final VoidCallback onTap;
+  // Iter 9: se present, render visuale del pet via CustomPaint invece
+  // della lettera (richiesta utente "metti il pet nelle card").
+  final PetType? petType;
 
   const _NeonLoadoutCard({
     required this.title,
@@ -249,6 +254,7 @@ class _NeonLoadoutCard extends StatelessWidget {
     required this.isUnlocked,
     required this.color,
     required this.onTap,
+    this.petType,
   });
 
   @override
@@ -298,7 +304,7 @@ class _NeonLoadoutCard extends StatelessWidget {
         ),
         child: Row(
           children: [
-            // Badge lettera con glow
+            // Badge: lettera per armi, CustomPaint shape per pet (iter 9).
             Container(
               width: 36,
               height: 36,
@@ -315,15 +321,23 @@ class _NeonLoadoutCard extends StatelessWidget {
                     : null,
               ),
               alignment: Alignment.center,
-              child: Text(
-                iconLetter,
-                style: TextStyle(
-                  color: eff,
-                  fontSize: 17,
-                  fontWeight: FontWeight.w900,
-                  fontFamily: 'monospace',
-                ),
-              ),
+              child: petType != null
+                  ? CustomPaint(
+                      size: const Size(28, 28),
+                      painter: _PetIconPainter(
+                        type: petType!,
+                        color: eff,
+                      ),
+                    )
+                  : Text(
+                      iconLetter,
+                      style: TextStyle(
+                        color: eff,
+                        fontSize: 17,
+                        fontWeight: FontWeight.w900,
+                        fontFamily: 'monospace',
+                      ),
+                    ),
             ),
             const SizedBox(width: 8),
             Expanded(
@@ -380,4 +394,158 @@ class _NeonLoadoutCard extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Painter per icona pet stilizzata nelle card loadout (iter 9).
+/// Disegna shape semplificato per ogni `PetType` matching color.
+class _PetIconPainter extends CustomPainter {
+  final PetType type;
+  final Color color;
+
+  _PetIconPainter({required this.type, required this.color});
+
+  // Iter 13 (caveman-review): instance fields invece di static per
+  // evitare shared paint state corruption se più painter parallel.
+  final Paint _fill = Paint();
+  final Paint _stroke = Paint()..style = PaintingStyle.stroke;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    // Clip a canvas bounds (iter 9 fix): _PetIconPainter rendeva bullet
+    // attack a cy-1.2r → fuori dal canvas (cy-r=0). ClipRect previene
+    // bleed nei layout circostanti.
+    canvas.clipRect(Offset.zero & size);
+
+    final cx = size.width / 2;
+    final cy = size.height / 2;
+    final r = math.min(size.width, size.height) / 2;
+    // Reset full paint state at entry (iter 9 fix: static paints riusati
+    // potrebbero mantenere strokeWidth/color stantii dal precedente paint).
+    _fill
+      ..color = color
+      ..style = PaintingStyle.fill
+      ..maskFilter = null;
+    _stroke
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.4
+      ..maskFilter = null;
+
+    switch (type) {
+      case PetType.attack:
+        // Triangolo punta su (mini ship gunner). Clampato dentro canvas.
+        final path = Path()
+          ..moveTo(cx, cy - r * 0.7)
+          ..lineTo(cx + r * 0.6, cy + r * 0.55)
+          ..lineTo(cx - r * 0.6, cy + r * 0.55)
+          ..close();
+        canvas.drawPath(path, _fill);
+        // Mini canna (entro canvas)
+        _stroke.strokeWidth = 1.6;
+        canvas.drawLine(Offset(cx, cy - r * 0.7), Offset(cx, cy - r * 0.88), _stroke);
+        // Bullet pre-spara (iter 13 fix: ridotto da 0.95→0.85 per stare
+        // completamente dentro canvas — radius 1.4 + cy-r*0.95 era half-clipped).
+        _fill.color = const Color(0xFFFFFFFF);
+        canvas.drawCircle(Offset(cx, cy - r * 0.85), 1.2, _fill);
+      case PetType.collect:
+        // Esagono cyan con cerchio interno (geom magnet feel).
+        final path = Path();
+        for (int i = 0; i < 6; i++) {
+          final ang = i * math.pi / 3 - math.pi / 2;
+          final x = cx + math.cos(ang) * r * 0.85;
+          final y = cy + math.sin(ang) * r * 0.85;
+          if (i == 0) {
+            path.moveTo(x, y);
+          } else {
+            path.lineTo(x, y);
+          }
+        }
+        path.close();
+        canvas.drawPath(path, _stroke);
+        // Geom centrale (rombo)
+        final geom = Path()
+          ..moveTo(cx, cy - r * 0.4)
+          ..lineTo(cx + r * 0.35, cy)
+          ..lineTo(cx, cy + r * 0.4)
+          ..lineTo(cx - r * 0.35, cy)
+          ..close();
+        canvas.drawPath(geom, _fill);
+      case PetType.sweep:
+        // Stella 4 punte rotante (orbita).
+        final path = Path();
+        for (int i = 0; i < 8; i++) {
+          final ang = i * math.pi / 4 - math.pi / 2;
+          final radius = (i.isEven) ? r * 0.95 : r * 0.35;
+          final x = cx + math.cos(ang) * radius;
+          final y = cy + math.sin(ang) * radius;
+          if (i == 0) {
+            path.moveTo(x, y);
+          } else {
+            path.lineTo(x, y);
+          }
+        }
+        path.close();
+        canvas.drawPath(path, _fill);
+      case PetType.defend:
+        // Pentagono shield + barra orizzontale interna.
+        final path = Path();
+        for (int i = 0; i < 5; i++) {
+          final ang = i * math.pi * 2 / 5 - math.pi / 2;
+          final x = cx + math.cos(ang) * r * 0.9;
+          final y = cy + math.sin(ang) * r * 0.9;
+          if (i == 0) {
+            path.moveTo(x, y);
+          } else {
+            path.lineTo(x, y);
+          }
+        }
+        path.close();
+        canvas.drawPath(path, _fill);
+        // Cross interno
+        _stroke
+          ..color = const Color(0xFFFFFFFF)
+          ..strokeWidth = 1.6;
+        canvas.drawLine(Offset(cx - r * 0.35, cy), Offset(cx + r * 0.35, cy), _stroke);
+        canvas.drawLine(Offset(cx, cy - r * 0.35), Offset(cx, cy + r * 0.1), _stroke);
+      case PetType.snipe:
+        // Diamond con crosshair.
+        final path = Path()
+          ..moveTo(cx, cy - r * 0.85)
+          ..lineTo(cx + r * 0.55, cy)
+          ..lineTo(cx, cy + r * 0.85)
+          ..lineTo(cx - r * 0.55, cy)
+          ..close();
+        canvas.drawPath(path, _stroke);
+        // Crosshair lines
+        _stroke.strokeWidth = 1.0;
+        canvas.drawLine(Offset(cx - r * 0.95, cy), Offset(cx + r * 0.95, cy), _stroke);
+        canvas.drawLine(Offset(cx, cy - r * 0.95), Offset(cx, cy + r * 0.95), _stroke);
+        _fill.color = color;
+        canvas.drawCircle(Offset(cx, cy), 2.0, _fill);
+      case PetType.ram:
+        // Chevron freccia (impatto).
+        _stroke
+          ..color = color
+          ..strokeWidth = 2.5;
+        final path = Path()
+          ..moveTo(cx - r * 0.7, cy + r * 0.5)
+          ..lineTo(cx, cy - r * 0.5)
+          ..lineTo(cx + r * 0.7, cy + r * 0.5);
+        canvas.drawPath(path, _stroke);
+        // Doppia freccia
+        final path2 = Path()
+          ..moveTo(cx - r * 0.7, cy + r * 0.85)
+          ..lineTo(cx, cy - r * 0.15)
+          ..lineTo(cx + r * 0.7, cy + r * 0.85);
+        _stroke.strokeWidth = 1.6;
+        canvas.drawPath(path2, _stroke);
+      case PetType.none:
+        // Default: cerchio vuoto
+        canvas.drawCircle(Offset(cx, cy), r * 0.5, _stroke);
+    }
+  }
+
+  @override
+  bool shouldRepaint(_PetIconPainter old) =>
+      old.type != type || old.color != color;
 }

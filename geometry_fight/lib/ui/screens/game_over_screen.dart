@@ -283,37 +283,8 @@ class _GameOverScreenState extends State<GameOverScreen>
                       ),
                     ],
 
-                    const SizedBox(height: 20),
-
-                    // Buttons
-                    Transform.translate(
-                      offset: Offset(0, _buttonsSlide.value),
-                      child: Opacity(
-                        opacity: _buttonsFade.value,
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            _NeonGameOverButton(
-                              text: 'RIPROVA',
-                              icon: Icons.refresh_rounded,
-                              color: Colors.cyanAccent,
-                              onTap: widget.onRetry,
-                              pulse: pulse,
-                              isPrimary: true,
-                            ),
-                            const SizedBox(width: 16),
-                            _NeonGameOverButton(
-                              text: 'ESCI',
-                              icon: Icons.home_rounded,
-                              color: Colors.white70,
-                              onTap: widget.onQuit,
-                              pulse: pulse,
-                              isPrimary: false,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
+                    // Buttons spostati fuori (Positioned right side) per
+                    // evitare taglio fondo schermo (richiesta utente).
                     const SizedBox(height: 16),
                   ],
                 ),
@@ -332,6 +303,44 @@ class _GameOverScreenState extends State<GameOverScreen>
                         Colors.black.withValues(alpha: 0.6),
                       ],
                       radius: 1.3,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
+            // Buttons (right side, vertical stack — richiesta utente:
+            // "metterli sulla destra" perché in basso erano tagliati).
+            Positioned(
+              right: 24,
+              top: 0,
+              bottom: 0,
+              child: Center(
+                child: Transform.translate(
+                  offset: Offset(_buttonsSlide.value, 0),
+                  child: Opacity(
+                    opacity: _buttonsFade.value,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _NeonGameOverButton(
+                          text: 'RIPROVA',
+                          icon: Icons.refresh_rounded,
+                          color: Colors.cyanAccent,
+                          onTap: widget.onRetry,
+                          pulse: pulse,
+                          isPrimary: true,
+                        ),
+                        const SizedBox(height: 14),
+                        _NeonGameOverButton(
+                          text: 'ESCI',
+                          icon: Icons.home_rounded,
+                          color: Colors.white70,
+                          onTap: widget.onQuit,
+                          pulse: pulse,
+                          isPrimary: false,
+                        ),
+                      ],
                     ),
                   ),
                 ),

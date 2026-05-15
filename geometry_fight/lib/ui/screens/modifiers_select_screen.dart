@@ -1,7 +1,41 @@
 import 'package:flutter/material.dart';
 import '../../data/constants.dart';
+import '../../data/difficulty.dart';
 import '../../data/modifiers.dart';
 import '../widgets/neon_back_button.dart';
+
+/// Iter 9: filtra modifier incompatibili con mode rules.
+/// Es: pacifist no shoot → glass_cannon/bullet_hell/one_shot/ricochet_world/
+/// infinite_bombs sono no-op o senza senso.
+bool _modIncompatibleWithMode(String modId, GameMode mode) {
+  switch (mode) {
+    case GameMode.pacifist:
+      return const {
+        'glass_cannon',
+        'bullet_hell',
+        'one_shot',
+        'ricochet_world',
+        'infinite_bombs',
+      }.contains(modId);
+    case GameMode.waves:
+      // Kamikaze non sparano → bullet_hell N/A.
+      return modId == 'bullet_hell';
+    case GameMode.zenMode:
+      // Player immortale → 1-life mods senza senso.
+      return modId == 'glass_cannon' || modId == 'one_shot';
+    case GameMode.gravityInferno:
+      // Tanti BH + mob misti, no spari obbligatorio. one_shot
+      // brutale (1 vita + BH attrazione = unfair) → filter.
+      return modId == 'one_shot';
+    case GameMode.classic:
+    case GameMode.bossRush:
+    case GameMode.survival:
+    case GameMode.timeAttack:
+    case GameMode.tunnel:
+    case GameMode.dailyChallenge:
+      return false;
+  }
+}
 
 /// Schermata dedicata selezione modificatori (richiesta utente: "fare schermate
 /// aggiuntive dedicate"). Wrapper full-screen del catalog modifiers in
@@ -11,12 +45,15 @@ import '../widgets/neon_back_button.dart';
 /// sheet modal — questa è full-screen step del wizard pre-game.
 class ModifiersSelectScreen extends StatefulWidget {
   final List<String> initial;
+  // Iter 9: mode passato per filtrare modifier incompatibili.
+  final GameMode mode;
   final VoidCallback onBack;
   final void Function(List<String> mods) onConfirm;
 
   const ModifiersSelectScreen({
     super.key,
     required this.initial,
+    required this.mode,
     required this.onBack,
     required this.onConfirm,
   });
@@ -27,20 +64,32 @@ class ModifiersSelectScreen extends StatefulWidget {
 
 class _ModifiersSelectScreenState extends State<ModifiersSelectScreen> {
   late List<String> _active;
+  late List<GameModifier> _availableModifiers;
   static const _maxActive = 3;
 
   @override
   void initState() {
     super.initState();
-    _active = List.from(widget.initial);
+    // Filter out modifier incompatibili con la mode selezionata.
+    _availableModifiers = allModifiers
+        .where((m) => !_modIncompatibleWithMode(m.id, widget.mode))
+        .toList();
+    // Pulisci modifiers iniziali che non sono più compatibili (utente
+    // potrebbe avere mods sticky da partita precedente).
+    _active = widget.initial
+        .where((id) =>
+            _availableModifiers.any((m) => m.id == id))
+        .toList();
   }
 
   void _toggle(String id) {
     setState(() {
+      // Iter 9 fix: pattern immutable — replace list instead of in-place
+      // mutation (rispetta global rule "ALWAYS create new objects").
       if (_active.contains(id)) {
-        _active.remove(id);
+        _active = [..._active]..remove(id);
       } else if (_active.length < _maxActive) {
-        _active.add(id);
+        _active = [..._active, id];
       } else {
         ScaffoldMessenger.of(context)
           ..hideCurrentSnackBar()
@@ -135,9 +184,9 @@ class _ModifiersSelectScreenState extends State<ModifiersSelectScreen> {
             Expanded(
               child: ListView.builder(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
-                itemCount: allModifiers.length,
+                itemCount: _availableModifiers.length,
                 itemBuilder: (_, i) {
-                  final m = allModifiers[i];
+                  final m = _availableModifiers[i];
                   final on = _active.contains(m.id);
                   final color = m.isChallenge
                       ? const Color(0xFFFF4466)

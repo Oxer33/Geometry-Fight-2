@@ -1,4 +1,5 @@
 import 'package:hive/hive.dart';
+import 'difficulty.dart';
 
 /// Definizione di un achievement
 class AchievementDef {
@@ -67,6 +68,29 @@ const List<AchievementDef> allAchievements = [
   AchievementDef(id: 'gold_10000', name: 'Paperone', description: 'Accumula 10.000 Gold Geom', icon: '🪙', category: 'special', target: 10000, reward: 500),
   AchievementDef(id: 'all_upgrades', name: 'Potenziato al Massimo', description: 'Compra tutti gli upgrade', icon: '⬆️', category: 'special', target: 1, reward: 1000),
   AchievementDef(id: 'powerups_100', name: 'Drogato di Power-Up', description: 'Raccogli 100 power-up', icon: '⚡', category: 'special', target: 100, reward: 200),
+
+  // === NUOVI (iter 12) ===
+  AchievementDef(id: 'kills_session_1000', name: 'Apocalisse', description: 'Uccidi 1000 nemici in una partita', icon: '🌋', category: 'combat', target: 1000, reward: 700),
+  AchievementDef(id: 'bosses_100', name: 'Sterminatore Reale', description: 'Sconfiggi 100 boss in totale', icon: '👹', category: 'combat', target: 100, reward: 1500),
+  AchievementDef(id: 'boss_session_5', name: 'Caccia Reale', description: 'Sconfiggi 5 boss in una partita', icon: '🎯', category: 'combat', target: 5, reward: 400),
+  AchievementDef(id: 'bombs_500', name: 'Demolitore', description: 'Usa 500 bombe in totale', icon: '🧨', category: 'combat', target: 500, reward: 800),
+  AchievementDef(id: 'multiplier_5000', name: 'Combo Divina', description: 'Raggiungi un moltiplicatore di 5000x', icon: '🌠', category: 'score', target: 5000, reward: 1500),
+  AchievementDef(id: 'geoms_100000', name: 'Avaro Geometrico', description: 'Raccogli 100.000 geom in totale', icon: '💍', category: 'score', target: 100000, reward: 800),
+  AchievementDef(id: 'wave_200', name: 'Inarrestabile', description: 'Raggiungi wave 200 (Survival/Tunnel)', icon: '🌀', category: 'progress', target: 200, reward: 1500),
+  AchievementDef(id: 'waves_wave_20', name: 'Schivatore', description: 'Waves mode: raggiungi wave 20', icon: '🔻', category: 'mastery', target: 20, reward: 300),
+  AchievementDef(id: 'waves_wave_50', name: 'Maestro del Dodge', description: 'Waves mode: raggiungi wave 50', icon: '🩰', category: 'mastery', target: 50, reward: 800),
+  AchievementDef(id: 'gravity_wave_15', name: 'Astrofisico', description: 'Gravity Inferno: raggiungi wave 15', icon: '🌑', category: 'mastery', target: 15, reward: 500),
+  AchievementDef(id: 'pacifist_combo_15', name: 'Pacifista Pro', description: 'Pacifist: combo gate 15+', icon: '🕊️', category: 'mastery', target: 15, reward: 600),
+  AchievementDef(id: 'time_attack_500k', name: 'Cronometrista', description: 'Time Attack: 500k score', icon: '⏱️', category: 'mastery', target: 500000, reward: 500),
+  AchievementDef(id: 'daily_streak_7', name: 'Devoto Giornaliero', description: 'Riscatta il daily reward 7 giorni di fila', icon: '📅', category: 'special', target: 7, reward: 500),
+  AchievementDef(id: 'daily_streak_30', name: 'Fedele Mensile', description: 'Riscatta il daily reward 30 giorni di fila', icon: '🗓️', category: 'special', target: 30, reward: 2000),
+  AchievementDef(id: 'gold_50000', name: 'Magnate', description: 'Accumula 50.000 Gold Geom', icon: '💸', category: 'special', target: 50000, reward: 1500),
+  AchievementDef(id: 'gauss_kills_500', name: 'Maestro Gauss', description: 'Uccidi 500 nemici con Gauss Cannon', icon: '🧲', category: 'mastery', target: 500, reward: 600),
+  AchievementDef(id: 'chain_kills_500', name: 'Tempesta', description: 'Uccidi 500 nemici con Chain Lightning', icon: '⚡', category: 'mastery', target: 500, reward: 600),
+  AchievementDef(id: 'all_weapons', name: 'Armaiolo', description: 'Sblocca tutte le armi', icon: '🔫', category: 'special', target: 1, reward: 800),
+  AchievementDef(id: 'all_skins', name: 'Fashionista', description: 'Sblocca tutte le skin', icon: '👗', category: 'special', target: 1, reward: 800),
+  AchievementDef(id: 'all_trails', name: 'Collezione Cosmica', description: 'Sblocca tutti i trail', icon: '🌈', category: 'special', target: 1, reward: 800),
+  AchievementDef(id: 'all_pets', name: 'Domatore', description: 'Sblocca tutti i pet', icon: '🐾', category: 'special', target: 1, reward: 800),
 ];
 
 /// Manager per gli achievement — persistenza con Hive
@@ -165,6 +189,10 @@ class AchievementManager {
     required bool completedClassicHard,
     required bool completedClassicNightmare,
     required int bossRushWave,
+    // Iter 13: session bosses + mode + gate combo per achievement nuovi.
+    int sessionBosses = 0,
+    GameMode? gameMode,
+    int maxGateCombo = 0,
   }) {
     if (!_initialized) return const [];
     final newlyUnlocked = <AchievementDef>[];
@@ -172,6 +200,8 @@ class AchievementManager {
     // Reset session-based progress (questi achievement tracciano SOLO la sessione corrente)
     _box.put('progress_kills_session_200', 0);
     _box.put('progress_kills_session_500', 0);
+    _box.put('progress_kills_session_1000', 0);
+    _box.put('progress_boss_session_5', 0);
 
     // Combat
     newlyUnlocked.addAll(updateProgress('kills_100', totalKills));
@@ -180,9 +210,13 @@ class AchievementManager {
     newlyUnlocked.addAll(updateProgress('kills_100000', totalKills));
     newlyUnlocked.addAll(updateProgress('kills_session_200', sessionKills));
     newlyUnlocked.addAll(updateProgress('kills_session_500', sessionKills));
+    newlyUnlocked.addAll(updateProgress('kills_session_1000', sessionKills));
     newlyUnlocked.addAll(updateProgress('bosses_10', totalBosses));
     newlyUnlocked.addAll(updateProgress('bosses_50', totalBosses));
+    newlyUnlocked.addAll(updateProgress('bosses_100', totalBosses));
     newlyUnlocked.addAll(updateProgress('bombs_50', totalBombs));
+    newlyUnlocked.addAll(updateProgress('bombs_500', totalBombs));
+    newlyUnlocked.addAll(updateProgress('boss_session_5', sessionBosses));
 
     // Score
     newlyUnlocked.addAll(updateProgress('score_100k', sessionScore));
@@ -193,12 +227,15 @@ class AchievementManager {
     newlyUnlocked.addAll(updateProgress('multiplier_100', maxMultiplier));
     newlyUnlocked.addAll(updateProgress('multiplier_500', maxMultiplier));
     newlyUnlocked.addAll(updateProgress('multiplier_1000', maxMultiplier));
+    newlyUnlocked.addAll(updateProgress('multiplier_5000', maxMultiplier));
     newlyUnlocked.addAll(updateProgress('geoms_10000', totalGeoms));
+    newlyUnlocked.addAll(updateProgress('geoms_100000', totalGeoms));
 
     // Progress
     newlyUnlocked.addAll(updateProgress('wave_20', waveReached));
     newlyUnlocked.addAll(updateProgress('wave_50', waveReached));
     newlyUnlocked.addAll(updateProgress('wave_100', waveReached));
+    newlyUnlocked.addAll(updateProgress('wave_200', waveReached));
     newlyUnlocked.addAll(updateProgress('perfect_waves_5', consecutivePerfectWaves));
     newlyUnlocked.addAll(updateProgress('perfect_waves_10', consecutivePerfectWaves));
     newlyUnlocked.addAll(updateProgress('perfect_waves_20', consecutivePerfectWaves));
@@ -215,8 +252,31 @@ class AchievementManager {
     newlyUnlocked.addAll(updateProgress('games_100', gamesPlayed));
     newlyUnlocked.addAll(updateProgress('games_500', gamesPlayed));
     newlyUnlocked.addAll(updateProgress('gold_10000', totalGold));
+    newlyUnlocked.addAll(updateProgress('gold_50000', totalGold));
     if (allUpgradesBought) newlyUnlocked.addAll(unlock('all_upgrades'));
     newlyUnlocked.addAll(updateProgress('powerups_100', totalPowerUps));
+
+    // Mode-specific achievements (iter 13).
+    if (gameMode != null) {
+      switch (gameMode) {
+        case GameMode.waves:
+          newlyUnlocked.addAll(updateProgress('waves_wave_20', waveReached));
+          newlyUnlocked.addAll(updateProgress('waves_wave_50', waveReached));
+        case GameMode.gravityInferno:
+          newlyUnlocked.addAll(updateProgress('gravity_wave_15', waveReached));
+        case GameMode.timeAttack:
+          newlyUnlocked.addAll(updateProgress('time_attack_500k', sessionScore));
+        case GameMode.pacifist:
+          newlyUnlocked.addAll(updateProgress('pacifist_combo_15', maxGateCombo));
+        case GameMode.classic:
+        case GameMode.bossRush:
+        case GameMode.survival:
+        case GameMode.zenMode:
+        case GameMode.tunnel:
+        case GameMode.dailyChallenge:
+          break;
+      }
+    }
 
     return newlyUnlocked;
   }

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math' as math;
 import 'package:flame/components.dart' show Vector2;
 import 'package:flutter/material.dart';
+import '../data/difficulty.dart';
 import '../data/wave_configs.dart';
 import '../game/game_world.dart';
 import '../game/entities/enemies/enemy_base.dart';
@@ -74,8 +75,9 @@ class _GameHudState extends State<GameHud> {
 
               // === WAVE INDICATOR (margine superiore dello schermo) ===
               // Tunnel mode: non ha wave tradizionali, il contatore confonde
-              // → nascosto come richiesto.
-              if (!game.isTunnelMode)
+              // → nascosto. Survival rework iter 8: stesso motivo (no wave,
+              // spawn 1-a-1 continuo) → contatore wave nascosto.
+              if (!game.isTunnelMode && game.gameMode != GameMode.survival)
                 Positioned(
                   top: topPad,
                   left: 0,

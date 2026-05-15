@@ -199,6 +199,8 @@ class GeometryFightGame extends FlameGame
   /// Reset a 0 quando il timer scade.
   int gateCombo = 0;
   double gateComboTimer = 0;
+  /// Iter 13: max gate combo della sessione (per achievement `pacifist_combo_15`).
+  int maxGateCombo = 0;
   static const double _gateComboWindow = 4.0;
   /// AoE multiplier scaling con combo (gate_enemy.dart legge questo per
   /// allargare il raggio di kill). 1.0 base, +0.15 per combo, max 2.5x.
@@ -378,6 +380,9 @@ class GeometryFightGame extends FlameGame
     // Update systems
     if (isTunnelMode) {
       waveSystem.updateTunnel(scaledDt); // Tunnel: spawn continuo
+    } else if (gameMode == GameMode.survival) {
+      // Survival rework (richiesta utente): 1-a-1 accelerante, no wave.
+      waveSystem.updateSurvival(scaledDt);
     } else {
       waveSystem.update(scaledDt);
     }
@@ -1275,6 +1280,7 @@ class GeometryFightGame extends FlameGame
   void onGateExplosion(int killCount, Vector2 pos) {
     if (!isPacifistMode) return;
     gateCombo++;
+    if (gateCombo > maxGateCombo) maxGateCombo = gateCombo;
     gateComboTimer = _gateComboWindow;
     if (killCount > 0) {
       // Pacifism scoring: base 25 + 10 per kill, × combo multiplier (1-10×).
@@ -1439,6 +1445,7 @@ class GeometryFightGame extends FlameGame
     // gate post-restart partirebbe con AoE/score multiplier dal session prima.
     gateCombo = 0;
     gateComboTimer = 0;
+    maxGateCombo = 0;
     _bombExplosionTimers = null;
     _bombExplosionPos = null;
     _deathExplosionTimers = null;

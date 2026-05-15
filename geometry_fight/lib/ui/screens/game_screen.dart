@@ -133,6 +133,10 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
       bossRushWave: _game.gameMode == GameMode.bossRush
           ? _game.waveSystem.currentWave
           : 0,
+      // Iter 13: nuovi achievement.
+      sessionBosses: _game.sessionBossKills,
+      gameMode: _game.gameMode,
+      maxGateCombo: _game.maxGateCombo,
     );
 
     // Calculate and grant performance bonus gold

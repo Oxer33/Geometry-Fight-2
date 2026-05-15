@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import '../../data/achievements.dart';
 import '../../data/save_data.dart';
 import '../../game/systems/music_manager.dart';
 import '../widgets/animated_builder_widget.dart';
@@ -57,6 +58,12 @@ class _MainMenuScreenState extends State<MainMenuScreen>
   void initState() {
     super.initState();
     _saveData = SaveManager.load();
+
+    // Daily reward (utente: "daily reward che dà +100 geom"). Mostra dialog
+    // post-frame se claim disponibile (data oggi != lastDailyClaim).
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _maybeShowDailyReward();
+    });
 
     // Garantisce che la musica intro stia suonando ogni volta che si torna
     // al main menu (es. dopo game over). Idempotente se già in modalità intro.
@@ -132,6 +139,85 @@ class _MainMenuScreenState extends State<MainMenuScreen>
     _borderController.dispose();
     _glitchController.dispose();
     super.dispose();
+  }
+
+  /// Mostra dialog daily reward se claim disponibile (oggi != lastDailyClaim).
+  /// Auto-claim su tap "RISCATTA" → +100 geom + streak update + save.
+  Future<void> _maybeShowDailyReward() async {
+    if (!mounted) return;
+    if (!_saveData.canClaimDailyReward()) return;
+    final reward = _saveData.claimDailyReward();
+    if (reward == 0) return;
+    await SaveManager.save(_saveData);
+    if (!mounted) return;
+    // Iter 13 (caveman-review): rebuild necessario per refresh badge
+    // gold counter dopo `goldGeoms += kDailyRewardAmount`. Body vuoto
+    // perché `_saveData` mutato in-place — basta re-render.
+    setState(() {});
+    final streak = _saveData.dailyStreak;
+    // Track streak achievement
+    AchievementManager.updateProgress('daily_streak_7', streak);
+    AchievementManager.updateProgress('daily_streak_30', streak);
+    showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF0A0A14),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14),
+          side: const BorderSide(color: Color(0xFFFFD700), width: 2),
+        ),
+        title: const Text(
+          'DAILY REWARD',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            color: Color(0xFFFFD700),
+            fontWeight: FontWeight.w900,
+            fontFamily: 'monospace',
+            letterSpacing: 4,
+          ),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.diamond, color: Color(0xFFFFD700), size: 48),
+            const SizedBox(height: 12),
+            Text(
+              '+$reward GEOM',
+              style: const TextStyle(
+                color: Color(0xFFFFD700),
+                fontSize: 28,
+                fontWeight: FontWeight.w900,
+                fontFamily: 'monospace',
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Streak: $streak ${streak == 1 ? "giorno" : "giorni"}',
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.7),
+                fontSize: 12,
+                fontFamily: 'monospace',
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text(
+              'CONTINUA',
+              style: TextStyle(
+                color: Color(0xFFFFD700),
+                fontWeight: FontWeight.w900,
+                fontFamily: 'monospace',
+                letterSpacing: 2,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   String _formatNumber(int n) {

@@ -3,7 +3,6 @@ import 'dart:ui';
 import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
 import '../../data/constants.dart';
-import '../../data/pet_types.dart';
 import '../../data/wave_configs.dart';
 import '../game_world.dart';
 import 'player.dart';
@@ -80,20 +79,10 @@ class Geom extends PositionComponent
     if (game.hasModifier('magnet_king')) {
       magnetRange += 600.0;
     }
-    // CollectPet (Geometry Wars 3 style): doppio boost.
-    //   1) +250px sul magnetRange globale (era 150 — utente "non funziona",
-    //      bumpato per visibilità immediata).
-    //   2) Pet-locale: se il geom è entro 250px dal pet (NON dal player),
-    //      lo agganciamo comunque → effetto "il pet aspira geom da lontano
-    //      e li trascina al player". Senza questo, geom lontani dal player
-    //      restavano fermi finché il player non si avvicinava.
-    final pet = game.activePet;
-    if (pet != null && pet.def.type == PetType.collect) {
-      magnetRange += 250.0;
-      if (!_attracted && pet.position.distanceTo(position) < 250.0) {
-        _attracted = true;
-      }
-    }
+    // CollectPet (richiesta utente iter 7): rimosso magnet boost +250
+    // verso il player. Il pet deve fisicamente girare per raccogliere
+    // (logica in pet_base.dart `CollectPet.onPetUpdate` → physical pickup
+    // entro 25px). Niente più aspirazione passiva via player.
 
     if (dist < magnetRange) {
       _attracted = true;

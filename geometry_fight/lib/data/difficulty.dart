@@ -107,12 +107,14 @@ enum GameMode {
   timeAttack,
   zenMode,
   tunnel,
-  endlessBoss,
   dailyChallenge,
   pacifist,
   // GW2:RE Waves mode — solo kamikaze (triangoli rossi cardinali, movimento
   // sx/dx + su/giù), rare blackhole. Ondate crescenti, no boss, no other mob.
   waves,
+  // Gravity Inferno — tanti blackhole + pochi mob mixed types, no boss.
+  // Test caos gravitazionale (richiesta utente).
+  gravityInferno,
 }
 
 /// Configurazione per ogni modalità di gioco
@@ -194,16 +196,6 @@ const Map<GameMode, GameModeConfig> gameModeConfigs = {
     infiniteWaves: true,
     pauseBetweenWaves: false,
   ),
-  GameMode.endlessBoss: GameModeConfig(
-    name: 'BOSS INFINITI',
-    description: 'Boss dopo boss, sempre più forti. Quanti ne riesci a battere?',
-    icon: '💀',
-    unlockCost: 3500,
-    hasBosses: true,
-    hasWaves: false,
-    infiniteWaves: true,
-    pauseBetweenWaves: false,
-  ),
   GameMode.dailyChallenge: GameModeConfig(
     name: 'SFIDA GIORNALIERA',
     description: 'Stessa sfida per tutti. Seed giornaliero. Chi fa più punti?',
@@ -229,6 +221,16 @@ const Map<GameMode, GameModeConfig> gameModeConfigs = {
   // Waves: ispirata GW2:RE Waves mode. Solo kamikaze (triangoli rossi
   // cardinali, sx/dx + su/giù). Rare blackhole ogni 5 wave. No boss.
   // Wave count crescente → mastery del dodge cardinale.
+  GameMode.gravityInferno: GameModeConfig(
+    name: 'GRAVITY INFERNO',
+    description: 'Tanti buchi neri + pochi mob misti. Niente boss. Caos gravitazionale.',
+    icon: '🌑',
+    unlockCost: 1800,
+    hasBosses: false,
+    hasWaves: true,
+    infiniteWaves: true,
+    pauseBetweenWaves: false,
+  ),
   GameMode.waves: GameModeConfig(
     name: 'WAVES',
     description: 'Solo triangoli rossi cardinali. Rari buchi neri. Test puro di dodge.',

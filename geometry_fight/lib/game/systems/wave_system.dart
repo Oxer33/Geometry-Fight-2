@@ -125,13 +125,14 @@ class WaveSystem {
     return _currentConfig?.modifier ?? WaveModifier.none;
   }
 
-  /// Reset stato tunnel per nuova partita
+  /// Reset stato tunnel + survival per nuova partita
   void reset() {
     _tunnelSpawnTimer = 0.5;
     _tunnelKillCount = 0;
     _nextBossAt = 120; // Primo boss a 120 kill (richiesta utente)
     _tunnelBossCooldown = 0;
     _tunnelBossBag.clear();
+    _resetSurvival();
     currentWave = 0;
     _waveActive = false;
     _bossActive = false;
@@ -140,6 +141,14 @@ class WaveSystem {
   }
 
   void startWave(int wave) {
+    // Survival rework iter 7: orchestrato da updateSurvival, NON da
+    // wave path. Guard early-return → evita _waveActive/_completeWave
+    // race con currentWave incrementato anche da updateSurvival.
+    if (_mode == GameMode.survival) {
+      currentWave = wave;
+      _waveActive = false;
+      return;
+    }
     currentWave = wave;
     _waveActive = true;
     _spawnIndex = 0;
@@ -164,14 +173,14 @@ class WaveSystem {
         );
       case GameMode.tunnel:
         _currentConfig = _generateTunnelWave(wave);
-      case GameMode.endlessBoss:
-        _currentConfig = _generateEndlessBossWave(wave);
       case GameMode.dailyChallenge:
         _currentConfig = _generateDailyChallengeWave(wave);
       case GameMode.pacifist:
         _currentConfig = _generatePacifistWave(wave);
       case GameMode.waves:
         _currentConfig = _generateWavesMode(wave);
+      case GameMode.gravityInferno:
+        _currentConfig = _generateGravityInfernoWave(wave);
       case GameMode.classic:
         _currentConfig = _configs.firstWhere(
           (c) => c.waveNumber == wave,
@@ -329,27 +338,71 @@ class WaveSystem {
     return WaveConfig(waveNumber: wave, spawns: [], boss: bosses[bossIndex]);
   }
 
-  /// Survival: wave infinite stile GW — TANTISSIMI mob stupidi + pochi letali
+  /// Survival rework (richiesta utente): no wave, spawn 1-a-1 accelerante.
+  /// Spawn timer decresce con tempo elapsed → mob arrivano sempre più rapidi.
+  /// Mix di mob stile GW (drone/swarmDrone main, kamikaze/weaver/etc. rare).
+  /// `_generateSurvivalWave` ora ritorna empty config (orchestrato da
+  /// `updateSurvival` invece di waves).
   WaveConfig _generateSurvivalWave(int wave) {
-    final spawns = <WaveSpawn>[];
-    // Massa stupida (70%) — raddoppiata
-    spawns.add(WaveSpawn(EnemyType.swarmDrone, (50 + wave * 6).clamp(50, 120)));
-    spawns.add(WaveSpawn(EnemyType.drone, (30 + wave * 4).clamp(30, 100), delay: 0.3));
-    spawns.add(WaveSpawn(EnemyType.drone, (20 + wave * 4).clamp(20, 60), delay: 0.5));
-    // Pericolosi (30%) — raddoppiati
-    if (wave >= 2) spawns.add(WaveSpawn(EnemyType.kamikaze, (2 + wave * 2).clamp(2, 24), delay: 1));
-    if (wave >= 3) spawns.add(WaveSpawn(EnemyType.weaver, (wave).clamp(1, 16), delay: 1.5));
-    if (wave >= 4) spawns.add(WaveSpawn(EnemyType.mine, (wave).clamp(1, 16), delay: 1));
-    if (wave >= 5) spawns.add(WaveSpawn(EnemyType.splitter, (wave * 2 ~/ 3).clamp(1, 12), delay: 2));
-    if (wave >= 7) spawns.add(WaveSpawn(EnemyType.shieldEnemy, (wave * 2 ~/ 5).clamp(1, 8), delay: 3));
-    if (wave >= 10) spawns.add(WaveSpawn(EnemyType.titan, (wave ~/ 5).clamp(1, 4), delay: 4));
-    if (wave >= 12) spawns.add(WaveSpawn(EnemyType.glitch, (wave ~/ 3).clamp(1, 8), delay: 3));
-    if (wave >= 15) spawns.add(WaveSpawn(EnemyType.blackHole, 2, delay: 5));
-    // Gate (bilanciere verde): rarissimo in survival — solo ogni 8 wave
-    if (wave >= 8 && wave % 8 == 0) {
-      spawns.add(WaveSpawn(EnemyType.gate, 1, delay: 10));
+    return WaveConfig(waveNumber: wave, spawns: []);
+  }
+
+  /// State survival: spawn timer + tempo elapsed (per accelerare nel tempo).
+  double _survivalSpawnTimer = 0.5;
+  double _survivalElapsed = 0;
+  static final _survivalRng = math.Random();
+
+  /// Aggiornamento continuo survival: ogni `_survivalSpawnTimer` secondi
+  /// spawna 1 mob random. Intervallo decresce: 1.2s start → 0.15s a 5min.
+  /// Tipo random pesato (no boss, no mob speciali troppo letali).
+  void updateSurvival(double dt) {
+    _survivalElapsed += dt;
+    _survivalSpawnTimer -= dt;
+    if (_survivalSpawnTimer > 0) return;
+
+    // Cap nemici attivi: 200 — survival design = caos crescente.
+    if (game.enemyCount >= 200) {
+      _survivalSpawnTimer = 0.1;
+      return;
     }
-    return WaveConfig(waveNumber: wave, spawns: spawns);
+
+    // Intervallo accelerante (iter 8 utente: 2× più veloce dall'inizio):
+    // 0.6s start → 0.075s a 5min elapsed.
+    final t = (_survivalElapsed / 300).clamp(0.0, 1.0);
+    final base = 0.6 + (0.075 - 0.6) * t;
+    // Jitter ±20% per non sentire pattern fisso.
+    final jitter = 0.8 + _survivalRng.nextDouble() * 0.4;
+    _survivalSpawnTimer = (base * jitter).clamp(0.1, 1.5);
+
+    // Pesi: drone/swarmDrone main, kamikaze/weaver/mine/splitter scaling
+    // con elapsed (più mob pericolosi col passare del tempo).
+    final type = _randomSurvivalEnemyType();
+    game.spawnEnemy(type);
+    // Anche progress wave counter (usato da achievements/HUD).
+    final computedWave = (_survivalElapsed / 30).floor() + 1;
+    if (computedWave > currentWave) currentWave = computedWave;
+  }
+
+  EnemyType _randomSurvivalEnemyType() {
+    final t = (_survivalElapsed / 300).clamp(0.0, 1.0);
+    final roll = _survivalRng.nextInt(100);
+    // Mob comuni (60-80% peso, decresce nel tempo)
+    final commonWeight = (80 - 20 * t).round();
+    if (roll < commonWeight ~/ 2) return EnemyType.swarmDrone;
+    if (roll < commonWeight) return EnemyType.drone;
+    // Pericolosi (peso cresce nel tempo)
+    if (roll < commonWeight + 6) return EnemyType.kamikaze;
+    if (roll < commonWeight + 10) return EnemyType.weaver;
+    if (roll < commonWeight + 14) return EnemyType.mine;
+    if (roll < commonWeight + 17) return EnemyType.splitter;
+    if (roll < commonWeight + 19) return EnemyType.shieldEnemy;
+    return EnemyType.glitch;
+  }
+
+  /// Survival reset (chiamato da `reset()`).
+  void _resetSurvival() {
+    _survivalSpawnTimer = 0.5;
+    _survivalElapsed = 0;
   }
 
   /// Time Attack: TANTISSIMI mob per fare punti — massa di stupidi + pochi pericolosi
@@ -423,6 +476,39 @@ class WaveSystem {
       final bhCount = (1 + wave ~/ 10).clamp(1, 4);
       spawns.add(WaveSpawn(EnemyType.blackHole, bhCount,
           formation: SpawnFormation.cross, delay: 2.5));
+    }
+    return WaveConfig(waveNumber: wave, spawns: spawns);
+  }
+
+  /// Gravity Inferno (utente: "tanti buchi neri + pochi mob di tutti i tipi
+  /// e senza boss"). Caos gravitazionale: 3-8 blackhole per wave + 6-12 mob
+  /// random tra il pool standard. No boss.
+  WaveConfig _generateGravityInfernoWave(int wave) {
+    final bhCount = (3 + wave ~/ 3).clamp(3, 8);
+    final mobCount = (6 + wave ~/ 2).clamp(6, 12);
+    // Pool mob misti — variety, no spam stesso tipo.
+    final mobTypes = [
+      EnemyType.drone,
+      EnemyType.kamikaze,
+      EnemyType.weaver,
+      EnemyType.splitter,
+      EnemyType.shieldEnemy,
+      EnemyType.glitch,
+      EnemyType.tesla,
+      EnemyType.swarmDrone,
+    ];
+    final rng = math.Random(wave * 7919);
+    final spawns = <WaveSpawn>[
+      // Black hole cluster all'inizio — formation scatter per coprire arena.
+      WaveSpawn(EnemyType.blackHole, bhCount,
+          formation: SpawnFormation.scatter, delay: 0),
+    ];
+    // Aggiungi 3 gruppi mob piccoli sparsi nel tempo per wave.
+    for (int i = 0; i < 3; i++) {
+      final type = mobTypes[rng.nextInt(mobTypes.length)];
+      final cnt = (mobCount ~/ 3).clamp(2, 5);
+      spawns.add(WaveSpawn(type, cnt,
+          formation: SpawnFormation.scatter, delay: 2.0 + i * 2.5));
     }
     return WaveConfig(waveNumber: wave, spawns: spawns);
   }
@@ -549,29 +635,6 @@ class WaveSystem {
     return WaveConfig(waveNumber: wave, spawns: []);
   }
 
-  /// Endless Boss: ogni wave è un boss con HP crescenti.
-  /// Tra un boss e l'altro, una piccola wave di mob per fare rifornimento.
-  WaveConfig _generateEndlessBossWave(int wave) {
-    if (wave % 2 == 1) {
-      // Wave dispari: mini-wave di mob per recuperare power-up e geom
-      final mobCount = (10 + wave * 2).clamp(10, 40);
-      return WaveConfig(
-        waveNumber: wave,
-        spawns: [
-          WaveSpawn(EnemyType.swarmDrone, mobCount),
-          WaveSpawn(EnemyType.drone, mobCount, delay: 0.5),
-        ],
-      );
-    } else {
-      // Wave pari: boss! Scala tra tutti i boss disponibili
-      final bossIndex = ((wave ~/ 2) - 1) % BossType.values.length;
-      return WaveConfig(
-        waveNumber: wave,
-        spawns: [],
-        boss: BossType.values[bossIndex],
-      );
-    }
-  }
 
   /// Daily Challenge: 30 wave fisse con seed giornaliero.
   /// Stesse wave per tutti i giocatori dello stesso giorno.

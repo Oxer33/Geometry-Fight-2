@@ -36,10 +36,10 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
     ('timeAttack', 'TEMPO', Icons.timer_rounded, const Color(0xFFFF8800)),
     ('zenMode', 'ZEN', Icons.self_improvement_rounded, const Color(0xFF44FF44)),
     ('tunnel', 'TUNNEL', Icons.rotate_90_degrees_ccw_rounded, const Color(0xFF4488FF)),
-    ('endlessBoss', 'BOSS INF.', Icons.whatshot_rounded, const Color(0xFFFF2244)),
     ('dailyChallenge', 'GIORNALIERA', Icons.calendar_today_rounded, const Color(0xFFFFD700)),
     ('pacifist', 'PACIFISTA', Icons.spa_outlined, const Color(0xFF77FFD4)),
     ('waves', 'WAVES', Icons.change_history, const Color(0xFFFF3344)),
+    ('gravityInferno', 'GRAVITY', Icons.blur_circular, const Color(0xFF9933FF)),
   ];
 
   static const _difficulties = [

@@ -1,9 +1,17 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import '../../data/achievements.dart';
 import '../../data/save_data.dart';
 import '../../data/constants.dart';
 import '../../data/pet_types.dart';
 import '../widgets/neon_back_button.dart';
+
+/// Iter 13: total counts per collection achievement (`all_*`).
+/// Allineati ai cataloghi in `_buildSkinsTab` / `_buildTrailsTab` /
+/// `_buildWeaponsTab` + `kPetCatalog`. Aggiornare se aggiungo entry.
+const int _kTotalSkins = 16;
+const int _kTotalTrails = 16;
+const int _kTotalWeapons = 7;
 
 class ShopScreen extends StatefulWidget {
   final VoidCallback onBack;
@@ -45,12 +53,31 @@ class _ShopScreenState extends State<ShopScreen>
     super.dispose();
   }
 
+  /// Iter 13: dopo ogni purchase verifica collection completion e
+  /// unlock achievement `all_skins`/`all_trails`/`all_weapons`/`all_pets`.
+  void _checkCollectionUnlocks() {
+    if (_saveData.unlockedSkins.length >= _kTotalSkins) {
+      AchievementManager.unlock('all_skins');
+    }
+    if (_saveData.unlockedTrails.length >= _kTotalTrails) {
+      AchievementManager.unlock('all_trails');
+    }
+    if (_saveData.unlockedWeapons.length >= _kTotalWeapons) {
+      AchievementManager.unlock('all_weapons');
+    }
+    // Pet catalog len (incluso 'none' default). Confronta su unlockedPets.
+    if (_saveData.unlockedPets.length >= kPetCatalog.length) {
+      AchievementManager.unlock('all_pets');
+    }
+  }
+
   void _purchase(String id, int cost, VoidCallback onSuccess) {
     if (_saveData.goldGeoms >= cost) {
       setState(() {
         _saveData.goldGeoms -= cost;
         onSuccess();
         SaveManager.save(_saveData);
+        _checkCollectionUnlocks();
       });
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -566,9 +593,9 @@ class _ShopScreenState extends State<ShopScreen>
       _ModeDef('timeAttack', 'Time Attack', 1500, '3 minuti: fai più punti possibile prima che scada', Icons.timer, NeonColors.orange),
       _ModeDef('zenMode', 'Zen Mode', 1000, 'Vite infinite — gioca senza stress, esplora tutto', Icons.spa, const Color(0xFF88CCFF)),
       _ModeDef('tunnel', 'Tunnel', 3000, 'Scorrimento laterale in un tunnel infinito', Icons.straighten, NeonColors.purple),
-      _ModeDef('endlessBoss', 'Boss Infiniti', 3500, 'Boss dopo boss senza fine — solo per esperti', Icons.repeat, const Color(0xFFFF00AA)),
       _ModeDef('pacifist', 'Pacifist', 1500, 'Niente colpi! Sopravvivi con i Gate (GW Pacifism)', Icons.spa_outlined, const Color(0xFF77FFD4)),
       _ModeDef('waves', 'Waves', 800, 'Solo triangoli rossi cardinali. Rari buchi neri. Dodge puro.', Icons.change_history, const Color(0xFFFF3344)),
+      _ModeDef('gravityInferno', 'Gravity Inferno', 1800, 'Tanti buchi neri + pochi mob misti. Niente boss. Caos gravitazionale.', Icons.blur_circular, const Color(0xFF9933FF)),
     ];
 
     // Single-column list con card grosse: icona+nome+descrizione+stato.

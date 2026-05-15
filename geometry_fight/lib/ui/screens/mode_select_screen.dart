@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../../data/difficulty.dart';
 import '../../data/save_data.dart';
@@ -84,37 +85,8 @@ class _ModeSelectScreenState extends State<ModeSelectScreen>
 
             return Column(
               children: [
-                // Header
+                // Header (con step indicator 1/5 a destra integrato — iter 8).
                 _buildHeader(entrance, glow),
-
-                // Step indicator (1/5)
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 16, vertical: 4),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(8),
-                          border: Border.all(
-                              color: Colors.cyanAccent.withValues(alpha: 0.5)),
-                        ),
-                        child: const Text(
-                          '1/5',
-                          style: TextStyle(
-                            color: Colors.cyanAccent,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w900,
-                            fontFamily: 'monospace',
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
 
                 // Mode list orizzontale (con scroll arrow indicator)
                 Expanded(
@@ -123,47 +95,12 @@ class _ModeSelectScreenState extends State<ModeSelectScreen>
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _buildSectionLabel('MODALITÀ', Icons.gamepad_rounded,
-                            Colors.cyanAccent, entrance, 0.1),
-                        const SizedBox(height: 8),
-                        // Stack: lista + freccia destra fade indicator
-                        // (richiesta utente: "freccia verso destra che indica
-                        // che lo screen è scrollabile orizontalmente").
+                        // Iter 8: rimosso _buildSectionLabel('MODALITÀ',...)
+                        // duplicato → header già "SELEZIONA MODALITÀ".
+                        // Iter 13 (utente: "togliamo freccia scroll"):
+                        // rimossi Stack + chevron icon + black gradient fade.
                         Expanded(
-                          child: Stack(
-                            children: [
-                              _buildModeList(saveData, entrance, glow),
-                              Positioned(
-                                right: 0,
-                                top: 0,
-                                bottom: 0,
-                                child: IgnorePointer(
-                                  child: Container(
-                                    width: 50,
-                                    decoration: BoxDecoration(
-                                      gradient: LinearGradient(
-                                        begin: Alignment.centerLeft,
-                                        end: Alignment.centerRight,
-                                        colors: [
-                                          Colors.transparent,
-                                          Colors.black
-                                              .withValues(alpha: 0.85),
-                                        ],
-                                      ),
-                                    ),
-                                    alignment: Alignment.centerRight,
-                                    padding: const EdgeInsets.only(right: 4),
-                                    child: Icon(
-                                      Icons.chevron_right,
-                                      color: Colors.cyanAccent.withValues(
-                                          alpha: 0.6 + 0.4 * glow),
-                                      size: 36,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
+                          child: _buildModeList(saveData, entrance, glow),
                         ),
                       ],
                     ),
@@ -191,15 +128,37 @@ class _ModeSelectScreenState extends State<ModeSelectScreen>
             children: [
               NeonBackButton(onTap: widget.onBack),
               const SizedBox(width: 16),
-              const Text(
-                'SELEZIONA MODALITÀ',
-                style: TextStyle(
-                  color: Colors.cyanAccent,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  fontFamily: 'monospace',
-                  letterSpacing: 3,
-                  shadows: [Shadow(color: Colors.cyanAccent, blurRadius: 8)],
+              const Expanded(
+                child: Text(
+                  'SELEZIONA MODALITÀ',
+                  style: TextStyle(
+                    color: Colors.cyanAccent,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    fontFamily: 'monospace',
+                    letterSpacing: 3,
+                    shadows: [Shadow(color: Colors.cyanAccent, blurRadius: 8)],
+                  ),
+                ),
+              ),
+              // Step indicator iter 8: integrato nell'header (top-dx) come
+              // negli altri screen pre-partita (summary/difficulty).
+              Container(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                      color: Colors.cyanAccent.withValues(alpha: 0.5)),
+                ),
+                child: const Text(
+                  '1/5',
+                  style: TextStyle(
+                    color: Colors.cyanAccent,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w900,
+                    fontFamily: 'monospace',
+                  ),
                 ),
               ),
             ],
@@ -209,71 +168,25 @@ class _ModeSelectScreenState extends State<ModeSelectScreen>
     );
   }
 
-  Widget _buildSectionLabel(String title, IconData icon, Color color,
-      double entrance, double delay) {
-    final e = delay >= 1.0
-        ? 1.0
-        : ((entrance - delay) / (1.0 - delay)).clamp(0.0, 1.0);
-    return Opacity(
-      opacity: e,
-      child: Transform.translate(
-        offset: Offset(-15 * (1 - e), 0),
-        child: Row(
-          children: [
-            Container(
-              width: 22,
-              height: 22,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: color.withValues(alpha: 0.12),
-                border: Border.all(color: color.withValues(alpha: 0.4)),
-              ),
-              child: Icon(icon, color: color, size: 11),
-            ),
-            const SizedBox(width: 8),
-            Text(
-              title,
-              style: TextStyle(
-                color: color.withValues(alpha: 0.8),
-                fontSize: 11,
-                fontWeight: FontWeight.bold,
-                fontFamily: 'monospace',
-                letterSpacing: 4,
-                shadows: [
-                  Shadow(color: color.withValues(alpha: 0.3), blurRadius: 4)
-                ],
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Container(
-                height: 1,
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      color.withValues(alpha: 0.3),
-                      Colors.transparent,
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  // Iter 8: rimosso _buildSectionLabel (unused dopo cleanup duplicato).
 
   Widget _buildModeList(SaveData saveData, double entrance, double glow) {
     final e = ((entrance - 0.15) / 0.85).clamp(0.0, 1.0);
+    // Iter 12 (utente: "card alte la metà + 2 file"). GridView 2 row.
     return Opacity(
       opacity: e,
       child: Transform.translate(
         offset: Offset(0, 15 * (1 - e)),
         child: SizedBox(
-          height: 105,
-          child: ListView(
+          // Iter 15: glow halved again → padding/spacing ulteriormente ridotti.
+          height: 128,
+          child: GridView.count(
             scrollDirection: Axis.horizontal,
+            crossAxisCount: 2, // 2 rows
+            mainAxisSpacing: 6,
+            crossAxisSpacing: 6,
+            childAspectRatio: 56 / 145, // height/width = card 145×56
+            padding: const EdgeInsets.all(5),
             children: GameMode.values.map((mode) {
               final config = gameModeConfigs[mode]!;
               final isUnlocked = config.unlockCost == 0 ||
@@ -281,6 +194,7 @@ class _ModeSelectScreenState extends State<ModeSelectScreen>
               final isSelected = _selectedMode == mode;
               return _NeonModeCard(
                 config: config,
+                mode: mode,
                 isSelected: isSelected,
                 isUnlocked: isUnlocked,
                 glow: glow,
@@ -557,116 +471,270 @@ class _ModeSelectScreenState extends State<ModeSelectScreen>
 }
 
 // ==================== NEON MODE CARD ====================
+/// Color theme per modalità (richiesta utente iter 8: card colorate con
+/// FX cosmici). Stessi colori dei tab leaderboard per coerenza visiva.
+Color _modeColor(GameMode m) {
+  switch (m) {
+    case GameMode.classic: return const Color(0xFF00FFFF);       // ciano
+    case GameMode.bossRush: return const Color(0xFFCC00FF);      // viola
+    case GameMode.survival: return const Color(0xFFFF4466);      // rosa-rosso
+    case GameMode.timeAttack: return const Color(0xFFFF8800);    // arancio
+    case GameMode.zenMode: return const Color(0xFF44FF44);       // verde
+    case GameMode.tunnel: return const Color(0xFF4488FF);        // blu
+    case GameMode.dailyChallenge: return const Color(0xFFFFD700);// oro
+    case GameMode.pacifist: return const Color(0xFF77FFD4);      // ciano pastel
+    case GameMode.waves: return const Color(0xFFFF3344);         // rosso
+    case GameMode.gravityInferno: return const Color(0xFF9933FF);// viola gravity
+  }
+}
+
 class _NeonModeCard extends StatelessWidget {
   final GameModeConfig config;
   final bool isSelected;
   final bool isUnlocked;
   final double glow;
   final VoidCallback? onTap;
+  // Iter 8: GameMode passato per derivare color theme cosmico.
+  final GameMode mode;
 
   const _NeonModeCard({
     required this.config,
     required this.isSelected,
     required this.isUnlocked,
     required this.glow,
+    required this.mode,
     this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
+    final themeColor = _modeColor(mode);
+    final desat = isUnlocked ? 1.0 : 0.35;
+    final tint = Color.lerp(Colors.white24, themeColor, desat)!;
     return GestureDetector(
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 250),
-        width: 145,
-        margin: const EdgeInsets.only(right: 10),
-        padding: const EdgeInsets.all(12),
+        // Iter 12: width fit GridView constraint, height target 56.
+        // Glow shimmer multi-layer pulsante quando selected.
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(
-            color: isSelected
-                ? Colors.cyanAccent.withValues(alpha: 0.6 + glow * 0.15)
-                : isUnlocked
-                    ? Colors.white.withValues(alpha: 0.08)
-                    : Colors.white.withValues(alpha: 0.04),
-            width: isSelected ? 1.5 : 0.5,
-          ),
-          gradient: isSelected
-              ? LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    Colors.cyanAccent.withValues(alpha: 0.1),
-                    Colors.cyanAccent.withValues(alpha: 0.03),
-                  ],
-                )
-              : null,
-          color: isSelected ? null : Colors.white.withValues(alpha: 0.02),
+          borderRadius: BorderRadius.circular(12),
           boxShadow: isSelected
               ? [
+                  // Iter 15 (utente: "glow ancora più piccolo, metà"):
+                  // halved again da iter14. Compatto, no overflow su altre.
                   BoxShadow(
-                    color: Colors.cyanAccent
-                        .withValues(alpha: 0.1 + glow * 0.05),
-                    blurRadius: 10,
+                    color: themeColor.withValues(alpha: 0.55 + glow * 0.35),
+                    blurRadius: 6 + glow * 2.5,
+                    spreadRadius: 0.5 + glow * 0.5,
+                  ),
+                  BoxShadow(
+                    color: themeColor.withValues(alpha: 0.4),
+                    blurRadius: 3,
+                  ),
+                  BoxShadow(
+                    color: Colors.white.withValues(alpha: 0.15 + glow * 0.15),
+                    blurRadius: 1,
                   ),
                 ]
-              : null,
+              : isUnlocked
+                  ? [
+                      BoxShadow(
+                        color: themeColor.withValues(alpha: 0.15 + glow * 0.1),
+                        blurRadius: 10,
+                      ),
+                    ]
+                  : null,
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Text(config.icon, style: const TextStyle(fontSize: 16)),
-                const SizedBox(width: 6),
-                Expanded(
-                  child: Text(
-                    config.name,
-                    style: TextStyle(
-                      color: isUnlocked
-                          ? (isSelected ? Colors.cyanAccent : Colors.white)
-                          : Colors.white30,
-                      fontSize: 11,
-                      fontWeight: FontWeight.bold,
-                      fontFamily: 'monospace',
-                      shadows: isSelected
-                          ? [
-                              Shadow(
-                                  color: Colors.cyanAccent
-                                      .withValues(alpha: 0.3),
-                                  blurRadius: 4)
-                            ]
-                          : null,
-                    ),
-                    overflow: TextOverflow.ellipsis,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: Stack(
+            children: [
+              // Cosmic background painter: radial gradient + stelle stabili.
+              Positioned.fill(
+                child: CustomPaint(
+                  painter: _CosmicCardPainter(
+                    color: tint,
+                    seed: mode.hashCode,
+                    pulse: glow,
+                    isSelected: isSelected,
                   ),
                 ),
-              ],
-            ),
-            const SizedBox(height: 6),
-            Text(
-              isUnlocked ? config.description : '${config.unlockCost} GG',
-              style: TextStyle(
-                color: isUnlocked
-                    ? Colors.white.withValues(alpha: 0.45)
-                    : Colors.orange.withValues(alpha: 0.5),
-                fontSize: 9,
-                fontFamily: 'monospace',
               ),
-              maxLines: 3,
-              overflow: TextOverflow.ellipsis,
-            ),
-            if (!isUnlocked)
+              // Border neon
+              Positioned.fill(
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: isSelected
+                          ? themeColor.withValues(alpha: 0.85 + glow * 0.15)
+                          : tint.withValues(alpha: isUnlocked ? 0.45 : 0.18),
+                      width: isSelected ? 2.0 : 1.0,
+                    ),
+                  ),
+                ),
+              ),
+              // Contenuto compact (iter 12: fit 56h).
               Padding(
-                padding: const EdgeInsets.only(top: 4),
-                child: Icon(Icons.lock_rounded,
-                    color: Colors.white.withValues(alpha: 0.15), size: 12),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                child: Row(
+                  children: [
+                    Text(config.icon, style: const TextStyle(fontSize: 21)),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            config.name,
+                            style: TextStyle(
+                              // Iter 13 contrast (utente: "scritta selected
+                              // stesso colore della card"): selected → white
+                              // bold con glow themeColor; unselected →
+                              // themeColor stesso (highlight non-selezionato).
+                              color: !isUnlocked
+                                  ? Colors.white30
+                                  : isSelected
+                                      ? Colors.white
+                                      : themeColor,
+                              // Iter 16: +30% base (10→13), selected +10% (14).
+                              fontSize: isSelected ? 14 : 13,
+                              fontWeight: FontWeight.w900,
+                              fontFamily: 'monospace',
+                              shadows: isUnlocked
+                                  ? [
+                                      Shadow(
+                                          color: isSelected
+                                              ? themeColor
+                                                  .withValues(alpha: 0.95)
+                                              : themeColor
+                                                  .withValues(alpha: 0.45),
+                                          blurRadius: isSelected ? 10 : 5)
+                                    ]
+                                  : null,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
+                          ),
+                          if (!isUnlocked)
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(Icons.lock_rounded,
+                                    color: Colors.orange
+                                        .withValues(alpha: 0.65),
+                                    size: 12),
+                                const SizedBox(width: 3),
+                                Flexible(
+                                  child: Text(
+                                    '${config.unlockCost}',
+                                    style: TextStyle(
+                                      color: Colors.orange
+                                          .withValues(alpha: 0.7),
+                                      // Iter 16: 9 → 12 (+30%).
+                                      fontSize: 12,
+                                      fontFamily: 'monospace',
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                    maxLines: 1,
+                                  ),
+                                ),
+                              ],
+                            ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
+}
+
+/// Cosmic card background: radial gradient mode-color + stelle deterministiche
+/// (seed = mode.hashCode, sempre stesse posizioni per card consistente).
+/// `pulse` (0..1) anima twinkle stelle. `isSelected` boost luminosità.
+class _CosmicCardPainter extends CustomPainter {
+  final Color color;
+  final int seed;
+  final double pulse;
+  final bool isSelected;
+
+  _CosmicCardPainter({
+    required this.color,
+    required this.seed,
+    required this.pulse,
+    required this.isSelected,
+  });
+
+  // Cached paint allocs.
+  static final Paint _bgPaint = Paint();
+  static final Paint _starPaint = Paint();
+  static final Paint _nebulaPaint = Paint();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final rect = Offset.zero & size;
+    // Base scuro con gradient radiale colorato (più intenso se selected).
+    final gradStrength = isSelected ? 0.55 : 0.32;
+    _bgPaint.shader = RadialGradient(
+      center: const Alignment(-0.4, -0.6),
+      radius: 1.4,
+      colors: [
+        color.withValues(alpha: gradStrength),
+        const Color(0xFF050010),
+      ],
+    ).createShader(rect);
+    canvas.drawRect(rect, _bgPaint);
+    _bgPaint.shader = null;
+
+    // Nebula soft blob (mode color, blurred-ish).
+    _nebulaPaint
+      ..color = color.withValues(alpha: 0.18 + pulse * 0.08)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 14);
+    canvas.drawCircle(
+        Offset(size.width * 0.75, size.height * 0.7),
+        size.width * 0.45,
+        _nebulaPaint);
+    _nebulaPaint.maskFilter = null;
+
+    // Stelle (deterministe via seed).
+    final rng = math.Random(seed);
+    final starCount = 18;
+    for (int i = 0; i < starCount; i++) {
+      final x = rng.nextDouble() * size.width;
+      final y = rng.nextDouble() * size.height;
+      final r = 0.4 + rng.nextDouble() * 1.4;
+      // Twinkle: ogni stella pulsa con phase diversa derivata da i.
+      final phase = (pulse + i * 0.13) % 1.0;
+      final twinkle = 0.4 + (math.sin(phase * math.pi * 2) * 0.5 + 0.5) * 0.6;
+      _starPaint.color = const Color(0xFFFFFFFF)
+          .withValues(alpha: twinkle * (isSelected ? 0.95 : 0.7));
+      canvas.drawCircle(Offset(x, y), r, _starPaint);
+    }
+    // Stella accenti color (3) più grandi.
+    for (int i = 0; i < 3; i++) {
+      final x = rng.nextDouble() * size.width;
+      final y = rng.nextDouble() * size.height;
+      final phase = (pulse + i * 0.27) % 1.0;
+      final twinkle = 0.5 + (math.sin(phase * math.pi * 2) * 0.5 + 0.5) * 0.5;
+      _starPaint.color = color.withValues(alpha: twinkle * 0.9);
+      canvas.drawCircle(Offset(x, y), 2.2, _starPaint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(_CosmicCardPainter old) =>
+      old.pulse != pulse ||
+      old.color != color ||
+      old.seed != seed ||
+      old.isSelected != isSelected;
 }
 
 // ==================== NEON DIFFICULTY CARD ====================

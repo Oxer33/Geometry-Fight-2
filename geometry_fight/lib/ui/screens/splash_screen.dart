@@ -305,6 +305,25 @@ class _SplashPainter extends CustomPainter {
   // Logo line paint cache (2 linee decorative → 1 Paint; strokeWidth=1 costante)
   static final Paint _logoLinePaint = Paint()..strokeWidth = 1;
 
+  // Iter 10 game-like upgrade: grid distortion + geom drops + HUD + kills.
+  static final Paint _gridPaint = Paint()
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 0.7;
+  static final Paint _gridGlowPaint = Paint()
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 2.0
+    ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
+  static final Paint _geomFillPaint = Paint();
+  static final Paint _geomStrokePaint = Paint()..style = PaintingStyle.stroke;
+  static final Paint _hudBgPaint = Paint();
+  static final Paint _killExpPaint = Paint();
+  static final Paint _killShockPaint = Paint()..style = PaintingStyle.stroke;
+  static final Paint _floatyTrailPaint = Paint();
+  static TextPainter? _cachedScorePainter;
+  static int _cachedScoreValue = -1;
+  static TextPainter? _cachedMultPainter;
+  static int _cachedMultValue = -1;
+
   // Logo glow paint cache: MaskFilter blur(radius=40) cached all'init (nota
   // che `_drawLogo` disegna cerchio costante, blur costante → Paint totalmente
   // stabile, solo .color cambia con alpha).
@@ -334,6 +353,7 @@ class _SplashPainter extends CustomPainter {
     final cx = size.width / 2;
     final cy = size.height / 2;
 
+    // Iter 13 (utente: "no griglia"): rimossa _drawGameGrid.
     _drawNebula(canvas, size);
     _drawScrollingBg(canvas, size);
     _drawStars(canvas, size);
@@ -342,6 +362,9 @@ class _SplashPainter extends CustomPainter {
       _drawSpeedLines(canvas, size);
     }
 
+    // Iter 11 (utente: "no HUD, solo ship insegue mob"): rimossi
+    // _drawFloatingGeoms, _drawSecondaryKills, _drawHUDOverlay.
+    // Splash = pure chase simulation (ship + bullets + 1 weaver).
     if (chaseProgress < 1.0) {
       _drawChaseScene(canvas, size);
     }
@@ -488,25 +511,26 @@ class _SplashPainter extends CustomPainter {
     final t = chaseProgress;
     final cy = size.height / 2;
 
-    // === PERCORSO: weaver scappa con zigzag ampio + dodge laterali
-    // aggressivi (movimenti rapidi come Weaver in gioco quando schiva). ===
-    final droneX = size.width * (-0.15 + t * 0.75);
-    // Dodge aggressivo: 40Hz primario (amp 35) + 70Hz secondario (amp 12)
-    // → movimenti impulsivi, stretti, imprevedibili. Burst modulation per
-    // avere periodi di "calm" e "panic".
-    final dodgeBurst = 0.3 + math.sin(t * math.pi * 2) * 0.7;
-    final dodgeY =
-        math.sin(t * 40) * 35 * dodgeBurst + math.sin(t * 70) * 12;
-    final droneY = cy + math.sin(t * math.pi * 5) * size.height * 0.13
-        + math.cos(t * math.pi * 3) * size.height * 0.05
-        + dodgeY;
+    // === PERCORSO: weaver scappa con sinusoide AMPIA (utente iter 13:
+    // "ampiezza maggiore, più alto/basso") + micro-jitter leggero per
+    // sentirsi vivo. Niente più dodge 40Hz/70Hz aggressivo che creava
+    // tremore (era jittery sia per il mob che per ship aim follow). ===
+    // Iter 14 (utente: "2x speed, raggiunge margine destro"): factor
+    // 0.75 → 1.20 → ship+drone vanno -0.15 fino a +1.05 width (oltre right).
+    final droneX = size.width * (-0.15 + t * 1.20);
+    // Sinusoide singola lenta: 1 onda completa nel chase, amp 0.32 size.h
+    // → mob copre da alto a basso schermo. Jitter sottile aggiunge vita.
+    final droneJitter = math.sin(t * math.pi * 8) * 6;
+    final droneY = cy + math.sin(t * math.pi * 2) * size.height * 0.32 +
+        droneJitter;
 
-    // La navicella insegue con ritardo
+    // La navicella insegue con ritardo. Iter 12 (utente: "navicella si
+    // muove strana"): smussato traiettoria ship → 1 oscillazione lenta
+    // invece di 5+3 (era jittery). Wobble ridotto a 0.10 (era 0.13+0.05).
     const shipDelay = 0.1;
     final shipT = (t - shipDelay).clamp(0.0, 1.0);
-    final shipX = size.width * (-0.15 + shipT * 0.75);
-    final shipY = cy + math.sin(shipT * math.pi * 5) * size.height * 0.13
-        + math.cos(shipT * math.pi * 3) * size.height * 0.05;
+    final shipX = size.width * (-0.15 + shipT * 1.20);
+    final shipY = cy + math.sin(shipT * math.pi * 1.5) * size.height * 0.10;
 
     // Angolo di mira: la nave si orienta verso il drone, come in gioco.
     // Convenzione `_rotation = atan2(aim.y, aim.x) + π/2`. Guard su vettore
@@ -519,18 +543,16 @@ class _SplashPainter extends CustomPainter {
         ? math.pi / 2 // muso a destra (default chase direction)
         : math.atan2(dyAim, dxAim) + math.pi / 2;
 
-    // === SCIA WEAVER (verde, dodge aggressivo matching live position) ===
+    // === SCIA WEAVER (verde, matching ampia sinusoide nuova trajectory) ===
     for (int i = 1; i <= 12; i++) {
       final raw = t - i * 0.01;
       if (raw <= 0) break;
       final dt2 = raw.clamp(0.0, 1.0);
-      final dtx = size.width * (-0.15 + dt2 * 0.75);
-      final dBurstPast = 0.3 + math.sin(dt2 * math.pi * 2) * 0.7;
-      final dDodgePast =
-          math.sin(dt2 * 40) * 35 * dBurstPast + math.sin(dt2 * 70) * 12;
-      final dty = cy + math.sin(dt2 * math.pi * 5) * size.height * 0.13
-          + math.cos(dt2 * math.pi * 3) * size.height * 0.05
-          + dDodgePast;
+      final dtx = size.width * (-0.15 + dt2 * 1.20);
+      final dJitterPast = math.sin(dt2 * math.pi * 8) * 6;
+      final dty = cy +
+          math.sin(dt2 * math.pi * 2) * size.height * 0.32 +
+          dJitterPast;
       final a = (1 - i / 12.0) * 0.22;
       final s = (1 - i / 12.0) * 3.5;
       _droneTrailPaint.color = Color.fromRGBO(0, 255, 90, a);
@@ -547,9 +569,9 @@ class _SplashPainter extends CustomPainter {
       final rawSt = shipT - i * 0.008;
       if (rawSt <= 0) break; // tutti i sample successivi sarebbero clampati
       final st = rawSt.clamp(0.0, 1.0);
-      final stx = size.width * (-0.15 + st * 0.75);
-      final sty = cy + math.sin(st * math.pi * 5) * size.height * 0.13
-          + math.cos(st * math.pi * 3) * size.height * 0.05;
+      final stx = size.width * (-0.15 + st * 1.20);
+      // Iter 12: trajectory smussata matching ship.
+      final sty = cy + math.sin(st * math.pi * 1.5) * size.height * 0.10;
       final a = (1 - i / 18.0) * 0.4;
       final s = (1 - i / 18.0) * 3.5;
       _shipTrailGlowPaint.color =
@@ -560,49 +582,68 @@ class _SplashPainter extends CustomPainter {
       canvas.drawCircle(Offset(stx, sty), s, _shipTrailCorePaint);
     }
 
-    // === PROIETTILI stile in-game `PlayerBullet` — 4 raffiche × 2 bullet
-    // paralleli. Velocity COSTANTE lungo aimDir: bullet vola dritto
-    // attraverso lo schermo (fire-and-forget), non lerpa ship→drone. ===
+    // === PROIETTILI in-game basic weapon: 3 RAFFICHE × 4 COPPIE.
+    // Iter 11 (utente: "in fila come arma base + 2-3 raffiche, mob schiva").
+    // Pattern in-game: ogni `_shoot()` spawna 1 coppia (2 bullet ±6px perp).
+    // baseFireRate=8/s → fireInterval=0.125s tra coppie. In chase-units
+    // (chase=3.5s): 0.125/3.5 ≈ 0.0357 per coppia. Burst = 4 coppie =
+    // 0.143 chase-units (~0.5s). 3 burst start a t=0.10, 0.40, 0.70.
+    // AIM SNAPSHOT al burst-start (NON per coppia) → tutte 4 coppie del
+    // burst stessa direzione → "in fila" come gioco. Mob schiva grazie al
+    // dodge che continua a muoverlo durante i 0.5s del burst. ===
     if (t > 0.1 && t < 0.99) {
-      const volleyCount = 4;
-      const volleyInterval = 0.15;
+      const burstStarts = [0.10, 0.40, 0.70];
+      const pairsPerBurst = 4;
+      const pairInterval = 0.0357; // 0.125s @ chase=3.5s = baseFireRate 8/s
       const bulletColor = Color(0xFFFFE500); // NeonColors.bulletYellow
       const pairOffset = 6.0;
-      // Velocità bullet: `chaseProgress` unit / sec. 1.0 = attraversa tutto
-      // lo schermo in 1s di chase time. Usiamo 2.0 → bullet veloce, esce
-      // dallo schermo in ~500ms di chase time.
-      final bulletSpeedWorldPerSec = size.width * 2.0;
+      // Velocità bullet: matchata ad in-game (700 px/s). 1.4 width/s →
+      // bullet attraversa schermo in ~0.7s = velocità realistica.
+      final bulletSpeedWorldPerSec = size.width * 1.4;
 
-      for (int v = 0; v < volleyCount; v++) {
-        final fireTime = 0.10 + v * volleyInterval;
-        if (t <= fireTime) continue;
-        final dtSinceFire = t - fireTime; // in chase-time units (0..1)
+      for (int b = 0; b < burstStarts.length; b++) {
+        final burstStart = burstStarts[b];
+        if (t <= burstStart) continue;
 
-        // Ship center al fire time (snapshot)
-        final fst = (fireTime - shipDelay).clamp(0.0, 1.0);
-        final shipCenterX = size.width * (-0.15 + fst * 0.75);
-        final shipCenterY = cy + math.sin(fst * math.pi * 5) * size.height * 0.13
-            + math.cos(fst * math.pi * 3) * size.height * 0.05;
-        // Snapshot aim verso drone al fire time (include dodge corrente)
-        final firedDodgeBurst =
-            0.3 + math.sin(fireTime * math.pi * 2) * 0.7;
-        final firedDodgeY = math.sin(fireTime * 40) * 35 * firedDodgeBurst
-            + math.sin(fireTime * 70) * 12;
-        final toX = size.width * (-0.15 + fireTime * 0.75);
-        final toY = cy + math.sin(fireTime * math.pi * 5) * size.height * 0.13
-            + math.cos(fireTime * math.pi * 3) * size.height * 0.05
-            + firedDodgeY;
-        final aimDx = toX - shipCenterX;
-        final aimDy = toY - shipCenterY;
+        // Aim SNAPSHOT al burst-start: tutte le coppie del burst usano la
+        // stessa dir → bullet in fila parallela come basic weapon in-game.
+        // Iter 13: traiettoria drone aggiornata (sin singola ampia + jitter).
+        final dJitter = math.sin(burstStart * math.pi * 8) * 6;
+        final toX = size.width * (-0.15 + burstStart * 1.20);
+        final toY = cy +
+            math.sin(burstStart * math.pi * 2) * size.height * 0.32 +
+            dJitter;
+        final burstShipT = (burstStart - shipDelay).clamp(0.0, 1.0);
+        final burstShipX = size.width * (-0.15 + burstShipT * 1.20);
+        final burstShipY = cy +
+            math.sin(burstShipT * math.pi * 1.5) * size.height * 0.10;
+        final aimDx = toX - burstShipX;
+        final aimDy = toY - burstShipY;
         final aimLen = math.sqrt(aimDx * aimDx + aimDy * aimDy);
         if (aimLen < 0.1) continue;
         final dirX = aimDx / aimLen;
         final dirY = aimDy / aimLen;
         final perpX = -dirY;
         final perpY = dirX;
-        const noseOffset = 14.0 * 1.2;
-        // Distanza percorsa dal bullet: velocity costante × dt.
-        final travel = bulletSpeedWorldPerSec * dtSinceFire;
+        // Iter 14 (utente: "bullets dal centro non punta"): noseOffset
+        // bumped 16.8 → 24 → bullet emerge OLTRE tip nave (era esattamente
+        // sul tip → sembrava centro). Tip nave a -14*s=-18.9 local.
+        const noseOffset = 24.0;
+        // Iter 12 (utente: "bullets non in fila"): tutte le coppie del burst
+        // emergono dalla STESSA ship pos (snapshot al burst-start) → bullet
+        // perfettamente in fila lungo aimDir, distanziati solo da
+        // velocità × pairInterval → linea retta come basic weapon in-game.
+        final shipCenterX = burstShipX;
+        final shipCenterY = burstShipY;
+
+        // Itera coppie del burst.
+        for (int p = 0; p < pairsPerBurst; p++) {
+          final fireTime = burstStart + p * pairInterval;
+          if (t <= fireTime) continue;
+          final dtSinceFire = t - fireTime;
+
+          // Distanza percorsa dal bullet: velocity costante × dt.
+          final travel = bulletSpeedWorldPerSec * dtSinceFire;
 
         // Disegna COPPIA di bullet paralleli (±perp offset come basic weapon)
         for (int side = -1; side <= 1; side += 2) {
@@ -653,9 +694,10 @@ class _SplashPainter extends CustomPainter {
                 const Color(0xFFFFFFFF).withValues(alpha: flashAlpha);
             canvas.drawCircle(Offset(fromX, fromY), 4, _muzzleCorePaint);
           }
-        }
-      }
-    }
+        } // for side
+        } // for p (pair within burst)
+      } // for b (burst)
+    } // if (t > 0.1)
 
     // === WEAVER: schiva TUTTI i proiettili, non viene mai colpito.
     // Nessun fumo/damage — il mob sopravvive per tutto lo splash. ===
@@ -757,8 +799,10 @@ class _SplashPainter extends CustomPainter {
   void _drawShip(Canvas canvas, double x, double y, double t, double aimAngle) {
     canvas.save();
     canvas.translate(x, y);
-    // Rotazione verso il bersaglio + micro-wobble per vivacità
-    final wobble = math.sin(t * math.pi * 5) * 0.08;
+    // Rotazione verso il bersaglio. Iter 13 (utente: "ship trema"):
+    // micro-wobble ridotto da sin(π*5)*0.08 → sin(π*1.5)*0.025 →
+    // movimento elegante senza tremore visibile.
+    final wobble = math.sin(t * math.pi * 1.5) * 0.025;
     canvas.rotate(aimAngle + wobble);
 
     // ─── THRUSTERS (disegnati PRIMA del corpo → fiamma dietro) ───
@@ -1045,6 +1089,303 @@ class _SplashPainter extends CustomPainter {
         Offset(cx - subPainter.width / 2, textY + textPainter.height + 30),
       );
     }
+  }
+
+  // ═══════════════════════════════════════════════════════════════════
+  // ITER 10 game-like helpers: grid distortion bg + geom drops + HUD +
+  // secondary kills chain. Trasforma splash in vera simulazione di gioco.
+  // ═══════════════════════════════════════════════════════════════════
+
+  /// Geometry Wars style grid: linee blu/ciano distorte da sin waves.
+  /// Iter 13: dead code (utente: "no griglia"). Tenuto per ref.
+  // ignore: unused_element
+  void _drawGameGrid(Canvas canvas, Size size) {
+    const cellSize = 70.0;
+    final scrollX = (bgPhase * 80) % cellSize;
+    final scrollY = (bgPhase * 30) % cellSize;
+    final intensity = (0.5 + chaseProgress * 0.5).clamp(0.5, 1.0);
+    final baseAlpha = 0.18 * intensity;
+    final glowAlpha = 0.28 * intensity;
+
+    // Glow layer (più spesso + blur, pulsing).
+    final pulse = 0.7 + math.sin(bgPhase * math.pi * 4) * 0.3;
+    _gridGlowPaint.color = const Color(0xFF0066FF).withValues(alpha: glowAlpha * pulse * 0.4);
+
+    // Linee orizzontali distorte da sin verticale.
+    for (double y = -scrollY; y < size.height + cellSize; y += cellSize) {
+      final path = Path();
+      bool started = false;
+      for (double x = 0; x <= size.width; x += 12) {
+        final dy = math.sin(x * 0.011 + bgPhase * math.pi * 2 + y * 0.004) * 6 +
+            math.cos(x * 0.005 + bgPhase * math.pi) * 3;
+        if (!started) {
+          path.moveTo(x, y + dy);
+          started = true;
+        } else {
+          path.lineTo(x, y + dy);
+        }
+      }
+      _gridPaint.color = const Color(0xFF44CCFF).withValues(alpha: baseAlpha);
+      canvas.drawPath(path, _gridPaint);
+    }
+
+    // Linee verticali distorte da cos orizzontale.
+    for (double x = -scrollX; x < size.width + cellSize; x += cellSize) {
+      final path = Path();
+      bool started = false;
+      for (double y = 0; y <= size.height; y += 12) {
+        final dx = math.cos(y * 0.011 + bgPhase * math.pi * 2 + x * 0.004) * 6 +
+            math.sin(y * 0.005 + bgPhase * math.pi) * 3;
+        if (!started) {
+          path.moveTo(x + dx, y);
+          started = true;
+        } else {
+          path.lineTo(x + dx, y);
+        }
+      }
+      _gridPaint.color = const Color(0xFF44CCFF).withValues(alpha: baseAlpha);
+      canvas.drawPath(path, _gridPaint);
+    }
+
+    // Highlight ondulato — onda di "energia" che attraversa il grid.
+    final waveX = (chaseProgress * size.width * 1.5) - size.width * 0.3;
+    for (double y = 0; y <= size.height; y += cellSize / 2) {
+      final dy = math.sin(waveX * 0.01 + y * 0.01 + bgPhase * math.pi * 4) * 12;
+      final dist = (waveX - size.width * 0.5).abs();
+      final waveAlpha = (1.0 - (dist / (size.width * 0.5)).clamp(0.0, 1.0)) * 0.35 * intensity;
+      if (waveAlpha > 0.05) {
+        _gridGlowPaint.color =
+            const Color(0xFF00CCFF).withValues(alpha: waveAlpha);
+        canvas.drawLine(
+          Offset(waveX - 50, y + dy),
+          Offset(waveX + 50, y + dy),
+          _gridGlowPaint,
+        );
+      }
+    }
+  }
+
+  /// Geom drops drifting in arena (cyan/pink/yellow shards, simula loot).
+  /// Iter 11: dead code (utente: solo chase, no extra). Tenuto per ref.
+  // ignore: unused_element
+  void _drawFloatingGeoms(Canvas canvas, Size size) {
+    if (chaseProgress < 0.08) return;
+    final intensity = ((chaseProgress - 0.08) * 3).clamp(0.0, 1.0);
+    final rng = math.Random(2024);
+    const geomCount = 14;
+    for (int i = 0; i < geomCount; i++) {
+      final baseX = rng.nextDouble() * size.width;
+      final baseY = rng.nextDouble() * size.height;
+      // Drift orbitale lento.
+      final angle = bgPhase * math.pi * 2 + i * 0.7;
+      final wobble = 18.0 + rng.nextDouble() * 12.0;
+      final x = baseX + math.cos(angle) * wobble;
+      final y = baseY + math.sin(angle * 1.3) * wobble;
+      // Color cycling tra 3 shade GW.
+      final colorChoice = i % 3;
+      final color = colorChoice == 0
+          ? const Color(0xFF00FFFF)  // ciano
+          : colorChoice == 1
+              ? const Color(0xFFFF00AA)  // pink
+              : const Color(0xFFFFE500); // yellow
+      final pulse = 0.55 + math.sin(bgPhase * math.pi * 4 + i * 1.3) * 0.45;
+      final r = (3.5 + rng.nextDouble() * 2.5) * intensity;
+      // Diamond shape rotato da bgPhase.
+      canvas.save();
+      canvas.translate(x, y);
+      canvas.rotate(bgPhase * math.pi * 2 + i);
+      final p = Path()
+        ..moveTo(0, -r)
+        ..lineTo(r * 0.65, 0)
+        ..lineTo(0, r)
+        ..lineTo(-r * 0.65, 0)
+        ..close();
+      _geomFillPaint.color = color.withValues(alpha: 0.45 * pulse * intensity);
+      canvas.drawPath(p, _geomFillPaint);
+      _geomStrokePaint
+        ..color = color.withValues(alpha: 0.85 * pulse * intensity)
+        ..strokeWidth = 1.2;
+      canvas.drawPath(p, _geomStrokePaint);
+      // Core bianco
+      _geomFillPaint.color =
+          const Color(0xFFFFFFFF).withValues(alpha: pulse * 0.6 * intensity);
+      canvas.drawCircle(Offset.zero, r * 0.35, _geomFillPaint);
+      canvas.restore();
+    }
+  }
+
+  /// Secondary kills chain: 3 mini esplosioni distribuiti nel tempo a
+  /// posizioni casuali → simula multi-kill mentre il player insegue weaver.
+  /// Iter 11: dead code (utente: solo chase, no extra). Tenuto per ref.
+  // ignore: unused_element
+  void _drawSecondaryKills(Canvas canvas, Size size) {
+    final rng = math.Random(7);
+    // 3 kill events con tempi crescenti.
+    const killTimes = [0.18, 0.42, 0.68];
+    const killColors = [
+      Color(0xFF00FFFF),
+      Color(0xFFFF00AA),
+      Color(0xFFFFAA00),
+    ];
+    for (int i = 0; i < 3; i++) {
+      final ft = killTimes[i];
+      if (chaseProgress <= ft) continue;
+      final dt = chaseProgress - ft;
+      if (dt > 0.20) continue;  // explosion lifetime ~0.2 chase units
+      final t = dt / 0.20;  // 0..1
+      // Posizione kill: random per i, but stable.
+      final kx = size.width * (0.25 + rng.nextDouble() * 0.55);
+      final ky = size.height * (0.25 + rng.nextDouble() * 0.5);
+      final color = killColors[i];
+      // Shockwave ring.
+      final ringR = 8 + t * 50;
+      final ringAlpha = (1 - t) * 0.7;
+      _killShockPaint
+        ..color = color.withValues(alpha: ringAlpha)
+        ..strokeWidth = 2.5 * (1 - t);
+      canvas.drawCircle(Offset(kx, ky), ringR, _killShockPaint);
+      // Inner flash.
+      final flashAlpha = (1 - t * 2).clamp(0.0, 1.0) * 0.85;
+      _killExpPaint.color =
+          const Color(0xFFFFFFFF).withValues(alpha: flashAlpha);
+      canvas.drawCircle(Offset(kx, ky), 8 + t * 20, _killExpPaint);
+      // Particelle radiali.
+      for (int j = 0; j < 8; j++) {
+        final ang = j * math.pi / 4 + i;
+        final dist = t * 40 + 10;
+        final pAlpha = (1 - t).clamp(0.0, 1.0) * 0.7;
+        _killExpPaint.color = color.withValues(alpha: pAlpha);
+        canvas.drawCircle(
+          Offset(kx + math.cos(ang) * dist, ky + math.sin(ang) * dist),
+          1.6 + (1 - t) * 1.4,
+          _killExpPaint,
+        );
+      }
+      // Geom drop volante che fluisce verso ship — disegnato come scia.
+      if (t < 0.85) {
+        final shipT = (chaseProgress - 0.1).clamp(0.0, 1.0);
+        final cy = size.height / 2;
+        final shipX = size.width * (-0.15 + shipT * 1.20);
+        final shipY = cy + math.sin(shipT * math.pi * 5) * size.height * 0.13
+            + math.cos(shipT * math.pi * 3) * size.height * 0.05;
+        // Posizione lerp dal kill verso ship con curva
+        final lerpT = (t / 0.85).clamp(0.0, 1.0);
+        final gx = kx + (shipX - kx) * lerpT;
+        final gy = ky + (shipY - ky) * lerpT;
+        _floatyTrailPaint.color = color.withValues(alpha: 0.7 * (1 - lerpT * 0.5));
+        canvas.drawCircle(Offset(gx, gy), 3.0, _floatyTrailPaint);
+        // Trail
+        for (int k = 1; k <= 4; k++) {
+          final tk = (lerpT - k * 0.05).clamp(0.0, 1.0);
+          if (tk <= 0) break;
+          final tx = kx + (shipX - kx) * tk;
+          final ty = ky + (shipY - ky) * tk;
+          _floatyTrailPaint.color = color.withValues(alpha: 0.4 * (1 - k / 4));
+          canvas.drawCircle(Offset(tx, ty), 1.8, _floatyTrailPaint);
+        }
+      }
+    }
+  }
+
+  /// HUD overlay: score counter top-left + multiplier badge top-right.
+  /// Iter 11: dead code (utente: "no HUD nel video iniziale"). Tenuto.
+  // ignore: unused_element
+  void _drawHUDOverlay(Canvas canvas, Size size) {
+    final intensity = ((chaseProgress - 0.05) * 5).clamp(0.0, 1.0);
+    if (intensity < 0.05) return;
+
+    // Score salendo: ramping basato su chaseProgress + secondary kills.
+    final baseScore = (chaseProgress * 32500).round();
+    final killBonus = chaseProgress > 0.18 ? 1500 : 0;
+    final killBonus2 = chaseProgress > 0.42 ? 3000 : 0;
+    final killBonus3 = chaseProgress > 0.68 ? 5500 : 0;
+    final score = baseScore + killBonus + killBonus2 + killBonus3;
+
+    // Multiplier ramping: x1 → x9 con kills.
+    final mult = chaseProgress < 0.18
+        ? 1
+        : chaseProgress < 0.42
+            ? 3
+            : chaseProgress < 0.68
+                ? 5
+                : 9;
+
+    // === SCORE top-left ===
+    if (_cachedScorePainter == null || _cachedScoreValue != score) {
+      _cachedScorePainter = TextPainter(
+        text: TextSpan(
+          text: _formatScore(score),
+          style: TextStyle(
+            color: const Color(0xFFFFFFFF).withValues(alpha: intensity),
+            fontSize: 24,
+            fontWeight: FontWeight.w900,
+            fontFamily: 'monospace',
+            letterSpacing: 2,
+            shadows: [
+              Shadow(
+                  color:
+                      const Color(0xFF00FFFF).withValues(alpha: intensity * 0.7),
+                  blurRadius: 10),
+            ],
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+      )..layout();
+      _cachedScoreValue = score;
+    }
+    final sp = _cachedScorePainter!;
+    sp.paint(canvas, Offset(20, 24));
+
+    // === MULTIPLIER top-right (badge cyan glow) ===
+    if (_cachedMultPainter == null || _cachedMultValue != mult) {
+      _cachedMultPainter = TextPainter(
+        text: TextSpan(
+          text: 'x$mult',
+          style: TextStyle(
+            color: mult >= 5
+                ? const Color(0xFFFFE500).withValues(alpha: intensity)
+                : const Color(0xFF00FFFF).withValues(alpha: intensity),
+            fontSize: 28,
+            fontWeight: FontWeight.w900,
+            fontFamily: 'monospace',
+            letterSpacing: 3,
+            shadows: [
+              Shadow(
+                  color: (mult >= 5
+                          ? const Color(0xFFFFE500)
+                          : const Color(0xFF00FFFF))
+                      .withValues(alpha: intensity * 0.8),
+                  blurRadius: 12),
+            ],
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+      )..layout();
+      _cachedMultValue = mult;
+    }
+    final mp = _cachedMultPainter!;
+    final mx = size.width - mp.width - 20;
+    final my = 24.0;
+    // Badge bg
+    _hudBgPaint.color = Colors.black.withValues(alpha: 0.35 * intensity);
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromLTWH(mx - 10, my - 4, mp.width + 20, mp.height + 8),
+        const Radius.circular(8),
+      ),
+      _hudBgPaint,
+    );
+    mp.paint(canvas, Offset(mx, my));
+  }
+
+  String _formatScore(int s) {
+    final str = s.toString();
+    final buf = StringBuffer();
+    for (int i = 0; i < str.length; i++) {
+      if (i > 0 && (str.length - i) % 3 == 0) buf.write(',');
+      buf.write(str[i]);
+    }
+    return buf.toString();
   }
 
   @override

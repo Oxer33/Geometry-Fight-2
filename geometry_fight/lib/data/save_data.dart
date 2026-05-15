@@ -23,6 +23,12 @@ class SaveData {
   /// l'opzione "no pet"). Pet acquistati aggiunti tramite shop_screen.
   List<String> unlockedPets;
 
+  /// Daily reward: data ultimo claim formato 'YYYY-MM-DD' ('' = mai claimato).
+  /// Reward +100 geom su claim. Streak: incrementa di 1 se claim consecutivo
+  /// (gap esattamente 1 giorno), reset a 1 se gap > 1 giorno.
+  String lastDailyClaim;
+  int dailyStreak;
+
   SaveData({
     this.goldGeoms = 0,
     Map<String, int>? upgrades,
@@ -40,6 +46,8 @@ class SaveData {
     this.startingWeapon = 'basic',
     this.activePet = 'none',
     List<String>? unlockedPets,
+    this.lastDailyClaim = '',
+    this.dailyStreak = 0,
   })  : upgrades = upgrades ?? {},
         unlockedSkins = unlockedSkins ?? ['classic'],
         unlockedTrails = unlockedTrails ?? ['normal'],
@@ -95,6 +103,51 @@ class SaveData {
     return 1.0 + level * 0.10; // +10% per livello (max +50% al livello 5)
   }
 
+  // ─── DAILY REWARD ─────────────────────────────────────────────────────
+  /// Helper: oggi in formato `YYYY-MM-DD`.
+  static String _today() {
+    final d = DateTime.now();
+    final m = d.month.toString().padLeft(2, '0');
+    final dd = d.day.toString().padLeft(2, '0');
+    return '${d.year}-$m-$dd';
+  }
+
+  /// True se daily reward è riscattabile oggi (= lastDailyClaim != oggi).
+  bool canClaimDailyReward() => lastDailyClaim != _today();
+
+  /// Riscatta daily reward: aggiunge `kDailyRewardAmount` a goldGeoms e
+  /// gestisce streak (incrementa se consecutivo, reset a 1 se gap > 1).
+  /// Ritorna il numero di geom ottenuti (sempre `kDailyRewardAmount`).
+  /// Caller deve salvare con `SaveManager.save(this)`.
+  int claimDailyReward() {
+    final today = _today();
+    if (lastDailyClaim == today) return 0; // già claimato
+
+    // Streak: incrementa se ieri, reset a 1 se gap > 1 o mai claimato.
+    if (lastDailyClaim.isEmpty) {
+      dailyStreak = 1;
+    } else {
+      try {
+        final lastDate = DateTime.parse(lastDailyClaim);
+        final todayDate = DateTime.parse(today);
+        final diff = todayDate.difference(lastDate).inDays;
+        if (diff == 1) {
+          dailyStreak += 1;
+        } else {
+          dailyStreak = 1; // gap → reset
+        }
+      } catch (e) {
+        // Iter 13 (caveman-review): no più silent swallow — log invece.
+        debugPrint('claimDailyReward parse error: $e (lastClaim=$lastDailyClaim)');
+        dailyStreak = 1;
+      }
+    }
+
+    lastDailyClaim = today;
+    goldGeoms += kDailyRewardAmount;
+    return kDailyRewardAmount;
+  }
+
   Map<String, dynamic> toJson() => {
         'goldGeoms': goldGeoms,
         'upgrades': upgrades,
@@ -112,6 +165,8 @@ class SaveData {
         'startingWeapon': startingWeapon,
         'activePet': activePet,
         'unlockedPets': unlockedPets,
+        'lastDailyClaim': lastDailyClaim,
+        'dailyStreak': dailyStreak,
       };
 
   factory SaveData.fromJson(Map<String, dynamic> json) => SaveData(
@@ -140,6 +195,8 @@ class SaveData {
         // Pet fields: default 'none' / ['none'] per back-compat con save vecchi.
         activePet: json['activePet'] ?? 'none',
         unlockedPets: List<String>.from(json['unlockedPets'] ?? ['none']),
+        lastDailyClaim: json['lastDailyClaim'] ?? '',
+        dailyStreak: (json['dailyStreak'] as num?)?.toInt() ?? 0,
       );
 }
 
@@ -174,3 +231,6 @@ class SaveManager {
     await _box.clear();
   }
 }
+
+/// Reward giornaliero in geom (utente: "daily reward che dà +100 geom").
+const int kDailyRewardAmount = 100;

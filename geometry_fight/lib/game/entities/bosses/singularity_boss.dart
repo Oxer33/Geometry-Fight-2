@@ -11,8 +11,7 @@ class SingularityBoss extends BossBase {
   double _pullTimer = 3.33; // +50% frequenza (era 5, richiesta utente)
   double _cloneTimer = 8;
   double _vortexTimer = 12;
-  // ignore: unused_field
-  double _blackRainTimer = 4.0;
+  // Iter 13 (caveman-review): _blackRainTimer rimosso — dead field.
   bool _pulling = false;
   // Shared rng — evita alloc in _spawnClones/_blackRain.
   static final math.Random _rng = math.Random();

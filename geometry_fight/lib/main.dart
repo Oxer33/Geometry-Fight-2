@@ -248,6 +248,7 @@ class _NavigationWrapperState extends State<NavigationWrapper> {
         return ModifiersSelectScreen(
           key: const ValueKey('modifiersSelect'),
           initial: _selectedModifiers,
+          mode: _selectedMode,
           // Pacifist: difficulty step skipped → back va direttamente a mode.
           onBack: () => _navigateTo(_selectedMode == GameMode.pacifist
               ? AppScreen.modeSelect
