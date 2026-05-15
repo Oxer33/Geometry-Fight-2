@@ -471,24 +471,28 @@ class _ShopScreenState extends State<ShopScreen>
   /// upgrades come skill-tree neon. Nodi posizionati su griglia normalizzata
   /// (0-1 x/y), connessi da linee luminose. Tap nodo → pannello dettagli +
   /// pulsante acquisto. Linee disegnate via CustomPaint sotto i nodi.
+  ///
+  /// Iter 13c (utente: "talent tree tutto schiacciato"): map = SingleChild
+  /// Scroll. Map height fissa via aspect ratio 1.35× width (porta sempre
+  /// 4 row leggibili anche su schermi corti). Detail panel sotto, scroll
+  /// permette di vedere panel + map senza overlap.
   Widget _buildUpgradesTab() {
     final upgrades = _upgradeNodes();
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        // Aspect ratio del map = 1:1.4 (più alto che largo per fit portrait).
-        final mapW = constraints.maxWidth - 24;
-        final mapH = constraints.maxHeight - 220; // 220 = pannello footer
-        return Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
-              child: SizedBox(
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+      child: Column(
+        children: [
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final mapW = constraints.maxWidth;
+              // Aspect 1.35× → su 380px wide = 513px tall → 4 row larghe.
+              final mapH = mapW * 1.35;
+              return SizedBox(
                 width: mapW,
                 height: mapH,
                 child: Stack(
                   clipBehavior: Clip.none,
                   children: [
-                    // Linee connessioni (sotto i nodi).
                     Positioned.fill(
                       child: AnimatedBuilder(
                         animation: _previewController,
@@ -502,7 +506,6 @@ class _ShopScreenState extends State<ShopScreen>
                         ),
                       ),
                     ),
-                    // Nodi (sopra linee).
                     for (final node in upgrades)
                       Positioned(
                         left: node.x * mapW - 32,
@@ -517,13 +520,13 @@ class _ShopScreenState extends State<ShopScreen>
                       ),
                   ],
                 ),
-              ),
-            ),
-            // Pannello dettagli + acquisto del nodo selezionato.
-            _buildUpgradeDetailPanel(upgrades),
-          ],
-        );
-      },
+              );
+            },
+          ),
+          const SizedBox(height: 12),
+          _buildUpgradeDetailPanel(upgrades),
+        ],
+      ),
     );
   }
 
@@ -535,23 +538,25 @@ class _ShopScreenState extends State<ShopScreen>
             orElse: () => nodes.first,
           );
     if (selected == null) {
+      // Iter 13c: no margin (parent scroll handles padding) + compact 80px
+      // placeholder — il map ha già spazio sufficiente sopra.
       return Container(
-        margin: const EdgeInsets.all(12),
         padding: const EdgeInsets.all(16),
-        height: 180,
+        height: 80,
         alignment: Alignment.center,
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
         ),
         child: Text(
           'TOCCA UN NODO PER VEDERE DETTAGLI',
           style: TextStyle(
-            color: Colors.white.withValues(alpha: 0.4),
+            color: Colors.white.withValues(alpha: 0.5),
             fontFamily: 'monospace',
             fontSize: 11,
             letterSpacing: 2,
           ),
+          textAlign: TextAlign.center,
         ),
       );
     }
@@ -562,7 +567,6 @@ class _ShopScreenState extends State<ShopScreen>
     final cost = isMaxed ? 0 : item.costs[safeLvl];
 
     return Container(
-      margin: const EdgeInsets.all(12),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
