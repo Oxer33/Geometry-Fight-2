@@ -193,6 +193,9 @@ class AchievementManager {
     int sessionBosses = 0,
     GameMode? gameMode,
     int maxGateCombo = 0,
+    // Iter 13 (weapon-specific kill achievements).
+    int gaussKills = 0,
+    int chainKills = 0,
   }) {
     if (!_initialized) return const [];
     final newlyUnlocked = <AchievementDef>[];
@@ -217,6 +220,8 @@ class AchievementManager {
     newlyUnlocked.addAll(updateProgress('bombs_50', totalBombs));
     newlyUnlocked.addAll(updateProgress('bombs_500', totalBombs));
     newlyUnlocked.addAll(updateProgress('boss_session_5', sessionBosses));
+    newlyUnlocked.addAll(updateProgress('gauss_kills_500', gaussKills));
+    newlyUnlocked.addAll(updateProgress('chain_kills_500', chainKills));
 
     // Score
     newlyUnlocked.addAll(updateProgress('score_100k', sessionScore));

@@ -11,7 +11,7 @@ import '../widgets/neon_back_button.dart';
 /// `_buildWeaponsTab` + `kPetCatalog`. Aggiornare se aggiungo entry.
 const int _kTotalSkins = 16;
 const int _kTotalTrails = 16;
-const int _kTotalWeapons = 7;
+const int _kTotalWeapons = 9;
 
 class ShopScreen extends StatefulWidget {
   final VoidCallback onBack;
@@ -28,6 +28,8 @@ class _ShopScreenState extends State<ShopScreen>
   late AnimationController _previewController;
   late SaveData _saveData;
   int? _selectedPreviewIndex;
+  /// Iter 13: nodo upgrade selezionato nella mappa 2D (mostra dettagli).
+  String? _selectedUpgradeId;
 
   @override
   void initState() {
@@ -320,6 +322,14 @@ class _ShopScreenState extends State<ShopScreen>
           'Raggio rosso continuo — taglia tutto ciò che tocca.',
           NeonColors.laserRed, 'beam',
           stats: ['DMG: 0.5/tick', 'RATE: CONT', 'PIERCE: ∞', 'LEN: 800']),
+      _WeaponDef('gauss', 'Gauss Cannon', 2800,
+          'Colpo viola con aspirazione gravitazionale 1s — raggruppa i nemici per colpirli tutti.',
+          const Color(0xFFCC66FF), 'gauss',
+          stats: ['DMG: 1.8', 'RATE: 0.7s', 'PULL: 220px/1s', 'PIERCE']),
+      _WeaponDef('chain', 'Chain Lightning', 3200,
+          'Fulmine elettrico rimbalza tra 5 nemici — perfetto vs gruppi.',
+          const Color(0xFFFFFF44), 'chain',
+          stats: ['DMG: 1.2x', 'RATE: 0.55s', 'JUMPS: 5', 'RANGE: 380/220']),
     ];
 
     return _buildPreviewGrid(
@@ -457,131 +467,327 @@ class _ShopScreenState extends State<ShopScreen>
 
   // ==================== UPGRADES TAB ====================
 
+  /// Iter 13 (utente: "mappa 2D fighissima invece che una lista"): redesign
+  /// upgrades come skill-tree neon. Nodi posizionati su griglia normalizzata
+  /// (0-1 x/y), connessi da linee luminose. Tap nodo → pannello dettagli +
+  /// pulsante acquisto. Linee disegnate via CustomPaint sotto i nodi.
   Widget _buildUpgradesTab() {
-    final upgrades = [
-      _UpgradeItem('firepower', 'FIREPOWER', [100, 200, 300, 400, 500], 5,
-          '+5% danno per livello (max +25%)', Icons.local_fire_department, const Color(0xFFFF4400)),
-      _UpgradeItem('speed', 'SPEED', [100, 200, 300, 400, 500], 5,
-          '+5% velocità per livello (max +25%)', Icons.speed, NeonColors.cyan),
-      _UpgradeItem('fire_rate', 'FIRE RATE', [100, 200, 300, 400, 500], 5,
-          '+5% cadenza per livello (max +25%)', Icons.bolt, NeonColors.bulletYellow),
-      _UpgradeItem('shield_capacity', 'SHIELD', [300, 600, 900, 1200, 1500], 5,
-          'Scudo post-morte: 5s → 10s → 15s → 20s → 25s', Icons.shield_outlined, const Color(0xFF00AAFF)),
-      _UpgradeItem('starting_lives', 'LIVES', [500, 1200], 2,
-          'Vite iniziali: 3 → 4 → 5', Icons.favorite, const Color(0xFFFF4466)),
-      _UpgradeItem('bomb_capacity', 'BOMBS', [400, 900], 2,
-          'Bombe disponibili: 3 → 4 → 5', Icons.blur_circular, NeonColors.orange),
-      _UpgradeItem('magnet_range', 'MAGNET', [200, 400, 600, 800, 1000], 5,
-          '+10px raggio magnete per livello (max +50px)', Icons.radar, NeonColors.purple),
-      _UpgradeItem('xp_boost', 'XP BOOST', [200, 400, 600, 800, 1000], 5,
-          '+10% GoldGeom per livello (max +50%)', Icons.auto_awesome, const Color(0xFFFFD700)),
-    ];
-
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: upgrades.length,
-      itemBuilder: (context, index) {
-        final item = upgrades[index];
-        final currentLevel = _saveData.getUpgradeLevel(item.id);
-        final isMaxed = currentLevel >= item.maxLevel;
-        final safeLvl = currentLevel.clamp(0, item.costs.length - 1); // FIX C11: bounds check
-        final cost = isMaxed ? 0 : item.costs[safeLvl];
-
-        return Container(
-          margin: const EdgeInsets.only(bottom: 10),
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            border: Border.all(
-              color: isMaxed
-                  ? item.color.withValues(alpha: 0.4)
-                  : item.color.withValues(alpha: 0.15),
-            ),
-            borderRadius: BorderRadius.circular(8),
-            gradient: LinearGradient(
-              colors: [
-                item.color.withValues(alpha: isMaxed ? 0.06 : 0.02),
-                Colors.transparent,
-              ],
-            ),
-          ),
-          child: Row(
-            children: [
-              // Icona con glow
-              Container(
-                width: 40, height: 40,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(color: item.color.withValues(alpha: 0.3)),
-                  color: item.color.withValues(alpha: 0.08),
-                ),
-                child: Icon(item.icon, color: item.color, size: 20),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+    final upgrades = _upgradeNodes();
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Aspect ratio del map = 1:1.4 (più alto che largo per fit portrait).
+        final mapW = constraints.maxWidth - 24;
+        final mapH = constraints.maxHeight - 220; // 220 = pannello footer
+        return Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 8, 12, 4),
+              child: SizedBox(
+                width: mapW,
+                height: mapH,
+                child: Stack(
+                  clipBehavior: Clip.none,
                   children: [
-                    Text(item.name, style: TextStyle(
-                      color: item.color,
-                      fontSize: 14, fontWeight: FontWeight.bold, fontFamily: 'monospace',
-                    )),
-                    const SizedBox(height: 2),
-                    Text(item.description, style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.4),
-                      fontSize: 10, fontFamily: 'monospace',
-                    )),
-                    const SizedBox(height: 6),
-                    Row(
-                      children: List.generate(item.maxLevel, (i) {
-                        return AnimatedContainer(
-                          duration: const Duration(milliseconds: 300),
-                          width: 22, height: 4,
-                          margin: const EdgeInsets.only(right: 3),
-                          decoration: BoxDecoration(
-                            color: i < currentLevel
-                                ? item.color
-                                : item.color.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(2),
-                            boxShadow: i < currentLevel
-                                ? [BoxShadow(color: item.color.withValues(alpha: 0.4), blurRadius: 4)]
-                                : null,
+                    // Linee connessioni (sotto i nodi).
+                    Positioned.fill(
+                      child: AnimatedBuilder(
+                        animation: _previewController,
+                        builder: (_, child) => CustomPaint(
+                          painter: _UpgradeMapPainter(
+                            nodes: upgrades,
+                            connections: _upgradeConnections,
+                            saveData: _saveData,
+                            time: _previewController.value * 6.283,
                           ),
-                        );
-                      }),
+                        ),
+                      ),
                     ),
+                    // Nodi (sopra linee).
+                    for (final node in upgrades)
+                      Positioned(
+                        left: node.x * mapW - 32,
+                        top: node.y * mapH - 32,
+                        child: _UpgradeMapNode(
+                          item: node.item,
+                          currentLevel: _saveData.getUpgradeLevel(node.item.id),
+                          isSelected: _selectedUpgradeId == node.item.id,
+                          onTap: () => setState(() =>
+                              _selectedUpgradeId = node.item.id),
+                        ),
+                      ),
                   ],
                 ),
               ),
-              if (!isMaxed)
-                _PurchaseButton(
-                  cost: cost,
-                  canAfford: _saveData.goldGeoms >= cost,
-                  color: item.color,
-                  onTap: () {
-                    _purchase(item.id, cost, () {
-                      _saveData.upgrades[item.id] = currentLevel + 1;
-                    });
-                  },
-                )
-              else
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(6),
-                    border: Border.all(color: Colors.greenAccent.withValues(alpha: 0.4)),
-                    color: Colors.greenAccent.withValues(alpha: 0.05),
-                  ),
-                  child: const Text('MAX', style: TextStyle(
-                    color: Colors.greenAccent,
-                    fontFamily: 'monospace', fontWeight: FontWeight.bold, fontSize: 12,
-                  )),
-                ),
-            ],
-          ),
+            ),
+            // Pannello dettagli + acquisto del nodo selezionato.
+            _buildUpgradeDetailPanel(upgrades),
+          ],
         );
       },
     );
   }
+
+  Widget _buildUpgradeDetailPanel(List<_UpgradeNode> nodes) {
+    final selected = _selectedUpgradeId == null
+        ? null
+        : nodes.firstWhere(
+            (n) => n.item.id == _selectedUpgradeId,
+            orElse: () => nodes.first,
+          );
+    if (selected == null) {
+      return Container(
+        margin: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(16),
+        height: 180,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
+        ),
+        child: Text(
+          'TOCCA UN NODO PER VEDERE DETTAGLI',
+          style: TextStyle(
+            color: Colors.white.withValues(alpha: 0.4),
+            fontFamily: 'monospace',
+            fontSize: 11,
+            letterSpacing: 2,
+          ),
+        ),
+      );
+    }
+    final item = selected.item;
+    final currentLevel = _saveData.getUpgradeLevel(item.id);
+    final isMaxed = currentLevel >= item.maxLevel;
+    final safeLvl = currentLevel.clamp(0, item.costs.length - 1);
+    final cost = isMaxed ? 0 : item.costs[safeLvl];
+
+    return Container(
+      margin: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: item.color.withValues(alpha: 0.6), width: 2),
+        gradient: LinearGradient(
+          colors: [
+            item.color.withValues(alpha: 0.18),
+            item.color.withValues(alpha: 0.04),
+          ],
+        ),
+        boxShadow: [
+          BoxShadow(
+              color: item.color.withValues(alpha: 0.3), blurRadius: 14)
+        ],
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Icon big
+          Container(
+            width: 52,
+            height: 52,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(
+                  color: item.color.withValues(alpha: 0.7), width: 2),
+              color: item.color.withValues(alpha: 0.1),
+              boxShadow: [
+                BoxShadow(
+                    color: item.color.withValues(alpha: 0.4),
+                    blurRadius: 10),
+              ],
+            ),
+            child: Icon(item.icon, color: item.color, size: 28),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(item.name,
+                    style: TextStyle(
+                      color: item.color,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w900,
+                      fontFamily: 'monospace',
+                      letterSpacing: 2,
+                    )),
+                const SizedBox(height: 4),
+                Text(item.description,
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.7),
+                      fontSize: 11,
+                      fontFamily: 'monospace',
+                    )),
+                const SizedBox(height: 10),
+                Row(
+                  children: List.generate(item.maxLevel, (i) {
+                    return AnimatedContainer(
+                      duration: const Duration(milliseconds: 300),
+                      width: 28,
+                      height: 6,
+                      margin: const EdgeInsets.only(right: 4),
+                      decoration: BoxDecoration(
+                        color: i < currentLevel
+                            ? item.color
+                            : item.color.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(2),
+                        boxShadow: i < currentLevel
+                            ? [
+                                BoxShadow(
+                                    color: item.color.withValues(alpha: 0.5),
+                                    blurRadius: 4)
+                              ]
+                            : null,
+                      ),
+                    );
+                  }),
+                ),
+                const SizedBox(height: 8),
+                Text('LIV $currentLevel / ${item.maxLevel}',
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.7),
+                      fontSize: 11,
+                      fontFamily: 'monospace',
+                      letterSpacing: 1.5,
+                    )),
+                const SizedBox(height: 8),
+                if (!isMaxed)
+                  _PurchaseButton(
+                    cost: cost,
+                    canAfford: _saveData.goldGeoms >= cost,
+                    color: item.color,
+                    onTap: () {
+                      _purchase(item.id, cost, () {
+                        _saveData.upgrades[item.id] = currentLevel + 1;
+                      });
+                    },
+                  )
+                else
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 6),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(
+                          color:
+                              Colors.greenAccent.withValues(alpha: 0.6)),
+                      color: Colors.greenAccent.withValues(alpha: 0.1),
+                    ),
+                    child: const Text('MAX',
+                        style: TextStyle(
+                          color: Colors.greenAccent,
+                          fontFamily: 'monospace',
+                          fontWeight: FontWeight.w900,
+                          fontSize: 14,
+                          letterSpacing: 2,
+                        )),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Iter 13: nodi della mappa 2D upgrades. Coordinate normalizzate
+  /// (x,y in [0,1] = % della grid area).
+  List<_UpgradeNode> _upgradeNodes() => const [
+        // Top row: stat combat
+        _UpgradeNode(
+            x: 0.18,
+            y: 0.12,
+            item: _UpgradeItem(
+                'firepower',
+                'FIREPOWER',
+                [100, 200, 300, 400, 500],
+                5,
+                '+5% danno per livello (max +25%)',
+                Icons.local_fire_department,
+                Color(0xFFFF4400))),
+        _UpgradeNode(
+            x: 0.5,
+            y: 0.12,
+            item: _UpgradeItem(
+                'fire_rate',
+                'FIRE RATE',
+                [100, 200, 300, 400, 500],
+                5,
+                '+5% cadenza per livello (max +25%)',
+                Icons.bolt,
+                NeonColors.bulletYellow)),
+        _UpgradeNode(
+            x: 0.82,
+            y: 0.12,
+            item: _UpgradeItem(
+                'speed',
+                'SPEED',
+                [100, 200, 300, 400, 500],
+                5,
+                '+5% velocità per livello (max +25%)',
+                Icons.speed,
+                NeonColors.cyan)),
+        // Mid row: defense
+        _UpgradeNode(
+            x: 0.5,
+            y: 0.4,
+            item: _UpgradeItem(
+                'shield_capacity',
+                'SHIELD',
+                [300, 600, 900, 1200, 1500],
+                5,
+                'Scudo post-morte: 5s → 10s → 15s → 20s → 25s',
+                Icons.shield_outlined,
+                Color(0xFF00AAFF))),
+        // Bottom row: resources + utility
+        _UpgradeNode(
+            x: 0.18,
+            y: 0.68,
+            item: _UpgradeItem('starting_lives', 'LIVES', [500, 1200], 2,
+                'Vite iniziali: 3 → 4 → 5', Icons.favorite,
+                Color(0xFFFF4466))),
+        _UpgradeNode(
+            x: 0.5,
+            y: 0.68,
+            item: _UpgradeItem('bomb_capacity', 'BOMBS', [400, 900], 2,
+                'Bombe disponibili: 3 → 4 → 5', Icons.blur_circular,
+                NeonColors.orange)),
+        _UpgradeNode(
+            x: 0.82,
+            y: 0.68,
+            item: _UpgradeItem(
+                'magnet_range',
+                'MAGNET',
+                [200, 400, 600, 800, 1000],
+                5,
+                '+10px raggio magnete per livello (max +50px)',
+                Icons.radar,
+                NeonColors.purple)),
+        _UpgradeNode(
+            x: 0.5,
+            y: 0.92,
+            item: _UpgradeItem(
+                'xp_boost',
+                'XP BOOST',
+                [200, 400, 600, 800, 1000],
+                5,
+                '+10% GoldGeom per livello (max +50%)',
+                Icons.auto_awesome,
+                Color(0xFFFFD700))),
+      ];
+
+  /// Connessioni skill-tree (id_a, id_b) — linee tra nodi.
+  static const _upgradeConnections = [
+    ('firepower', 'fire_rate'),
+    ('fire_rate', 'speed'),
+    ('fire_rate', 'shield_capacity'),
+    ('shield_capacity', 'starting_lives'),
+    ('shield_capacity', 'bomb_capacity'),
+    ('shield_capacity', 'magnet_range'),
+    ('starting_lives', 'xp_boost'),
+    ('bomb_capacity', 'xp_boost'),
+    ('magnet_range', 'xp_boost'),
+  ];
 
   // ==================== MODES TAB ====================
 
@@ -1352,8 +1558,132 @@ class _UpgradeItem {
   final IconData icon;
   final Color color;
 
-  _UpgradeItem(this.id, this.name, this.costs, this.maxLevel,
+  const _UpgradeItem(this.id, this.name, this.costs, this.maxLevel,
       this.description, this.icon, this.color);
+}
+
+/// Iter 13: nodo skill-tree (mappa 2D upgrades).
+/// `x`/`y` normalizzati 0-1 = posizione su grid area.
+class _UpgradeNode {
+  final double x;
+  final double y;
+  final _UpgradeItem item;
+  const _UpgradeNode({required this.x, required this.y, required this.item});
+}
+
+/// Iter 13: painter linee connessione skill-tree. Pulsate con `time`.
+class _UpgradeMapPainter extends CustomPainter {
+  final List<_UpgradeNode> nodes;
+  final List<(String, String)> connections;
+  final SaveData saveData;
+  final double time;
+
+  _UpgradeMapPainter({
+    required this.nodes,
+    required this.connections,
+    required this.saveData,
+    required this.time,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.6
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2);
+    for (final (aId, bId) in connections) {
+      final a = nodes.firstWhere((n) => n.item.id == aId,
+          orElse: () => nodes.first);
+      final b = nodes.firstWhere((n) => n.item.id == bId,
+          orElse: () => nodes.first);
+      // Linea attiva se entrambi i nodi hanno livello > 0.
+      final lvlA = saveData.getUpgradeLevel(aId);
+      final lvlB = saveData.getUpgradeLevel(bId);
+      final unlocked = lvlA > 0 && lvlB > 0;
+      final color = unlocked
+          ? Color.lerp(a.item.color, b.item.color, 0.5)!
+          : Colors.white.withValues(alpha: 0.12);
+      // Pulse alpha sui rami attivi.
+      final pulse = unlocked
+          ? (0.6 + 0.4 * (0.5 + 0.5 * math.sin(time + a.x * 5)))
+          : 1.0;
+      paint.color = unlocked
+          ? color.withValues(alpha: 0.7 * pulse)
+          : color;
+      canvas.drawLine(
+        Offset(a.x * size.width, a.y * size.height),
+        Offset(b.x * size.width, b.y * size.height),
+        paint,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(_UpgradeMapPainter old) {
+    // Iter 13 (caveman): time check copre animation. SaveData mutato
+    // in-place → reference compare inutile. setState dopo purchase
+    // ricrea painter (new instance) → repaint comunque triggerato.
+    return old.time != time;
+  }
+}
+
+/// Iter 13: nodo nella mappa skill-tree.
+class _UpgradeMapNode extends StatelessWidget {
+  final _UpgradeItem item;
+  final int currentLevel;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _UpgradeMapNode({
+    required this.item,
+    required this.currentLevel,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isMaxed = currentLevel >= item.maxLevel;
+    final glow = isMaxed ? 0.9 : (0.3 + 0.12 * currentLevel);
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 64,
+        height: 64,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: item.color.withValues(alpha: 0.12 + 0.06 * currentLevel),
+          border: Border.all(
+            color: item.color.withValues(alpha: glow),
+            width: isSelected ? 3 : 2,
+          ),
+          boxShadow: [
+            BoxShadow(
+                color: item.color.withValues(
+                    alpha: glow * (isSelected ? 0.7 : 0.4)),
+                blurRadius: isSelected ? 18 : 10),
+          ],
+        ),
+        alignment: Alignment.center,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(item.icon, color: item.color, size: 26),
+            const SizedBox(height: 2),
+            Text('$currentLevel/${item.maxLevel}',
+                style: TextStyle(
+                  color: isMaxed
+                      ? Colors.greenAccent
+                      : item.color.withValues(alpha: 0.9),
+                  fontSize: 9,
+                  fontWeight: FontWeight.w900,
+                  fontFamily: 'monospace',
+                )),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 // ==================== SKIN PREVIEW PAINTER ====================
@@ -2694,6 +3024,67 @@ class _WeaponPreviewPainter extends CustomPainter {
       case 'homing': _drawHomingMissiles(canvas, cx, shipY, size); break;
       case 'plasma': _drawPlasmaBolts(canvas, cx, shipY, fireRate); break;
       case 'beam': _drawLaserBeam(canvas, cx, shipY); break;
+      // Iter 13: nuovi preview pattern.
+      case 'gauss': _drawGaussBolt(canvas, cx, shipY, fireRate); break;
+      case 'chain': _drawChainLightning(canvas, cx, shipY, size); break;
+    }
+  }
+
+  /// Iter 13: Gauss bolt preview — bullet viola lento + anelli pull.
+  void _drawGaussBolt(Canvas canvas, double cx, double shipY, double fireRate) {
+    final phase = (time % fireRate) / fireRate;
+    final y = shipY - 12 - phase * 95;
+    final bAlpha = (1 - phase).clamp(0.2, 1.0);
+    // Pull ring effect attorno ship (aspirazione visual).
+    final ringR = 20 + phase * 25;
+    canvas.drawCircle(Offset(cx, shipY - 5), ringR, Paint()
+      ..color = Color.fromRGBO(204, 102, 255, (1 - phase) * 0.25)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.5
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4));
+    // Bullet viola big.
+    canvas.drawCircle(Offset(cx, y), 7, Paint()
+      ..color = Color.fromRGBO(204, 102, 255, 0.5 * bAlpha)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6));
+    canvas.drawCircle(Offset(cx, y), 5, Paint()
+      ..color = Color.fromRGBO(204, 102, 255, bAlpha));
+    canvas.drawCircle(Offset(cx, y), 2, Paint()
+      ..color = Color.fromRGBO(255, 255, 255, bAlpha));
+  }
+
+  /// Iter 13: Chain Lightning preview — arco zigzag verso 3 bersagli.
+  void _drawChainLightning(Canvas canvas, double cx, double shipY, Size size) {
+    final rng = math.Random(time.floor() ~/ 2);
+    final phase = (time * 3) % 1.0;
+    final alpha = (1 - phase).clamp(0.1, 1.0);
+    final pts = <Offset>[Offset(cx, shipY - 10)];
+    for (int i = 0; i < 3; i++) {
+      final x = cx + (i - 1) * 32.0 + (rng.nextDouble() - 0.5) * 12;
+      final y = 30 + rng.nextDouble() * 20;
+      pts.add(Offset(x, y));
+    }
+    final glowPaint = Paint()
+      ..color = Color.fromRGBO(255, 255, 68, 0.6 * alpha)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 5
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 5);
+    final bodyPaint = Paint()
+      ..color = Color.fromRGBO(255, 255, 100, alpha)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2;
+    for (int i = 0; i < pts.length - 1; i++) {
+      final path = Path()..moveTo(pts[i].dx, pts[i].dy);
+      final steps = 4;
+      for (int s = 1; s < steps; s++) {
+        final t = s / steps;
+        final mx = pts[i].dx + (pts[i + 1].dx - pts[i].dx) * t;
+        final my = pts[i].dy + (pts[i + 1].dy - pts[i].dy) * t;
+        path.lineTo(mx + (rng.nextDouble() - 0.5) * 8,
+            my + (rng.nextDouble() - 0.5) * 6);
+      }
+      path.lineTo(pts[i + 1].dx, pts[i + 1].dy);
+      canvas.drawPath(path, glowPaint);
+      canvas.drawPath(path, bodyPaint);
     }
   }
 
@@ -2730,6 +3121,8 @@ class _WeaponPreviewPainter extends CustomPainter {
       case 'plasma': return 0.6;
       case 'homing': return 0.7;
       case 'triple': return 0.12;
+      case 'gauss': return 0.7;
+      case 'chain': return 0.55;
       default: return 0.18;
     }
   }

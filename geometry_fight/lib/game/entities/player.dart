@@ -4,7 +4,9 @@ import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
 import 'package:flutter/painting.dart' show HSVColor;
 import '../../data/constants.dart';
+import '../effects/chain_lightning_effect.dart';
 import '../game_world.dart';
+import 'bosses/boss_base.dart';
 import 'enemies/enemy_base.dart';
 import 'projectiles.dart';
 
@@ -18,6 +20,12 @@ enum WeaponType {
   homing,
   triple,
   overdrive,
+  /// Iter 13 (utente): Gauss Cannon — colpo lento+forte + aspirazione
+  /// nemici a corto raggio per 1s ad ogni colpo. Fire interval 0.7s.
+  gauss,
+  /// Iter 13 (utente): Chain Lightning — bolt rimbalza tra fino a 5
+  /// nemici. Damage decade per jump. Shop-unlock.
+  chainLightning,
 }
 
 // Plasma: colpo lento con danni base * 3.9 (era 3.0, +30% richiesta utente).
@@ -52,6 +60,12 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
   double magnetTimer = 0;
   double timeSlowTimer = 0;
   double firePowerTimer = 0;
+  /// Iter 13: Gauss Cannon pull effect timer. Quando > 0, ogni frame
+  /// tutti i nemici/boss entro `_gaussPullRange` vengono attirati verso
+  /// il player. Settato a 1.0 ad ogni colpo Gauss.
+  double gaussPullTimer = 0;
+  static const double _gaussPullRange = 220;
+  static const double _gaussPullSpeed = 180; // px/s verso player
   bool get hasRapidFire => rapidFireTimer > 0;
   bool get hasOverdrive => overdriveTimer > 0;
   bool get hasMagnet => magnetTimer > 0;
@@ -120,6 +134,10 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
         currentWeapon = WeaponType.plasma;
       case 'laser':
         currentWeapon = WeaponType.laser;
+      case 'gauss':
+        currentWeapon = WeaponType.gauss;
+      case 'chain':
+        currentWeapon = WeaponType.chainLightning;
       case 'basic':
       default:
         currentWeapon = WeaponType.basic;
@@ -237,6 +255,11 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
     if (overdriveTimer > 0) overdriveTimer -= realDt;
     if (magnetTimer > 0) magnetTimer -= realDt;
     if (firePowerTimer > 0) firePowerTimer -= realDt;
+    // Iter 13 Gauss pull: applica trazione su nemici/boss vicini.
+    if (gaussPullTimer > 0) {
+      gaussPullTimer -= realDt;
+      _gaussPull(realDt);
+    }
     if (timeSlowTimer > 0) {
       timeSlowTimer -= realDt;
       if (timeSlowTimer <= 0) {
@@ -411,6 +434,102 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
       case WeaponType.overdrive:
         _spawnOverdriveBeam(dir);
         _fireTimer = 3.0;
+      case WeaponType.gauss:
+        // Iter 13 (utente): "spara un proiettile ogni 0,7 secondi" +
+        // "aspirazione nemici a corto raggio per 1s". Damage forte (1.8x).
+        // Trigger pull effect 1s (gestito in update() via gaussPullTimer).
+        _spawnBullet(dir, damageMultiplier * 1.8,
+            const Color(0xFFCC66FF),
+            speed: bulletSpeed * 0.85,
+            pierce: true,
+            weaponType: WeaponType.gauss);
+        gaussPullTimer = 1.0;
+        // Override interval: 0.7s base, accelerato da fireRateMultiplier
+        // (shop fire_rate upgrade + rapidFire powerup). Rispetta tutti i
+        // potenziamenti via fireRateMultiplier già calcolato sopra.
+        _fireTimer = (0.7 / fireRateMultiplier).clamp(0.05, 5.0);
+      case WeaponType.chainLightning:
+        // Iter 13: bolt rimbalza fino a 5 nemici. Damage decade 0.85x per
+        // jump. Range jump 200px. Visual: ChainLightningEffect.
+        _castChainLightning(damageMultiplier);
+        // Fire rate 0.55s base (più rapido di gauss ma più lento di basic).
+        _fireTimer = (0.55 / fireRateMultiplier).clamp(0.05, 5.0);
+    }
+  }
+
+  /// Iter 13: Gauss pull — attira nemici/boss entro `_gaussPullRange`
+  /// verso il player con velocità `_gaussPullSpeed`. Boss invulnerabili
+  /// allo spawn sono saltati. dt scalato dal caller (realDt player).
+  void _gaussPull(double dt) {
+    for (final child in game.world.children) {
+      if (child is EnemyBase) {
+        if (child.isSpawnInvulnerable) continue;
+        final delta = position - child.position;
+        final d = delta.length;
+        if (d > 1 && d < _gaussPullRange) {
+          child.position += delta.normalized() * _gaussPullSpeed * dt;
+        }
+      } else if (child is BossBase) {
+        final delta = position - child.position;
+        final d = delta.length;
+        // Boss pull ridotto 30% — boss grossi non devono saltare addosso.
+        if (d > 1 && d < _gaussPullRange) {
+          child.position += delta.normalized() * (_gaussPullSpeed * 0.3) * dt;
+        }
+      }
+    }
+  }
+
+  /// Iter 13: Chain Lightning — trova fino a 5 bersagli in sequenza, ognuno
+  /// nel raggio `chainRange` dal precedente. Applica damage decrescente
+  /// (0.85x per jump). Spawna `ChainLightningEffect` come visual world-space.
+  void _castChainLightning(double damage) {
+    const int maxJumps = 5;
+    const double chainRange = 220.0;
+    const double initialRange = 380.0;
+    const double decay = 0.85;
+    final hitTargets = <PositionComponent>{};
+    final points = <Vector2>[position.clone()];
+    PositionComponent? from;
+    double currentDamage = damage * 1.2;
+    Vector2 currentPos = position;
+    double currentRange = initialRange;
+
+    for (int jump = 0; jump < maxJumps; jump++) {
+      PositionComponent? target;
+      double bestDist = currentRange;
+      for (final child in game.world.children) {
+        PositionComponent? cand;
+        if (child is EnemyBase && !child.isSpawnInvulnerable) {
+          cand = child;
+        } else if (child is BossBase) {
+          cand = child;
+        }
+        if (cand == null) continue;
+        if (hitTargets.contains(cand)) continue;
+        if (identical(cand, from)) continue;
+        final d = cand.position.distanceTo(currentPos);
+        if (d < bestDist) {
+          bestDist = d;
+          target = cand;
+        }
+      }
+      if (target == null) break;
+      hitTargets.add(target);
+      points.add(target.position.clone());
+      if (target is EnemyBase) {
+        target.takeDamage(currentDamage);
+      } else if (target is BossBase) {
+        target.takeDamage(currentDamage);
+      }
+      from = target;
+      currentPos = target.position;
+      currentDamage *= decay;
+      currentRange = chainRange;
+    }
+    if (points.length >= 2) {
+      final fx = ChainLightningEffect(points: points);
+      game.world.add(fx);
     }
   }
 

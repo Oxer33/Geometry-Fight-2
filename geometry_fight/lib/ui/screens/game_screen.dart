@@ -137,6 +137,8 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
       sessionBosses: _game.sessionBossKills,
       gameMode: _game.gameMode,
       maxGateCombo: _game.maxGateCombo,
+      gaussKills: stats['gaussKills'] ?? 0,
+      chainKills: stats['chainKills'] ?? 0,
     );
 
     // Calculate and grant performance bonus gold

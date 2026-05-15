@@ -942,6 +942,14 @@ class GeometryFightGame extends FlameGame
     scoreSystem.addKill(pointsBoosted, enemy.position);
     sessionKills++;
 
+    // Iter 13: weapon-specific kill tracking per achievement.
+    final wpn = player.currentWeapon;
+    if (wpn == WeaponType.gauss) {
+      saveData.stats['gaussKills'] = (saveData.stats['gaussKills'] ?? 0) + 1;
+    } else if (wpn == WeaponType.chainLightning) {
+      saveData.stats['chainKills'] = (saveData.stats['chainKills'] ?? 0) + 1;
+    }
+
     // Track max multiplier per achievement
     final currentMult = scoreSystem.multiplierDisplay;
     if (currentMult > maxMultiplierReached) maxMultiplierReached = currentMult;
