@@ -457,25 +457,18 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
     }
   }
 
-  /// Iter 13: Gauss pull — attira nemici/boss entro `_gaussPullRange`
-  /// verso il player con velocità `_gaussPullSpeed`. Boss invulnerabili
-  /// allo spawn sono saltati. dt scalato dal caller (realDt player).
+  /// Iter 13: Gauss pull — attira nemici entro `_gaussPullRange` verso
+  /// il player con velocità `_gaussPullSpeed`. Boss esclusi (caveman fix:
+  /// pull disturbava AI pattern boss). Enemy invulnerabili allo spawn
+  /// saltati. dt scalato dal caller (realDt player).
   void _gaussPull(double dt) {
     for (final child in game.world.children) {
-      if (child is EnemyBase) {
-        if (child.isSpawnInvulnerable) continue;
-        final delta = position - child.position;
-        final d = delta.length;
-        if (d > 1 && d < _gaussPullRange) {
-          child.position += delta.normalized() * _gaussPullSpeed * dt;
-        }
-      } else if (child is BossBase) {
-        final delta = position - child.position;
-        final d = delta.length;
-        // Boss pull ridotto 30% — boss grossi non devono saltare addosso.
-        if (d > 1 && d < _gaussPullRange) {
-          child.position += delta.normalized() * (_gaussPullSpeed * 0.3) * dt;
-        }
+      if (child is! EnemyBase) continue;
+      if (child.isSpawnInvulnerable) continue;
+      final delta = position - child.position;
+      final d = delta.length;
+      if (d > 1 && d < _gaussPullRange) {
+        child.position += delta.normalized() * _gaussPullSpeed * dt;
       }
     }
   }
@@ -483,14 +476,26 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
   /// Iter 13: Chain Lightning — trova fino a 5 bersagli in sequenza, ognuno
   /// nel raggio `chainRange` dal precedente. Applica damage decrescente
   /// (0.85x per jump). Spawna `ChainLightningEffect` come visual world-space.
+  ///
+  /// Caveman fix: pre-collect targets una volta (era 5× iterate world.children
+  /// → con 200 children = 1000 walk; ora 1 walk + 5 list scan).
   void _castChainLightning(double damage) {
     const int maxJumps = 5;
     const double chainRange = 220.0;
     const double initialRange = 380.0;
     const double decay = 0.85;
+    // Pre-collect potential targets (caveman fix perf).
+    final candidates = <PositionComponent>[];
+    for (final child in game.world.children) {
+      if (child is EnemyBase && !child.isSpawnInvulnerable) {
+        candidates.add(child);
+      } else if (child is BossBase) {
+        candidates.add(child);
+      }
+    }
+    if (candidates.isEmpty) return;
     final hitTargets = <PositionComponent>{};
     final points = <Vector2>[position.clone()];
-    PositionComponent? from;
     double currentDamage = damage * 1.2;
     Vector2 currentPos = position;
     double currentRange = initialRange;
@@ -498,16 +503,8 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
     for (int jump = 0; jump < maxJumps; jump++) {
       PositionComponent? target;
       double bestDist = currentRange;
-      for (final child in game.world.children) {
-        PositionComponent? cand;
-        if (child is EnemyBase && !child.isSpawnInvulnerable) {
-          cand = child;
-        } else if (child is BossBase) {
-          cand = child;
-        }
-        if (cand == null) continue;
+      for (final cand in candidates) {
         if (hitTargets.contains(cand)) continue;
-        if (identical(cand, from)) continue;
         final d = cand.position.distanceTo(currentPos);
         if (d < bestDist) {
           bestDist = d;
@@ -522,7 +519,6 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
       } else if (target is BossBase) {
         target.takeDamage(currentDamage);
       }
-      from = target;
       currentPos = target.position;
       currentDamage *= decay;
       currentRange = chainRange;

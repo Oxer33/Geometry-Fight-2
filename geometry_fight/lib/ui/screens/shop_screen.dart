@@ -1593,30 +1593,42 @@ class _UpgradeMapPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.6
+      ..strokeWidth = 1.8
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2);
+    // Caveman fix: shorten line endpoints by `nodeRadius` per non pierce
+    // i cerchi dei nodi (le linee andavano fino al centro).
+    const double nodeRadius = 32;
     for (final (aId, bId) in connections) {
       final a = nodes.firstWhere((n) => n.item.id == aId,
           orElse: () => nodes.first);
       final b = nodes.firstWhere((n) => n.item.id == bId,
           orElse: () => nodes.first);
-      // Linea attiva se entrambi i nodi hanno livello > 0.
       final lvlA = saveData.getUpgradeLevel(aId);
       final lvlB = saveData.getUpgradeLevel(bId);
       final unlocked = lvlA > 0 && lvlB > 0;
       final color = unlocked
           ? Color.lerp(a.item.color, b.item.color, 0.5)!
-          : Colors.white.withValues(alpha: 0.12);
-      // Pulse alpha sui rami attivi.
+          : Colors.white.withValues(alpha: 0.18);
       final pulse = unlocked
           ? (0.6 + 0.4 * (0.5 + 0.5 * math.sin(time + a.x * 5)))
           : 1.0;
       paint.color = unlocked
-          ? color.withValues(alpha: 0.7 * pulse)
+          ? color.withValues(alpha: 0.8 * pulse)
           : color;
+      // Compute endpoint shortened by nodeRadius along direction.
+      final ax = a.x * size.width;
+      final ay = a.y * size.height;
+      final bx = b.x * size.width;
+      final by = b.y * size.height;
+      final dx = bx - ax;
+      final dy = by - ay;
+      final len = math.sqrt(dx * dx + dy * dy);
+      if (len <= nodeRadius * 2) continue;
+      final nx = dx / len;
+      final ny = dy / len;
       canvas.drawLine(
-        Offset(a.x * size.width, a.y * size.height),
-        Offset(b.x * size.width, b.y * size.height),
+        Offset(ax + nx * nodeRadius, ay + ny * nodeRadius),
+        Offset(bx - nx * nodeRadius, by - ny * nodeRadius),
         paint,
       );
     }
