@@ -50,8 +50,9 @@ class ScreenShakeEffect extends Component {
 
       if (_timer <= 0) {
         _intensity = 0;
+        _duration = 0;
       }
-    } else if (_previousOffset.length > 0) {
+    } else if (_previousOffset.length2 > 0) {
       // Undo last offset to restore original position
       p.position -= _previousOffset;
       _previousOffset = Vector2.zero();

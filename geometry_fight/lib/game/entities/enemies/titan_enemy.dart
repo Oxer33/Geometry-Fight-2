@@ -87,8 +87,10 @@ class TitanEnemy extends EnemyBase {
 
   @override
   void takeDamage(double amount, {bool isArea = false}) {
-    // Il Titan subisce danno ridotto (armatura)
-    super.takeDamage(amount * 0.5, isArea: isArea);
+    // Il Titan subisce danno ridotto SOLO da colpi diretti (armatura frontale).
+    // Bomba/laser/area passano normali — l'armatura non protegge da onde d'urto.
+    final scaled = isArea ? amount : amount * 0.5;
+    super.takeDamage(scaled, isArea: isArea);
   }
 
   @override

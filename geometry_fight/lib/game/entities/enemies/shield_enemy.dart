@@ -27,6 +27,11 @@ class ShieldEnemy extends EnemyBase {
   // Throttle per repel bullets (ogni 3 frame, non ogni frame)
   int _repelFrameCounter = 0;
 
+  // Cached toPlayer vector — updated in updateBehavior, reused in renderShape
+  // per evitare un secondo `playerPosition - position` per frame (e tenere il
+  // valore stabile tra logic e render).
+  Vector2 _cachedToPlayer = Vector2.zero();
+
   // State machine per il movimento a cariche
   _ShieldState _state = _ShieldState.approach;
   double _stateTimer = 0;
@@ -51,6 +56,8 @@ class ShieldEnemy extends EnemyBase {
   @override
   void updateBehavior(double dt) {
     _stateTimer += dt;
+    // Cache toPlayer once per frame for reuse in renderShape (stable tra logic/render).
+    _cachedToPlayer = playerPosition - position;
 
     // Shield regen
     if (shieldHp <= 0) {
@@ -106,6 +113,10 @@ class ShieldEnemy extends EnemyBase {
         if (_stateTimer >= _chargeDuration) {
           _state = _ShieldState.recovering;
           _stateTimer = 0;
+          // Reset regen timer on entry to recovering: prima un ciclo di shield
+          // a 0 hp che entrava in recovering vedeva un regen "lampo" residuo
+          // (timer accumulato da approach/lockOn → rigenerava istantaneamente).
+          _shieldRegenTimer = 0;
         }
         break;
 
@@ -191,7 +202,9 @@ class ShieldEnemy extends EnemyBase {
 
     // Scudo frontale force field
     if (shieldHp > 0) {
-      final toPlayer = (playerPosition - position);
+      // Usa il vettore cachato in updateBehavior — evita un secondo lookup
+      // di playerPosition per frame e mantiene logic/render coerenti.
+      final toPlayer = _cachedToPlayer;
       final angle = math.atan2(toPlayer.y, toPlayer.x);
       final shieldAlpha = (shieldHp / 5.0).clamp(0.0, 1.0);
 

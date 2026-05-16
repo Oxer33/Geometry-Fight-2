@@ -4,7 +4,14 @@ import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
 
-void main() {
+void main(List<String> args) {
+  if (!File('pubspec.yaml').existsSync()) {
+    stderr.writeln(
+      'Error: pubspec.yaml not found in current directory. '
+      'Run this script from the geometry_fight project root.',
+    );
+    exit(1);
+  }
   final outDir = Directory('assets/audio');
   if (!outDir.existsSync()) outDir.createSync(recursive: true);
 

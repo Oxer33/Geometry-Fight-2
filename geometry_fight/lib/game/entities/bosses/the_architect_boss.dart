@@ -147,6 +147,9 @@ class TheArchitectBoss extends BossBase {
   static final _structurePaint = Paint()
     ..style = PaintingStyle.stroke
     ..strokeWidth = 2;
+  // Body paint cached: evita di mutare l'arg `paint` passato dal caller
+  // (BossBase usa lo stesso Paint per glow+main → mutation leak).
+  static final _bodyPaint = Paint();
 
   @override
   void renderBoss(Canvas canvas, Paint paint, double scale) {
@@ -187,19 +190,20 @@ class TheArchitectBoss extends BossBase {
       }
     }
 
-    // Square esterno
-    paint.style = PaintingStyle.stroke;
-    paint.strokeWidth = 3;
+    // Square esterno — usa _bodyPaint locale, non muta `paint` arg.
+    _bodyPaint.color = paint.color;
+    _bodyPaint.style = PaintingStyle.stroke;
+    _bodyPaint.strokeWidth = 3;
     canvas.drawRect(
         Rect.fromCenter(center: Offset.zero, width: r * 2, height: r * 2),
-        paint);
+        _bodyPaint);
 
     // Square interno ruotato
     canvas.rotate(math.pi / 4);
     canvas.drawRect(
         Rect.fromCenter(
             center: Offset.zero, width: r * 1.4, height: r * 1.4),
-        paint);
+        _bodyPaint);
     canvas.rotate(-math.pi / 4);
 
     // Construction ring contro-rotante
@@ -219,12 +223,12 @@ class TheArchitectBoss extends BossBase {
     }
 
     // Core: halo + fill + nucleo bianco pulsante
-    paint.style = PaintingStyle.fill;
+    _bodyPaint.style = PaintingStyle.fill;
     if (scale <= 1.01) {
       _coreHaloPaint.color = NeonColors.electricBlue.withValues(alpha: 0.4);
       canvas.drawCircle(Offset.zero, 30 * scale, _coreHaloPaint);
     }
-    canvas.drawCircle(Offset.zero, 20 * scale, paint);
+    canvas.drawCircle(Offset.zero, 20 * scale, _bodyPaint);
     if (scale <= 1.01) {
       final corePulse = 0.7 + math.sin(_phase * 6) * 0.3;
       _corePaint.color = const Color(0xFFFFFFFF).withValues(alpha: corePulse);

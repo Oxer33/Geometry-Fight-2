@@ -17,13 +17,6 @@ extension Vector2Ext on Vector2 {
 
   double get heading => math.atan2(y, x);
 
-  /// Variante squared (risparmia sqrt) sopra a `distanceTo`.
-  double distanceToSquared(Vector2 other) {
-    final dx = x - other.x;
-    final dy = y - other.y;
-    return dx * dx + dy * dy;
-  }
-
   static final _random = math.Random();
 
   static Vector2 randomInCircle(double radius) {

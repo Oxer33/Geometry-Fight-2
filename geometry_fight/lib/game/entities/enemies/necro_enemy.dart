@@ -27,7 +27,13 @@ class NecroEnemy extends EnemyBase {
 
   @override
   void onDeath() {
-    _pendingRes.clear(); // Annulla resurrezioni pending
+    // Annulla resurrezioni pending e libera i dedupe key in modo che altri
+    // necro possano ri-accodare se lo desiderano (anche se in pratica chi
+    // ha la key è già morto).
+    for (final r in _pendingRes) {
+      _resurrectingIds.remove(r.dedupeKey);
+    }
+    _pendingRes.clear();
     super.onDeath();
   }
 
@@ -63,6 +69,7 @@ class NecroEnemy extends EnemyBase {
         final resurrected =
             game.spawnEnemy(_pendingRes[i].type, _pendingRes[i].position);
         resurrected?.clearSpawnInvulnerability();
+        _resurrectingIds.remove(_pendingRes[i].dedupeKey);
         _pendingRes.removeAt(i);
       }
     }
@@ -71,14 +78,27 @@ class NecroEnemy extends EnemyBase {
     // Questo viene gestito dal game_world.onEnemyKilled chiamando notifyNecros
   }
 
+  // Dedupe globale: se due Necro vedono la stessa morte, solo il primo
+  // accoda la resurrezione. Key = (type, posX rounded, posY rounded) — preciso
+  // abbastanza per identificare una death (mob fermo nel frame della morte)
+  // senza essere fragile a micro-jitter di Vector2.
+  static final Set<int> _resurrectingIds = <int>{};
+  static int _deathKey(EnemyType type, Vector2 pos) {
+    return Object.hash(type, pos.x.round(), pos.y.round());
+  }
+
   /// Chiamato quando un nemico muore vicino al necro
   void onNearbyEnemyDeath(EnemyType type, Vector2 deathPos) {
     final dist = position.distanceTo(deathPos);
     if (dist < _resurrectionRadius && _pendingRes.length < 3) {
+      final key = _deathKey(type, deathPos);
+      if (_resurrectingIds.contains(key)) return; // un altro necro già accodato
+      _resurrectingIds.add(key);
       _pendingRes.add(_PendingResurrection(
         type: type,
         position: deathPos,
         timer: 3.0,
+        dedupeKey: key,
       ));
     }
   }
@@ -140,10 +160,12 @@ class _PendingResurrection {
   final EnemyType type;
   final Vector2 position;
   double timer;
+  final int dedupeKey;
 
   _PendingResurrection({
     required this.type,
     required this.position,
     required this.timer,
+    required this.dedupeKey,
   });
 }

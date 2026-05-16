@@ -292,7 +292,9 @@ class _NavigationWrapperState extends State<NavigationWrapper> {
               final sd = SaveManager.load();
               sd.activeModifiers = _selectedModifiers;
               await SaveManager.save(sd);
-            } catch (_) {}
+            } catch (e, st) {
+              CrashReporter.handleZoneError(e, st);
+            }
             if (!mounted) return;
             _navigateTo(AppScreen.game);
           },

@@ -299,7 +299,9 @@ class AudioSystem {
   /// volume durante megaswarm/spawn boss simultanei → no audio mud, no
   /// vibration fatigue, no battery drain.
   static void playEnemyDeath() {
-    if (!_vibrationEnabled && (!_initialized || _sfxVolume <= 0)) return;
+    final canPlaySound = _initialized && _sfxVolume > 0;
+    final canVibrate = _vibrationEnabled;
+    if (!canPlaySound && !canVibrate) return;
 
     final now = DateTime.now().millisecondsSinceEpoch;
     // Reset finestra burst quando scade (O(1), no list).
@@ -473,9 +475,14 @@ class AudioSystem {
     }
 
     final toDispose = <Future<void>>[];
-    // Flame pool (AudioPool) non hanno Future da dispose. I nostri _Mp3Pool sì.
-    try { _shootPool?.dispose(); } catch (_) {}
-    try { _geomPool?.dispose(); } catch (_) {}
+    // Flame AudioPool.dispose() returns Future<void> — accodalo a toDispose
+    // così l'attesa successiva (Future.wait) include anche questi pool.
+    if (_shootPool != null) {
+      toDispose.add(_shootPool!.dispose().catchError((_) {}));
+    }
+    if (_geomPool != null) {
+      toDispose.add(_geomPool!.dispose().catchError((_) {}));
+    }
     _shootPool = null;
     _geomPool = null;
     final pools = [

@@ -67,7 +67,7 @@ class SnakeEnemy extends EnemyBase {
 
     // Direzione base verso il player
     final toPlayer = (playerPosition - position);
-    if (toPlayer.length == 0) return;
+    if (toPlayer.length2 < 0.0001) return;
     final baseDir = toPlayer.normalized();
 
     // Vettore perpendicolare per l'onda sinusoidale
@@ -245,6 +245,10 @@ class _SnakeBody extends PositionComponent with CollisionCallbacks {
   @override
   void update(double dt) {
     super.update(dt);
+    if (!snake.isMounted) {
+      removeFromParent();
+      return;
+    }
     // Segui il segment corrispondente (world coord → parent-local).
     // Il parent (SnakeEnemy) ha anchor.center, ma le coord locali dei figli
     // usano il TOP-LEFT come origine → serve + snake.size/2 per allineare

@@ -28,6 +28,7 @@ class _ModifiersSheetState extends State<ModifiersSheet> {
     final wasAtCap = !_active.contains(id) && _active.length >= 3;
     if (wasAtCap) {
       // Feedback utente: cap raggiunto, drop silenzioso → SnackBar esplicita.
+      if (!mounted) return;
       ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
         ..showSnackBar(

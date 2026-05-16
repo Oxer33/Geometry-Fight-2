@@ -42,7 +42,10 @@ class SirenEnemy extends EnemyBase {
           final pushDir = (bullet.position - position);
           if (pushDir.length > 0) {
             pushDir.normalize();
-            bullet.position -= pushDir * 400 * dt; // Controvento 2× per compensare throttle ogni 2 frame
+            // Push più mite: il 400×dt precedente poteva superare il movimento
+            // per-frame del bullet (al limite invertendo direzione visivamente).
+            // 60×dt è sufficiente per "frenare" il bullet senza overrun.
+            bullet.position -= pushDir * 60 * dt;
           }
         }
       }

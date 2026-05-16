@@ -121,8 +121,14 @@ class SplitterEnemy extends EnemyBase {
   /// per questo frame — il splitter muore senza generare figli.
   static int _splitBudget = _maxSplitsPerFrame;
   static const int _maxSplitsPerFrame = 3;
+  // Wall-clock timestamp dell'ultimo reset (ms): safety per evitare che il
+  // budget resti bloccato a 0 se game_world.update() salta un reset (pause,
+  // crash di un sistema, refactor). Fallback: se sono passati >100ms dall'
+  // ultimo reset visto, si auto-resetta in onDeath.
+  static int _lastResetMs = 0;
   static void resetFrameBudget() {
     _splitBudget = _maxSplitsPerFrame;
+    _lastResetMs = DateTime.now().millisecondsSinceEpoch;
   }
 
   @override
@@ -160,6 +166,14 @@ class SplitterEnemy extends EnemyBase {
 
   @override
   void onDeath() {
+    // Safety: se il budget è esaurito da troppo tempo (>100ms) significa che
+    // qualcuno ha smesso di chiamare resetFrameBudget() — auto-recover per
+    // evitare splitter "sterili" permanenti.
+    final nowMs = DateTime.now().millisecondsSinceEpoch;
+    if (_splitBudget <= 0 && nowMs - _lastResetMs > 100) {
+      _splitBudget = _maxSplitsPerFrame;
+      _lastResetMs = nowMs;
+    }
     // Split into smaller pieces
     SplitterSize? nextSize;
     switch (splitterSize) {

@@ -112,8 +112,13 @@ class MusicManager {
   /// l'utente in silenzio fino al prossimo playIntro manuale.
   static Future<void> playIntro() async {
     if (!_initialized) return;
+    // Fast path: già in intro e attivo → no-op (NIENTE stop() spurio che
+    // creerebbe un breve gap audio per nessun motivo).
     if (_mode == _Mode.intro && _isActuallyPlaying()) return;
-    await stop();
+    // Solo se la track sta per cambiare effettivamente facciamo stop().
+    if (_mode != _Mode.idle || _isActuallyPlaying()) {
+      await stop();
+    }
     _mode = _Mode.intro;
     await _playFromIntroBag();
     await _verifyPlayingOrRetry(_Mode.intro);
@@ -122,8 +127,12 @@ class MusicManager {
   /// Avvia modalità BGM. Stessa lifecycle robusta di `playIntro`.
   static Future<void> playBgm() async {
     if (!_initialized) return;
+    // Fast path: già in bgm e attivo → no-op.
     if (_mode == _Mode.bgm && _isActuallyPlaying()) return;
-    await stop();
+    // Solo se la track sta per cambiare effettivamente facciamo stop().
+    if (_mode != _Mode.idle || _isActuallyPlaying()) {
+      await stop();
+    }
     _mode = _Mode.bgm;
     await _playFromBgmBag();
     await _verifyPlayingOrRetry(_Mode.bgm);
@@ -225,6 +234,7 @@ class MusicManager {
   }
 
   static Future<void> resume() async {
+    if (!_initialized || _mode == _Mode.idle) return;
     try {
       await FlameAudio.bgm.resume();
     } catch (_) {}
@@ -306,7 +316,9 @@ class MusicManager {
     // "appena suonato" un track mai partito, impattando avoidRepeat).
     if (_playInFlight) {
       _playSeq++;
-      _lastManualPlayMs = DateTime.now().millisecondsSinceEpoch;
+      // NB: NON aggiorniamo `_lastManualPlayMs` qui — il debounce in
+      // `_onTrackComplete` deve riferirsi al play che ha effettivamente
+      // preso il mutex, non a una call stale che ha appena bumpato il seq.
       return false;
     }
     _playInFlight = true;
@@ -417,13 +429,19 @@ class MusicManager {
 
   /// Cleanup risorse. Chiamato a dispose dell'app (raro: app vive in memory).
   static Future<void> dispose() async {
+    // Cancel listener PRIMA del dispose: se FlameAudio.bgm.dispose() emette
+    // un completion event spurio durante il teardown, vogliamo essere già
+    // disiscritti per evitare un _onTrackComplete su stato in corso di
+    // distruzione.
     await _completeSub?.cancel();
     _completeSub = null;
+    // Marca idle PRIMA del dispose: qualsiasi listener residuo (race) vede
+    // `_mode == idle` e short-circuita senza pescare dal bag.
+    _mode = _Mode.idle;
     try {
       await FlameAudio.bgm.dispose();
     } catch (_) {}
     _initialized = false;
-    _mode = _Mode.idle;
   }
 }
 

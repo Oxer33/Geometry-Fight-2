@@ -746,7 +746,7 @@ _Archetype _pickArchetype(int wave, List<int> history) {
 
   // Pseudo-random deterministico sul wave number: riproducibile,
   // varia per-wave, history previene ripetizioni.
-  final pickIdx = pool[(wave * 2654435761) % pool.length];
+  final pickIdx = pool[((wave * 2654435761).abs()) % pool.length];
   _pushHistory(history, pickIdx);
   return _archetypes[pickIdx];
 }

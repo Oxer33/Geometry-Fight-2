@@ -202,6 +202,10 @@ class SpaceBackground extends PositionComponent
   }
 
   static final _bgPaint = Paint();
+  // Static: arena dimensions are compile-time constants (arenaWidth/arenaHeight
+  // never change at runtime), so the background shader can be safely shared
+  // across all SpaceBackground instances. If arena sizing becomes dynamic,
+  // promote this to an instance field.
   static Shader? _bgShader;
 
   void _renderDeepSpaceGradient(Canvas canvas) {
@@ -265,6 +269,7 @@ class SpaceBackground extends PositionComponent
         if (_nebulaShaderCache.length > 200) {
           final toEvict = _nebulaShaderCache.keys.take(100).toList();
           for (final k in toEvict) {
+            _nebulaShaderCache[k]?.dispose();
             _nebulaShaderCache.remove(k);
           }
         }

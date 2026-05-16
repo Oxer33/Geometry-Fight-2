@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:hive/hive.dart';
 import 'difficulty.dart';
 
@@ -106,13 +108,13 @@ class AchievementManager {
   /// Progresso corrente per un achievement
   static int getProgress(String achievementId) {
     if (!_initialized) return 0;
-    return _box.get('progress_$achievementId', defaultValue: 0) as int;
+    return (_box.get('progress_$achievementId', defaultValue: 0) as num).toInt();
   }
 
   /// Se un achievement è stato sbloccato
   static bool isUnlocked(String achievementId) {
     if (!_initialized) return false;
-    return _box.get('unlocked_$achievementId', defaultValue: false) as bool;
+    return _box.get('unlocked_$achievementId', defaultValue: false) == true;
   }
 
   /// Aggiorna il progresso e restituisce la lista di achievement appena sbloccati
@@ -121,7 +123,7 @@ class AchievementManager {
     final unlocked = <AchievementDef>[];
     final current = getProgress(achievementId);
     if (value > current) {
-      _box.put('progress_$achievementId', value);
+      unawaited(_box.put('progress_$achievementId', value));
     }
 
     // Controlla tutti gli achievement che usano questo ID come trigger
@@ -129,7 +131,7 @@ class AchievementManager {
       if (achievement.id == achievementId && !isUnlocked(achievementId)) {
         final progress = getProgress(achievementId);
         if (progress >= achievement.target) {
-          _box.put('unlocked_$achievementId', true);
+          unawaited(_box.put('unlocked_$achievementId', true));
           unlocked.add(achievement);
         }
       }
@@ -145,7 +147,9 @@ class AchievementManager {
 
   /// Sblocca direttamente (per achievement binari)
   static List<AchievementDef> unlock(String achievementId) {
-    return updateProgress(achievementId, allAchievements.firstWhere((a) => a.id == achievementId, orElse: () => const AchievementDef(id: '', name: '', description: '', icon: '', category: '', target: 1)).target);
+    final achievement = allAchievements.firstWhere((a) => a.id == achievementId, orElse: () => const AchievementDef(id: '', name: '', description: '', icon: '', category: '', target: 1));
+    if (achievement.id.isEmpty) return [];
+    return updateProgress(achievementId, achievement.target);
   }
 
   /// Conta achievement sbloccati
@@ -201,10 +205,10 @@ class AchievementManager {
     final newlyUnlocked = <AchievementDef>[];
 
     // Reset session-based progress (questi achievement tracciano SOLO la sessione corrente)
-    _box.put('progress_kills_session_200', 0);
-    _box.put('progress_kills_session_500', 0);
-    _box.put('progress_kills_session_1000', 0);
-    _box.put('progress_boss_session_5', 0);
+    unawaited(_box.put('progress_kills_session_200', 0));
+    unawaited(_box.put('progress_kills_session_500', 0));
+    unawaited(_box.put('progress_kills_session_1000', 0));
+    unawaited(_box.put('progress_boss_session_5', 0));
 
     // Combat
     newlyUnlocked.addAll(updateProgress('kills_100', totalKills));

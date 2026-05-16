@@ -69,7 +69,7 @@ class PhantomEnemy extends EnemyBase {
         _visible ? CollisionType.active : CollisionType.inactive;
 
     final toPlayer = playerPosition - position;
-    if (toPlayer.length == 0) return;
+    if (toPlayer.length2 < 0.0001) return;
 
     if (!_visible) {
       // INVISIBILE: riposizionamento veloce verso il fianco del player

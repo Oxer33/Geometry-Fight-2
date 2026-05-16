@@ -250,7 +250,7 @@ class SwarmMotherBoss extends BossBase {
     // ── BODY rendering per fase ─────────────────────────────────────
     if (currentPhase == 0) {
       // Single hexagon center.
-      _drawHexagon(canvas, bodyPaint, scale, Offset(cx, cy));
+      _drawOctagon(canvas, bodyPaint, scale, Offset(cx, cy));
     } else {
       // Phase 1+: 2 metà. Chase half = boss center. Wander/vortex half
       // = offset locale = (wanderHalfPos - position).
@@ -342,7 +342,7 @@ class SwarmMotherBoss extends BossBase {
     canvas.drawPath(path, paint);
   }
 
-  void _drawHexagon(Canvas canvas, Paint paint, double scale, Offset center) {
+  void _drawOctagon(Canvas canvas, Paint paint, double scale, Offset center) {
     final r = 80 * scale;
     final path = Path();
     for (int i = 0; i < 8; i++) {

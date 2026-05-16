@@ -77,7 +77,8 @@ class _SplashScreenState extends State<SplashScreen>
     });
 
     _bgController.addListener(() {
-      if (_showExplosion && mounted) {
+      if (!mounted) return;
+      if (_showExplosion) {
         setState(() => _explosionPhase += 0.018);
         if (_explosionPhase > 1.5) _showExplosion = false;
       }

@@ -527,8 +527,9 @@ class RamPet extends PetBase {
         !PetBase.isValidPetTarget(_target!)) {
       _target = findNearestEnemy(maxDist: 500);
     }
-    if (_target == null) {
+    if (_target == null || _target!.isRemoved) {
       // Idle orbit
+      _target = null;
       final ang = phase * 1.5;
       position = game.player.position +
           Vector2(math.cos(ang), math.sin(ang)) * 70;
@@ -553,14 +554,16 @@ class RamPet extends PetBase {
 
   @override
   void render(Canvas canvas) {
+    if (_target == null || _target!.isRemoved) return;
     final cx = size.x / 2;
     final cy = size.y / 2;
     final pulse = 0.6 + math.sin(phase * 7) * 0.4;
     _glowPaint.color = def.color.withValues(alpha: 0.5 * pulse);
     canvas.drawCircle(Offset(cx, cy), 15, _glowPaint);
     // Chevron arrow puntato verso direzione movimento (target o player).
-    final aim = _target != null
-        ? (_target!.position - position).normalized()
+    final tPos = _target?.position;
+    final aim = tPos != null
+        ? (tPos - position).normalized()
         : Vector2(1, 0);
     final ang = math.atan2(aim.y, aim.x);
     canvas.save();

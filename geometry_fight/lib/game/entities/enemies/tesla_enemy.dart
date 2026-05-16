@@ -11,6 +11,9 @@ class TeslaEnemy extends EnemyBase {
   double _sparkPhase = 0;
   final List<Vector2> _connectedPositions = [];
   double _flankAngle;
+  // Cooldown sul danno player dagli archi: previene 60 dmg/sec se il player
+  // sta fermo nell'arco. 0.5s permette comunque di uscire muovendosi.
+  double _arcHitCd = 0;
   static const double _orbitDistance = 130.0;
   static const double _soloOrbitSpeed = 1.5; // rad/s quando solo
 
@@ -28,6 +31,7 @@ class TeslaEnemy extends EnemyBase {
   @override
   void updateBehavior(double dt) {
     _sparkPhase += dt * 12;
+    if (_arcHitCd > 0) _arcHitCd -= dt;
 
     // Trova altri Tesla per comportamento a branco
     final otherTeslas = <TeslaEnemy>[];
@@ -82,14 +86,15 @@ class TeslaEnemy extends EnemyBase {
         if (dist < 150 && _connectedPositions.length < 3) {
           _connectedPositions.add(child.position.clone());
 
-          // Se il player è vicino all'arco, danno!
+          // Se il player è vicino all'arco, danno! (con cooldown 0.5s)
           final playerDist = _distanceToLine(
             game.player.position,
             position,
             child.position,
           );
-          if (playerDist < 15) {
+          if (playerDist < 15 && _arcHitCd <= 0) {
             game.player.takeDamage();
+            _arcHitCd = 0.5;
           }
         }
       }

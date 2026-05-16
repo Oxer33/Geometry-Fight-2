@@ -207,7 +207,10 @@ abstract class EnemyBase extends PositionComponent
     removeFromParent();
   }
 
-  Vector2 get playerPosition => game.player.position;
+  Vector2 get playerPosition {
+    if (!game.player.isMounted) return position;
+    return game.player.position;
+  }
 
   Vector2 seekPlayer(double maxSpeed) {
     final dir = (playerPosition - position);

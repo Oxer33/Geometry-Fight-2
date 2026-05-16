@@ -14,6 +14,9 @@ class LaserTurretEnemy extends EnemyBase {
   double _warmupTimer = 1.5; // Tempo prima che il laser si attivi
   bool _laserActive = false;
   static const double _laserLength = 250.0;
+  // Cooldown sul danno al player: il raggio era un check per-frame → 60 danni/sec.
+  // Con 0.5s di cooldown il player può comunque uscire dal cono di rotazione.
+  double _hitCd = 0;
 
   // Paint caches: evita 2× alloc/frame × N turret a schermo.
   static final Paint _cannonPaint = Paint()
@@ -43,8 +46,9 @@ class LaserTurretEnemy extends EnemyBase {
 
     // Ruota il laser
     _laserAngle += _laserSpeed * dt;
+    if (_hitCd > 0) _hitCd -= dt;
 
-    // Check danno al player
+    // Check danno al player (con cooldown 0.5s tra hit per evitare 60 dmg/sec).
     if (_laserActive) {
       final laserEnd = position + Vector2(
         math.cos(_laserAngle) * _laserLength,
@@ -52,8 +56,9 @@ class LaserTurretEnemy extends EnemyBase {
       );
       // Distanza punto-segmento player-laser
       final playerDist = _distToSegment(playerPosition, position, laserEnd);
-      if (playerDist < 12) {
+      if (playerDist < 12 && _hitCd <= 0) {
         game.player.takeDamage();
+        _hitCd = 0.5;
       }
     }
   }

@@ -161,20 +161,6 @@ class SingularityBoss extends BossBase {
     }
   }
 
-  // ignore: unused_element
-  void _blackRain() {
-    for (int i = 0; i < 5; i++) {
-      final x = playerPosition.x + (_rng.nextDouble() - 0.5) * 400;
-      final bullet = EnemyBullet(
-        direction: Vector2(0, 1),
-        speed: 300,
-        color: NeonColors.darkRed,
-      );
-      bullet.position = Vector2(x, playerPosition.y - 500);
-      game.world.add(bullet);
-    }
-  }
-
   // Paint cache FX
   static final _darkPaint = Paint()..color = const Color(0xFF050505);
   static final _greenGlowPaint = Paint();
@@ -260,7 +246,7 @@ class SingularityBoss extends BossBase {
     // ─── PULL INDICATOR (ring viola espansivi) ───
     if (_pulling) {
       for (int ring = 0; ring < 3; ring++) {
-        final ringR = r + 20 + ring * 30 + (_pullDuration * 50);
+        final ringR = r + 20 + ring * 30 + ((3.0 - _pullDuration) * 50);
         _pullPaint.color =
             NeonColors.purple.withValues(alpha: 0.35 - ring * 0.1);
         _pullPaint.strokeWidth = 2;

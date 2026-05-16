@@ -90,7 +90,7 @@ class GridDistortion extends PositionComponent {
         final dy = node.position.y - center.y;
         final distSq = dx * dx + dy * dy;
         if (distSq < radiusSq && distSq > minDistSq) {
-          final dist = node.position.distanceTo(center);
+          final dist = math.sqrt(distSq);
           final strength = force * (1.0 - dist / radius);
           final dir = (node.position - center)..normalize();
           node.velocity += dir * strength;
@@ -110,7 +110,7 @@ class GridDistortion extends PositionComponent {
         final dy = node.position.y - center.y;
         final distSq = dx * dx + dy * dy;
         if (distSq < radiusSq && distSq > minDistSq) {
-          final dist = node.position.distanceTo(center);
+          final dist = math.sqrt(distSq);
           final strength = force * (1.0 - dist / radius);
           final dir = (center - node.position)..normalize();
           node.velocity += dir * strength;
@@ -132,30 +132,38 @@ class GridDistortion extends PositionComponent {
     // A 120fps: aggiorna ogni 2 frame con dt doppio → metà CPU, fisica identica
     _physicsAccumulator += dt;
     if (_physicsAccumulator < _physicsStep) return;
-    // Clamp: max 4 step accumulati (~66ms) — previene esplosione spring su app resume
-    final stepDt = _physicsAccumulator.clamp(0.0, _physicsStep * 4);
-    _physicsAccumulator = 0.0;
 
     // Damping frame-rate independent: esponente normalizza per frequenza
     // Identico visivamente a 30, 60 o 120fps
-    final frameDamping = math.pow(gridDamping, stepDt * 60).toDouble();
+    final frameDamping = math.pow(gridDamping, _physicsStep * 60).toDouble();
 
     bool stillActive = false;
-    for (final row in _nodes) {
-      for (final node in row) {
-        // Spring back to rest
-        final displacement = node.restPosition - node.position;
-        node.velocity += displacement * gridSpringStiffness * stepDt;
+    // Substeps loop: consuma l'accumulatore in step fissi, max 4 iterazioni
+    // (~66ms) — previene esplosione spring dopo app resume / long frame.
+    int iterations = 0;
+    while (_physicsAccumulator >= _physicsStep && iterations < 4) {
+      for (final row in _nodes) {
+        for (final node in row) {
+          // Spring back to rest
+          final displacement = node.restPosition - node.position;
+          node.velocity += displacement * gridSpringStiffness * _physicsStep;
 
-        // Damping normalizzato per dt
-        node.velocity *= frameDamping;
+          // Damping normalizzato per dt
+          node.velocity *= frameDamping;
 
-        // Update position
-        node.position += node.velocity * stepDt;
+          // Update position
+          node.position += node.velocity * _physicsStep;
 
-        // Check if any node still has meaningful velocity
-        if (node.velocity.length2 > 0.1) stillActive = true;
+          // Check if any node still has meaningful velocity
+          if (node.velocity.length2 > 0.1) stillActive = true;
+        }
       }
+      _physicsAccumulator -= _physicsStep;
+      iterations++;
+    }
+    // Scarta eventuale residuo se abbiamo raggiunto il cap di iterazioni
+    if (iterations >= 4) {
+      _physicsAccumulator = 0.0;
     }
     // Quando tutti i nodi si sono fermati, disabilita updates finché
     // non arriva una nuova esplosione (applyForce/applyAttraction)

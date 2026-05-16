@@ -132,7 +132,7 @@ class HydraBoss extends BossBase {
     // ENRAGE @ 40% (utente). headCount=0 triggera _rageMode → phase 3.
     final p = healthPercent;
     if (p <= 0.40) return 0; // rage mode
-    if (p <= 0.55) return 3;
+    if (p <= 0.50) return 3;
     if (p <= 0.75) return 2;
     return 1;
   }

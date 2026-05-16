@@ -86,6 +86,8 @@ class Geom extends PositionComponent
 
     if (dist < magnetRange) {
       _attracted = true;
+    } else {
+      _attracted = false;
     }
 
     if (_attracted) {

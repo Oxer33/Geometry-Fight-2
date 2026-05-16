@@ -16,6 +16,9 @@ class ProtonEnemy extends EnemyBase {
 
   // Paint cache: evita alloc per frame × N proton.
   static final Paint _streakPaint = Paint()..strokeWidth = 0.5;
+  static final Paint _ringPaint = Paint()..style = PaintingStyle.stroke;
+  // Random statico condiviso (evita alloc per ogni proton spawnato).
+  static final math.Random _rng = math.Random();
 
   ProtonEnemy({Vector2? direction, super.speed = 280})
       : super(
@@ -28,7 +31,7 @@ class ProtonEnemy extends EnemyBase {
     if (direction != null) {
       _moveDir = direction.normalized();
     } else {
-      final angle = math.Random().nextDouble() * math.pi * 2;
+      final angle = _rng.nextDouble() * math.pi * 2;
       _moveDir = Vector2(math.cos(angle), math.sin(angle));
     }
     // Nessuna invulnerabilità spawn: i Proton sono generati in-game da esplosione,
@@ -120,15 +123,13 @@ class ProtonEnemy extends EnemyBase {
     canvas.drawCircle(Offset(cx, cy), r, paint);
 
     if (scale <= 1.01) {
-      // Anello orbitale rotante
-      final ringPaint = Paint()
-        ..color = paint.color.withValues(alpha: 0.3)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 0.5;
+      // Anello orbitale rotante (paint cache: mutate color + strokeWidth only)
+      _ringPaint.color = paint.color.withValues(alpha: 0.3);
+      _ringPaint.strokeWidth = 0.5;
       canvas.save();
       canvas.translate(cx, cy);
       canvas.rotate(idlePhase * 8);
-      canvas.drawOval(Rect.fromCenter(center: Offset.zero, width: r * 2.2, height: r * 1.0), ringPaint);
+      canvas.drawOval(Rect.fromCenter(center: Offset.zero, width: r * 2.2, height: r * 1.0), _ringPaint);
       canvas.restore();
 
       // Nucleo bianco brillante

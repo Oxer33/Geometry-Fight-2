@@ -17,6 +17,7 @@ class ChronoWraithBoss extends BossBase {
   bool _timeWarping = false;
   double _timeWarpDuration = 0;
   double _warpShotTimer = 0;
+  double _priorTimeScale = 1.0;
 
   ChronoWraithBoss()
       : super(
@@ -90,6 +91,7 @@ class ChronoWraithBoss extends BossBase {
       _timeWarpTimer = 8.0;
       _warpShotTimer = 0;
       // Slow everything except boss
+      _priorTimeScale = game.timeScale;
       game.timeScale = 0.3;
     }
 
@@ -98,7 +100,7 @@ class ChronoWraithBoss extends BossBase {
       if (_timeWarpDuration <= 0) {
         _timeWarping = false;
         if (game.slowMoTimer <= 0) {
-          game.timeScale = game.player.timeSlowTimer > 0 ? 0.4 : 1.0;
+          game.timeScale = _priorTimeScale;
         }
       }
 
@@ -154,8 +156,8 @@ class ChronoWraithBoss extends BossBase {
   @override
   void onRemove() {
     // FIX C9b: Ripristina timeScale se il boss viene rimosso per qualsiasi ragione
-    if (game.timeScale < 1.0 && game.slowMoTimer <= 0) {
-      game.timeScale = 1.0;
+    if (_priorTimeScale != game.timeScale) {
+      game.timeScale = _priorTimeScale;
     }
     super.onRemove();
   }

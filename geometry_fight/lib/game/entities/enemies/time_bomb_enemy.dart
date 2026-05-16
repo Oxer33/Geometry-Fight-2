@@ -79,10 +79,13 @@ class TimeBombEnemy extends EnemyBase {
       game.grid.applyForce(position, _explosionRadius * 1.5, 1500);
     }
     game.triggerScreenShake(8, 0.4);
-    // Delegano a super per settare EnemyBase._isDead + onEnemyKilled +
-    // removeFromParent — evita che un killSilently successivo (bomba/gate)
-    // esploda di nuovo e conti un secondo kill.
-    super.onDeath();
+    // Direct cleanup invece di super.onDeath() per evitare la seconda
+    // esplosione standard di EnemyBase.onDeath() (abbiamo già spawnato la
+    // mega-esplosione area sopra). Local `_dead` previene re-entry; chiamata
+    // a `onEnemyKilled` + `removeFromParent()` replica gli effetti collaterali
+    // critici di EnemyBase.onDeath senza il secondo spawnExplosion.
+    game.onEnemyKilled(this);
+    removeFromParent();
   }
 
   @override

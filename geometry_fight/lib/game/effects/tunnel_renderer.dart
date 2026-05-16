@@ -20,7 +20,11 @@ class TunnelRenderer extends PositionComponent
   static final _random = math.Random();
 
   // Cached static Paints — muri tunnel bianco fluo (spessore dimezzato rispetto pre)
+  // Precomputed glow color: white @ alpha 0.15 → ARGB 0x26FFFFFF.
+  // Caches `withValues` result so we never recompute it inside the render loop.
+  static const Color _wallGlowColor = Color(0x26FFFFFF);
   static final _wallGlowPaint = Paint()
+    ..color = _wallGlowColor
     ..style = PaintingStyle.stroke
     ..strokeWidth = 20;
   static final _wallMainPaint = Paint()
@@ -316,10 +320,11 @@ class TunnelRenderer extends PositionComponent
   }
 
   // Path cache riutilizzati: 4 Path × 60fps = 240 alloc/sec risparmiate.
-  static final Path _topWallPath = Path();
-  static final Path _bottomWallPath = Path();
-  static final Path _topInnerPath = Path();
-  static final Path _bottomInnerPath = Path();
+  // Instance fields (no static) — evita race se più TunnelRenderer attivi.
+  final Path _topWallPath = Path();
+  final Path _bottomWallPath = Path();
+  final Path _topInnerPath = Path();
+  final Path _bottomInnerPath = Path();
 
   void _renderTunnelWalls(Canvas canvas, double startX, double endX,
       double topY, double bottomY) {
@@ -341,7 +346,8 @@ class TunnelRenderer extends PositionComponent
     }
 
     // Glow esterno dei muri — bianco fluo spesso
-    _wallGlowPaint.color = const Color(0xFFFFFFFF).withValues(alpha: 0.15);
+    // Color pre-cached in _wallGlowColor (set at Paint init) — no per-frame
+    // withValues recompute.
     canvas.drawPath(topPath, _wallGlowPaint);
     canvas.drawPath(bottomPath, _wallGlowPaint);
 

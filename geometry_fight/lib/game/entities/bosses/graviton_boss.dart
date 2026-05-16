@@ -69,20 +69,26 @@ class GravitonBoss extends BossBase {
     final toPlayer = playerPosition - position;
     final dist = toPlayer.length;
     if (dist < _gravityRadius && dist > 10) {
-      final strength = 120 * dt * (1 - dist / _gravityRadius);
-      // Pull: muove il player VERSO il boss (direzione opposta a toPlayer)
-      // Push: muove il player LONTANO dal boss (stessa direzione di toPlayer)
-      final dir = _isPulling ? -1.0 : 1.0;
-      game.player.position += toPlayer.normalized() * strength * dir;
-      // Clamp post-gravity: push può spingere il player fuori arena.
-      if (game.isTunnelMode) {
-        final camY = game.camera.viewfinder.position.y;
-        final halfH = game.tunnelHeight / 2;
-        game.player.position.y = game.player.position.y
-            .clamp(camY - halfH + 10, camY + halfH - 10);
-      } else {
-        game.player.position.x = game.player.position.x.clamp(10.0, arenaWidth - 10);
-        game.player.position.y = game.player.position.y.clamp(10.0, arenaHeight - 10);
+      if (!game.player.isInvincible) {
+        final strength = 120 * dt * (1 - dist / _gravityRadius);
+        // Pull: muove il player VERSO il boss (direzione opposta a toPlayer)
+        // Push: muove il player LONTANO dal boss (stessa direzione di toPlayer)
+        final dir = _isPulling ? -1.0 : 1.0;
+        game.player.position += toPlayer.normalized() * strength * dir;
+        // Clamp post-gravity: push può spingere il player fuori arena.
+        if (game.isTunnelMode) {
+          final camX = game.camera.viewfinder.position.x;
+          final halfW = game.size.x > 0 ? game.size.x / 2 : 400.0;
+          final camY = game.camera.viewfinder.position.y;
+          final halfH = game.tunnelHeight / 2;
+          game.player.position.x = game.player.position.x
+              .clamp(camX - halfW + 10, camX + halfW - 10);
+          game.player.position.y = game.player.position.y
+              .clamp(camY - halfH + 10, camY + halfH - 10);
+        } else {
+          game.player.position.x = game.player.position.x.clamp(10.0, arenaWidth - 10);
+          game.player.position.y = game.player.position.y.clamp(10.0, arenaHeight - 10);
+        }
       }
     }
 
@@ -252,7 +258,7 @@ class _GravBullet extends PositionComponent with HasGameReference<GeometryFightG
     _lifetime -= dt;
     if (_lifetime <= 0) removeFromParent();
     if (position.distanceTo(game.player.position) < 14) {
-      game.player.takeDamage();
+      if (!game.player.isInvincible) game.player.takeDamage();
       removeFromParent();
     }
   }

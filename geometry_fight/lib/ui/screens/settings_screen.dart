@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -71,7 +73,7 @@ class _SettingsScreenState extends State<SettingsScreen>
     AudioSystem.setBgmVolume(_bgmVolume);
     AudioSystem.setVibration(_vibration);
     // Live update del player BGM (slider music = effetto immediato)
-    MusicManager.setVolume(_bgmVolume);
+    unawaited(MusicManager.setVolume(_bgmVolume));
   }
 
   /// Mostra i crash log raccolti da CrashReporter. L'utente può copiarli
@@ -792,7 +794,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                 AudioSystem.setSfxVolume(_sfxVolume);
                 AudioSystem.setBgmVolume(_bgmVolume);
                 AudioSystem.setVibration(_vibration);
-                MusicManager.setVolume(_bgmVolume);
+                unawaited(MusicManager.setVolume(_bgmVolume));
               }
             },
             child: Container(

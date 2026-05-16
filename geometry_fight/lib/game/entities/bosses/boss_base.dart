@@ -94,6 +94,7 @@ abstract class BossBase extends PositionComponent
 
   @override
   void update(double dt) {
+    if (_onDeathFired) return;
     // Il boss ignora il powerup TimeSlow: compensa il timeScale con realDt.
     // Durante un burst slow-mo (bomba/morte) senza powerup attivo, rallenta normalmente.
     // Threshold 0.2 (non 0.01) evita amplificazioni estreme: se timeScale=0.011
@@ -130,9 +131,7 @@ abstract class BossBase extends PositionComponent
     // setup di fase intermedia (spawn, pattern attacco, ecc).
     final newPhase = getPhase();
     if (newPhase != currentPhase) {
-      if (_phaseFlashTimer <= 0) {
-        _triggerPhaseFx();
-      }
+      _triggerPhaseFx();
       // Step through intermediate phases one at a time (supports both skip-up
       // e skip-down — es. heal powerup che ripristina HP potrebbe regredire).
       final step = newPhase > currentPhase ? 1 : -1;

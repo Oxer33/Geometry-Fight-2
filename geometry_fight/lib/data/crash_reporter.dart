@@ -108,7 +108,7 @@ class CrashReporter {
         if (existing.length > _kMaxEntries) {
           existing.removeRange(0, existing.length - _kMaxEntries);
         }
-        await _prefs!.setStringList(_kKey, existing);
+        await _prefs?.setStringList(_kKey, existing);
       }).catchError((_) {});
       unawaited(_writeChain);
     } catch (_) {}

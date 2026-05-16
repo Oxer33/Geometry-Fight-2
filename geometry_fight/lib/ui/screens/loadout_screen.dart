@@ -51,13 +51,13 @@ class _LoadoutScreenState extends State<LoadoutScreen> {
 
   void _selectWeapon(String id) {
     if (!_saveData.unlockedWeapons.contains(id)) return;
-    setState(() => _saveData.startingWeapon = id);
+    setState(() => _saveData = _saveData.copyWith(startingWeapon: id));
     SaveManager.save(_saveData);
   }
 
   void _selectPet(String id) {
     if (id != 'none' && !_saveData.unlockedPets.contains(id)) return;
-    setState(() => _saveData.activePet = id);
+    setState(() => _saveData = _saveData.copyWith(activePet: id));
     SaveManager.save(_saveData);
   }
 

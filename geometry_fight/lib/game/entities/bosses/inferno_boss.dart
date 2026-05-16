@@ -1,3 +1,4 @@
+import 'dart:collection';
 import 'dart:math' as math;
 import 'dart:ui';
 import 'package:flame/components.dart';
@@ -15,7 +16,7 @@ class InfernoBoss extends BossBase {
   double _flamePhase = 0;
   double _attackTimer = 3.0;
   double _moveAngle = 0;
-  final List<_FlameTrail> _trails = [];
+  final ListQueue<_FlameTrail> _trails = ListQueue<_FlameTrail>();
   // Cooldown boss-level: 60 trails sovrapposti sul player non devono
   // causare 60 takeDamage nello stesso frame (oltre iframe player).
   double _anyTrailHitTimer = 0;
@@ -58,29 +59,29 @@ class InfernoBoss extends BossBase {
     }
 
     // Lascia scia di fuoco
-    _trails.add(_FlameTrail(position: position.clone(), lifetime: 3.0));
+    _trails.addLast(_FlameTrail(position: position.clone(), lifetime: 3.0));
     // Boss-level cooldown decrement.
     if (_anyTrailHitTimer > 0) _anyTrailHitTimer -= dt;
-    // Aggiorna e rimuovi trails
-    for (int i = _trails.length - 1; i >= 0; i--) {
-      final trail = _trails[i];
+    // Aggiorna lifetimes e check hit (iterazione in order).
+    for (final trail in _trails) {
       trail.lifetime -= dt;
-      if (trail.lifetime <= 0) {
-        _trails.removeAt(i);
-      } else if (_anyTrailHitTimer <= 0) {
+      if (trail.lifetime > 0 && _anyTrailHitTimer <= 0) {
         // Cooldown BOSS-level: se ANY trail hit, skip altri per 0.5s.
         // Evita che 60 trail sovrapposti causino 60 takeDamage in un frame.
         final dist = game.player.position.distanceTo(trail.position);
         if (dist < 15) {
           game.player.takeDamage();
           _anyTrailHitTimer = 0.5;
-          break;
         }
       }
     }
+    // I trail più vecchi (head della queue) scadono per primi: removeFirst O(1).
+    while (_trails.isNotEmpty && _trails.first.lifetime <= 0) {
+      _trails.removeFirst();
+    }
     // Limita trails
     while (_trails.length > 60) {
-      _trails.removeAt(0);
+      _trails.removeFirst();
     }
 
     // Attacco: proiettili di fuoco
@@ -223,7 +224,7 @@ class _FireBullet extends PositionComponent with HasGameReference<GeometryFightG
     _lifetime -= dt;
     if (_lifetime <= 0) removeFromParent();
     if (position.distanceTo(game.player.position) < 14) {
-      game.player.takeDamage();
+      if (!game.player.isInvincible) game.player.takeDamage();
       removeFromParent();
     }
   }

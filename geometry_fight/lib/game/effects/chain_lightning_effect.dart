@@ -26,6 +26,7 @@ class ChainLightningEffect extends PositionComponent {
   final Paint _corePaint = Paint()
     ..style = PaintingStyle.stroke
     ..strokeWidth = 1.0;
+  final Path _segmentPath = Path();
 
   ChainLightningEffect({
     required List<Vector2> points,
@@ -58,16 +59,17 @@ class ChainLightningEffect extends PositionComponent {
     final steps = (dist / 18).clamp(2, 12).toInt();
     final dir = (b - a) / steps.toDouble();
     final perp = Vector2(-dir.y, dir.x).normalized();
-    final path = Path()..moveTo(a.x, a.y);
+    _segmentPath.reset();
+    _segmentPath.moveTo(a.x, a.y);
     for (int s = 1; s < steps; s++) {
       final base = a + dir * s.toDouble();
       final jitter = (_rng.nextDouble() - 0.5) * 12;
       final p = base + perp * jitter;
-      path.lineTo(p.x, p.y);
+      _segmentPath.lineTo(p.x, p.y);
     }
-    path.lineTo(b.x, b.y);
-    canvas.drawPath(path, _glowPaint);
-    canvas.drawPath(path, _bodyPaint);
-    canvas.drawPath(path, _corePaint);
+    _segmentPath.lineTo(b.x, b.y);
+    canvas.drawPath(_segmentPath, _glowPaint);
+    canvas.drawPath(_segmentPath, _bodyPaint);
+    canvas.drawPath(_segmentPath, _corePaint);
   }
 }

@@ -888,12 +888,10 @@ class GeometryFightGame extends FlameGame
     double minDist = double.infinity;
     // Campiona solo i primi 40 nemici per evitare O(N) costoso con 150 attivi
     int checked = 0;
-    for (final child in world.children) {
-      if (child is EnemyBase) {
-        final d = child.position.distanceToSquared(pos);
-        if (d < minDist) minDist = d;
-        if (++checked >= 40) break;
-      }
+    for (final child in world.children.whereType<EnemyBase>()) {
+      final d = child.position.distanceToSquared(pos);
+      if (d < minDist) minDist = d;
+      if (++checked >= 40) break;
     }
     return minDist;
   }
@@ -1206,7 +1204,7 @@ class GeometryFightGame extends FlameGame
       saveData.playedModes.add(gameMode.name);
     }
 
-    SaveManager.save(saveData);
+    unawaited(SaveManager.save(saveData));
   }
 
   void onPlayerDeath() {
@@ -1419,6 +1417,7 @@ class GeometryFightGame extends FlameGame
     // Rimuovi screenShake dal viewfinder prima di pulire il world
     screenShake.removeFromParent();
 
+    activePet = null;
     world.removeAll(world.children.toList());
     gameState = GameState.playing;
     timeScale = 1.0;

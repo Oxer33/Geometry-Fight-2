@@ -50,10 +50,17 @@ class MirrorMasterBoss extends BossBase {
         : arenaHeight / 2;
     // Triangolo: 3 specchi ai vertici di un triangolo equilatero attorno al centro.
     const r = 180.0;
+    final yMin = game.camera.viewfinder.position.y - 200;
+    final yMax = game.camera.viewfinder.position.y + 200;
     for (int i = 0; i < 3; i++) {
       final ang = i * math.pi * 2 / 3 - math.pi / 2;
+      final mx = cx + math.cos(ang) * r;
+      var my = cy + math.sin(ang) * r;
+      if (game.isTunnelMode) {
+        my = my.clamp(yMin, yMax);
+      }
       _mirrors.add(_FloorMirror()
-        ..position = Vector2(cx + math.cos(ang) * r, cy + math.sin(ang) * r)
+        ..position = Vector2(mx, my)
         ..angle = ang + math.pi / 2);
     }
     _mirrorsSpawned = true;
@@ -111,9 +118,8 @@ class MirrorMasterBoss extends BossBase {
     // "reflected" ogni frame fino alla rimozione effettiva → rain di
     // _MirrorBullet. `wasReflected` + `isRemoved` guard + snapshot list
     // (niente concurrent modification su game.world.children).
-    final childrenSnapshot = game.world.children.toList(growable: false);
-    for (final child in childrenSnapshot) {
-      if (child is! PlayerBullet) continue;
+    final bullets = game.world.children.whereType<PlayerBullet>().toList();
+    for (final child in bullets) {
       if (child.wasReflected || child.isRemoved) continue;
       for (final m in _mirrors) {
         if (!m.alive) continue;
@@ -343,7 +349,7 @@ class _MirrorBullet extends PositionComponent with HasGameReference<GeometryFigh
     _lifetime -= dt;
     if (_lifetime <= 0) removeFromParent();
     if (position.distanceTo(game.player.position) < 14) {
-      game.player.takeDamage();
+      if (!game.player.isInvincible) game.player.takeDamage();
       removeFromParent();
     }
   }

@@ -175,9 +175,9 @@ class NexusPrimeBoss extends BossBase {
     // BUG FIX: iterare game.world.children mentre si chiama removeFromParent
     // può causare ConcurrentModificationError (Flame rimuove fine frame ma la
     // collection interna può mutare). Snapshot + isRemoved guard.
-    final nexusChildrenSnapshot = game.world.children.toList(growable: false);
-    for (final child in nexusChildrenSnapshot) {
-      if (child is! PlayerBullet) continue;
+    final nexusBullets =
+        game.world.children.whereType<PlayerBullet>().toList();
+    for (final child in nexusBullets) {
       if (child.isRemoved) continue;
       for (final s in _satellites) {
         if (!s.alive) continue;

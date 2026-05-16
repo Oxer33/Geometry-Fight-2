@@ -399,8 +399,8 @@ class _NeonPauseButtonState extends State<_NeonPauseButton>
 }
 
 class _PauseParticlesPainter extends CustomPainter {
-  // Static cache: evita alloc per frame × 20 particles.
-  static final Paint _paintCache = Paint()..style = PaintingStyle.fill;
+  // Instance cache: evita alloc per frame × 20 particles.
+  final Paint _paintCache = Paint()..style = PaintingStyle.fill;
 
   final double time;
   final double opacity;
@@ -441,6 +441,7 @@ class _PauseParticlesPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant _PauseParticlesPainter old) => true;
+  bool shouldRepaint(covariant _PauseParticlesPainter old) =>
+      old.time != time || old.opacity != opacity;
 }
 

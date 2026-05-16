@@ -17,7 +17,6 @@ class MutatorEnemy extends EnemyBase {
   EnemyBase? _target;
   double _pulsePhase = 0;
   int _mutationsCount = 0; // Quanti nemici ha potenziato
-  bool _dead = false; // Guard per double-kill
   static const int _maxMutations = 8; // Si autodistrugge dopo 8 potenziamenti
 
   MutatorEnemy()
@@ -60,22 +59,17 @@ class MutatorEnemy extends EnemyBase {
       position += Vector2(math.cos(angle), math.sin(angle)) * speed * 0.3 * dt;
     }
 
-    // Autodistruzione dopo troppe mutazioni
-    if (_mutationsCount >= _maxMutations && !_dead) {
-      _dead = true;
+    // Autodistruzione dopo troppe mutazioni — delega a super.onDeath() che ha
+    // già il guard `_isDead` interno (EnemyBase), evita double-kill.
+    if (_mutationsCount >= _maxMutations) {
       onDeath();
-      return; // Non continuare dopo la morte
+      return;
     }
   }
 
   @override
   void onDeath() {
-    if (_dead) {
-      // Già in fase di morte (autodistruzione) — evita double-kill
-      super.onDeath();
-      return;
-    }
-    _dead = true;
+    // EnemyBase.onDeath() ha già il guard `_isDead` → safe contro double-fire.
     super.onDeath();
   }
 

@@ -75,10 +75,14 @@ class LeaderboardManager {
     for (final key in _box.keys) {
       final raw = _box.get(key);
       if (raw != null) {
-        final list = List<Map<String, dynamic>>.from(
-          (raw as List).map((e) => Map<String, dynamic>.from(e)),
-        );
-        all.addAll(list.map((e) => LeaderboardEntry.fromJson(e)));
+        try {
+          final list = List<Map<String, dynamic>>.from(
+            (raw as List).map((e) => Map<String, dynamic>.from(e)),
+          );
+          all.addAll(list.map((e) => LeaderboardEntry.fromJson(e)));
+        } catch (_) {
+          // skip malformed entries
+        }
       }
     }
     all.sort((a, b) => b.score.compareTo(a.score));

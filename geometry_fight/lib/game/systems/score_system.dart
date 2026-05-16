@@ -74,4 +74,15 @@ class ScoreSystem {
     // NOTA: geomValueMultiplier, scoreMultiplier e modifierMultiplier NON resettati qui
     // perché sono settati dalla difficoltà/modifier in game_world
   }
+
+  /// Reset completo: oltre allo stato base, azzera anche i moltiplicatori
+  /// di difficoltà/modifier (geomValueMultiplier, scoreMultiplier,
+  /// modifierMultiplier). Usare quando si torna al menu principale o
+  /// si vuole uno stato pulito senza dipendere da configurazioni esterne.
+  void resetAll() {
+    reset();
+    geomValueMultiplier = 1.0;
+    scoreMultiplier = 1.0;
+    modifierMultiplier = 1.0;
+  }
 }

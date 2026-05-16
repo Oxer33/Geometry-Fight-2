@@ -93,6 +93,17 @@ class WaveSystem {
   }
 
   double _delayBeforeNextGroup() {
+    assert(
+      _currentConfig != null &&
+          _spawnIndex < _currentConfig!.spawns.length,
+      'spawnIndex out of bounds',
+    );
+    // Difensiva runtime: l'assert vale solo in debug, in release ritorna 0
+    // se l'indice è fuori range invece di crashare con range error.
+    if (_currentConfig == null ||
+        _spawnIndex >= _currentConfig!.spawns.length) {
+      return 0.0;
+    }
     // Richiesta design: in modalità classica ogni gruppo (tipo nemico) arriva
     // a cadenza fissa, così la wave è più leggibile.
     if (_mode == GameMode.classic) {
@@ -188,10 +199,13 @@ class WaveSystem {
         );
     }
 
-    // Wave senza gruppi spawnabili: considera subito "all spawned"
+    // Wave senza gruppi spawnabili: considera subito "all spawned".
+    // PostSpawnDelay 0.8s evita race: senza un piccolo buffer, una wave
+    // boss-only senza spawns può completare in zero frame e collidere col
+    // ciclo di spawn del boss async.
     if (_currentConfig!.spawns.isEmpty) {
       _allSpawned = true;
-      _postSpawnDelay = 0;
+      _postSpawnDelay = 0.8;
     }
 
     // Check for boss — spawna solo se non c'è già un boss attivo
@@ -295,6 +309,10 @@ class WaveSystem {
   }
 
   void _completeWave() {
+    // Re-entry guard: senza questo, due chiamate ravvicinate (es. boss
+    // defeated + timeout nello stesso frame) doppiavano `onWaveComplete`
+    // e scheduling di `_pendingWave`.
+    if (!_waveActive) return;
     _waveActive = false;
 
     // Notifica il game che la wave è completa (per Perfect Wave bonus)
@@ -571,9 +589,16 @@ class WaveSystem {
     _tunnelSpawnTimer -= dt;
     if (_tunnelBossCooldown > 0) _tunnelBossCooldown -= dt;
 
-    // Mantieni almeno 10 nemici attivi (era 20)
+    // Mantieni almeno 10 nemici attivi (era 20).
+    // OR intenzionale: due condizioni di spawn legittime e indipendenti —
+    // (a) il timer è scaduto, oppure (b) il count è sotto la soglia minima.
+    // Il reset di `_tunnelSpawnTimer` qui sotto vale per entrambi i path
+    // (anche quello count-based), così non si ha double-fire nel frame
+    // successivo.
     if (_tunnelSpawnTimer <= 0 || game.enemyCount < 10) {
-      // Timer raddoppiato: 0.6-1.6s invece di 0.3-0.8s
+      // Timer raddoppiato: 0.6-1.6s invece di 0.3-0.8s.
+      // Reset incondizionato: copre sia il path "timer scaduto" sia
+      // "count basso" → niente double-fire al prossimo frame.
       _tunnelSpawnTimer = 0.6 + _tunnelRng.nextDouble() * 1.0;
 
       // Batch dimezzato: 2-4 nemici (era 4-8)

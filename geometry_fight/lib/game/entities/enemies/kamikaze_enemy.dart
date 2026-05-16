@@ -59,12 +59,17 @@ class KamikazeEnemy extends EnemyBase {
           _stateTimer = 1.2;
         }
       case KamikazeState.rushing:
-        position += _rushDirection! * speed * dt;
+        // Null-safe: se per qualche motivo _rushDirection è null (es. transizione
+        // di stato race), fallback a zero invece di crashare con `!`.
+        position += (_rushDirection ?? Vector2.zero()) * speed * dt;
         // Arena clamp in rush: EnemyBase.update clampa la pos al bordo arena
         // DOPO updateBehavior, ma senza transizione di stato il kamikaze
         // restava inchiodato al muro per tutto `_stateTimer` continuando a
         // premere contro il bordo. Check TOUCH bordo (non 50px past) → passa
         // subito a recovering così il prossimo charge può ritargettare.
+        // NOTE: in tunnel mode arenaWidth is the static arena bound; no
+        // tunnel-aware horizontal getter exists. EnemyBase.update already
+        // handles tunnel Y clamping after updateBehavior.
         final hx = size.x / 2;
         final hy = size.y / 2;
         if (position.x <= hx || position.x >= arenaWidth - hx ||

@@ -17,6 +17,8 @@ class OrbiterEnemy extends EnemyBase {
 
   // Paint cache: evita alloc per frame × N orbiter.
   static final Paint _ringPaint = Paint()..style = PaintingStyle.stroke;
+  // Random statico condiviso (evita alloc per ogni orbiter spawnato).
+  static final math.Random _rng = math.Random();
 
   OrbiterEnemy()
       : super(
@@ -27,7 +29,7 @@ class OrbiterEnemy extends EnemyBase {
           neonColor: const Color(0xFFFF9933),
           size: Vector2(20, 20),
         ) {
-    _orbitAngle = math.Random().nextDouble() * math.pi * 2;
+    _orbitAngle = _rng.nextDouble() * math.pi * 2;
   }
 
   @override
@@ -122,6 +124,12 @@ class _OrbiterBullet extends PositionComponent
   @override
   void update(double dt) {
     super.update(dt);
+    // Guard contro race: se player è già stato smontato (game over,
+    // transizione scena), rimuovi il bullet invece di accedere a player.position.
+    if (!game.player.isMounted) {
+      removeFromParent();
+      return;
+    }
     position += _velocity * dt;
     _lifetime -= dt;
     if (_lifetime <= 0) removeFromParent();

@@ -136,7 +136,7 @@ class _GameHudState extends State<GameHud> {
               // === BARRA HP BOSS (in basso, piccola e non invasiva) ===
               if (game.activeBoss != null)
                 Positioned(
-                  bottom: 30,
+                  bottom: 30 + MediaQuery.of(context).padding.bottom,
                   left: MediaQuery.of(context).size.width * 0.3,
                   right: MediaQuery.of(context).size.width * 0.3,
                   child: _BossHpBar(
@@ -205,7 +205,7 @@ class _GameHudState extends State<GameHud> {
 
               // === NEMICI RIMANENTI (mini-bar in basso al centro) ===
               Positioned(
-                bottom: 8,
+                bottom: 8 + MediaQuery.of(context).padding.bottom,
                 left: 0,
                 right: 0,
                 child: Center(
@@ -1010,18 +1010,16 @@ class _LifeIconPainter extends CustomPainter {
   static final Paint _glowPaint = Paint()
     ..color = const Color(0xFF00FFFF).withValues(alpha: 0.3)
     ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
-  static final Path _path = Path();
 
   @override
   void paint(Canvas canvas, Size size) {
-    _path.reset();
-    _path
+    final path = Path()
       ..moveTo(size.width / 2, 0)
       ..lineTo(size.width, size.height)
       ..lineTo(0, size.height)
       ..close();
-    canvas.drawPath(_path, _glowPaint);
-    canvas.drawPath(_path, _fillPaint);
+    canvas.drawPath(path, _glowPaint);
+    canvas.drawPath(path, _fillPaint);
   }
 
   @override
@@ -1035,7 +1033,6 @@ class _GeomIconPainter extends CustomPainter {
   static final Paint _glowPaint = Paint()
     ..color = const Color(0xFF00FFFF).withValues(alpha: 0.3)
     ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
-  static final Path _path = Path();
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -1043,16 +1040,15 @@ class _GeomIconPainter extends CustomPainter {
     final cy = size.height / 2;
     final r = size.width / 2;
 
-    _path.reset();
-    _path
+    final path = Path()
       ..moveTo(cx, cy - r)
       ..lineTo(cx + r * 0.6, cy)
       ..lineTo(cx, cy + r)
       ..lineTo(cx - r * 0.6, cy)
       ..close();
 
-    canvas.drawPath(_path, _glowPaint);
-    canvas.drawPath(_path, _fillPaint);
+    canvas.drawPath(path, _glowPaint);
+    canvas.drawPath(path, _fillPaint);
   }
 
   @override
@@ -1228,7 +1224,7 @@ class _ArrowPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant _ArrowPainter oldDelegate) => true;
+  bool shouldRepaint(covariant _ArrowPainter oldDelegate) => false;
 }
 
 class _EnemyDir {

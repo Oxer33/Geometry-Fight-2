@@ -83,6 +83,7 @@ class _ModifiersSelectScreenState extends State<ModifiersSelectScreen> {
   }
 
   void _toggle(String id) {
+    bool showCapSnack = false;
     setState(() {
       // Iter 9 fix: pattern immutable — replace list instead of in-place
       // mutation (rispetta global rule "ALWAYS create new objects").
@@ -91,20 +92,24 @@ class _ModifiersSelectScreenState extends State<ModifiersSelectScreen> {
       } else if (_active.length < _maxActive) {
         _active = [..._active, id];
       } else {
-        ScaffoldMessenger.of(context)
-          ..hideCurrentSnackBar()
-          ..showSnackBar(SnackBar(
-            duration: const Duration(milliseconds: 1200),
-            backgroundColor: const Color(0xFF0A0A1A),
-            behavior: SnackBarBehavior.floating,
-            content: Text('MAX $_maxActive MODIFICATORI',
-                style: const TextStyle(
-                    color: Colors.amber,
-                    fontFamily: 'monospace',
-                    fontWeight: FontWeight.w900)),
-          ));
+        showCapSnack = true;
       }
     });
+    if (showCapSnack) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(
+          duration: const Duration(milliseconds: 1200),
+          backgroundColor: const Color(0xFF0A0A1A),
+          behavior: SnackBarBehavior.floating,
+          content: Text('MAX $_maxActive MODIFICATORI',
+              style: const TextStyle(
+                  color: Colors.amber,
+                  fontFamily: 'monospace',
+                  fontWeight: FontWeight.w900)),
+        ));
+    }
   }
 
   @override

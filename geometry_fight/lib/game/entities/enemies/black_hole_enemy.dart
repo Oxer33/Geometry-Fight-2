@@ -76,7 +76,13 @@ class BlackHoleEnemy extends EnemyBase {
         final proximity = 1.0 - (toHole.length / playerPullRadius);
         // Nerf -30% (utente). Base 60→42, quad 240→168 → 42 bordo, 210 centro.
         final force = 42.0 + proximity * proximity * 168.0;
-        game.player.position += toHole.normalized() * force * dt;
+        final pullDir = toHole.normalized();
+        final delta = pullDir * force * dt;
+        // Safety cap: limit per-frame pull to 20px/axis to avoid teleporting
+        // the player across the arena on big dt spikes (frame stutter, pause).
+        delta.x = delta.x.clamp(-20.0, 20.0);
+        delta.y = delta.y.clamp(-20.0, 20.0);
+        game.player.position += delta;
         // Clamp post-pull (mirror void_kraken): evita trascinamento fuori
         // arena/tunnel se BH spawnato vicino al bordo.
         if (game.isTunnelMode) {

@@ -33,6 +33,14 @@ class LeechEnemy extends EnemyBase {
     _savedPlayerSpeed = null;
   }
 
+  /// Alias esplicito: resetta tutto lo stato statico globale dei leech.
+  /// Da chiamare su game-over / restart / scene transition per evitare
+  /// che lo speed multiplier del player resti agganciato a un riferimento stale.
+  static void resetAllAttachedState() {
+    _attachedCount = 0;
+    _savedPlayerSpeed = null;
+  }
+
   @override
   void onDeath() {
     if (_attached) {

@@ -27,6 +27,8 @@ class TheGridBoss extends BossBase {
   static final Paint _corePaint = Paint();
   static final Paint _centerWhitePaint = Paint();
   static final Paint _cornerPaint = Paint();
+  // Body paint cached: evita di mutare l'arg `paint` passato dal caller.
+  static final Paint _bodyPaint = Paint();
   static final Paint _phaseDotPaint = Paint();
   static final Paint _warnPaint = Paint()
     ..style = PaintingStyle.stroke
@@ -207,16 +209,17 @@ class TheGridBoss extends BossBase {
       phaseColor = NeonColors.red;
     }
 
-    // Se il paint è per il glow, usa alpha ridotto
+    // Se il paint è per il glow, usa alpha ridotto: copia colore in _bodyPaint
+    // invece di mutare l'arg `paint` (BossBase lo riusa per glow+main).
     final isGlow = scale > 1.1;
-    if (!isGlow) paint.color = phaseColor;
+    _bodyPaint.color = isGlow ? paint.color : phaseColor;
 
     // Quadrato esterno principale
-    paint.style = PaintingStyle.stroke;
-    paint.strokeWidth = 3 * scale;
+    _bodyPaint.style = PaintingStyle.stroke;
+    _bodyPaint.strokeWidth = 3 * scale;
     canvas.drawRect(
       Rect.fromCenter(center: Offset(cx, cy), width: s * 2, height: s * 2),
-      paint,
+      _bodyPaint,
     );
 
     // Griglia interna animata
@@ -227,13 +230,13 @@ class TheGridBoss extends BossBase {
       final offset = -s + s * 2 * t;
       canvas.drawLine(
         Offset(cx - s, cy + offset + wobble),
-        Offset(cx + s, cy + offset + wobble), paint);
+        Offset(cx + s, cy + offset + wobble), _bodyPaint);
       canvas.drawLine(
         Offset(cx + offset + wobble, cy - s),
-        Offset(cx + offset + wobble, cy + s), paint);
+        Offset(cx + offset + wobble, cy + s), _bodyPaint);
     }
 
-    paint.style = PaintingStyle.fill;
+    _bodyPaint.style = PaintingStyle.fill;
 
     if (scale <= 1.01) {
       // Nucleo centrale pulsante (più grande nelle fasi avanzate)

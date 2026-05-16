@@ -21,6 +21,8 @@ class SwarmQueenBoss extends BossBase {
   // deve ripulire lo sciame per aprire la finestra di danno.
   static const int _kHiveBondThreshold = 15;
   int _swarmCount = 0;
+  int _countTick = 0;
+  int _droneCount = 0;
   // Shared rng — evita alloc di 5× `math.Random()` per `_spawnSwarm`
   // (spawn ogni 1-2.5s → ~2-5 alloc/s eliminati).
   static final math.Random _rng = math.Random();
@@ -67,12 +69,15 @@ class SwarmQueenBoss extends BossBase {
     _cellPhase += dt * 3;
     _wingPhase += dt * 5;
 
-    // Conta swarm drone in vita ogni frame (per hive-bond).
-    int cnt = 0;
-    for (final c in game.world.children) {
-      if (c is SwarmDroneEnemy) cnt++;
+    // Conta swarm drone (throttled: ricalcola ogni 6 frame).
+    if (_countTick++ % 6 == 0) {
+      int cnt = 0;
+      for (final c in game.world.children) {
+        if (c is SwarmDroneEnemy) cnt++;
+      }
+      _droneCount = cnt;
     }
-    _swarmCount = cnt;
+    _swarmCount = _droneCount;
 
     // Movimento lento
     final toPlayer = (playerPosition - position);

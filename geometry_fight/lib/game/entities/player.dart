@@ -82,6 +82,7 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
   // step avanza (intervalli di 5°) → da 60 HSV/sec per player a ~2/sec.
   int _crystalHueStep = -1;
   Color? _crystalColorCache;
+  String? _crystalCachedSkin;
 
   // Trail di movimento (scia luminosa)
   final List<Vector2> _trail = [];
@@ -295,10 +296,10 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
     }
 
     // Animazioni visive
-    _thrusterPhase += dt * 15;
-    _wingPulse += dt * 4;
-    _energyPhase += dt * 8;
-    _shieldPhase += dt * 3;
+    _thrusterPhase += realDt * 15;
+    _wingPulse += realDt * 4;
+    _energyPhase += realDt * 8;
+    _shieldPhase += realDt * 3;
 
     // Trail di movimento: registra posizione ogni 0.02s
     _trailTimer += dt;
@@ -433,7 +434,7 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
         _fireTimer = fireInterval * 0.5;
       case WeaponType.overdrive:
         _spawnOverdriveBeam(dir);
-        _fireTimer = 3.0;
+        _fireTimer = 3.0 / fireRateMultiplier;
       case WeaponType.gauss:
         // Iter 13 (utente): "spara un proiettile ogni 0,7 secondi" +
         // "aspirazione nemici a corto raggio per 1s". Damage forte (1.8x).
@@ -849,10 +850,14 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
         // Crystal: ciclo cromatico lento → riflessi arcobaleno.
         // Cache su step di 5° → ricomputo ~72 volte/ciclo invece di 60 fps.
         final step = ((_energyPhase * 20) / 5).floor() % 72;
+        if (_crystalCachedSkin != 'crystal') {
+          _crystalColorCache = null;
+        }
         if (_crystalHueStep != step || _crystalColorCache == null) {
           _crystalHueStep = step;
           _crystalColorCache =
               HSVColor.fromAHSV(1, step * 5.0, 0.5, 1).toColor();
+          _crystalCachedSkin = 'crystal';
         }
         return _crystalColorCache!;
       case 'ghost':
@@ -868,10 +873,14 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
       case 'aurora':
         // Cycle ciano→rosa→verde, simile a crystal ma più saturato.
         final step = ((_energyPhase * 25) / 5).floor() % 72;
+        if (_crystalCachedSkin != 'aurora') {
+          _crystalColorCache = null;
+        }
         if (_crystalHueStep != step || _crystalColorCache == null) {
           _crystalHueStep = step;
           _crystalColorCache =
               HSVColor.fromAHSV(1, (step * 5.0 + 120) % 360, 0.7, 1).toColor();
+          _crystalCachedSkin = 'aurora';
         }
         return _crystalColorCache!;
       case 'tactical':
@@ -898,10 +907,14 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
       case 'prism':
         // Rotazione hue veloce → bianco apparente con flash colorati.
         final step = ((_energyPhase * 40) / 5).floor() % 72;
+        if (_crystalCachedSkin != 'prism') {
+          _crystalColorCache = null;
+        }
         if (_crystalHueStep != step || _crystalColorCache == null) {
           _crystalHueStep = step;
           _crystalColorCache =
               HSVColor.fromAHSV(1, step * 5.0, 0.6, 1).toColor();
+          _crystalCachedSkin = 'prism';
         }
         return _crystalColorCache!;
       case 'classic':

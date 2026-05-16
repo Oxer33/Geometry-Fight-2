@@ -30,9 +30,10 @@ class SwarmDroneEnemy extends EnemyBase {
   static final Paint _eyePaint = Paint();
   static final Paint _thrusterPaint = Paint();
 
-  // Path cache condiviso (trail). Con 50 drone a schermo risparmia ~150 Path
-  // alloc/frame. Reset prima di ogni uso.
-  static final Path _sharedTrailPath = Path();
+  // Per-instance trail path (Path è piccolo, e mantenerlo per-instance evita
+  // race con render parallelo / future invarianti di shared-state).
+  // Reset prima di ogni uso in renderShape.
+  final Path _trailPath = Path();
 
   // Random statico condiviso (evita alloc per constructor + wall bounce).
   static final math.Random _rng = math.Random();
@@ -146,13 +147,13 @@ class SwarmDroneEnemy extends EnemyBase {
         final trailAlpha = (isGloballyEnraged ? 0.45 : 0.25) - i * 0.08;
         if (trailAlpha > 0) {
           _trailPaint.color = baseColor.withValues(alpha: trailAlpha);
-          // Reset + riempi il path condiviso invece di allocarne uno nuovo.
-          _sharedTrailPath.reset();
-          _sharedTrailPath
+          // Reset + riempi il path per-instance invece di allocarne uno nuovo.
+          _trailPath.reset();
+          _trailPath
             ..moveTo(s * 0.35, s * 0.45 + i * 3.0)
             ..lineTo(0, s * 0.55 + i * 4.0)
             ..lineTo(-s * 0.35, s * 0.45 + i * 3.0);
-          canvas.drawPath(_sharedTrailPath, _trailPaint);
+          canvas.drawPath(_trailPath, _trailPaint);
         }
       }
     }

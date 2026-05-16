@@ -96,7 +96,7 @@ class PlayerBullet extends PositionComponent
         return;
       }
     } else {
-      if (maxBounces > 2) {
+      if (maxBounces > 0) {
         // Ricochet weapon: rimbalza sui muri
         bool destroyed = false;
         if (position.x <= 0) {
@@ -340,8 +340,9 @@ class LaserBeam extends PositionComponent
   @override
   void update(double dt) {
     super.update(dt);
-    _lifetime -= dt;
-    _pulsePhase += dt;
+    final realDt = dt / game.timeScale.clamp(0.3, 1.0);
+    _lifetime -= realDt;
+    _pulsePhase += realDt;
     if (_hitPartCooldown > 0) _hitPartCooldown -= dt;
     if (_lifetime <= 0) removeFromParent();
 
@@ -357,7 +358,7 @@ class LaserBeam extends PositionComponent
     bool didHit = false;
     Vector2? hitPoint;
     if (doWalk) {
-      final dmgMul = dt * 60 * 2; // 2× per compensare skip frame
+      final dmgMul = realDt * 60 * 2; // 2× per compensare skip frame
       for (final child in game.world.children) {
         if (child is EnemyBase) {
           final toEnemy = child.position - position;
@@ -564,8 +565,9 @@ class PlasmaBullet extends PositionComponent
   @override
   void update(double dt) {
     super.update(dt);
-    position += _velocity * dt;
-    _phase += dt * 10;
+    final realDt = dt / game.timeScale.clamp(0.3, 1.0);
+    position += _velocity * realDt;
+    _phase += realDt * 10;
 
     if (game.isTunnelMode) {
       final cameraLeft = game.camera.viewfinder.position.x - (game.size.x > 0 ? game.size.x / 2 : 400) - 200;
@@ -1025,6 +1027,7 @@ class OverdriveBeam extends PositionComponent
   final Vector2 direction;
   double _lifetime = 3.0;
   double _phase = 0;
+  int _walkFrame = 0;
 
   OverdriveBeam({required this.direction})
       : super(size: Vector2(overdriveBeamWidth, overdriveBeamLength), anchor: Anchor.topCenter);
@@ -1036,41 +1039,44 @@ class OverdriveBeam extends PositionComponent
     _phase += dt * 20;
     if (_lifetime <= 0) removeFromParent();
 
-    // Kill everything in path (enemies AND bosses) — raycast = danno ad AREA → splitter immuni
-    final dir = direction.normalized();
-    final toRemove = <EnemyBullet>[];
-    for (final child in game.world.children) {
-      if (child is EnemyBase) {
-        final toEnemy = child.position - position;
-        final dot = toEnemy.dot(dir);
-        if (dot > 0 && dot < overdriveBeamLength) {
-          final perpDist = (toEnemy - dir * dot).length;
-          if (perpDist < 30) {
-            child.takeDamage(999, isArea: true);
+    _walkFrame++;
+    if ((_walkFrame & 1) == 0) {
+      // Kill everything in path (enemies AND bosses) — raycast = danno ad AREA → splitter immuni
+      final dir = direction.normalized();
+      final toRemove = <EnemyBullet>[];
+      for (final child in game.world.children) {
+        if (child is EnemyBase) {
+          final toEnemy = child.position - position;
+          final dot = toEnemy.dot(dir);
+          if (dot > 0 && dot < overdriveBeamLength) {
+            final perpDist = (toEnemy - dir * dot).length;
+            if (perpDist < 30) {
+              child.takeDamage(999, isArea: true);
+            }
           }
-        }
-      } else if (child is BossBase) {
-        final toBoss = child.position - position;
-        final dot = toBoss.dot(dir);
-        if (dot > 0 && dot < overdriveBeamLength) {
-          final perpDist = (toBoss - dir * dot).length;
-          if (perpDist < 30) {
-            child.takeDamage(10); // Danno boss dall'overdrive
+        } else if (child is BossBase) {
+          final toBoss = child.position - position;
+          final dot = toBoss.dot(dir);
+          if (dot > 0 && dot < overdriveBeamLength) {
+            final perpDist = (toBoss - dir * dot).length;
+            if (perpDist < 30) {
+              child.takeDamage(10); // Danno boss dall'overdrive
+            }
           }
-        }
-      } else if (child is EnemyBullet) {
-        final toB = child.position - position;
-        final dot = toB.dot(dir);
-        if (dot > 0 && dot < overdriveBeamLength) {
-          final perpDist = (toB - dir * dot).length;
-          if (perpDist < 30) {
-            toRemove.add(child);
+        } else if (child is EnemyBullet) {
+          final toB = child.position - position;
+          final dot = toB.dot(dir);
+          if (dot > 0 && dot < overdriveBeamLength) {
+            final perpDist = (toB - dir * dot).length;
+            if (perpDist < 30) {
+              toRemove.add(child);
+            }
           }
         }
       }
-    }
-    for (final b in toRemove) {
-      b.removeFromParent();
+      for (final b in toRemove) {
+        b.removeFromParent();
+      }
     }
   }
 

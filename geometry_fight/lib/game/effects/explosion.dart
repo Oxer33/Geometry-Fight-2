@@ -33,9 +33,9 @@ class ExplosionEffect extends PositionComponent {
   double _age = 0;
 
   static final _random = math.Random();
-  static final _flashPaint = Paint();
-  static final _particlePaint = Paint();
-  static final _ringPaint = Paint()..style = PaintingStyle.stroke;
+  final Paint _flashPaint = Paint();
+  final Paint _particlePaint = Paint();
+  final Paint _ringPaint = Paint()..style = PaintingStyle.stroke;
 
   ExplosionEffect({
     required this.color,
@@ -218,6 +218,7 @@ class FloatingText extends PositionComponent {
     final quantizedAlpha = (alpha * 10).roundToDouble() / 10;
     if (_cachedPainter == null || quantizedAlpha != _lastAlpha) {
       _lastAlpha = quantizedAlpha;
+      _cachedPainter?.dispose();
       _cachedPainter = TextPainter(
         text: TextSpan(
           text: text,

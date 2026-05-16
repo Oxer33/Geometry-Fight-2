@@ -63,7 +63,7 @@ class _VirtualJoystickState extends State<VirtualJoystick>
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      behavior: HitTestBehavior.translucent,
+      behavior: HitTestBehavior.opaque,
       onPanStart: (details) {
         setState(() {
           _center = details.localPosition;
@@ -72,13 +72,14 @@ class _VirtualJoystickState extends State<VirtualJoystick>
         widget.onStart?.call();
       },
       onPanUpdate: (details) {
+        final maxDist = widget.radius;
+        if (maxDist <= 0) return;
         if (_center != null) {
           final delta = details.localPosition - _center!;
           final dist = delta.distance;
-          final maxDist = widget.radius;
 
-          // Clamp al raggio massimo
-          final clamped = dist > maxDist
+          // Clamp al raggio massimo (guard contro dist == 0)
+          final clamped = (dist > maxDist && dist > 0)
               ? Offset(
                   delta.dx / dist * maxDist,
                   delta.dy / dist * maxDist,
@@ -90,10 +91,11 @@ class _VirtualJoystickState extends State<VirtualJoystick>
           });
 
           // Normalizza e invia il callback
-          final normalized = Offset(
+          var normalized = Offset(
             clamped.dx / maxDist,
             clamped.dy / maxDist,
           );
+          if (normalized.distance < 0.08) normalized = Offset.zero;
           widget.onMove(normalized);
         }
       },
@@ -163,24 +165,24 @@ class _JoystickPainter extends CustomPainter {
   final double radius;
   final double pulseValue;
 
-  // Cached static Paints — riusati tra frame per evitare allocazioni
-  static final _baseGlowPaint = Paint();
-  static final _baseBorderPaint = Paint()
+  // Cached instance Paints — riusati tra frame per evitare allocazioni
+  final Paint _baseGlowPaint = Paint();
+  final Paint _baseBorderPaint = Paint()
     ..style = PaintingStyle.stroke
     ..strokeWidth = 1.5;
-  static final _linePaint = Paint()
+  final Paint _linePaint = Paint()
     ..strokeWidth = 1.5
     ..style = PaintingStyle.stroke;
-  static final _midPaint = Paint()
+  final Paint _midPaint = Paint()
     ..style = PaintingStyle.stroke
     ..strokeWidth = 0.5;
-  static final _thumbGlowPaint = Paint();
-  static final _thumbBorderPaint = Paint()
+  final Paint _thumbGlowPaint = Paint();
+  final Paint _thumbBorderPaint = Paint()
     ..style = PaintingStyle.stroke
     ..strokeWidth = 2;
-  static final _thumbCenterPaint = Paint();
-  static final _dotPaint = Paint();
-  static final _crossPaint = Paint()..strokeWidth = 0.5;
+  final Paint _thumbCenterPaint = Paint();
+  final Paint _dotPaint = Paint();
+  final Paint _crossPaint = Paint()..strokeWidth = 0.5;
 
   _JoystickPainter({
     required this.color,

@@ -241,7 +241,7 @@ class _AchievementsScreenState extends State<AchievementsScreen>
     final catAchievements =
         allAchievements.where((a) => a.category == category);
     final catUnlocked =
-        catAchievements.where((a) => AchievementManager.isUnlocked(a.id));
+        catAchievements.where((a) => _unlockedCache[a.id] == true);
     final catPct = catAchievements.isNotEmpty
         ? catUnlocked.length / catAchievements.length
         : 0.0;

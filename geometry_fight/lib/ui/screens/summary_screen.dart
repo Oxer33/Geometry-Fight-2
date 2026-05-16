@@ -17,7 +17,7 @@ import '../widgets/neon_back_button.dart';
 /// - Loadout (arma + pet)
 /// - Multipliers breakdown: difficoltà ×, modifier ×, total ×
 /// - Bottone START → game.
-class SummaryScreen extends StatelessWidget {
+class SummaryScreen extends StatefulWidget {
   final GameMode mode;
   final Difficulty difficulty;
   final List<String> activeModifiers;
@@ -34,8 +34,27 @@ class SummaryScreen extends StatelessWidget {
   });
 
   @override
+  State<SummaryScreen> createState() => _SummaryScreenState();
+}
+
+class _SummaryScreenState extends State<SummaryScreen> {
+  late final SaveData _saveData;
+
+  @override
+  void initState() {
+    super.initState();
+    _saveData = SaveManager.load();
+  }
+
+  GameMode get mode => widget.mode;
+  Difficulty get difficulty => widget.difficulty;
+  List<String> get activeModifiers => widget.activeModifiers;
+  VoidCallback get onBack => widget.onBack;
+  VoidCallback get onStart => widget.onStart;
+
+  @override
   Widget build(BuildContext context) {
-    final saveData = SaveManager.load();
+    final saveData = _saveData;
     final diffCfg = difficultyConfigs[difficulty]!;
     final modScore = combinedScoreMultiplier(activeModifiers);
     final totalScore = diffCfg.scoreMultiplier * modScore;

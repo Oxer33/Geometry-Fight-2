@@ -148,6 +148,31 @@ class SaveData {
     return kDailyRewardAmount;
   }
 
+  /// Minimal copyWith for loadout-style mutations that need to swap a single
+  /// field without sharing the existing instance reference.
+  SaveData copyWith({String? startingWeapon, String? activePet}) {
+    return SaveData(
+      goldGeoms: goldGeoms,
+      upgrades: Map<String, int>.from(upgrades),
+      unlockedSkins: List<String>.from(unlockedSkins),
+      unlockedTrails: List<String>.from(unlockedTrails),
+      unlockedModes: List<String>.from(unlockedModes),
+      unlockedWeapons: List<String>.from(unlockedWeapons),
+      highscores: Map<String, int>.from(highscores),
+      totalPlaytime: totalPlaytime,
+      stats: Map<String, int>.from(stats),
+      playedModes: List<String>.from(playedModes),
+      activeModifiers: List<String>.from(activeModifiers),
+      activeSkin: activeSkin,
+      activeTrail: activeTrail,
+      startingWeapon: startingWeapon ?? this.startingWeapon,
+      activePet: activePet ?? this.activePet,
+      unlockedPets: List<String>.from(unlockedPets),
+      lastDailyClaim: lastDailyClaim,
+      dailyStreak: dailyStreak,
+    );
+  }
+
   Map<String, dynamic> toJson() => {
         'goldGeoms': goldGeoms,
         'upgrades': upgrades,
@@ -170,7 +195,7 @@ class SaveData {
       };
 
   factory SaveData.fromJson(Map<String, dynamic> json) => SaveData(
-        goldGeoms: json['goldGeoms'] ?? 0,
+        goldGeoms: (json['goldGeoms'] as num?)?.toInt() ?? 0,
         // FIX C7: conversione robusta per i valori numerici (evita cast int/double da Hive)
         upgrades: Map<String, int>.from(
             ((json['upgrades'] ?? {}) as Map).map((k, v) =>
@@ -183,7 +208,7 @@ class SaveData {
         highscores: Map<String, int>.from(
             ((json['highscores'] ?? {}) as Map).map((k, v) =>
                 MapEntry(k.toString(), (v as num).toInt()))),
-        totalPlaytime: json['totalPlaytime'] ?? 0,
+        totalPlaytime: (json['totalPlaytime'] as num?)?.toInt() ?? 0,
         stats: Map<String, int>.from(
             ((json['stats'] ?? {}) as Map).map((k, v) =>
                 MapEntry(k.toString(), (v as num).toInt()))),

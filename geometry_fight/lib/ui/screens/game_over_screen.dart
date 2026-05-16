@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math';
 import 'dart:ui';
 import 'package:flutter/material.dart';
@@ -38,6 +39,7 @@ class _GameOverScreenState extends State<GameOverScreen>
   late AnimationController _pulseController;
   late AnimationController _counterController;
   late AnimationController _particleController;
+  Timer? _delayedTimer;
 
   // Cached computed values (constant for widget lifetime)
   late final int _perfBonus;
@@ -139,13 +141,14 @@ class _GameOverScreenState extends State<GameOverScreen>
 
     _entranceController.forward();
     // Start counter animation after stats appear
-    Future.delayed(const Duration(milliseconds: 500), () {
+    _delayedTimer = Timer(const Duration(milliseconds: 500), () {
       if (mounted) _counterController.forward();
     });
   }
 
   @override
   void dispose() {
+    _delayedTimer?.cancel();
     _entranceController.dispose();
     _pulseController.dispose();
     _counterController.dispose();

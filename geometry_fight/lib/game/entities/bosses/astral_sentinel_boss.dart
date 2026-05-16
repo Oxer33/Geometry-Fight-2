@@ -38,7 +38,6 @@ class AstralSentinelBoss extends BossBase {
   double _cycleTimer = 4.0;
   bool _starsActive = false;
   List<Vector2> _starPositions = [];
-  double _linesFireTimer = 0;
   // Queue di indici linee da processare (spalma il fire su più frame).
   final List<int> _fireQueue = [];
 
@@ -138,7 +137,7 @@ class AstralSentinelBoss extends BossBase {
 
     if (_starsActive) {
       _starWindUp -= dt;
-      if (_starWindUp <= 0 && _fireQueue.isEmpty && _linesFireTimer <= 0) {
+      if (_starWindUp <= 0 && _fireQueue.isEmpty) {
         // Inizia il fire: carica la coda con gli indici delle linee.
         for (int i = 0; i < _starPositions.length; i++) {
           _fireQueue.add(i);
@@ -174,7 +173,6 @@ class AstralSentinelBoss extends BossBase {
           // per boost difficoltà: era 3.0/4.0 → ora 2.0/3.0).
           _starsActive = false;
           _cycleTimer = currentPhase >= 2 ? 2.0 : 3.0;
-          _linesFireTimer = 0;
         }
       }
     }

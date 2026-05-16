@@ -207,7 +207,7 @@ class VoidReaperBoss extends BossBase {
 }
 
 class _DeathZone {
-  Vector2 position;
+  final Vector2 position;
   double radius;
   double lifetime;
   double phase = 0;

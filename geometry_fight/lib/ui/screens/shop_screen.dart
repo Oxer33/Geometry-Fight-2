@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../../data/achievements.dart';
@@ -78,9 +79,9 @@ class _ShopScreenState extends State<ShopScreen>
       setState(() {
         _saveData.goldGeoms -= cost;
         onSuccess();
-        SaveManager.save(_saveData);
         _checkCollectionUnlocks();
       });
+      unawaited(SaveManager.save(_saveData));
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
