@@ -134,9 +134,10 @@ class _OrbiterBullet extends PositionComponent
     _lifetime -= dt;
     if (_lifetime <= 0) removeFromParent();
 
-    // Check collision con player
-    final dist = position.distanceTo(game.player.position);
-    if (dist < 12) {
+    // Check collision con player (distanza² evita sqrt per frame)
+    const double kHitRadius = 12.0;
+    const double kHitRadiusSq = kHitRadius * kHitRadius;
+    if ((position - game.player.position).length2 < kHitRadiusSq) {
       game.player.takeDamage();
       removeFromParent();
     }

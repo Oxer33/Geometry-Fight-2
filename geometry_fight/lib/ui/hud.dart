@@ -289,9 +289,9 @@ class _ScorePanel extends StatelessWidget {
               _MultiplierBadge(multiplier: multiplier),
               if (hasDoubleMultiplier) ...[
                 const SizedBox(width: 6),
-                _GlowBadge(
+                const _GlowBadge(
                   text: '2x BOOST',
-                  color: const Color(0xFFFFD700),
+                  color: Color(0xFFFFD700),
                 ),
               ],
             ],
@@ -710,7 +710,7 @@ class _BossHpBarPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final radius = Radius.circular(4);
+    const radius = Radius.circular(4);
 
     // Background scuro
     _bgPaint.color = Colors.white.withValues(alpha: 0.08);

@@ -1,18 +1,57 @@
 // Genera file WAV procedurali per SFX del gioco.
-// Eseguire con: dart run tool/generate_sfx.dart
+// Eseguire con: dart run tool/generate_sfx.dart [--out=<dir>]
+// Default output: assets/audio (relative to the cwd, which must be the
+// geometry_fight project root).
 import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
 
 void main(List<String> args) {
-  if (!File('pubspec.yaml').existsSync()) {
+  // Parse --help / -h
+  if (args.contains('--help') || args.contains('-h')) {
+    stdout.writeln(
+      'Usage: dart run tool/generate_sfx.dart [--out=<dir>]\n'
+      '  --out=<dir>  Output directory (default: assets/audio)\n'
+      '  --help, -h   Show this help message',
+    );
+    exit(0);
+  }
+
+  // Validate pubspec.yaml exists AND belongs to geometry_fight, to avoid
+  // accidentally writing assets into an unrelated repo when cwd is wrong.
+  final pubspec = File('pubspec.yaml');
+  if (!pubspec.existsSync()) {
     stderr.writeln(
       'Error: pubspec.yaml not found in current directory. '
       'Run this script from the geometry_fight project root.',
     );
     exit(1);
   }
-  final outDir = Directory('assets/audio');
+  final pubspecContent = pubspec.readAsStringSync();
+  if (!pubspecContent.contains(
+      RegExp(r'^name:\s*geometry_fight', multiLine: true))) {
+    stderr.writeln(
+      'Error: pubspec.yaml does not look like the geometry_fight project. '
+      'Refusing to write SFX assets into an unrelated repo.',
+    );
+    exit(1);
+  }
+
+  // Parse --out=<dir>, default to assets/audio.
+  String outPath = 'assets/audio';
+  for (final arg in args) {
+    if (arg.startsWith('--out=')) {
+      outPath = arg.substring('--out='.length);
+      if (outPath.isEmpty) {
+        stderr.writeln('Error: --out requires a non-empty directory path.');
+        exit(1);
+      }
+    } else if (arg.startsWith('--')) {
+      stderr.writeln('Error: unknown flag "$arg". Use --help for usage.');
+      exit(1);
+    }
+  }
+  final outDir = Directory(outPath);
   if (!outDir.existsSync()) outDir.createSync(recursive: true);
 
   // Sparo: bip acuto brevissimo (40ms)
@@ -133,10 +172,10 @@ Float64List _synth({
 
 void _writeWav(String path, Float64List samples, {int sampleRate = 22050}) {
   final numSamples = samples.length;
-  final bitsPerSample = 16;
-  final numChannels = 1;
+  const bitsPerSample = 16;
+  const numChannels = 1;
   final byteRate = sampleRate * numChannels * bitsPerSample ~/ 8;
-  final blockAlign = numChannels * bitsPerSample ~/ 8;
+  const blockAlign = numChannels * bitsPerSample ~/ 8;
   final dataSize = numSamples * blockAlign;
   final fileSize = 36 + dataSize;
 

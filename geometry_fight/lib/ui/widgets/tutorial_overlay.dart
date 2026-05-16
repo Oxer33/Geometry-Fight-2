@@ -29,7 +29,7 @@ class TutorialOverlay extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   // Titolo
-                  Text(
+                  const Text(
                     'COME GIOCARE',
                     style: TextStyle(
                       color: Colors.cyanAccent,
@@ -45,39 +45,39 @@ class TutorialOverlay extends StatelessWidget {
                   const SizedBox(height: 24),
 
                   // Controlli
-                  _ControlRow(
+                  const _ControlRow(
                     icon: Icons.gamepad,
                     label: 'JOYSTICK SINISTRO',
                     description: 'Muovi la navicella',
                     color: Colors.cyanAccent,
                   ),
                   const SizedBox(height: 12),
-                  _ControlRow(
+                  const _ControlRow(
                     icon: Icons.gps_fixed,
                     label: 'JOYSTICK DESTRO',
                     description: 'Mira e spara automaticamente',
-                    color: const Color(0xFFFF4444),
+                    color: Color(0xFFFF4444),
                   ),
                   const SizedBox(height: 12),
-                  _ControlRow(
+                  const _ControlRow(
                     icon: Icons.flash_on,
                     label: 'BOMBA',
                     description: 'Distrugge tutti i nemici vicini',
-                    color: const Color(0xFFFF6600),
+                    color: Color(0xFFFF6600),
                   ),
                   const SizedBox(height: 12),
-                  _ControlRow(
+                  const _ControlRow(
                     icon: Icons.diamond,
                     label: 'GEOMI',
                     description: 'Raccoglili per punti e upgrade',
-                    color: const Color(0xFF00FFFF),
+                    color: Color(0xFF00FFFF),
                   ),
                   const SizedBox(height: 12),
-                  _ControlRow(
+                  const _ControlRow(
                     icon: Icons.star,
                     label: 'POWER-UP',
                     description: 'Potenziamenti temporanei',
-                    color: const Color(0xFFFFD700),
+                    color: Color(0xFFFFD700),
                   ),
 
                   const SizedBox(height: 32),
@@ -92,7 +92,7 @@ class TutorialOverlay extends StatelessWidget {
                         BoxShadow(color: Colors.cyanAccent.withValues(alpha: 0.3), blurRadius: 12),
                       ],
                     ),
-                    child: Text(
+                    child: const Text(
                       'TOCCA PER INIZIARE',
                       style: TextStyle(
                         color: Colors.cyanAccent,

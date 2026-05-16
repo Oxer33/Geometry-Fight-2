@@ -33,12 +33,10 @@ class TeslaEnemy extends EnemyBase {
     _sparkPhase += dt * 12;
     if (_arcHitCd > 0) _arcHitCd -= dt;
 
-    // Trova altri Tesla per comportamento a branco
+    // Trova altri Tesla per comportamento a branco (whereType per perf)
     final otherTeslas = <TeslaEnemy>[];
-    for (final child in game.world.children) {
-      if (child is TeslaEnemy && child != this) {
-        otherTeslas.add(child);
-      }
+    for (final child in game.world.children.whereType<TeslaEnemy>()) {
+      if (child != this) otherTeslas.add(child);
     }
 
     if (otherTeslas.isEmpty) {
@@ -78,24 +76,26 @@ class TeslaEnemy extends EnemyBase {
       }
     }
 
-    // Trova nemici vicini per creare archi
+    // Trova nemici vicini per creare archi (whereType per perf)
     _connectedPositions.clear();
-    for (final child in game.world.children) {
-      if (child is EnemyBase && child != this) {
-        final dist = child.position.distanceTo(position);
-        if (dist < 150 && _connectedPositions.length < 3) {
-          _connectedPositions.add(child.position.clone());
+    const arcRangeSq = 150.0 * 150.0;
+    for (final child in game.world.children.whereType<EnemyBase>()) {
+      if (child == this) continue;
+      if (_connectedPositions.length >= 3) break;
+      final dx = child.position.x - position.x;
+      final dy = child.position.y - position.y;
+      if (dx * dx + dy * dy < arcRangeSq) {
+        _connectedPositions.add(child.position.clone());
 
-          // Se il player è vicino all'arco, danno! (con cooldown 0.5s)
-          final playerDist = _distanceToLine(
-            game.player.position,
-            position,
-            child.position,
-          );
-          if (playerDist < 15 && _arcHitCd <= 0) {
-            game.player.takeDamage();
-            _arcHitCd = 0.5;
-          }
+        // Se il player è vicino all'arco, danno! (con cooldown 0.5s)
+        final playerDist = _distanceToLine(
+          game.player.position,
+          position,
+          child.position,
+        );
+        if (playerDist < 15 && _arcHitCd <= 0) {
+          game.player.takeDamage();
+          _arcHitCd = 0.5;
         }
       }
     }
@@ -104,9 +104,9 @@ class TeslaEnemy extends EnemyBase {
   /// Distanza punto-segmento per check collisione arco
   double _distanceToLine(Vector2 point, Vector2 lineStart, Vector2 lineEnd) {
     final line = lineEnd - lineStart;
-    final len = line.length;
-    if (len == 0) return point.distanceTo(lineStart);
-    final t = ((point - lineStart).dot(line) / (len * len)).clamp(0.0, 1.0);
+    final lenSq = line.length2;
+    if (lenSq < 1e-6) return point.distanceTo(lineStart);
+    final t = ((point - lineStart).dot(line) / lenSq).clamp(0.0, 1.0);
     final projection = lineStart + line * t;
     return point.distanceTo(projection);
   }
@@ -172,11 +172,13 @@ class TeslaEnemy extends EnemyBase {
   static final _lightningGlowPaint = Paint()
     ..strokeWidth = 3
     ..style = PaintingStyle.stroke;
+  // Random condiviso: prima `math.Random(seed)` veniva istanziato per ogni
+  // arco in ogni frame (allocazione + setup state RNG inutile).
+  static final math.Random _lightningRng = math.Random();
 
   /// Disegna un arco elettrico tra due punti
   void _drawLightning(
       Canvas canvas, double x1, double y1, double x2, double y2) {
-    final random = math.Random((_sparkPhase * 10).toInt());
     final dx = x2 - x1;
     final dy = y2 - y1;
     const steps = 6;
@@ -187,8 +189,8 @@ class TeslaEnemy extends EnemyBase {
     final path = Path()..moveTo(x1, y1);
     for (int i = 1; i < steps; i++) {
       final t = i / steps;
-      final mx = x1 + dx * t + (random.nextDouble() - 0.5) * 15;
-      final my = y1 + dy * t + (random.nextDouble() - 0.5) * 15;
+      final mx = x1 + dx * t + (_lightningRng.nextDouble() - 0.5) * 15;
+      final my = y1 + dy * t + (_lightningRng.nextDouble() - 0.5) * 15;
       path.lineTo(mx, my);
     }
     path.lineTo(x2, y2);

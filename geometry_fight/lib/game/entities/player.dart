@@ -104,7 +104,7 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
   /// Multiple call sovrascrivono il knockback in corso (no stacking) per
   /// evitare yo-yo se 2 black hole esplodono ravvicinati.
   void applyKnockback(Vector2 dir, double distance, {double duration = 1.2}) {
-    if (dir.length == 0 || distance <= 0 || duration <= 0) return;
+    if (dir.length2 < 1e-6 || distance <= 0 || duration <= 0) return;
     final v0 = 2 * distance / duration;
     _knockbackVel = dir.normalized() * v0;
     _knockbackTimer = duration;
@@ -302,7 +302,8 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
     _shieldPhase += realDt * 3;
 
     // Trail di movimento: registra posizione ogni 0.02s
-    _trailTimer += dt;
+    // Usa realDt: il trail non deve essere rallentato dal slow-mo.
+    _trailTimer += realDt;
     if (_trailTimer >= 0.02 && moveDir.length > 0.1) {
       _trailTimer = 0;
       _trail.insert(0, position.clone());
@@ -328,7 +329,7 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
             (hasRapidFire ? 2.5 : 1.0))
         .clamp(0.01, double.infinity);
 
-    double fireInterval = 1.0 / (baseFireRate * fireRateMultiplier);
+    final double fireInterval = 1.0 / (baseFireRate * fireRateMultiplier);
     _fireTimer = fireInterval;
 
     final dir = direction.normalized();

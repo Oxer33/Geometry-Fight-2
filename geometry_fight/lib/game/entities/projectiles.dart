@@ -54,7 +54,11 @@ class PlayerBullet extends PositionComponent
 
   @override
   Future<void> onLoad() async {
-    _velocity = direction.normalized() * speed;
+    if (direction.length2 < 1e-6) {
+      _velocity = Vector2(speed, 0);
+    } else {
+      _velocity = direction.normalized() * speed;
+    }
     // Hitbox circolare per proiettili rotondi
     add(CircleHitbox(radius: 3 * sizeMultiplier, anchor: Anchor.center)
       ..position = size / 2);
@@ -248,7 +252,12 @@ class EnemyBullet extends PositionComponent
 
   @override
   Future<void> onLoad() async {
-    _velocity = direction.normalized() * speed;
+    final dLen2 = direction.length2;
+    if (dLen2 < 1e-6) {
+      _velocity = Vector2(speed, 0);
+    } else {
+      _velocity = direction.normalized() * speed;
+    }
     add(CircleHitbox(radius: 9, anchor: Anchor.center)
       ..position = size / 2);
   }
@@ -275,12 +284,14 @@ class EnemyBullet extends PositionComponent
         game.spawnExplosion(position, NeonColors.laserRed,
             radius: 10, particleCount: 3);
         removeFromParent();
+        return;
       }
     } else {
       // Arena: distruggi esattamente al bordo (nessuna penetrazione)
       if (position.x < 0 || position.x > arenaWidth ||
           position.y < 0 || position.y > arenaHeight) {
         removeFromParent();
+        return;
       }
     }
   }
@@ -343,14 +354,19 @@ class LaserBeam extends PositionComponent
     final realDt = dt / game.timeScale.clamp(0.3, 1.0);
     _lifetime -= realDt;
     _pulsePhase += realDt;
-    if (_hitPartCooldown > 0) _hitPartCooldown -= dt;
-    if (_lifetime <= 0) removeFromParent();
+    if (_hitPartCooldown > 0) _hitPartCooldown -= realDt;
+    if (_lifetime <= 0) {
+      removeFromParent();
+      return;
+    }
 
     position.setFrom(game.player.position);
 
     // Throttle hit-walk a frame alterni: halve O(N) cost, 2× damage
     // per tick preserva DPS (richiesta utente: laser generava lag).
     _walkFrame++;
+    // Bounded: prevent unbounded growth in extreme long sessions.
+    if (_walkFrame > 1 << 20) _walkFrame = 0;
     final doWalk = (_walkFrame & 1) == 0;
     final dir = _dir;
     final enemyHitRadius = 20 * sizeMultiplier;
@@ -552,7 +568,11 @@ class PlasmaBullet extends PositionComponent
 
   @override
   Future<void> onLoad() async {
-    _velocity = direction.normalized() * 350;
+    if (direction.length2 < 1e-6) {
+      _velocity = Vector2(350, 0);
+    } else {
+      _velocity = direction.normalized() * 350;
+    }
     // Hitbox circolare scalata con sizeMultiplier: con Firepower (x2) il
     // visual cresce ~2.4x e la hitbox default (size/2) tagliava fuori i
     // nemici vicini al bordo visuale.
@@ -581,12 +601,14 @@ class PlasmaBullet extends PositionComponent
       if (game.hitsTunnelObstacle(position)) {
         _explode(null);
         removeFromParent();
+        return;
       }
     } else {
       // Arena: distruggi al bordo esatto
       if (position.x < 0 || position.x > arenaWidth ||
           position.y < 0 || position.y > arenaHeight) {
         removeFromParent();
+        return;
       }
     }
   }
@@ -746,7 +768,11 @@ class HomingMissile extends PositionComponent
 
   @override
   Future<void> onLoad() async {
-    _velocity = direction.normalized() * 500;
+    if (direction.length2 < 1e-6) {
+      _velocity = Vector2(500, 0);
+    } else {
+      _velocity = direction.normalized() * 500;
+    }
     add(RectangleHitbox());
   }
 
@@ -798,9 +824,10 @@ class HomingMissile extends PositionComponent
 
     // Target search throttled: ogni 5 frame, o se target morto/perso.
     _searchCooldown--;
+    final cached = _cachedTarget;
     if (_searchCooldown <= 0 ||
-        _cachedTarget == null ||
-        _cachedTarget!.isRemoved) {
+        cached == null ||
+        cached.isRemoved) {
       _searchCooldown = 5;
       // Se stiamo switchando bersaglio, libera il vecchio claim così altri
       // missili della salva possono puntarlo. Altrimenti il claimed set
@@ -813,9 +840,10 @@ class HomingMissile extends PositionComponent
     }
 
     // Steering (NaN guard: se target coincide col missile, skip normalize).
-    if (_cachedTarget != null && !_cachedTarget!.isRemoved) {
-      final toTarget = _cachedTarget!.position - position;
-      if (toTarget.length > 0.001) {
+    final target = _cachedTarget;
+    if (target != null && !target.isRemoved) {
+      final toTarget = target.position - position;
+      if (toTarget.length2 > 1e-6) {
         final desired = toTarget.normalized() * 500;
         final steering = (desired - _velocity)..clampLength(0, 800 * dt);
         _velocity += steering;
@@ -1035,11 +1063,17 @@ class OverdriveBeam extends PositionComponent
   @override
   void update(double dt) {
     super.update(dt);
-    _lifetime -= dt;
-    _phase += dt * 20;
-    if (_lifetime <= 0) removeFromParent();
+    // Overdrive beam NON affetto dal slow-motion: compensa il timeScale.
+    final realDt = dt / game.timeScale.clamp(0.3, 1.0);
+    _lifetime -= realDt;
+    _phase += realDt * 20;
+    if (_lifetime <= 0) {
+      removeFromParent();
+      return;
+    }
 
     _walkFrame++;
+    if (_walkFrame > 1 << 20) _walkFrame = 0;
     if ((_walkFrame & 1) == 0) {
       // Kill everything in path (enemies AND bosses) — raycast = danno ad AREA → splitter immuni
       final dir = direction.normalized();

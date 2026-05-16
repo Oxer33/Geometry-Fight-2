@@ -92,10 +92,16 @@ class Geom extends PositionComponent
 
     if (_attracted) {
       final dir = (player.position - position);
-      if (dir.length > 0) {
+      if (dir.length2 > 1e-6) {
         dir.normalize();
-        // Velocità attrazione: più vicino = più veloce
-        final attractSpeed = player.hasMagnet ? 800.0 : 400.0 + (1.0 - dist / magnetRange).clamp(0.0, 1.0) * 300;
+        // Velocità attrazione: più vicino = più veloce.
+        // Guard divisione: se magnetRange<=0 (edge case shop/data), skip
+        // il termine proporzionale invece di NaN/Infinity.
+        final proximity = magnetRange > 0
+            ? (1.0 - dist / magnetRange).clamp(0.0, 1.0)
+            : 0.0;
+        final attractSpeed =
+            player.hasMagnet ? 800.0 : 400.0 + proximity * 300;
         position += dir * attractSpeed * dt;
       }
     }

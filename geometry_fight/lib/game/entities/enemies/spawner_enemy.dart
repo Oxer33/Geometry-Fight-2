@@ -28,8 +28,8 @@ class SpawnerEnemy extends EnemyBase {
   @override
   void updateBehavior(double dt) {
     // Move slowly away from player (towards edges)
-    final awayDir = (position - playerPosition);
-    if (awayDir.length > 0) {
+    final awayDir = position - playerPosition;
+    if (awayDir.length2 > 1e-6) {
       awayDir.normalize();
       position += awayDir * speed * dt;
     }

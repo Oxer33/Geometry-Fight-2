@@ -51,12 +51,12 @@ class ProtonEnemy extends EnemyBase {
     // (dopo 2s inizia a curvare verso il player, come in GW)
     if (_lifetime < 3.0) {
       final toPlayer = (playerPosition - position);
-      if (toPlayer.length > 0.001) {
+      if (toPlayer.length2 > 1e-6) {
         final desired = toPlayer.normalized();
         // NaN guard: `_moveDir + desired*0.02` può collassare a zero se
         // _moveDir è quasi opposto a desired (rara cancellazione).
         final sum = _moveDir + desired * 0.02;
-        if (sum.length > 0.001) {
+        if (sum.length2 > 1e-6) {
           _moveDir = sum.normalized();
         }
       }

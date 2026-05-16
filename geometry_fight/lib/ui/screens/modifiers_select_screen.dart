@@ -99,12 +99,12 @@ class _ModifiersSelectScreenState extends State<ModifiersSelectScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
-        ..showSnackBar(SnackBar(
-          duration: const Duration(milliseconds: 1200),
-          backgroundColor: const Color(0xFF0A0A1A),
+        ..showSnackBar(const SnackBar(
+          duration: Duration(milliseconds: 1200),
+          backgroundColor: Color(0xFF0A0A1A),
           behavior: SnackBarBehavior.floating,
           content: Text('MAX $_maxActive MODIFICATORI',
-              style: const TextStyle(
+              style: TextStyle(
                   color: Colors.amber,
                   fontFamily: 'monospace',
                   fontWeight: FontWeight.w900)),

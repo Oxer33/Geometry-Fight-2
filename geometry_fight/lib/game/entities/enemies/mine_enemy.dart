@@ -116,7 +116,10 @@ class MineEnemy extends EnemyBase {
     }
     path.close();
 
-    // Flash rosso quando si sta per detonare
+    // Flash rosso quando si sta per detonare.
+    // FIX: `paint` è condiviso/cache — non mutarne il color senza ripristino.
+    // Salviamo l'originale e ripristiniamo dopo il drawPath.
+    final originalColor = paint.color;
     if (_detonating) {
       final flashSpeed = 20 + (1 - _detonateTimer / 0.5) * 30;
       final flash = ((idlePhase * flashSpeed).toInt() % 2 == 0);
@@ -126,6 +129,7 @@ class MineEnemy extends EnemyBase {
     }
 
     canvas.drawPath(path, paint);
+    paint.color = originalColor;
 
     if (scale <= 1.01) {
       // Archi rotanti di pericolo (2 archi opposti)

@@ -362,13 +362,15 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
             ? 1.0
             : ((entrance - rowDelay) / (1.0 - rowDelay)).clamp(0.0, 1.0);
 
+        final entry = entries[index];
         return Opacity(
+          key: ValueKey('lb-${entry.date.millisecondsSinceEpoch}-${entry.score}-$index'),
           opacity: rowEntrance,
           child: Transform.translate(
             offset: Offset(0, 15 * (1 - rowEntrance)),
             child: _NeonLeaderboardRow(
               rank: index + 1,
-              entry: entries[index],
+              entry: entry,
               glow: glow,
             ),
           ),

@@ -11,6 +11,7 @@ import 'enemy_base.dart';
 /// Se il player lo distrugge da lontano, dropa geomi extra.
 class DecoyEnemy extends EnemyBase {
   bool _discovered = false; // Se il player ha sparato e lo ha scoperto
+  bool _exploded = false; // Guard contro doppia esplosione
   double _mimicPhase = 0;
 
   // Paint caches: evita alloc per frame × N decoy.
@@ -37,7 +38,7 @@ class DecoyEnemy extends EnemyBase {
     _mimicPhase += dt * 5;
 
     // Se il player si avvicina troppo e non è stato scoperto → esplosione trappola
-    if (!_discovered && distanceToPlayer < 30) {
+    if (!_discovered && !_exploded && !isRemoving && distanceToPlayer < 30) {
       _trapExplode();
     }
   }
@@ -53,6 +54,8 @@ class DecoyEnemy extends EnemyBase {
   }
 
   void _trapExplode() {
+    if (_exploded || isRemoving) return;
+    _exploded = true;
     game.player.takeDamage();
     game.spawnExplosion(position, const Color(0xFFFF2200), radius: 60, particleCount: 20);
     game.triggerScreenShake(5, 0.2);

@@ -78,7 +78,7 @@ class SnakeEnemy extends EnemyBase {
         math.sin(_sinePhase * _sineFrequency * math.pi * 2) * _sineAmplitude;
     final moveDir = baseDir * speed + perpDir * sineOffset;
 
-    if (moveDir.length > 0) {
+    if (moveDir.length2 > 1e-6) {
       position += moveDir.normalized() * speed * dt;
     }
 
@@ -108,13 +108,17 @@ class SnakeEnemy extends EnemyBase {
     // Update segment positions (follow the leader)
     if (_segments.isNotEmpty) {
       _segments[0] = position.clone();
+      const double kSegmentSpacing = 14.0;
+      const double kSegmentSpacingSq = kSegmentSpacing * kSegmentSpacing;
       for (int i = 1; i < _segments.length; i++) {
         final target = _segments[i - 1];
         final current = _segments[i];
         final toTarget = target - current;
-        if (toTarget.length > 14) {
+        final lenSq = toTarget.length2;
+        if (lenSq > kSegmentSpacingSq) {
+          final len = math.sqrt(lenSq);
           _segments[i] =
-              current + toTarget.normalized() * (toTarget.length - 14);
+              current + toTarget * ((len - kSegmentSpacing) / len);
         }
       }
     }

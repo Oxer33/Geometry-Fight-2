@@ -72,11 +72,11 @@ abstract class PetBase extends PositionComponent
   /// risultato in `cachedAim`. NON chiamare da render() (perf O(N)).
   Vector2 _computeAim() {
     final aim = game.aimInput;
-    if (aim.length > 0.01) return aim.normalized();
+    if (aim.length2 > 1e-4) return aim.normalized();
     final nearest = findNearestEnemy(maxDist: 800);
     if (nearest != null) {
       final to = nearest.position - game.player.position;
-      if (to.length > 0.01) return to.normalized();
+      if (to.length2 > 1e-4) return to.normalized();
     }
     return Vector2(1, 0);
   }
@@ -188,7 +188,7 @@ class CollectPet extends PetBase {
       }
     }
     final to = _wanderTarget - position;
-    if (to.length > 1) position += to.normalized() * 380 * dt;
+    if (to.length2 > 1) position += to.normalized() * 380 * dt;
 
     // Physical pickup (utente: "deve proprio andare in giro e fisicamente
     // raccogliere i geom"). Geom entro 25px → collect direct + remove.
@@ -522,25 +522,27 @@ class RamPet extends PetBase {
     }
     // Boss esclusione: findNearestEnemy filtra solo EnemyBase (BossBase è
     // classe separata) + escluso BH + spawn-invuln via isValidPetTarget.
-    if (_target == null ||
-        !_target!.isMounted ||
-        !PetBase.isValidPetTarget(_target!)) {
-      _target = findNearestEnemy(maxDist: 500);
+    var target = _target;
+    if (target == null ||
+        !target.isMounted ||
+        target.isRemoved ||
+        !PetBase.isValidPetTarget(target)) {
+      target = findNearestEnemy(maxDist: 500);
+      _target = target;
     }
-    if (_target == null || _target!.isRemoved) {
+    if (target == null) {
       // Idle orbit
-      _target = null;
       final ang = phase * 1.5;
       position = game.player.position +
           Vector2(math.cos(ang), math.sin(ang)) * 70;
       return;
     }
-    final to = _target!.position - position;
+    final to = target.position - position;
     if (to.length < 14) {
-      _target!.takeDamage(999, isArea: true);
+      target.takeDamage(999, isArea: true);
       _target = null;
       _cooldown = 1.0;
-    } else {
+    } else if (to.length2 > 1e-6) {
       position += to.normalized() * 380 * dt;
     }
   }
@@ -554,16 +556,17 @@ class RamPet extends PetBase {
 
   @override
   void render(Canvas canvas) {
-    if (_target == null || _target!.isRemoved) return;
+    final target = _target;
+    if (target == null || target.isRemoved) return;
     final cx = size.x / 2;
     final cy = size.y / 2;
     final pulse = 0.6 + math.sin(phase * 7) * 0.4;
     _glowPaint.color = def.color.withValues(alpha: 0.5 * pulse);
     canvas.drawCircle(Offset(cx, cy), 15, _glowPaint);
     // Chevron arrow puntato verso direzione movimento (target o player).
-    final tPos = _target?.position;
-    final aim = tPos != null
-        ? (tPos - position).normalized()
+    final toTarget = target.position - position;
+    final aim = toTarget.length2 > 1e-6
+        ? toTarget.normalized()
         : Vector2(1, 0);
     final ang = math.atan2(aim.y, aim.x);
     canvas.save();

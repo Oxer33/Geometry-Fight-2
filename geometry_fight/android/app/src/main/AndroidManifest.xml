@@ -1,8 +1,15 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+    <!-- Geometry Fight is a fully offline game: no INTERNET permission is
+         declared on purpose. If a future feature needs network access (e.g.
+         online leaderboard sync, telemetry), add <uses-permission
+         android:name="android.permission.INTERNET"/> here and document the
+         exact endpoint(s) and data shape it sends. -->
     <application
         android:label="Geometry Fight"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/ic_launcher"
+        tools:targetApi="33">
         <activity
             android:name=".MainActivity"
             android:exported="true"

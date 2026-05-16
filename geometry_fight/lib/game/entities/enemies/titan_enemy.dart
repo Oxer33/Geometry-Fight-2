@@ -67,9 +67,11 @@ class TitanEnemy extends EnemyBase {
 
       // Spingi via il player una sola volta quando l'onda lo raggiunge
       final dist = distanceToPlayer;
-      if (!_shockwavePushed && dist < _shockwaveRadius && dist > 0) {
+      if (!_shockwavePushed && dist < _shockwaveRadius && dist > 0.001) {
+        final pushVec = playerPosition - position;
+        if (pushVec.length2 < 1e-6) return;
         _shockwavePushed = true;
-        final pushDir = (playerPosition - position).normalized();
+        final pushDir = pushVec.normalized();
         game.player.position += pushDir * 80; // Impulso singolo
         // Clamp post-push: evita di spingere il player fuori arena/tunnel.
         if (game.isTunnelMode) {

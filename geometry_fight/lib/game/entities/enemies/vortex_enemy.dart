@@ -27,7 +27,7 @@ class VortexEnemy extends EnemyBase {
 
     // Slowly drift around
     final toPlayer = playerPosition - position;
-    if (toPlayer.length > 400) {
+    if (toPlayer.length2 > 400 * 400) {
       position += toPlayer.normalized() * speed * dt;
     }
 
@@ -80,8 +80,9 @@ class VortexEnemy extends EnemyBase {
 
     // Center — reset style + strokeWidth: `paint` è cached/condiviso.
     // Leak di strokeWidth=2 su next fill caller altrimenti.
+    // strokeWidth=1.0 è il default di Paint (non 0): ripristina lo stato standard.
     paint.style = PaintingStyle.fill;
-    paint.strokeWidth = 0;
+    paint.strokeWidth = 1.0;
     canvas.drawCircle(Offset.zero, 4 * scale, paint);
 
     canvas.restore();

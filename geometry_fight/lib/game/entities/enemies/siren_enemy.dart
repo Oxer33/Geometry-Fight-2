@@ -36,11 +36,14 @@ class SirenEnemy extends EnemyBase {
     _slowFrameCounter++;
     if (_slowFrameCounter >= 2) {
       _slowFrameCounter = 0;
+      final radiusSq = _interferenceRadius * _interferenceRadius;
       for (final bullet in game.world.children.whereType<PlayerBullet>()) {
-        final dist = bullet.position.distanceTo(position);
-        if (dist < _interferenceRadius) {
-          final pushDir = (bullet.position - position);
-          if (pushDir.length > 0) {
+        final dx = bullet.position.x - position.x;
+        final dy = bullet.position.y - position.y;
+        final distSq = dx * dx + dy * dy;
+        if (distSq < radiusSq) {
+          final pushDir = bullet.position - position;
+          if (pushDir.length2 > 1e-6) {
             pushDir.normalize();
             // Push più mite: il 400×dt precedente poteva superare il movimento
             // per-frame del bullet (al limite invertendo direzione visivamente).

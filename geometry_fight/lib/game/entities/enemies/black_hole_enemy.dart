@@ -54,14 +54,18 @@ class BlackHoleEnemy extends EnemyBase {
 
     // Attract nearby enemies + PLAYER (utente: "buchi neri non attraggono
     // il player, attrazione long-range sempre maggiore se ci si avvicina").
+    const double kAbsorbRange = 375.0;
+    const double kAbsorbRangeSq = kAbsorbRange * kAbsorbRange;
+    const double kAbsorbHitSq = 15.0 * 15.0;
     final toAbsorb = <EnemyBase>[];
     for (final child in game.world.children) {
       if (child is EnemyBase && child != this) {
         if (child is BlackHoleEnemy) continue;
         final toHole = position - child.position;
-        if (toHole.length > 0 && toHole.length < 375) {
+        final lenSq = toHole.length2;
+        if (lenSq > 1e-6 && lenSq < kAbsorbRangeSq) {
           child.position += toHole.normalized() * 90 * dt;
-          if (toHole.length < 15) {
+          if (lenSq < kAbsorbHitSq) {
             toAbsorb.add(child);
           }
         }
@@ -72,8 +76,11 @@ class BlackHoleEnemy extends EnemyBase {
     if (!game.player.isInvincible && game.player.lives > 0) {
       final toHole = position - game.player.position;
       const playerPullRadius = 600.0;
-      if (toHole.length > 1 && toHole.length < playerPullRadius) {
-        final proximity = 1.0 - (toHole.length / playerPullRadius);
+      const playerPullRadiusSq = playerPullRadius * playerPullRadius;
+      final lenSq = toHole.length2;
+      if (lenSq > 1.0 && lenSq < playerPullRadiusSq) {
+        final dist = math.sqrt(lenSq);
+        final proximity = 1.0 - (dist / playerPullRadius);
         // Nerf -30% (utente). Base 60→42, quad 240→168 → 42 bordo, 210 centro.
         final force = 42.0 + proximity * proximity * 168.0;
         final pullDir = toHole.normalized();

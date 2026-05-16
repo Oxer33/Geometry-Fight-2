@@ -320,6 +320,18 @@ class SpaceBackground extends PositionComponent
       canvas.drawCircle(Offset(d.x, d.y), d.size * 1.5, _dustPaint);
     }
   }
+
+  @override
+  void onRemove() {
+    // Dispose tutti gli Shader cached della nebula per evitare leak GPU
+    // quando lo sfondo è rimosso (restart, change scene, dispose).
+    // Il `_bgShader` è static e condiviso → NON dispose qui (vive col process).
+    for (final shader in _nebulaShaderCache.values) {
+      shader.dispose();
+    }
+    _nebulaShaderCache.clear();
+    super.onRemove();
+  }
 }
 
 /// Particella di polvere cosmica che fluttua lentamente

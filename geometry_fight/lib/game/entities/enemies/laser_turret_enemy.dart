@@ -65,9 +65,9 @@ class LaserTurretEnemy extends EnemyBase {
 
   double _distToSegment(Vector2 p, Vector2 a, Vector2 b) {
     final ab = b - a;
-    final len = ab.length;
-    if (len == 0) return p.distanceTo(a);
-    final t = ((p - a).dot(ab) / (len * len)).clamp(0.0, 1.0);
+    final lenSq = ab.length2;
+    if (lenSq < 1e-6) return p.distanceTo(a);
+    final t = ((p - a).dot(ab) / lenSq).clamp(0.0, 1.0);
     return p.distanceTo(a + ab * t);
   }
 

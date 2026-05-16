@@ -24,9 +24,11 @@ class MirrorEnemy extends EnemyBase {
   static final Paint _cdPaint = Paint()
     ..style = PaintingStyle.stroke
     ..strokeWidth = 1;
+  // Static RNG shared across all MirrorEnemy instances — avoids per-instance alloc.
+  static final math.Random _rng = math.Random();
 
   MirrorEnemy()
-      : _orbitAngle = math.Random().nextDouble() * math.pi * 2,
+      : _orbitAngle = _rng.nextDouble() * math.pi * 2,
         super(
           hp: 5,
           speed: 90,

@@ -114,13 +114,16 @@ class PowerUp extends PositionComponent
       ..position = size / 2);
   }
 
+  static const double _attractionRange = 120.0;
+
   @override
   void update(double dt) {
     super.update(dt);
-    // Usa dt reale per lifetime (non affetto da slow-mo)
-    final realDt = game.timeScale > 0.01 ? dt / game.timeScale : dt;
-    _phase += dt * 3;
-    _pulsePhase += dt * 6;
+    // Usa dt reale per lifetime (non affetto da slow-mo): clamp consistente
+    // con altre entità (0.3 min) per evitare divisione runaway in bomb-freeze.
+    final realDt = dt / game.timeScale.clamp(0.3, 1.0);
+    _phase += realDt * 3;
+    _pulsePhase += realDt * 6;
     _lifetime -= realDt;
     if (_lifetime <= 0) {
       removeFromParent();
@@ -138,12 +141,13 @@ class PowerUp extends PositionComponent
     // Attrazione verso il player (come i geomi, raggio 120px)
     final player = game.player;
     final dist = position.distanceTo(player.position);
-    if (dist < 120) {
+    if (dist < _attractionRange) {
       final dir = (player.position - position);
-      if (dir.length > 0) {
+      if (dir.length2 > 1e-6) {
         dir.normalize();
-        final attractSpeed = 300.0 + (1.0 - dist / 120) * 200;
-        position += dir * attractSpeed * dt;
+        final attractSpeed =
+            300.0 + (1.0 - dist / _attractionRange) * 200;
+        position += dir * attractSpeed * realDt;
       }
     }
   }

@@ -233,4 +233,13 @@ class FloatingText extends PositionComponent {
     }
     _cachedPainter!.paint(canvas, Offset(-_cachedPainter!.width / 2, -_cachedPainter!.height / 2));
   }
+
+  @override
+  void onRemove() {
+    // Dispose TextPainter to prevent leak when component is removed
+    // before lifetime expires (e.g., game restart, world.removeAll).
+    _cachedPainter?.dispose();
+    _cachedPainter = null;
+    super.onRemove();
+  }
 }

@@ -66,9 +66,11 @@ class GateEnemy extends PositionComponent
   // Size component bbox +66% iter 2 (era 90×90 → 150×150). Necessario per
   // contenere _gateWidth=112.5 + 2×sphere visual r=14 = 140.5 con margine.
   // 150 dà ~9px buffer per pulse FX delle sfere.
+  // Static RNG shared across all GateEnemy instances — avoids per-instance alloc.
+  static final math.Random _rng = math.Random();
+
   GateEnemy() : super(size: Vector2(150, 150), anchor: Anchor.center) {
-    final r = math.Random();
-    final angle = r.nextDouble() * math.pi * 2;
+    final angle = _rng.nextDouble() * math.pi * 2;
     _moveDir = Vector2(math.cos(angle), math.sin(angle));
     _targetDir = _moveDir.clone();
   }
@@ -105,7 +107,7 @@ class GateEnemy extends PositionComponent
   double _pointToSegmentDistance(Vector2 p, Vector2 a, Vector2 b) {
     final ab = b - a;
     final lenSq = ab.length2;
-    if (lenSq == 0) return p.distanceTo(a);
+    if (lenSq < 1e-6) return p.distanceTo(a);
     final ap = p - a;
     final t = (ap.dot(ab) / lenSq).clamp(0.0, 1.0);
     final projection = a + ab * t;
@@ -170,7 +172,7 @@ class GateEnemy extends PositionComponent
     final lerpRate = (dt * 5).clamp(0.0, 1.0);
     _moveDir.x += (_targetDir.x - _moveDir.x) * lerpRate;
     _moveDir.y += (_targetDir.y - _moveDir.y) * lerpRate;
-    if (_moveDir.length > 0.01) {
+    if (_moveDir.length2 > 1e-4) {
       _moveDir.normalize();
     }
 

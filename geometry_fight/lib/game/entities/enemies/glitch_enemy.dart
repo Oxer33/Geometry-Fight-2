@@ -101,10 +101,9 @@ class GlitchEnemy extends EnemyBase {
       game.grid.applyForce(position, 80, 300);
     }
     // E nel punto di partenza
-    if (_prevPosition != null) {
-      if (!game.isTunnelMode) {
-        game.grid.applyForce(_prevPosition!, 60, 200);
-      }
+    final prev = _prevPosition;
+    if (prev != null && !game.isTunnelMode) {
+      game.grid.applyForce(prev, 60, 200);
     }
   }
 
@@ -124,9 +123,10 @@ class GlitchEnemy extends EnemyBase {
     final r = size.x / 2 * scale;
 
     // Effetto "scia glitch" dalla posizione precedente
-    if (_prevPosition != null && _flashTimer > 0) {
+    final prev = _prevPosition;
+    if (prev != null && _flashTimer > 0) {
       final ghostAlpha = _flashTimer / 0.2;
-      final ghostOffset = _prevPosition! - position;
+      final ghostOffset = prev - position;
       _ghostPaint.color = neonColor.withValues(alpha: ghostAlpha * 0.15);
       canvas.drawRect(
         Rect.fromCenter(

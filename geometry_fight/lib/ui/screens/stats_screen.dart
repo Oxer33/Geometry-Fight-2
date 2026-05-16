@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../data/save_data.dart';
 import '../../data/achievements.dart';
@@ -17,6 +18,7 @@ class _StatsScreenState extends State<StatsScreen>
   late AnimationController _entranceController;
   late AnimationController _counterController;
   late AnimationController _glowController;
+  Timer? _counterDelay;
 
   // Cache save data once — avoid 60x/sec deserialization
   late final SaveData _saveData;
@@ -49,13 +51,14 @@ class _StatsScreenState extends State<StatsScreen>
       vsync: this,
     )..repeat(reverse: true);
 
-    Future.delayed(const Duration(milliseconds: 300), () {
+    _counterDelay = Timer(const Duration(milliseconds: 300), () {
       if (mounted) _counterController.forward();
     });
   }
 
   @override
   void dispose() {
+    _counterDelay?.cancel();
     _entranceController.dispose();
     _counterController.dispose();
     _glowController.dispose();

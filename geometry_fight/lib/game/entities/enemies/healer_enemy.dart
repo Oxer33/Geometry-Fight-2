@@ -74,12 +74,14 @@ class HealerEnemy extends EnemyBase {
   }
 
   void _healNearbyEnemies() {
-    for (final child in game.world.children) {
-      if (child is EnemyBase && child != this) {
-        final dist = child.position.distanceTo(position);
-        if (dist < _healRadius && child.hp < child.maxHp) {
-          child.hp = (child.hp + 1).clamp(0, child.maxHp);
-        }
+    final radiusSq = _healRadius * _healRadius;
+    for (final child in game.world.children.whereType<EnemyBase>()) {
+      if (child == this) continue;
+      if (child.hp >= child.maxHp) continue;
+      final dx = child.position.x - position.x;
+      final dy = child.position.y - position.y;
+      if (dx * dx + dy * dy < radiusSq) {
+        child.hp = (child.hp + 1).clamp(0, child.maxHp);
       }
     }
   }

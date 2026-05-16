@@ -91,14 +91,13 @@ class ShieldEnemy extends EnemyBase {
         // Fermo, si orienta verso il player (piccolo movimento)
         final velocity = seekPlayer(15);
         position += velocity * dt;
-        _chargeDir = (playerPosition - position).normalized();
-        // Dopo lock-on, carica!
-        // Safety check: ensure _chargeDir is never zero when transitioning to charge
-        if (_chargeDir.length == 0) {
-          final fallback = playerPosition - position;
-          _chargeDir = fallback.length > 0
-              ? fallback.normalized()
-              : Vector2(1, 0); // default rightward if player is exactly on top
+        {
+          final delta = playerPosition - position;
+          if (delta.length2 > 1e-6) {
+            _chargeDir = delta.normalized();
+          } else {
+            _chargeDir = Vector2(1, 0); // default rightward if player is exactly on top
+          }
         }
         if (_stateTimer >= _lockOnDuration) {
           _state = _ShieldState.charging;
@@ -134,15 +133,17 @@ class ShieldEnemy extends EnemyBase {
   /// I proiettili rimbalzano via nella direzione opposta allo scudo.
   void _repelNearbyBullets() {
     final shieldDir = (playerPosition - position);
-    if (shieldDir.length == 0) return;
+    if (shieldDir.length2 < 1e-6) return;
     final shieldNormal = shieldDir.normalized();
 
     // Colleziona i proiettili da respingere (senza rimuoverli durante l'iterazione)
     final toRepel = <PlayerBullet>[];
+    const double kRepelRangeSq = 25.0 * 25.0;
     for (final child in game.world.children) {
       if (child is PlayerBullet) {
         final toBullet = child.position - position;
-        if (toBullet.length > 0 && toBullet.length < 25) {
+        final lenSq = toBullet.length2;
+        if (lenSq > 1e-6 && lenSq < kRepelRangeSq) {
           final dot = toBullet.normalized().dot(shieldNormal);
           if (dot > 0.3) {
             toRepel.add(child);
@@ -152,7 +153,9 @@ class ShieldEnemy extends EnemyBase {
     }
     // Rimuovi fuori dal loop per evitare ConcurrentModificationError
     for (final bullet in toRepel) {
-      final pushDir = (bullet.position - position).normalized();
+      final delta = bullet.position - position;
+      if (delta.length2 < 1e-6) continue;
+      final pushDir = delta.normalized();
       bullet.position += pushDir * 30;
       game.spawnExplosion(bullet.position, NeonColors.purple, radius: 8, particleCount: 3);
       bullet.removeFromParent();

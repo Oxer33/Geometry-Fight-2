@@ -54,14 +54,12 @@ class WeaverEnemy extends EnemyBase {
       double closestDist = 140; // Raggio di rilevamento ampio.
       const imminentDist = 25.0; // Urgenza max → early break (O(n) evitato).
 
-      for (final child in game.world.children) {
-        if (child is PlayerBullet) {
-          final dist = child.position.distanceTo(position);
-          if (dist < closestDist) {
-            closestDist = dist;
-            closestBullet = child;
-            if (dist < imminentDist) break; // perf: urgenza max raggiunta.
-          }
+      for (final bullet in game.world.children.whereType<PlayerBullet>()) {
+        final dist = bullet.position.distanceTo(position);
+        if (dist < closestDist) {
+          closestDist = dist;
+          closestBullet = bullet;
+          if (dist < imminentDist) break; // perf: urgenza max raggiunta.
         }
       }
 

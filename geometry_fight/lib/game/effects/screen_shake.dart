@@ -61,8 +61,10 @@ class ScreenShakeEffect extends Component {
 
   @override
   void onRemove() {
-    // Safety: undo any remaining offset when removed
-    if (parent is PositionComponent && _previousOffset.length > 0) {
+    // Safety: undo any remaining offset when removed.
+    // Use length2 (squared) to avoid sqrt — cheaper and avoids the float==0
+    // pitfall of comparing computed lengths against 0.
+    if (parent is PositionComponent && _previousOffset.length2 > 0) {
       (parent as PositionComponent).position -= _previousOffset;
       _previousOffset = Vector2.zero();
     }
