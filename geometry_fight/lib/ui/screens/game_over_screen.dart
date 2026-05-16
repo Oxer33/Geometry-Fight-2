@@ -550,17 +550,17 @@ class _GameOverScreenState extends State<GameOverScreen>
       alignment: WrapAlignment.center,
       children: [
         if (widget.kills >= 200)
-          _GlowBadge(text: 'KILLER', color: Colors.orangeAccent),
+          const _GlowBadge(text: 'KILLER', color: Colors.orangeAccent),
         if (widget.kills >= 500)
-          _GlowBadge(text: 'MASSACRO', color: Colors.redAccent),
+          const _GlowBadge(text: 'MASSACRO', color: Colors.redAccent),
         if (widget.wave >= 20)
-          _GlowBadge(text: 'PERSISTENTE', color: Colors.cyanAccent),
+          const _GlowBadge(text: 'PERSISTENTE', color: Colors.cyanAccent),
         if (widget.wave >= 50)
-          _GlowBadge(text: 'VETERANO', color: Colors.purpleAccent),
+          const _GlowBadge(text: 'VETERANO', color: Colors.purpleAccent),
         if (widget.bossKills >= 3)
-          _GlowBadge(text: 'BOSS HUNTER', color: Colors.amberAccent),
+          const _GlowBadge(text: 'BOSS HUNTER', color: Colors.amberAccent),
         if (widget.bossKills >= 5)
-          _GlowBadge(text: 'REGICIDA', color: Colors.amber),
+          const _GlowBadge(text: 'REGICIDA', color: Colors.amber),
       ],
     );
   }

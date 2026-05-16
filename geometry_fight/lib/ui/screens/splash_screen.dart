@@ -773,10 +773,10 @@ class _SplashPainter extends CustomPainter {
     final vertexPulse = 0.4 + math.sin(t * 20) * 0.4;
     _droneVertexPaint.color = bodyColor.withValues(alpha: vertexPulse);
     final vertices = [
-      Offset(0, -h * 0.9),
-      Offset(w * 0.9, 0),
-      Offset(0, h * 0.9),
-      Offset(-w * 0.9, 0),
+      const Offset(0, -h * 0.9),
+      const Offset(w * 0.9, 0),
+      const Offset(0, h * 0.9),
+      const Offset(-w * 0.9, 0),
     ];
     for (final v in vertices) {
       canvas.drawCircle(v, 1.6, _droneVertexPaint);
@@ -839,36 +839,36 @@ class _SplashPainter extends CustomPainter {
     final cockpitGlow = 0.6 + math.sin(t * 10) * 0.2;
     _cockpitHaloPaint.color =
         const Color(0xFFFFFFFF).withValues(alpha: cockpitGlow * 0.5);
-    canvas.drawCircle(Offset(0, -4 * s), 5, _cockpitHaloPaint);
+    canvas.drawCircle(const Offset(0, -4 * s), 5, _cockpitHaloPaint);
     _cockpitWhitePaint.color =
         const Color(0xFFFFFFFF).withValues(alpha: cockpitGlow);
-    canvas.drawCircle(Offset(0, -4 * s), 3, _cockpitWhitePaint);
+    canvas.drawCircle(const Offset(0, -4 * s), 3, _cockpitWhitePaint);
     _cockpitCyanPaint.color =
         const Color(0xFF00FFFF).withValues(alpha: 0.9);
-    canvas.drawCircle(Offset(0, -4 * s), 2, _cockpitCyanPaint);
+    canvas.drawCircle(const Offset(0, -4 * s), 2, _cockpitCyanPaint);
 
     // Linee strutturali (stesse di `Player._renderShipDetails`)
     canvas.drawLine(
-        Offset(-2 * s, 0), Offset(-10 * s, 10 * s), _shipLinePaint);
+        const Offset(-2 * s, 0), const Offset(-10 * s, 10 * s), _shipLinePaint);
     canvas.drawLine(
-        Offset(2 * s, 0), Offset(10 * s, 10 * s), _shipLinePaint);
+        const Offset(2 * s, 0), const Offset(10 * s, 10 * s), _shipLinePaint);
     canvas.drawLine(
-        Offset(0, -8 * s), Offset(0, 8 * s), _shipLinePaint);
+        const Offset(0, -8 * s), const Offset(0, 8 * s), _shipLinePaint);
 
     // ─── WING-TIP LIGHTS (rossa a sx, verde a dx — come in gioco) ───
     final wingPulse = 0.5 + math.sin(t * 15) * 0.5;
     _wingRedGlowPaint.color =
         Color.fromRGBO(255, 50, 50, wingPulse * 0.3);
-    canvas.drawCircle(Offset(-12 * s, 10 * s), 4, _wingRedGlowPaint);
+    canvas.drawCircle(const Offset(-12 * s, 10 * s), 4, _wingRedGlowPaint);
     _wingRedCorePaint.color =
         Color.fromRGBO(255, 50, 50, wingPulse * 0.9);
-    canvas.drawCircle(Offset(-12 * s, 10 * s), 2, _wingRedCorePaint);
+    canvas.drawCircle(const Offset(-12 * s, 10 * s), 2, _wingRedCorePaint);
     _wingGreenGlowPaint.color =
         Color.fromRGBO(50, 255, 100, wingPulse * 0.3);
-    canvas.drawCircle(Offset(12 * s, 10 * s), 4, _wingGreenGlowPaint);
+    canvas.drawCircle(const Offset(12 * s, 10 * s), 4, _wingGreenGlowPaint);
     _wingGreenCorePaint.color =
         Color.fromRGBO(50, 255, 100, wingPulse * 0.9);
-    canvas.drawCircle(Offset(12 * s, 10 * s), 2, _wingGreenCorePaint);
+    canvas.drawCircle(const Offset(12 * s, 10 * s), 2, _wingGreenCorePaint);
 
     canvas.restore();
   }
@@ -1335,7 +1335,7 @@ class _SplashPainter extends CustomPainter {
       _cachedScoreValue = score;
     }
     final sp = _cachedScorePainter!;
-    sp.paint(canvas, Offset(20, 24));
+    sp.paint(canvas, const Offset(20, 24));
 
     // === MULTIPLIER top-right (badge cyan glow) ===
     if (_cachedMultPainter == null || _cachedMultValue != mult) {

@@ -18,18 +18,28 @@
 
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="A new Flutter project.">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="Geometry Fight - a Flutter/Flame arcade game.">
+  <meta name="theme-color" content="#0175C2">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+
+  <!--
+    Content Security Policy.
+    Flutter web's CanvasKit/Skwasm runtime requires 'wasm-unsafe-eval'.
+    Tighten further (drop blob:, narrow connect-src) once asset hosts are pinned.
+  -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'">
 
   <!-- iOS meta tags & icons -->
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="apple-mobile-web-app-title" content="geometry_fight">
+  <meta name="apple-mobile-web-app-title" content="Geometry Fight">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
 
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="favicon.png"/>
 
-  <title>geometry_fight</title>
+  <title>Geometry Fight</title>
   <link rel="manifest" href="manifest.json">
 </head>
 <body>

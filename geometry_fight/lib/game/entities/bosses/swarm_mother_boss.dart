@@ -315,11 +315,11 @@ class SwarmMotherBoss extends BossBase {
       canvas.translate(cx, cy);
       canvas.rotate(_laserAngle);
       _laserGlowPaint.color = NeonColors.laserRed.withValues(alpha: 0.35);
-      canvas.drawRect(Rect.fromLTWH(0, -10, 1500, 20), _laserGlowPaint);
+      canvas.drawRect(const Rect.fromLTWH(0, -10, 1500, 20), _laserGlowPaint);
       _laserCorePaint.color = NeonColors.laserRed;
-      canvas.drawRect(Rect.fromLTWH(0, -2, 1500, 4), _laserCorePaint);
+      canvas.drawRect(const Rect.fromLTWH(0, -2, 1500, 4), _laserCorePaint);
       _laserCorePaint.color = const Color(0xFFFFFFFF).withValues(alpha: 0.7);
-      canvas.drawRect(Rect.fromLTWH(0, -1, 1500, 2), _laserCorePaint);
+      canvas.drawRect(const Rect.fromLTWH(0, -1, 1500, 2), _laserCorePaint);
       canvas.restore();
     }
   }

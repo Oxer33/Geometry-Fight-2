@@ -291,13 +291,13 @@ class TheGridBoss extends BossBase {
       canvas.translate(cx, cy);
       canvas.rotate(_laserAngle);
       // Glow laser
-      canvas.drawRect(Rect.fromLTWH(0, -6, 1500, 12), _laserPaint);
+      canvas.drawRect(const Rect.fromLTWH(0, -6, 1500, 12), _laserPaint);
       // Core laser
       _laserPaint.color = NeonColors.laserRed;
-      canvas.drawRect(Rect.fromLTWH(0, -2, 1500, 4), _laserPaint);
+      canvas.drawRect(const Rect.fromLTWH(0, -2, 1500, 4), _laserPaint);
       // Centro bianco del laser
       _laserWhitePaint.color = const Color(0xFFFFFFFF).withValues(alpha: 0.5);
-      canvas.drawRect(Rect.fromLTWH(0, -1, 1500, 2), _laserWhitePaint);
+      canvas.drawRect(const Rect.fromLTWH(0, -1, 1500, 2), _laserWhitePaint);
       canvas.restore();
     }
   }

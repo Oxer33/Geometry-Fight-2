@@ -1601,16 +1601,16 @@ class WaveSystem {
 
     // Rari/speciali — raddoppiati
     if (wave % 3 == 0) spawns.add(WaveSpawn(EnemyType.titan, (wave ~/ 8).clamp(1, 4), delay: 5));
-    if (wave % 4 == 0) spawns.add(WaveSpawn(EnemyType.blackHole, 2, delay: 6));
+    if (wave % 4 == 0) spawns.add(const WaveSpawn(EnemyType.blackHole, 2, delay: 6));
     if (wave % 3 == 0) spawns.add(WaveSpawn(EnemyType.healer, (wave ~/ 10).clamp(1, 4), delay: 5));
     if (wave % 4 == 0) spawns.add(WaveSpawn(EnemyType.laserTurret, (wave ~/ 12).clamp(1, 4), delay: 6));
-    if (wave % 5 == 0) spawns.add(WaveSpawn(EnemyType.gravityWell, 2, delay: 7));
+    if (wave % 5 == 0) spawns.add(const WaveSpawn(EnemyType.gravityWell, 2, delay: 7));
     if (wave % 3 == 0) spawns.add(WaveSpawn(EnemyType.timeBomb, (wave ~/ 10).clamp(1, 4), delay: 5));
     if (wave % 2 == 0) spawns.add(WaveSpawn(EnemyType.decoy, (wave ~/ 5).clamp(2, 6), delay: 4));
     if (wave > 110) {
       spawns.add(WaveSpawn(EnemyType.orbiter, (wave ~/ 8).clamp(2, 6), delay: 5));
       spawns.add(WaveSpawn(EnemyType.siren, (wave ~/ 10).clamp(2, 4), delay: 6));
-      spawns.add(WaveSpawn(EnemyType.necro, 2, delay: 7));
+      spawns.add(const WaveSpawn(EnemyType.necro, 2, delay: 7));
     }
 
     return WaveConfig(waveNumber: wave, spawns: spawns);

@@ -158,7 +158,7 @@ class _MainMenuScreenState extends State<MainMenuScreen>
     // Track streak achievement
     AchievementManager.updateProgress('daily_streak_7', streak);
     AchievementManager.updateProgress('daily_streak_30', streak);
-    showDialog<void>(
+    unawaited(showDialog<void>(
       context: context,
       barrierDismissible: false,
       builder: (ctx) => AlertDialog(
@@ -217,7 +217,7 @@ class _MainMenuScreenState extends State<MainMenuScreen>
           ),
         ],
       ),
-    );
+    ));
   }
 
   String _formatNumber(int n) {
@@ -691,7 +691,7 @@ class _MainMenuScreenState extends State<MainMenuScreen>
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(
+                            const Icon(
                               Icons.play_arrow_rounded,
                               color: Colors.cyanAccent,
                               size: 30,
@@ -709,7 +709,7 @@ class _MainMenuScreenState extends State<MainMenuScreen>
                                 fontFamily: 'monospace',
                                 letterSpacing: 8,
                                 shadows: [
-                                  Shadow(color: Colors.cyanAccent, blurRadius: 10),
+                                  const Shadow(color: Colors.cyanAccent, blurRadius: 10),
                                   Shadow(
                                     color: Colors.cyanAccent.withValues(alpha: 0.5),
                                     blurRadius: 20,

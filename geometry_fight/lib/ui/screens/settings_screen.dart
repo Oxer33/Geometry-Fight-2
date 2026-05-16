@@ -732,12 +732,12 @@ class _SettingsScreenState extends State<SettingsScreen>
                     side: BorderSide(
                         color: Colors.redAccent.withValues(alpha: 0.3)),
                   ),
-                  title: Row(
+                  title: const Row(
                     children: [
                       Icon(Icons.warning_rounded,
                           color: Colors.redAccent, size: 20),
-                      const SizedBox(width: 8),
-                      const Text('RESET DATA',
+                      SizedBox(width: 8),
+                      Text('RESET DATA',
                           style: TextStyle(
                             color: Colors.redAccent,
                             fontFamily: 'monospace',
@@ -810,13 +810,13 @@ class _SettingsScreenState extends State<SettingsScreen>
                   ],
                 ),
               ),
-              child: Row(
+              child: const Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.delete_forever_rounded,
+                  Icon(Icons.delete_forever_rounded,
                       color: Colors.redAccent, size: 18),
-                  const SizedBox(width: 8),
-                  const Text(
+                  SizedBox(width: 8),
+                  Text(
                     'RESET ALL DATA',
                     style: TextStyle(
                       color: Colors.redAccent,

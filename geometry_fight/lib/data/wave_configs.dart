@@ -364,7 +364,7 @@ List<WaveConfig> generateWaveConfigs() {
 
     // Gate hazard raro: 1 ogni 10 wave non-boss (11, 21, 31, ...).
     if (wave >= 11 && wave % 10 == 1) {
-      spawns.add(WaveSpawn(EnemyType.gate, 1, delay: 10));
+      spawns.add(const WaveSpawn(EnemyType.gate, 1, delay: 10));
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -766,7 +766,7 @@ void _pushHistory(List<int> h, int idx) {
 final List<_Archetype> _archetypes = [
   // ─── TIER 1 ─────────────────────────────────────────────────────────
   _Archetype('CARDINAL QUARTET', 1, (w) => [
-        WaveSpawn(EnemyType.drone, 4, delay: 0),
+        const WaveSpawn(EnemyType.drone, 4, delay: 0),
         WaveSpawn(EnemyType.drone, (12 + w).clamp(12, 30), delay: 3.0),
       ]),
   _Archetype('INCOMING RUSH', 1, (w) => [
@@ -783,8 +783,8 @@ final List<_Archetype> _archetypes = [
         WaveSpawn(EnemyType.drone, (15 + w).clamp(15, 35), delay: 2.0),
       ]),
   _Archetype('PAIR ESCALATION', 1, (w) => [
-        WaveSpawn(EnemyType.shieldEnemy, 2, delay: 0),
-        WaveSpawn(EnemyType.weaver, 2, delay: 0.5),
+        const WaveSpawn(EnemyType.shieldEnemy, 2, delay: 0),
+        const WaveSpawn(EnemyType.weaver, 2, delay: 0.5),
         WaveSpawn(EnemyType.drone, (25 + w * 2).clamp(25, 60), delay: 3.0),
       ]),
 
@@ -886,7 +886,7 @@ final List<_Archetype> _archetypes = [
 
   // ─── TIER 4 — NIGHTMARE (wave 45+) ──────────────────────────────────
   _Archetype('VOID STORM', 4, (w) => [
-        WaveSpawn(EnemyType.blackHole, 2, delay: 0.5),
+        const WaveSpawn(EnemyType.blackHole, 2, delay: 0.5),
         WaveSpawn(EnemyType.drone, (35 + w).clamp(35, 70), delay: 2.5),
         WaveSpawn(EnemyType.proton, (8 + w ~/ 5).clamp(8, 20), delay: 4.0),
       ]),

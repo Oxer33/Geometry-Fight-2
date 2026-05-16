@@ -209,7 +209,7 @@ class SpaceBackground extends PositionComponent
   static Shader? _bgShader;
 
   void _renderDeepSpaceGradient(Canvas canvas) {
-    final rect = Rect.fromLTWH(0, 0, arenaWidth, arenaHeight);
+    final rect = const Rect.fromLTWH(0, 0, arenaWidth, arenaHeight);
     // Cache del gradiente statico (non cambia mai)
     _bgShader ??= const RadialGradient(
       center: Alignment.center,
@@ -380,7 +380,7 @@ class ArenaBorder extends PositionComponent
   void render(Canvas canvas) {
     // Non disegnare il bordo in tunnel mode (il tunnel ha i suoi muri)
     if (game.isTunnelMode) return;
-    final rect = Rect.fromLTWH(0, 0, arenaWidth, arenaHeight);
+    final rect = const Rect.fromLTWH(0, 0, arenaWidth, arenaHeight);
     canvas.drawRect(rect, _borderGlowPaint);
     canvas.drawRect(rect, _borderMainPaint);
     canvas.drawRect(rect, _borderInnerPaint);

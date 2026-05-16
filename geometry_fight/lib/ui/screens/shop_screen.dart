@@ -1359,7 +1359,7 @@ class _PurchaseButtonState extends State<_PurchaseButton> {
         scale: _pressed ? 0.93 : 1.0,
         duration: const Duration(milliseconds: 80),
         child: Container(
-          padding: EdgeInsets.symmetric(
+          padding: const EdgeInsets.symmetric(
             horizontal: 12,
             vertical: 5,
           ),
@@ -1380,7 +1380,7 @@ class _PurchaseButtonState extends State<_PurchaseButton> {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.diamond, color: const Color(0xFFFFD700),
+              const Icon(Icons.diamond, color: Color(0xFFFFD700),
                   size: 12),
               const SizedBox(width: 4),
               Text(
@@ -2279,7 +2279,7 @@ class _SkinPreviewPainter extends CustomPainter {
     final nodes = [
       Offset(-8 * s, -4 * s),
       Offset(8 * s, -4 * s),
-      Offset(0, 0),
+      const Offset(0, 0),
       Offset(-4 * s, 8 * s),
       Offset(4 * s, 8 * s),
     ];
@@ -3018,7 +3018,7 @@ class _WeaponPreviewPainter extends CustomPainter {
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8));
     canvas.drawPath(shipPath, Paint()..color = NeonColors.cyan);
     // Cockpit
-    canvas.drawCircle(Offset(0, -5 * s), 2 * s, Paint()..color = Colors.white.withValues(alpha: 0.7));
+    canvas.drawCircle(const Offset(0, -5 * s), 2 * s, Paint()..color = Colors.white.withValues(alpha: 0.7));
     canvas.restore();
 
     // Muzzle flash pulsante
@@ -3392,10 +3392,10 @@ class _WeaponPreviewPainter extends CustomPainter {
       canvas.drawRRect(
         RRect.fromRectAndRadius(
           Rect.fromCenter(
-              center: Offset(0, bodyH * 0.05),
+              center: const Offset(0, bodyH * 0.05),
               width: bodyW,
               height: bodyH * 0.8),
-          Radius.circular(bodyW * 0.25),
+          const Radius.circular(bodyW * 0.25),
         ),
         _homingBodyPaint..color = color.withValues(alpha: alpha),
       );

@@ -146,8 +146,8 @@ class AttackPet extends PetBase {
     canvas.drawPath(path, _outlinePaint);
     // Twin barrels (parallel slots forward)
     _fillPaint.color = const Color(0xFFFFFFFF);
-    canvas.drawRect(Rect.fromLTWH(2, -4, 9, 1.5), _fillPaint);
-    canvas.drawRect(Rect.fromLTWH(2, 2.5, 9, 1.5), _fillPaint);
+    canvas.drawRect(const Rect.fromLTWH(2, -4, 9, 1.5), _fillPaint);
+    canvas.drawRect(const Rect.fromLTWH(2, 2.5, 9, 1.5), _fillPaint);
     canvas.restore();
   }
 }
@@ -381,7 +381,7 @@ class DefendPet extends PetBase {
     canvas.drawPath(shieldPath, _outlinePaint);
     // Cannon barrel (forward = back-direction in pet frame)
     _fillPaint.color = const Color(0xFFFFFFFF);
-    canvas.drawRect(Rect.fromLTWH(4, -1.5, 8, 3), _fillPaint);
+    canvas.drawRect(const Rect.fromLTWH(4, -1.5, 8, 3), _fillPaint);
     canvas.restore();
   }
 }
