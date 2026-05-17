@@ -751,7 +751,12 @@ class EmpDronePet extends PetBase {
     position = game.player.position +
         Vector2(math.cos(ang), math.sin(ang)) * 52;
 
-    _pulseTimer -= dt;
+    // Pulse timer in REAL dt: 8s reali tra pulse anche durante slow-mo.
+    // I pets ricevono dt scalato dal world; dividiamo per timeScale per
+    // tornare a tempo reale. Clamp a 0.1 evita bomb-freeze esplosivo.
+    final scaleDiv = game.timeScale.clamp(0.1, 1.0);
+    final realDt = dt / scaleDiv;
+    _pulseTimer -= realDt;
     if (_pulseTimer <= 0) {
       _pulseTimer = _pulseInterval;
       // Stun nemici entro raggio. Esclude boss + spawn-invuln.
@@ -845,12 +850,19 @@ class TacticalSpotterPet extends PetBase {
     position = game.player.position +
         Vector2(math.cos(ang), math.sin(ang)) * _orbitRadius;
 
-    // Decrementa cooldown ogni frame (real dt, non scaledDt).
-    if (_cooldown > 0) _cooldown -= dt;
+    // Decrementa cooldown/slow timer in REAL dt (compensa game.timeScale):
+    // i pets ricevono dt già scalato dal world, quindi se siamo dentro lo
+    // slow-mo che noi stessi abbiamo attivato il timer ticchetterebbe a 0.4×
+    // → 0.5s di slow-mo durerebbero 1.25s reali. Dividendo per timeScale
+    // riportiamo a real-time. Clamp a 0.1 min per evitare bomb-freeze
+    // (timeScale≈0.05) che farebbe esplodere realDt → 20× dt.
+    final scaleDiv = game.timeScale.clamp(0.1, 1.0);
+    final realDt = dt / scaleDiv;
+    if (_cooldown > 0) _cooldown -= realDt;
 
     // Gestione slow-mo attivo: decrementa e ripristina al termine.
     if (_slowActive) {
-      _slowTimer -= dt;
+      _slowTimer -= realDt;
       if (_slowTimer <= 0) {
         _slowActive = false;
         // Ripristina lo scale precedente solo se nessun altro sistema lo ha
@@ -865,9 +877,14 @@ class TacticalSpotterPet extends PetBase {
     // Usa starting lives come reference (lives correnti / startingLives).
     final startingLives = game.diffConfig.startingLives +
         (game.saveData.startingLives - 3);
+    // Guard div-by-zero: startingLives <= 0 disabilita il trigger.
     if (startingLives <= 0) return;
     final hpRatio = game.player.lives / startingLives;
     if (!_slowActive && _cooldown <= 0 && hpRatio <= _hpThreshold) {
+      // Snapshot solo se non stiamo per clobberare uno scale "anomalo":
+      // se game.timeScale è già != 1.0 (es. bomb-freeze, TimeSlow powerup,
+      // altro pet che ha rallentato), preserviamo quello come prior così
+      // al ripristino non rompiamo lo stato altrui.
       _priorTimeScale = game.timeScale;
       game.timeScale = _slowFactor;
       _slowTimer = _slowDuration;

@@ -125,6 +125,7 @@ class _ShopScreenState extends State<ShopScreen>
       });
       unawaited(SaveManager.save(_saveData));
     } else {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Gold insufficiente!', style: TextStyle(fontFamily: 'monospace')),
@@ -140,7 +141,9 @@ class _ShopScreenState extends State<ShopScreen>
   /// No-op when already maxed (with a hint snackbar).
   void _tryBuyUpgrade(_UpgradeItem item) {
     final currentLevel = _saveData.getUpgradeLevel(item.id);
+    // Idempotent on max-level: show hint snackbar and bail before _purchase.
     if (currentLevel >= item.maxLevel) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -158,8 +161,12 @@ class _ShopScreenState extends State<ShopScreen>
     _purchase(item.id, cost, () {
       _saveData.upgrades[item.id] = currentLevel + 1;
     });
-    if (_saveData.goldGeoms >= 0 &&
-        _saveData.getUpgradeLevel(item.id) > currentLevel) {
+    // Success snackbar only when the level actually advanced (purchase may
+    // have failed silently inside _purchase if gold was insufficient — in
+    // which case _purchase has already shown its own "gold insufficiente"
+    // snackbar and we must not stack a second one).
+    if (!mounted) return;
+    if (_saveData.getUpgradeLevel(item.id) > currentLevel) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(

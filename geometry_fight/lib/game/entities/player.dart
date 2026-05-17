@@ -464,8 +464,11 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
     const double initialRange = 380.0;
     const double decay = 0.85;
     // Pre-collect potential targets (caveman fix perf).
+    // Skip `isRemoved`: Flame può tenere il component morto in `children`
+    // per un frame → un chain bolt non deve "jumpare" su un cadavere.
     final candidates = <PositionComponent>[];
     for (final child in game.world.children) {
+      if (child.isRemoved) continue;
       if (child is EnemyBase && !child.isSpawnInvulnerable) {
         candidates.add(child);
       } else if (child is BossBase) {

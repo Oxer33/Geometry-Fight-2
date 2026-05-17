@@ -49,8 +49,11 @@ class GaussImplosion extends PositionComponent
     }
 
     // Pull tutti i nemici (no boss) entro pullRadius verso epicentro.
+    // Skip nemici già morti (`isRemoved`): Flame può tenerli in `children`
+    // per un frame dopo `removeFromParent()` → evitiamo di muoverli/danneggiarli.
     for (final child in game.world.children) {
       if (child is! EnemyBase) continue;
+      if (child.isRemoved) continue;
       if (child.isSpawnInvulnerable) continue;
       final delta = epicenter - child.position;
       final d = delta.length;
@@ -65,6 +68,7 @@ class GaussImplosion extends PositionComponent
       _tickTimer -= damageTickInterval;
       for (final child in game.world.children) {
         if (child is! EnemyBase) continue;
+        if (child.isRemoved) continue;
         if (child.isSpawnInvulnerable) continue;
         if (child.position.distanceTo(epicenter) < damageRadius) {
           child.takeDamage(damagePerTick, isArea: true);

@@ -213,6 +213,11 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
       if (!_showGameOver) {
         unawaited(MusicManager.resume());
       }
+    } else if (state == AppLifecycleState.detached) {
+      // App in chiusura: flush + chiusura box Hive per rilasciare il file
+      // handle. Hive flusha già su ogni put(), quindi non c'è data-loss,
+      // ma close() è buona pratica.
+      unawaited(SaveManager.close());
     }
   }
 

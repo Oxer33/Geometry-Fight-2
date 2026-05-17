@@ -58,15 +58,35 @@ class _LoadoutScreenState extends State<LoadoutScreen> {
   ];
 
   void _selectWeapon(String id) {
-    if (!_saveData.unlockedWeapons.contains(id)) return;
+    if (!_saveData.unlockedWeapons.contains(id)) {
+      _showLockedSnack('Sblocca questa arma nello SHOP');
+      return;
+    }
     setState(() => _saveData = _saveData.copyWith(startingWeapon: id));
     unawaited(SaveManager.save(_saveData));
   }
 
   void _selectPet(String id) {
-    if (id != 'none' && !_saveData.unlockedPets.contains(id)) return;
+    if (id != 'none' && !_saveData.unlockedPets.contains(id)) {
+      _showLockedSnack('Sblocca questo pet nello SHOP');
+      return;
+    }
     setState(() => _saveData = _saveData.copyWith(activePet: id));
     unawaited(SaveManager.save(_saveData));
+  }
+
+  void _showLockedSnack(String msg) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          msg,
+          style: const TextStyle(fontFamily: 'monospace'),
+        ),
+        backgroundColor: Colors.amber.shade800,
+        duration: const Duration(milliseconds: 900),
+      ),
+    );
   }
 
   void _next() {
@@ -269,8 +289,10 @@ class _NeonLoadoutCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final disabled = !isUnlocked;
     final eff = disabled ? const Color(0xFF555555) : color;
+    // Caveman-review: locked cards still tappable so the selector can show a
+    // "buy first" snackbar instead of silently swallowing the gesture.
     return GestureDetector(
-      onTap: disabled ? null : onTap,
+      onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 250),
         width: 145,

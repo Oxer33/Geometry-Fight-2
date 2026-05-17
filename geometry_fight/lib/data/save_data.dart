@@ -255,6 +255,15 @@ class SaveManager {
     if (!_initialized) return;
     await _box.clear();
   }
+
+  /// Chiude il box Hive: invocare da AppLifecycleState.detached per
+  /// flush + release file handle. Hive flusha già su ogni put(), quindi
+  /// il rischio data-loss è minimo, ma close() è buona pratica.
+  static Future<void> close() async {
+    if (!_initialized) return;
+    await _box.close();
+    _initialized = false;
+  }
 }
 
 /// Reward giornaliero in geom (utente: "daily reward che dà +100 geom").
