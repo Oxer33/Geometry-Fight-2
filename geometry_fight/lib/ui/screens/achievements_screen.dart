@@ -52,6 +52,8 @@ class _AchievementsScreenState extends State<AchievementsScreen>
   late final Map<String, bool> _unlockedCache;
   late final Map<String, int> _progressCache;
 
+  final ScrollController _listCtrl = ScrollController();
+
   @override
   void initState() {
     super.initState();
@@ -93,6 +95,7 @@ class _AchievementsScreenState extends State<AchievementsScreen>
     _entranceController.dispose();
     _glowController.dispose();
     _shimmerController.dispose();
+    _listCtrl.dispose();
     super.dispose();
   }
 
@@ -118,7 +121,17 @@ class _AchievementsScreenState extends State<AchievementsScreen>
 
                 // Achievement list
                 Expanded(
-                  child: ListView(
+                  child: RawScrollbar(
+                    controller: _listCtrl,
+                    thumbVisibility: true,
+                    trackVisibility: true,
+                    thickness: 10,
+                    radius: const Radius.circular(5),
+                    thumbColor: const Color(0xFF00FFFF),
+                    trackColor: const Color(0x3300FFFF),
+                    trackBorderColor: const Color(0x8800FFFF),
+                    child: ListView(
+                    controller: _listCtrl,
                     padding: const EdgeInsets.all(16),
                     children: [
                       for (int ci = 0; ci < _categories.length; ci++) ...[
@@ -143,6 +156,7 @@ class _AchievementsScreenState extends State<AchievementsScreen>
                         const SizedBox(height: 12),
                       ],
                     ],
+                  ),
                   ),
                 ),
               ],

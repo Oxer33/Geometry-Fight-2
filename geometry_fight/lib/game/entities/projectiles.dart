@@ -4,6 +4,7 @@ import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
 import 'package:flutter/painting.dart' show HSVColor;
 import '../../data/constants.dart';
+import '../effects/gauss_implosion.dart';
 import '../game_world.dart';
 import 'enemies/enemy_base.dart';
 import 'bosses/boss_base.dart';
@@ -1047,6 +1048,180 @@ class HomingMissile extends PositionComponent
     game.spawnExplosion(position, const Color(0xFFFF8800),
         radius: radius * 0.6, particleCount: 8);
     removeFromParent();
+  }
+}
+
+/// Iter 14 (utente): Gauss Cannon proiettile dedicato. Visual = swirl di
+/// piccoli cerchi viola che convergono verso il core. All'impatto con un
+/// nemico/boss OR a fine vita (maxDistance/lifetime) spawna un
+/// `GaussImplosion` di 2s sul punto di impatto: pull enemies + tick dmg.
+///
+/// Sostituisce il vecchio `PlayerBullet` con `weaponType == gauss`. Non
+/// pierce (un solo trigger), non bounce. Damage diretto = `damage` (forte,
+/// stessa scala di Homing per-missile: tipicamente 1.0 × 4.0 × game mults).
+class GaussBullet extends PositionComponent
+    with HasGameReference<GeometryFightGame>, CollisionCallbacks {
+  final Vector2 direction;
+  final double speed;
+  final double damage;
+  final double sizeMultiplier;
+  late Vector2 _velocity;
+  double _distanceTravelled = 0;
+  double _lifetime = bulletLifetime;
+  double _phase = 0;
+
+  /// Guard contro double-impact nello stesso frame: stesso pattern di
+  /// HomingMissile._detonated. removeFromParent è async → 2 collision
+  /// possono triggerare 2 implosioni prima della rimozione.
+  bool _imploded = false;
+
+  GaussBullet({
+    required this.direction,
+    this.speed = bulletSpeed,
+    this.damage = 4.0,
+    this.sizeMultiplier = 1.0,
+  }) : super(
+            size: Vector2(24 * sizeMultiplier, 24 * sizeMultiplier),
+            anchor: Anchor.center);
+
+  @override
+  Future<void> onLoad() async {
+    if (direction.length2 < 1e-6) {
+      _velocity = Vector2(speed, 0);
+    } else {
+      _velocity = direction.normalized() * speed;
+    }
+    // Hitbox circolare al centro del core swirl.
+    add(CircleHitbox(radius: 6 * sizeMultiplier, anchor: Anchor.center)
+      ..position = size / 2);
+  }
+
+  @override
+  void update(double dt) {
+    super.update(dt);
+    final realDt = dt / game.timeScale.clamp(0.3, 1.0);
+    _phase += realDt;
+    position += _velocity * realDt;
+    _distanceTravelled += _velocity.length * realDt;
+    _lifetime -= realDt;
+
+    // Border / lifetime / maxDistance: trigger implosion anche se non
+    // colpisce nessuno (richiesta utente esplicita).
+    if (game.isTunnelMode) {
+      final cameraLeft = game.camera.viewfinder.position.x -
+          (game.size.x > 0 ? game.size.x / 2 : 400) - 200;
+      if (position.x < cameraLeft) {
+        _explode();
+        return;
+      }
+      final (topWall, bottomWall) = game.tunnelWallsAtX(position.x);
+      if (position.y <= topWall || position.y >= bottomWall) {
+        _explode();
+        return;
+      }
+      if (game.hitsTunnelObstacle(position)) {
+        _explode();
+        return;
+      }
+    } else {
+      if (position.x < 0 ||
+          position.x > arenaWidth ||
+          position.y < 0 ||
+          position.y > arenaHeight) {
+        _explode();
+        return;
+      }
+    }
+    if (_distanceTravelled > 900 || _lifetime <= 0) {
+      _explode();
+      return;
+    }
+  }
+
+  void _explode({PositionComponent? directHit}) {
+    if (_imploded) return;
+    _imploded = true;
+    // Direct hit damage (se presente).
+    if (directHit is EnemyBase && !directHit.isSpawnInvulnerable) {
+      directHit.takeDamage(damage);
+    } else if (directHit is BossBase) {
+      directHit.takeDamage(damage);
+    }
+    // Spawn implosion (pull + tick damage gestiti dal component).
+    game.world.add(GaussImplosion(epicenter: position.clone()));
+    removeFromParent();
+  }
+
+  // Paint cache instance-level (1 bullet vivo alla volta tipicamente —
+  // alloc 3 Paint per bullet OK, lifetime ~1s).
+  final Paint _swirlPaint = Paint();
+  final Paint _glowPaint = Paint();
+  final Paint _corePaint = Paint();
+
+  @override
+  void render(Canvas canvas) {
+    final cx = size.x / 2;
+    final cy = size.y / 2;
+    final s = sizeMultiplier;
+
+    // Glow esterno viola.
+    _glowPaint.color =
+        const Color(0xFFCC66FF).withValues(alpha: 0.35);
+    canvas.drawCircle(Offset(cx, cy), 11 * s, _glowPaint);
+    _glowPaint.color =
+        const Color(0xFFCC66FF).withValues(alpha: 0.55);
+    canvas.drawCircle(Offset(cx, cy), 7 * s, _glowPaint);
+
+    // Swirl: 10 piccoli cerchi che orbitano a 2 raggi differenti, ruotando.
+    // Distanza dal centro decresce con sin(_phase * speed + i) → effetto
+    // "converging into the core". Ogni cerchio piccolo è viola brillante.
+    const swirlCount = 10;
+    for (int i = 0; i < swirlCount; i++) {
+      final ang = _phase * 8 + (i * math.pi * 2 / swirlCount);
+      // Modulazione raggio: pulsa verso il centro continuamente.
+      final radiusMod =
+          0.55 + 0.45 * (math.sin(_phase * 4 + i * 0.7) * 0.5 + 0.5);
+      final r = 9 * s * radiusMod;
+      final sx = cx + math.cos(ang) * r;
+      final sy = cy + math.sin(ang) * r;
+      // Alpha più alta quando vicino al centro (illusione "trascinato dentro").
+      final convergedness = 1.0 - (r / (9 * s));
+      final alpha = (0.5 + convergedness * 0.45).clamp(0.0, 1.0);
+      _swirlPaint.color =
+          const Color(0xFFCC66FF).withValues(alpha: alpha);
+      canvas.drawCircle(Offset(sx, sy), 1.6 * s, _swirlPaint);
+
+      // Trail dot leggermente sfasato per dare senso di rotazione fluida.
+      final tang = ang - 0.35;
+      final tx = cx + math.cos(tang) * r;
+      final ty = cy + math.sin(tang) * r;
+      _swirlPaint.color =
+          const Color(0xFFAA44EE).withValues(alpha: alpha * 0.55);
+      canvas.drawCircle(Offset(tx, ty), 1.1 * s, _swirlPaint);
+    }
+
+    // Core centrale: nucleo viola brillante che pulsa.
+    final corePulse =
+        0.75 + 0.25 * math.sin(_phase * 14);
+    _corePaint.color =
+        const Color(0xFFCC66FF).withValues(alpha: corePulse);
+    canvas.drawCircle(Offset(cx, cy), 3.2 * s, _corePaint);
+    _corePaint.color =
+        const Color(0xFFFFFFFF).withValues(alpha: corePulse * 0.9);
+    canvas.drawCircle(Offset(cx, cy), 1.6 * s, _corePaint);
+  }
+
+  @override
+  void onCollisionStart(
+      Set<Vector2> intersectionPoints, PositionComponent other) {
+    if (_imploded) return;
+    if (other is EnemyBase) {
+      if (other.isSpawnInvulnerable) return;
+      _explode(directHit: other);
+    } else if (other is BossBase) {
+      _explode(directHit: other);
+    }
+    super.onCollisionStart(intersectionPoints, other);
   }
 }
 

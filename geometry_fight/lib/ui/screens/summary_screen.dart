@@ -40,10 +40,18 @@ class SummaryScreen extends StatefulWidget {
 class _SummaryScreenState extends State<SummaryScreen> {
   late final SaveData _saveData;
 
+  final ScrollController _scrollCtrl = ScrollController();
+
   @override
   void initState() {
     super.initState();
     _saveData = SaveManager.load();
+  }
+
+  @override
+  void dispose() {
+    _scrollCtrl.dispose();
+    super.dispose();
   }
 
   GameMode get mode => widget.mode;
@@ -105,7 +113,17 @@ class _SummaryScreenState extends State<SummaryScreen> {
               ),
             ),
             Expanded(
-              child: ListView(
+              child: RawScrollbar(
+                controller: _scrollCtrl,
+                thumbVisibility: true,
+                trackVisibility: true,
+                thickness: 10,
+                radius: const Radius.circular(5),
+                thumbColor: const Color(0xFF00FFFF),
+                trackColor: const Color(0x3300FFFF),
+                trackBorderColor: const Color(0x8800FFFF),
+                child: ListView(
+                controller: _scrollCtrl,
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 children: [
                   _section('MODALITÀ', _modeName(mode), NeonColors.cyan),
@@ -131,6 +149,7 @@ class _SummaryScreenState extends State<SummaryScreen> {
                   _multiplierBreakdown(diffCfg.scoreMultiplier, modScore,
                       totalScore),
                 ],
+              ),
               ),
             ),
             Padding(

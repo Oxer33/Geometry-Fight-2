@@ -24,6 +24,9 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
   late AnimationController _entranceController;
   late AnimationController _glowController;
 
+  final ScrollController _modeCtrl = ScrollController();
+  final ScrollController _entriesCtrl = ScrollController();
+
   void _refreshEntries() {
     _cachedEntries =
         LeaderboardManager.getEntries(_selectedMode, _selectedDifficulty);
@@ -68,6 +71,8 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
   void dispose() {
     _entranceController.dispose();
     _glowController.dispose();
+    _modeCtrl.dispose();
+    _entriesCtrl.dispose();
     super.dispose();
   }
 
@@ -222,7 +227,17 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
         offset: Offset(-20 * (1 - e), 0),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12),
-          child: SingleChildScrollView(
+          child: RawScrollbar(
+            controller: _modeCtrl,
+            thumbVisibility: true,
+            trackVisibility: true,
+            thickness: 10,
+            radius: const Radius.circular(5),
+            thumbColor: const Color(0xFF00FFFF),
+            trackColor: const Color(0x3300FFFF),
+            trackBorderColor: const Color(0x8800FFFF),
+            child: SingleChildScrollView(
+            controller: _modeCtrl,
             scrollDirection: Axis.horizontal,
             child: Row(
               children: _modes.map((m) {
@@ -239,6 +254,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
                 );
               }).toList(),
             ),
+          ),
           ),
         ),
       ),
@@ -352,7 +368,17 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
 
   Widget _buildEntryList(
       List<LeaderboardEntry> entries, double entrance, double glow) {
-    return ListView.builder(
+    return RawScrollbar(
+      controller: _entriesCtrl,
+      thumbVisibility: true,
+      trackVisibility: true,
+      thickness: 10,
+      radius: const Radius.circular(5),
+      thumbColor: const Color(0xFF00FFFF),
+      trackColor: const Color(0x3300FFFF),
+      trackBorderColor: const Color(0x8800FFFF),
+      child: ListView.builder(
+      controller: _entriesCtrl,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       itemCount: entries.length,
       itemBuilder: (context, index) {
@@ -376,6 +402,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
           ),
         );
       },
+    ),
     );
   }
 

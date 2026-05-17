@@ -994,6 +994,13 @@ class GeometryFightGame extends FlameGame
         }
       }
     }
+
+    // Vampire pet heal-on-kill hook (5% chance entro 200px → +1 HP player).
+    // RNG isolato nel pet stesso; qui solo dispatch se il pet attivo è Vampire.
+    final pet = activePet;
+    if (pet is VampirePet && !pet.isRemoved) {
+      pet.onEnemyKilledNear(enemy.position);
+    }
   }
 
   /// Determina il tipo EnemyType di un nemico dalla sua classe

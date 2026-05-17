@@ -577,7 +577,9 @@ class _NeonModeCard extends StatelessWidget {
               ),
               // Contenuto compact (iter 12: fit 56h).
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                // Iter 18 (utente: "nome modalità più grande +50%"):
+                // padding orizzontale 8 → 4 per dare più spazio al testo.
+                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
                 child: Row(
                   children: [
                     Text(config.icon, style: const TextStyle(fontSize: 21)),
@@ -599,10 +601,13 @@ class _NeonModeCard extends StatelessWidget {
                                   : isSelected
                                       ? Colors.white
                                       : themeColor,
-                              // Iter 16: +30% base (10→13), selected +10% (14).
-                              fontSize: isSelected ? 14 : 13,
-                              fontWeight: FontWeight.w900,
+                              // Iter 18 (utente: "+50% fontSize"):
+                              // 26/23 → 39/35 con w800. Padding orizzontale
+                              // ridotto per evitare line break.
+                              fontSize: isSelected ? 39 : 35,
+                              fontWeight: FontWeight.w800,
                               fontFamily: 'monospace',
+                              letterSpacing: -0.5,
                               shadows: isUnlocked
                                   ? [
                                       Shadow(

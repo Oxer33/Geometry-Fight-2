@@ -60,12 +60,11 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
   double magnetTimer = 0;
   double timeSlowTimer = 0;
   double firePowerTimer = 0;
-  /// Iter 13: Gauss Cannon pull effect timer. Quando > 0, ogni frame
-  /// tutti i nemici/boss entro `_gaussPullRange` vengono attirati verso
-  /// il player. Settato a 1.0 ad ogni colpo Gauss.
+  /// Iter 14: Gauss Cannon pull rifattorizzato. Il pull non è più
+  /// player-centric: ogni proiettile Gauss spawna una `GaussImplosion` sul
+  /// punto di impatto che gestisce pull + tick damage. Campo conservato
+  /// (= 0 sempre) per compatibilità API esterna; setter no-op.
   double gaussPullTimer = 0;
-  static const double _gaussPullRange = 220;
-  static const double _gaussPullSpeed = 180; // px/s verso player
   bool get hasRapidFire => rapidFireTimer > 0;
   bool get hasOverdrive => overdriveTimer > 0;
   bool get hasMagnet => magnetTimer > 0;
@@ -256,11 +255,8 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
     if (overdriveTimer > 0) overdriveTimer -= realDt;
     if (magnetTimer > 0) magnetTimer -= realDt;
     if (firePowerTimer > 0) firePowerTimer -= realDt;
-    // Iter 13 Gauss pull: applica trazione su nemici/boss vicini.
-    if (gaussPullTimer > 0) {
-      gaussPullTimer -= realDt;
-      _gaussPull(realDt);
-    }
+    // Iter 14: gaussPullTimer rimosso. Il pull ora vive nell'impact-point
+    // implosion (vedi GaussBullet → GaussImplosion).
     if (timeSlowTimer > 0) {
       timeSlowTimer -= realDt;
       if (timeSlowTimer <= 0) {
@@ -437,18 +433,11 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
         _spawnOverdriveBeam(dir);
         _fireTimer = 3.0 / fireRateMultiplier;
       case WeaponType.gauss:
-        // Iter 13 (utente): "spara un proiettile ogni 0,7 secondi" +
-        // "aspirazione nemici a corto raggio per 1s". Damage forte (1.8x).
-        // Trigger pull effect 1s (gestito in update() via gaussPullTimer).
-        _spawnBullet(dir, damageMultiplier * 1.8,
-            const Color(0xFFCC66FF),
-            speed: bulletSpeed * 0.85,
-            pierce: true,
-            weaponType: WeaponType.gauss);
-        gaussPullTimer = 1.0;
-        // Override interval: 0.7s base, accelerato da fireRateMultiplier
-        // (shop fire_rate upgrade + rapidFire powerup). Rispetta tutti i
-        // potenziamenti via fireRateMultiplier già calcolato sopra.
+        // Iter 14 (utente): swirl bullet dedicato. All'impatto (enemy/boss
+        // OR fine vita) spawna implosion 2s sul punto: pull + tick damage.
+        // Damage diretto >= per-missile homing (~ damage*4.0 vs 2.25 homing).
+        _spawnGaussBullet(dir, damageMultiplier * 4.0);
+        // Fire interval 0.7s base, accelerato da fireRateMultiplier.
         _fireTimer = (0.7 / fireRateMultiplier).clamp(0.05, 5.0);
       case WeaponType.chainLightning:
         // Iter 13: bolt rimbalza fino a 5 nemici. Damage decade 0.85x per
@@ -459,21 +448,8 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
     }
   }
 
-  /// Iter 13: Gauss pull — attira nemici entro `_gaussPullRange` verso
-  /// il player con velocità `_gaussPullSpeed`. Boss esclusi (caveman fix:
-  /// pull disturbava AI pattern boss). Enemy invulnerabili allo spawn
-  /// saltati. dt scalato dal caller (realDt player).
-  void _gaussPull(double dt) {
-    for (final child in game.world.children) {
-      if (child is! EnemyBase) continue;
-      if (child.isSpawnInvulnerable) continue;
-      final delta = position - child.position;
-      final d = delta.length;
-      if (d > 1 && d < _gaussPullRange) {
-        child.position += delta.normalized() * _gaussPullSpeed * dt;
-      }
-    }
-  }
+  /// Iter 14: Gauss pull rimosso (era player-centric). Il pull ora vive
+  /// nell'impact-point `GaussImplosion` spawnata da `GaussBullet._explode`.
 
   /// Iter 13: Chain Lightning — trova fino a 5 bersagli in sequenza, ognuno
   /// nel raggio `chainRange` dal precedente. Applica damage decrescente
@@ -498,7 +474,7 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
     if (candidates.isEmpty) return;
     final hitTargets = <PositionComponent>{};
     final points = <Vector2>[position.clone()];
-    double currentDamage = damage * 1.2;
+    double currentDamage = damage * 4.8;
     Vector2 currentPos = position;
     double currentRange = initialRange;
 
@@ -533,7 +509,7 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
 
   void _spawnBullet(Vector2 dir, double damage, Color color,
       {double speed = bulletSpeed,
-      int maxBounces = maxBounces,
+      int maxBounces = 0,
       Vector2? offset,
       bool pierce = false,
       WeaponType weaponType = WeaponType.basic}) {
@@ -573,6 +549,21 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
     );
     plasma.position = position.clone();
     game.world.add(plasma);
+  }
+
+  /// Iter 14: spawn dedicato Gauss. Bullet con swirl visual + implosion
+  /// post-impact gestita internamente dal GaussBullet stesso. Velocità
+  /// ridotta (0.85x bulletSpeed) per dare tempo al player di vedere il
+  /// swirl. Firepower scala size 2x come gli altri spawn.
+  void _spawnGaussBullet(Vector2 dir, double damage) {
+    final bullet = GaussBullet(
+      direction: dir,
+      damage: damage,
+      speed: bulletSpeed * 0.85,
+      sizeMultiplier: hasFirePower ? 2.0 : 1.0,
+    );
+    bullet.position = position.clone();
+    game.world.add(bullet);
   }
 
   void _spawnHomingMissile(

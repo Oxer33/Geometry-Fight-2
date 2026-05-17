@@ -27,6 +27,8 @@ class _StatsScreenState extends State<StatsScreen>
   late final int _achUnlocked;
   late final int _achTotal;
 
+  final ScrollController _scrollCtrl = ScrollController();
+
   @override
   void initState() {
     super.initState();
@@ -62,6 +64,7 @@ class _StatsScreenState extends State<StatsScreen>
     _entranceController.dispose();
     _counterController.dispose();
     _glowController.dispose();
+    _scrollCtrl.dispose();
     super.dispose();
   }
 
@@ -92,7 +95,17 @@ class _StatsScreenState extends State<StatsScreen>
 
                 // Stats list
                 Expanded(
-                  child: SingleChildScrollView(
+                  child: RawScrollbar(
+                    controller: _scrollCtrl,
+                    thumbVisibility: true,
+                    trackVisibility: true,
+                    thickness: 10,
+                    radius: const Radius.circular(5),
+                    thumbColor: const Color(0xFF00FFFF),
+                    trackColor: const Color(0x3300FFFF),
+                    trackBorderColor: const Color(0x8800FFFF),
+                    child: SingleChildScrollView(
+                    controller: _scrollCtrl,
                     padding: const EdgeInsets.all(16),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -143,6 +156,7 @@ class _StatsScreenState extends State<StatsScreen>
                         const SizedBox(height: 32),
                       ],
                     ),
+                  ),
                   ),
                 ),
               ],

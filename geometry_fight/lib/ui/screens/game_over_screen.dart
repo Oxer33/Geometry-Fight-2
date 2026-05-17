@@ -41,6 +41,8 @@ class _GameOverScreenState extends State<GameOverScreen>
   late AnimationController _particleController;
   Timer? _delayedTimer;
 
+  final ScrollController _scrollCtrl = ScrollController();
+
   // Cached computed values (constant for widget lifetime)
   late final int _perfBonus;
   late final int _achievementGold;
@@ -153,6 +155,7 @@ class _GameOverScreenState extends State<GameOverScreen>
     _pulseController.dispose();
     _counterController.dispose();
     _particleController.dispose();
+    _scrollCtrl.dispose();
     super.dispose();
   }
 
@@ -203,7 +206,17 @@ class _GameOverScreenState extends State<GameOverScreen>
 
             // Content
             Center(
-              child: SingleChildScrollView(
+              child: RawScrollbar(
+                controller: _scrollCtrl,
+                thumbVisibility: true,
+                trackVisibility: true,
+                thickness: 10,
+                radius: const Radius.circular(5),
+                thumbColor: const Color(0xFF00FFFF),
+                trackColor: const Color(0x3300FFFF),
+                trackBorderColor: const Color(0x8800FFFF),
+                child: SingleChildScrollView(
+                controller: _scrollCtrl,
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
@@ -291,6 +304,7 @@ class _GameOverScreenState extends State<GameOverScreen>
                     const SizedBox(height: 16),
                   ],
                 ),
+              ),
               ),
             ),
 

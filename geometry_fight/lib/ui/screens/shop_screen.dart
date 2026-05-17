@@ -32,6 +32,20 @@ class _ShopScreenState extends State<ShopScreen>
   /// Iter 13: nodo upgrade selezionato nella mappa 2D (mostra dettagli).
   String? _selectedUpgradeId;
 
+  // Scroll controllers for cyan Scrollbar on every scrollable view.
+  // Separate controllers per-tab so multiple ListViews can stay alive
+  // simultaneously (TabBarView keeps state) without ScrollController
+  // attach conflicts.
+  final ScrollController _petsScrollCtrl = ScrollController();
+  final ScrollController _upgradesScrollCtrl = ScrollController();
+  final ScrollController _modesScrollCtrl = ScrollController();
+  final ScrollController _weaponsListCtrl = ScrollController();
+  final ScrollController _weaponsPreviewCtrl = ScrollController();
+  final ScrollController _skinsListCtrl = ScrollController();
+  final ScrollController _skinsPreviewCtrl = ScrollController();
+  final ScrollController _trailsListCtrl = ScrollController();
+  final ScrollController _trailsPreviewCtrl = ScrollController();
+
   @override
   void initState() {
     super.initState();
@@ -53,7 +67,35 @@ class _ShopScreenState extends State<ShopScreen>
   void dispose() {
     _tabController.dispose();
     _previewController.dispose();
+    _petsScrollCtrl.dispose();
+    _upgradesScrollCtrl.dispose();
+    _modesScrollCtrl.dispose();
+    _weaponsListCtrl.dispose();
+    _weaponsPreviewCtrl.dispose();
+    _skinsListCtrl.dispose();
+    _skinsPreviewCtrl.dispose();
+    _trailsListCtrl.dispose();
+    _trailsPreviewCtrl.dispose();
     super.dispose();
+  }
+
+  /// Wrap any scrollable widget with a prominent cyan scrollbar.
+  /// Uses [RawScrollbar] to force exact colors/thickness regardless of theme.
+  Widget _cyanScrollbar({
+    required ScrollController controller,
+    required Widget child,
+  }) {
+    return RawScrollbar(
+      controller: controller,
+      thumbVisibility: true,
+      trackVisibility: true,
+      thickness: 10,
+      radius: const Radius.circular(5),
+      thumbColor: const Color(0xFF00FFFF),
+      trackColor: const Color(0x3300FFFF),
+      trackBorderColor: const Color(0x8800FFFF),
+      child: child,
+    );
   }
 
   /// Iter 13: dopo ogni purchase verifica collection completion e
@@ -88,6 +130,44 @@ class _ShopScreenState extends State<ShopScreen>
           content: Text('Gold insufficiente!', style: TextStyle(fontFamily: 'monospace')),
           backgroundColor: Colors.redAccent,
           duration: Duration(seconds: 1),
+        ),
+      );
+    }
+  }
+
+  /// Attempt to buy/level-up an upgrade node directly from a tap on the
+  /// talent-tree map. Deducts gold, increments level, saves, shows snackbar.
+  /// No-op when already maxed (with a hint snackbar).
+  void _tryBuyUpgrade(_UpgradeItem item) {
+    final currentLevel = _saveData.getUpgradeLevel(item.id);
+    if (currentLevel >= item.maxLevel) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            '${item.name} già al massimo!',
+            style: const TextStyle(fontFamily: 'monospace'),
+          ),
+          backgroundColor: Colors.blueGrey,
+          duration: const Duration(seconds: 1),
+        ),
+      );
+      return;
+    }
+    final safeLvl = currentLevel.clamp(0, item.costs.length - 1);
+    final cost = item.costs[safeLvl];
+    _purchase(item.id, cost, () {
+      _saveData.upgrades[item.id] = currentLevel + 1;
+    });
+    if (_saveData.goldGeoms >= 0 &&
+        _saveData.getUpgradeLevel(item.id) > currentLevel) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            '${item.name} LIV ${currentLevel + 1}',
+            style: const TextStyle(fontFamily: 'monospace'),
+          ),
+          backgroundColor: Colors.green.shade700,
+          duration: const Duration(milliseconds: 900),
         ),
       );
     }
@@ -242,6 +322,8 @@ class _ShopScreenState extends State<ShopScreen>
         color: (item as _SkinDef).color,
         time: time,
       ),
+      listController: _skinsListCtrl,
+      previewController: _skinsPreviewCtrl,
     );
   }
 
@@ -288,6 +370,8 @@ class _ShopScreenState extends State<ShopScreen>
         color: (item as _TrailDef).color,
         time: time,
       ),
+      listController: _trailsListCtrl,
+      previewController: _trailsPreviewCtrl,
     );
   }
 
@@ -354,6 +438,9 @@ class _ShopScreenState extends State<ShopScreen>
         color: item.color,
         time: time,
       ),
+      listController: _weaponsListCtrl,
+      previewController: _weaponsPreviewCtrl,
+      hideDescription: true,
     );
   }
 
@@ -363,7 +450,10 @@ class _ShopScreenState extends State<ShopScreen>
   /// Diversa dagli altri tab perché non serve preview painter — i pet
   /// sono visibili in-game, qui basta nome + descrizione + costo.
   Widget _buildPetsTab() {
-    return ListView.builder(
+    return _cyanScrollbar(
+      controller: _petsScrollCtrl,
+      child: ListView.builder(
+      controller: _petsScrollCtrl,
       padding: const EdgeInsets.all(12),
       itemCount: kPetCatalog.length,
       itemBuilder: (context, index) {
@@ -463,6 +553,7 @@ class _ShopScreenState extends State<ShopScreen>
           ),
         );
       },
+    ),
     );
   }
 
@@ -479,7 +570,10 @@ class _ShopScreenState extends State<ShopScreen>
   /// permette di vedere panel + map senza overlap.
   Widget _buildUpgradesTab() {
     final upgrades = _upgradeNodes();
-    return SingleChildScrollView(
+    return _cyanScrollbar(
+      controller: _upgradesScrollCtrl,
+      child: SingleChildScrollView(
+      controller: _upgradesScrollCtrl,
       padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
       child: Column(
         children: [
@@ -515,8 +609,11 @@ class _ShopScreenState extends State<ShopScreen>
                           item: node.item,
                           currentLevel: _saveData.getUpgradeLevel(node.item.id),
                           isSelected: _selectedUpgradeId == node.item.id,
-                          onTap: () => setState(() =>
-                              _selectedUpgradeId = node.item.id),
+                          onTap: () {
+                            setState(() =>
+                                _selectedUpgradeId = node.item.id);
+                            _tryBuyUpgrade(node.item);
+                          },
                         ),
                       ),
                   ],
@@ -528,6 +625,7 @@ class _ShopScreenState extends State<ShopScreen>
           _buildUpgradeDetailPanel(upgrades),
         ],
       ),
+    ),
     );
   }
 
@@ -815,7 +913,10 @@ class _ShopScreenState extends State<ShopScreen>
       animation: _previewController,
       builder: (context, _) {
         final pulse = (math.sin(_previewController.value * math.pi * 2) * 0.5 + 0.5);
-        return ListView.builder(
+        return _cyanScrollbar(
+          controller: _modesScrollCtrl,
+          child: ListView.builder(
+          controller: _modesScrollCtrl,
           padding: const EdgeInsets.all(14),
           itemCount: modes.length,
           itemBuilder: (context, index) {
@@ -1006,6 +1107,7 @@ class _ShopScreenState extends State<ShopScreen>
               ),
             );
           },
+        ),
         );
       },
     );
@@ -1020,6 +1122,9 @@ class _ShopScreenState extends State<ShopScreen>
     required void Function(_ShopItem) onPurchase,
     required void Function(_ShopItem) onSelect,
     required CustomPainter Function(_ShopItem item, double time) previewBuilder,
+    required ScrollController listController,
+    required ScrollController previewController,
+    bool hideDescription = false,
   }) {
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -1029,7 +1134,10 @@ class _ShopScreenState extends State<ShopScreen>
             // === LISTA ITEMS ===
             SizedBox(
               width: isWide ? 200 : 160,
-              child: ListView.builder(
+              child: _cyanScrollbar(
+                controller: listController,
+                child: ListView.builder(
+                controller: listController,
                 padding: const EdgeInsets.all(10),
                 itemCount: items.length,
                 itemBuilder: (context, index) {
@@ -1112,6 +1220,7 @@ class _ShopScreenState extends State<ShopScreen>
                   );
                 },
               ),
+              ),
             ),
 
             // === DIVISORE VERTICALE ===
@@ -1145,7 +1254,10 @@ class _ShopScreenState extends State<ShopScreen>
                       // Preview dinamica: riduci molto su schermi corti per lasciar posto al bottone.
                       final previewSize = (previewConstraints.maxHeight - 140).clamp(60.0, 200.0);
                       final isActive = item.id == activeId;
-                      return SingleChildScrollView(
+                      return _cyanScrollbar(
+                        controller: previewController,
+                        child: SingleChildScrollView(
+                        controller: previewController,
                         padding: const EdgeInsets.symmetric(vertical: 12),
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
@@ -1181,6 +1293,7 @@ class _ShopScreenState extends State<ShopScreen>
                               stats: item is _WeaponDef
                                   ? (item).stats
                                   : const [],
+                              showDescription: !hideDescription,
                             ),
                             const SizedBox(height: 12),
                             _ShopActionButton(
@@ -1203,6 +1316,7 @@ class _ShopScreenState extends State<ShopScreen>
                             ),
                           ],
                         ),
+                      ),
                       );
                     },
                   );
@@ -1440,12 +1554,14 @@ class _InfoCard extends StatelessWidget {
   final String description;
   final Color accentColor;
   final List<String> stats;
+  final bool showDescription;
 
   const _InfoCard({
     required this.title,
     required this.description,
     required this.accentColor,
     this.stats = const [],
+    this.showDescription = true,
   });
 
   @override
@@ -1497,18 +1613,20 @@ class _InfoCard extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(height: 8),
-          // Descrizione
-          Text(
-            description,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.75),
-              fontSize: 10,
-              fontFamily: 'monospace',
-              height: 1.4,
+          if (showDescription) ...[
+            const SizedBox(height: 8),
+            // Descrizione
+            Text(
+              description,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.75),
+                fontSize: 10,
+                fontFamily: 'monospace',
+                height: 1.4,
+              ),
             ),
-          ),
+          ],
           if (stats.isNotEmpty) ...[
             const SizedBox(height: 10),
             // Stat pills

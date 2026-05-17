@@ -67,6 +67,14 @@ class _ModifiersSelectScreenState extends State<ModifiersSelectScreen> {
   late List<GameModifier> _availableModifiers;
   static const _maxActive = 3;
 
+  final ScrollController _scrollCtrl = ScrollController();
+
+  @override
+  void dispose() {
+    _scrollCtrl.dispose();
+    super.dispose();
+  }
+
   @override
   void initState() {
     super.initState();
@@ -187,7 +195,17 @@ class _ModifiersSelectScreenState extends State<ModifiersSelectScreen> {
             ),
             const SizedBox(height: 8),
             Expanded(
-              child: ListView.builder(
+              child: RawScrollbar(
+                controller: _scrollCtrl,
+                thumbVisibility: true,
+                trackVisibility: true,
+                thickness: 10,
+                radius: const Radius.circular(5),
+                thumbColor: const Color(0xFF00FFFF),
+                trackColor: const Color(0x3300FFFF),
+                trackBorderColor: const Color(0x8800FFFF),
+                child: ListView.builder(
+                controller: _scrollCtrl,
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 itemCount: _availableModifiers.length,
                 itemBuilder: (_, i) {
@@ -260,6 +278,7 @@ class _ModifiersSelectScreenState extends State<ModifiersSelectScreen> {
                     ),
                   );
                 },
+              ),
               ),
             ),
             Padding(

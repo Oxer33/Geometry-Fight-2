@@ -40,6 +40,11 @@ class _LoadoutScreenState extends State<LoadoutScreen> {
     _saveData = SaveManager.load();
   }
 
+  // Iter 18 (utente: "show ALL weapons"): catalog allineato a shop_screen
+  // (_kTotalWeapons = 9). Locked weapons grigi + lock icon nella card.
+  // Gli id corrispondono a SaveData.unlockedWeapons / startingWeapon e a
+  // Player.setWeaponFromId. WeaponType enum (player.dart) include anche
+  // spreadFan/overdrive — sono powerup-only (drop in-game), non loadout.
   static const _weaponCatalog = [
     _WeaponEntry('basic', 'BASIC'),
     _WeaponEntry('triple', 'TRIPLE'),
@@ -48,6 +53,8 @@ class _LoadoutScreenState extends State<LoadoutScreen> {
     _WeaponEntry('homing', 'HOMING'),
     _WeaponEntry('plasma', 'PLASMA'),
     _WeaponEntry('laser', 'LASER'),
+    _WeaponEntry('gauss', 'GAUSS'),
+    _WeaponEntry('chain', 'CHAIN'),
   ];
 
   void _selectWeapon(String id) {
@@ -543,6 +550,44 @@ class _PetIconPainter extends CustomPainter {
       case PetType.none:
         // Default: cerchio vuoto
         canvas.drawCircle(Offset(cx, cy), r * 0.5, _stroke);
+      // Iter 18: nuovi pet shop (shieldOrb/magnetCore/turretDrone/vampire).
+      // Shape fallback semplici fino a custom icon dedicate.
+      case PetType.shieldOrb:
+        // Cerchio + ring esterno (shield-style).
+        _stroke.strokeWidth = 1.6;
+        canvas.drawCircle(Offset(cx, cy), r * 0.55, _stroke);
+        canvas.drawCircle(Offset(cx, cy), r * 0.85, _stroke);
+      case PetType.magnetCore:
+        // U-shape magnete: 2 poli + barra.
+        _stroke.strokeWidth = 2.0;
+        canvas.drawLine(
+            Offset(cx - r * 0.55, cy - r * 0.5),
+            Offset(cx - r * 0.55, cy + r * 0.5),
+            _stroke);
+        canvas.drawLine(
+            Offset(cx + r * 0.55, cy - r * 0.5),
+            Offset(cx + r * 0.55, cy + r * 0.5),
+            _stroke);
+        canvas.drawLine(
+            Offset(cx - r * 0.55, cy + r * 0.5),
+            Offset(cx + r * 0.55, cy + r * 0.5),
+            _stroke);
+      case PetType.turretDrone:
+        // Quadrato + canna sopra.
+        final rect = Rect.fromCenter(
+            center: Offset(cx, cy), width: r * 1.1, height: r * 1.1);
+        canvas.drawRect(rect, _stroke);
+        _stroke.strokeWidth = 1.8;
+        canvas.drawLine(
+            Offset(cx, cy - r * 0.55), Offset(cx, cy - r * 0.95), _stroke);
+      case PetType.vampire:
+        // Goccia/triangolo invertito (sangue).
+        final path = Path()
+          ..moveTo(cx, cy - r * 0.75)
+          ..lineTo(cx + r * 0.55, cy + r * 0.55)
+          ..lineTo(cx - r * 0.55, cy + r * 0.55)
+          ..close();
+        canvas.drawPath(path, _fill);
     }
   }
 

@@ -589,6 +589,272 @@ class RamPet extends PetBase {
   }
 }
 
+// ═══════════════════════════════════════════════════════════════════════
+// 7. SHIELD ORB PET — orbita player, genera scudo 1-hit ogni 30s
+// ═══════════════════════════════════════════════════════════════════════
+class ShieldOrbPet extends PetBase {
+  ShieldOrbPet() : super(kPetCatalog[6]);
+  static const _orbitRadius = 60.0;
+  static const _orbitSpeed = 2.0;
+  static const _shieldInterval = 30.0;
+  double shieldChargeTimer = 0;
+
+  @override
+  void onPetUpdate(double dt) {
+    final ang = phase * _orbitSpeed;
+    position = game.player.position +
+        Vector2(math.cos(ang), math.sin(ang)) * _orbitRadius;
+
+    shieldChargeTimer += dt;
+    if (shieldChargeTimer >= _shieldInterval && !game.player.hasShield) {
+      shieldChargeTimer = 0;
+      // 1-hit shield, lunga durata (60s) — il player la consuma al primo
+      // hit ricevuto. Riutilizza il sistema scudo esistente in Player.
+      game.player.applyShield(1, duration: 60.0);
+    }
+  }
+
+  static final _outlinePaint = Paint()
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 1.6;
+  static final _fillPaint = Paint();
+  static final _glowPaint = Paint();
+  static final _ringPaint = Paint()
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 2;
+
+  @override
+  void render(Canvas canvas) {
+    final cx = size.x / 2;
+    final cy = size.y / 2;
+    final pulse = 0.6 + math.sin(phase * 5) * 0.4;
+    // Charge progress 0..1 — drives ring brightness from dim to bright.
+    final charge = (shieldChargeTimer / _shieldInterval).clamp(0.0, 1.0);
+    _glowPaint.color = def.color.withValues(alpha: 0.45 * pulse);
+    canvas.drawCircle(Offset(cx, cy), 14, _glowPaint);
+    // Anello esterno — ruota e si illumina con la carica.
+    _ringPaint.color = def.color.withValues(alpha: 0.3 + charge * 0.6);
+    canvas.drawCircle(Offset(cx, cy), 12 + math.sin(phase * 4) * 1.5,
+        _ringPaint);
+    // Orb body
+    _fillPaint.color = def.color;
+    canvas.drawCircle(Offset(cx, cy), 6, _fillPaint);
+    _outlinePaint.color = const Color(0xFFFFFFFF);
+    canvas.drawCircle(Offset(cx, cy), 6, _outlinePaint);
+    // Nucleo bianco
+    _fillPaint.color = const Color(0xFFFFFFFF);
+    canvas.drawCircle(Offset(cx, cy), 2.5, _fillPaint);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// 8. MAGNET CORE PET — attira tutti i geom verso il player entro 400px
+// ═══════════════════════════════════════════════════════════════════════
+class MagnetCorePet extends PetBase {
+  MagnetCorePet() : super(kPetCatalog[7]);
+  static const _pullRadius = 400.0;
+  static const _pullSpeed = 240.0;
+
+  @override
+  void onPetUpdate(double dt) {
+    // Orbita stretta accanto al player.
+    final ang = phase * 1.8;
+    position = game.player.position +
+        Vector2(math.cos(ang), math.sin(ang)) * 38;
+
+    // Attrazione fisica diretta: i geom entro `_pullRadius` dal pet vengono
+    // tirati verso il player (boost vs base magnet 80px / shop +50 max).
+    final playerPos = game.player.position;
+    for (final c in game.world.children) {
+      if (c is Geom) {
+        final d = c.position.distanceTo(position);
+        if (d < _pullRadius) {
+          final to = playerPos - c.position;
+          if (to.length2 > 1e-4) {
+            c.position += to.normalized() * _pullSpeed * dt;
+          }
+        }
+      }
+    }
+  }
+
+  static final _outlinePaint = Paint()
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 1.6;
+  static final _fillPaint = Paint();
+  static final _glowPaint = Paint();
+
+  @override
+  void render(Canvas canvas) {
+    final cx = size.x / 2;
+    final cy = size.y / 2;
+    final pulse = 0.6 + math.sin(phase * 6) * 0.4;
+    _glowPaint.color = def.color.withValues(alpha: 0.5 * pulse);
+    canvas.drawCircle(Offset(cx, cy), 14, _glowPaint);
+    // Magnet shape: ferro di cavallo arancione (U-shape).
+    canvas.save();
+    canvas.translate(cx, cy);
+    canvas.rotate(phase * 0.6);
+    final path = Path()
+      ..moveTo(-7, -8)
+      ..lineTo(-7, 4)
+      ..quadraticBezierTo(-7, 9, -2, 9)
+      ..lineTo(-2, 2)
+      ..lineTo(2, 2)
+      ..lineTo(2, 9)
+      ..quadraticBezierTo(7, 9, 7, 4)
+      ..lineTo(7, -8)
+      ..lineTo(2, -8)
+      ..lineTo(2, -3)
+      ..lineTo(-2, -3)
+      ..lineTo(-2, -8)
+      ..close();
+    _fillPaint.color = def.color;
+    canvas.drawPath(path, _fillPaint);
+    _outlinePaint.color = const Color(0xFFFFFFFF);
+    canvas.drawPath(path, _outlinePaint);
+    canvas.restore();
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// 9. TURRET DRONE PET — orbita player, spara al nemico più vicino ogni 1.5s
+// ═══════════════════════════════════════════════════════════════════════
+class TurretDronePet extends PetBase {
+  TurretDronePet() : super(kPetCatalog[8]);
+  static const _orbitRadius = 65.0;
+  static const _orbitSpeed = 1.5;
+  static const _shootInterval = 1.5;
+  static const _shootRange = 600.0;
+  double _shootTimer = _shootInterval;
+  Vector2? _lastFireDir;
+
+  @override
+  void onPetUpdate(double dt) {
+    final ang = phase * _orbitSpeed;
+    position = game.player.position +
+        Vector2(math.cos(ang), math.sin(ang)) * _orbitRadius;
+
+    _shootTimer -= dt;
+    if (_shootTimer <= 0) {
+      _shootTimer = _shootInterval;
+      final target = findNearestEnemy(maxDist: _shootRange);
+      if (target != null) {
+        final to = target.position - position;
+        if (to.length2 > 1e-4) {
+          final dir = to.normalized();
+          _lastFireDir = dir;
+          // Damage 0.5× del player base. Reusa PlayerBullet basic.
+          final bullet = PlayerBullet(
+            direction: dir,
+            weaponType: WeaponType.basic,
+            damage: 0.5,
+            color: def.color,
+            sizeMultiplier: 0.7,
+          );
+          bullet.position = position.clone();
+          game.world.add(bullet);
+        }
+      }
+    }
+  }
+
+  static final _outlinePaint = Paint()
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 1.6;
+  static final _fillPaint = Paint();
+  static final _glowPaint = Paint();
+
+  @override
+  void render(Canvas canvas) {
+    final cx = size.x / 2;
+    final cy = size.y / 2;
+    final pulse = 0.6 + math.sin(phase * 5) * 0.4;
+    _glowPaint.color = def.color.withValues(alpha: 0.45 * pulse);
+    canvas.drawCircle(Offset(cx, cy), 14, _glowPaint);
+    // Base square turret + barrel ruotata verso ultima direzione di tiro.
+    canvas.save();
+    canvas.translate(cx, cy);
+    _fillPaint.color = def.color;
+    canvas.drawRect(const Rect.fromLTWH(-6, -6, 12, 12), _fillPaint);
+    _outlinePaint.color = const Color(0xFFFFFFFF);
+    canvas.drawRect(const Rect.fromLTWH(-6, -6, 12, 12), _outlinePaint);
+    // Barrel: ruota verso ultimo target (fallback: cachedAim).
+    final aim = _lastFireDir ?? cachedAim;
+    final barrelAng = math.atan2(aim.y, aim.x);
+    canvas.rotate(barrelAng);
+    _fillPaint.color = const Color(0xFFFFFFFF);
+    canvas.drawRect(const Rect.fromLTWH(0, -1.5, 11, 3), _fillPaint);
+    canvas.restore();
+    // Nucleo
+    _fillPaint.color = const Color(0xFFFFFFFF);
+    canvas.drawCircle(Offset(cx, cy), 2, _fillPaint);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// 10. VAMPIRE PET — segue player, 5% heal +1 HP su kill entro 200px dal pet.
+//     Heal trigger gestito in game_world.onEnemyKilled (vedi quel file).
+// ═══════════════════════════════════════════════════════════════════════
+class VampirePet extends PetBase {
+  VampirePet() : super(kPetCatalog[9]);
+  static const double healRadius = 200.0;
+  static const double healChance = 0.05;
+  static final math.Random _healRng = math.Random();
+
+  /// Trigger heal-on-kill. Chiamato da `game.onEnemyKilled` con la posizione
+  /// del nemico ucciso. 5% chance se entro `healRadius` dal pet → +1 HP.
+  void onEnemyKilledNear(Vector2 enemyPos) {
+    if (enemyPos.distanceTo(position) > healRadius) return;
+    if (_healRng.nextDouble() >= healChance) return;
+    game.player.lives += 1;
+  }
+
+  @override
+  void onPetUpdate(double dt) {
+    // Segue il player con offset orbitale lento.
+    position = game.player.position +
+        Vector2(math.cos(phase * 1.0), math.sin(phase * 1.0)) * 42;
+  }
+
+  static final _outlinePaint = Paint()
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 1.6;
+  static final _fillPaint = Paint();
+  static final _glowPaint = Paint();
+
+  @override
+  void render(Canvas canvas) {
+    final cx = size.x / 2;
+    final cy = size.y / 2;
+    final pulse = 0.6 + math.sin(phase * 7) * 0.4;
+    _glowPaint.color = def.color.withValues(alpha: 0.5 * pulse);
+    canvas.drawCircle(Offset(cx, cy), 14, _glowPaint);
+    // Drop body: cerchio rosso con due fang bianche.
+    canvas.save();
+    canvas.translate(cx, cy);
+    _fillPaint.color = def.color;
+    canvas.drawCircle(Offset.zero, 7, _fillPaint);
+    _outlinePaint.color = const Color(0xFFFFFFFF);
+    canvas.drawCircle(Offset.zero, 7, _outlinePaint);
+    // Fang highlights (due triangolini bianchi).
+    final fang = Path()
+      ..moveTo(-2.5, -1)
+      ..lineTo(-1.5, 3)
+      ..lineTo(-0.5, -1)
+      ..close();
+    _fillPaint.color = const Color(0xFFFFFFFF);
+    canvas.drawPath(fang, _fillPaint);
+    final fang2 = Path()
+      ..moveTo(0.5, -1)
+      ..lineTo(1.5, 3)
+      ..lineTo(2.5, -1)
+      ..close();
+    canvas.drawPath(fang2, _fillPaint);
+    canvas.restore();
+  }
+}
+
 /// Factory: instantiate il pet corretto per il tipo. Ritorna null se
 /// `PetType.none`.
 PetBase? createPet(PetType type) {
@@ -600,6 +866,10 @@ PetBase? createPet(PetType type) {
     case PetType.defend: return DefendPet();
     case PetType.snipe: return SnipePet();
     case PetType.ram: return RamPet();
+    case PetType.shieldOrb: return ShieldOrbPet();
+    case PetType.magnetCore: return MagnetCorePet();
+    case PetType.turretDrone: return TurretDronePet();
+    case PetType.vampire: return VampirePet();
   }
 }
 

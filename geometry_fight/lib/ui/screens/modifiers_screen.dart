@@ -18,10 +18,18 @@ class ModifiersSheet extends StatefulWidget {
 class _ModifiersSheetState extends State<ModifiersSheet> {
   late List<String> _active;
 
+  final ScrollController _scrollCtrl = ScrollController();
+
   @override
   void initState() {
     super.initState();
     _active = List.from(widget.activeModifiers);
+  }
+
+  @override
+  void dispose() {
+    _scrollCtrl.dispose();
+    super.dispose();
   }
 
   void _toggle(String id) {
@@ -135,7 +143,17 @@ class _ModifiersSheetState extends State<ModifiersSheet> {
           // Modifier list
           SizedBox(
             height: 280,
-            child: ListView.builder(
+            child: RawScrollbar(
+              controller: _scrollCtrl,
+              thumbVisibility: true,
+              trackVisibility: true,
+              thickness: 10,
+              radius: const Radius.circular(5),
+              thumbColor: const Color(0xFF00FFFF),
+              trackColor: const Color(0x3300FFFF),
+              trackBorderColor: const Color(0x8800FFFF),
+              child: ListView.builder(
+              controller: _scrollCtrl,
               padding: const EdgeInsets.symmetric(horizontal: 16),
               itemCount: allModifiers.length,
               itemBuilder: (context, index) {
@@ -232,6 +250,7 @@ class _ModifiersSheetState extends State<ModifiersSheet> {
                   ),
                 );
               },
+            ),
             ),
           ),
 

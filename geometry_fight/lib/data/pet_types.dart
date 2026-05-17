@@ -20,6 +20,10 @@ enum PetType {
   defend,
   snipe,
   ram,
+  shieldOrb,
+  magnetCore,
+  turretDrone,
+  vampire,
 }
 
 /// Definizione metadata pet — display name, descrizione, costo gold,
@@ -99,6 +103,42 @@ const List<PetDef> kPetCatalog = [
     cost: 2500,
     color: NeonColors.orange,
     iconCode: 'R',
+  ),
+  PetDef(
+    type: PetType.shieldOrb,
+    id: 'shield_orb',
+    displayName: 'SHIELD ORB',
+    description: 'Orbita il player. Genera scudo 1-hit ogni 30s.',
+    cost: 2400,
+    color: NeonColors.cyan,
+    iconCode: 'O',
+  ),
+  PetDef(
+    type: PetType.magnetCore,
+    id: 'magnet_core',
+    displayName: 'MAGNET CORE',
+    description: 'Attira tutti i geom verso il player entro 400px.',
+    cost: 1600,
+    color: NeonColors.orange,
+    iconCode: 'M',
+  ),
+  PetDef(
+    type: PetType.turretDrone,
+    id: 'turret_drone',
+    displayName: 'TURRET DRONE',
+    description: 'Orbita il player. Spara al nemico più vicino ogni 1.5s.',
+    cost: 2000,
+    color: NeonColors.yellow,
+    iconCode: 'T',
+  ),
+  PetDef(
+    type: PetType.vampire,
+    id: 'vampire',
+    displayName: 'VAMPIRE',
+    description: 'Kill nemico entro 200px: 5% chance +1 HP al player.',
+    cost: 2800,
+    color: NeonColors.red,
+    iconCode: 'V',
   ),
 ];
 

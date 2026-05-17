@@ -29,6 +29,9 @@ class _SettingsScreenState extends State<SettingsScreen>
   late AnimationController _entranceController;
   late AnimationController _glowController;
 
+  final ScrollController _settingsCtrl = ScrollController();
+  final ScrollController _crashLogsCtrl = ScrollController();
+
   @override
   void initState() {
     super.initState();
@@ -49,6 +52,8 @@ class _SettingsScreenState extends State<SettingsScreen>
   void dispose() {
     _entranceController.dispose();
     _glowController.dispose();
+    _settingsCtrl.dispose();
+    _crashLogsCtrl.dispose();
     super.dispose();
   }
 
@@ -118,7 +123,17 @@ class _SettingsScreenState extends State<SettingsScreen>
                     ),
                   ),
                 )
-              : ListView.separated(
+              : RawScrollbar(
+                  controller: _crashLogsCtrl,
+                  thumbVisibility: true,
+                  trackVisibility: true,
+                  thickness: 10,
+                  radius: const Radius.circular(5),
+                  thumbColor: const Color(0xFF00FFFF),
+                  trackColor: const Color(0x3300FFFF),
+                  trackBorderColor: const Color(0x8800FFFF),
+                  child: ListView.separated(
+                  controller: _crashLogsCtrl,
                   itemCount: logs.length,
                   separatorBuilder: (_, i) =>
                       const Divider(color: Colors.white12, height: 12),
@@ -134,6 +149,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                       ),
                     );
                   },
+                ),
                 ),
         ),
         actions: [
@@ -204,7 +220,17 @@ class _SettingsScreenState extends State<SettingsScreen>
 
                 // Settings
                 Expanded(
-                  child: ListView(
+                  child: RawScrollbar(
+                    controller: _settingsCtrl,
+                    thumbVisibility: true,
+                    trackVisibility: true,
+                    thickness: 10,
+                    radius: const Radius.circular(5),
+                    thumbColor: const Color(0xFF00FFFF),
+                    trackColor: const Color(0x3300FFFF),
+                    trackBorderColor: const Color(0x8800FFFF),
+                    child: ListView(
+                    controller: _settingsCtrl,
                     padding: const EdgeInsets.all(20),
                     children: [
                       // Audio section
@@ -359,6 +385,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                         onTap: _showCrashLogs,
                       ),
                     ],
+                  ),
                   ),
                 ),
               ],

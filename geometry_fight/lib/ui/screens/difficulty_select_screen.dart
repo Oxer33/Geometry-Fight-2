@@ -84,73 +84,89 @@ class _DifficultySelectScreenState extends State<DifficultySelectScreen> {
               ),
             ),
             Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: GridView.count(
-                  // Iter 10 (utente): 4 card lista verticale → griglia 2×2
-                  // senza scroll. Rimossa description + chip HP/SPD/Vite.
-                  // Solo nome + score multiplier per card.
-                  crossAxisCount: 2,
-                  crossAxisSpacing: 12,
-                  mainAxisSpacing: 12,
-                  // childAspectRatio 2.0 → 3.2 (utente: card troppo grandi,
-                  // devono rientrare tutte nello schermo senza scroll).
-                  childAspectRatio: 3.2,
-                  physics: const NeverScrollableScrollPhysics(),
-                  children: Difficulty.values.map((d) {
-                    final cfg = difficultyConfigs[d]!;
-                    final selected = _sel == d;
-                    final color = _diffColor(d);
-                    return GestureDetector(
-                      onTap: () => setState(() => _sel = d),
-                      child: Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(10),
-                          color: selected
-                              ? color.withValues(alpha: 0.18)
-                              : color.withValues(alpha: 0.05),
-                          border: Border.all(
-                              color: color.withValues(
-                                  alpha: selected ? 0.95 : 0.4),
-                              width: selected ? 2.5 : 1),
-                          boxShadow: selected
-                              ? [
-                                  BoxShadow(
-                                      color: color.withValues(alpha: 0.4),
-                                      blurRadius: 12)
-                                ]
-                              : null,
-                        ),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            Text(
-                              cfg.name,
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                color: color,
-                                fontSize: 18,
-                                fontWeight: FontWeight.w900,
-                                fontFamily: 'monospace',
-                                letterSpacing: 3,
+              child: Center(
+                child: ConstrainedBox(
+                  // Iter 18 (utente: card 70% smaller): wrap in Center +
+                  // ConstrainedBox(maxWidth: 700) → cards no longer fill
+                  // viewport. Explicit SizedBox per card invece di Expanded.
+                  constraints: const BoxConstraints(maxWidth: 700),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 16),
+                    child: Wrap(
+                      alignment: WrapAlignment.center,
+                      runAlignment: WrapAlignment.center,
+                      spacing: 10,
+                      runSpacing: 10,
+                      children: Difficulty.values.map((d) {
+                        final cfg = difficultyConfigs[d]!;
+                        final selected = _sel == d;
+                        final color = _diffColor(d);
+                        return GestureDetector(
+                          onTap: () => setState(() => _sel = d),
+                          child: SizedBox(
+                            // Iter 18: dimensioni esplicite per card 70%.
+                            width: 280,
+                            height: 100,
+                            child: Container(
+                              // Iter 18: padding card interno 8 → 16
+                              // (ora che la card ha altezza fissa, padding
+                              // interno coerente con request utente).
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(10),
+                                color: selected
+                                    ? color.withValues(alpha: 0.18)
+                                    : color.withValues(alpha: 0.05),
+                                border: Border.all(
+                                    color: color.withValues(
+                                        alpha: selected ? 0.95 : 0.4),
+                                    width: selected ? 2.5 : 1),
+                                boxShadow: selected
+                                    ? [
+                                        BoxShadow(
+                                            color: color.withValues(
+                                                alpha: 0.4),
+                                            blurRadius: 12)
+                                      ]
+                                    : null,
+                              ),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                crossAxisAlignment:
+                                    CrossAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    cfg.name,
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      color: color,
+                                      // Iter 18: 13 → 15 (-15% dal 18
+                                      // originale ≈ 15).
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w900,
+                                      fontFamily: 'monospace',
+                                      letterSpacing: 2,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 3),
+                                  Text(
+                                    '×${cfg.scoreMultiplier.toStringAsFixed(1)} score',
+                                    style: TextStyle(
+                                      color: color.withValues(alpha: 0.8),
+                                      // Iter 18: 9 → 11 (-15% dal 12).
+                                      fontSize: 11,
+                                      fontFamily: 'monospace',
+                                    ),
+                                  ),
+                                ],
                               ),
                             ),
-                            const SizedBox(height: 6),
-                            Text(
-                              '×${cfg.scoreMultiplier.toStringAsFixed(1)} score',
-                              style: TextStyle(
-                                color: color.withValues(alpha: 0.8),
-                                fontSize: 12,
-                                fontFamily: 'monospace',
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  }).toList(),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ),
                 ),
               ),
             ),
