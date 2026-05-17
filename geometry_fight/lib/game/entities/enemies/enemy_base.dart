@@ -47,6 +47,17 @@ abstract class EnemyBase extends PositionComponent
   Vector2? _fearDirection;
   bool get canFearDodge => false;
 
+  // Stun mechanic (EMP DRONE pet): mentre `_stunTimer > 0` il nemico
+  // salta `updateBehavior` (resta fermo) ma può ancora subire danno.
+  double _stunTimer = 0;
+  bool get isStunned => _stunTimer > 0;
+
+  /// Applica stun per `seconds` se il valore è maggiore del residuo corrente.
+  /// Evita refresh "indebolente" se due EMP pulse si sovrappongono.
+  void applyStun(double seconds) {
+    if (seconds > _stunTimer) _stunTimer = seconds;
+  }
+
   /// Immunità danno ad area: bomba, plasma explosion, laser raycast, overdrive,
   /// shockwave morte player, buco nero. Usato dai Splitter per evitare cascata
   /// di divisioni simultanee che fa crashare il gioco.
@@ -86,6 +97,7 @@ abstract class EnemyBase extends PositionComponent
       _spawnInvulnTimer -= dt;
     }
     if (_fearTimer > 0) _fearTimer -= dt;
+    if (_stunTimer > 0) _stunTimer -= dt;
 
     // Tunnel mode: despawn dietro o oltre la camera.
     if (game.isTunnelMode) {
@@ -118,8 +130,11 @@ abstract class EnemyBase extends PositionComponent
 
     // Durante il warning di spawn (2.5s) il nemico sta fermo: niente fear, niente behavior
     if (_spawnInvulnTimer <= 0) {
-      // Fear: fuggi nella direzione opposta brevemente
-      if (_fearTimer > 0 && _fearDirection != null) {
+      // Stun (EMP DRONE pet): blocca tutto il movimento, anche la fear.
+      if (_stunTimer > 0) {
+        // skip
+      } else if (_fearTimer > 0 && _fearDirection != null) {
+        // Fear: fuggi nella direzione opposta brevemente
         position += _fearDirection! * speed * 2.5 * dt;
       } else {
         updateBehavior(dt);

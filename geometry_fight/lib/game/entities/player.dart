@@ -8,6 +8,7 @@ import '../effects/chain_lightning_effect.dart';
 import '../game_world.dart';
 import 'bosses/boss_base.dart';
 import 'enemies/enemy_base.dart';
+import 'pets/pet_base.dart';
 import 'projectiles.dart';
 
 enum WeaponType {
@@ -643,6 +644,19 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
     game.onPlayerHit();
 
     if (lives <= 0) {
+      // Phoenix pet hook: una volta per run consuma la carica e revive il
+      // player ripristinando vite (formula identica a `_startRun`) + 2s di
+      // invincibilità. Skip onPlayerDeath() per evitare game over.
+      final pet = game.activePet;
+      if (pet is PhoenixPet && pet.tryConsumeRevive()) {
+        lives = game.diffConfig.startingLives +
+            (game.saveData.startingLives - 3);
+        if (lives < 1) lives = 1;
+        _invincibleTimer = 2.0;
+        game.spawnExplosion(position, NeonColors.orange,
+            radius: 120, particleCount: 30, epic: true);
+        return;
+      }
       game.onPlayerDeath();
     }
   }

@@ -550,44 +550,76 @@ class _PetIconPainter extends CustomPainter {
       case PetType.none:
         // Default: cerchio vuoto
         canvas.drawCircle(Offset(cx, cy), r * 0.5, _stroke);
-      // Iter 18: nuovi pet shop (shieldOrb/magnetCore/turretDrone/vampire).
-      // Shape fallback semplici fino a custom icon dedicate.
-      case PetType.shieldOrb:
-        // Cerchio + ring esterno (shield-style).
-        _stroke.strokeWidth = 1.6;
-        canvas.drawCircle(Offset(cx, cy), r * 0.55, _stroke);
-        canvas.drawCircle(Offset(cx, cy), r * 0.85, _stroke);
-      case PetType.magnetCore:
-        // U-shape magnete: 2 poli + barra.
-        _stroke.strokeWidth = 2.0;
-        canvas.drawLine(
-            Offset(cx - r * 0.55, cy - r * 0.5),
-            Offset(cx - r * 0.55, cy + r * 0.5),
-            _stroke);
-        canvas.drawLine(
-            Offset(cx + r * 0.55, cy - r * 0.5),
-            Offset(cx + r * 0.55, cy + r * 0.5),
-            _stroke);
-        canvas.drawLine(
-            Offset(cx - r * 0.55, cy + r * 0.5),
-            Offset(cx + r * 0.55, cy + r * 0.5),
-            _stroke);
-      case PetType.turretDrone:
-        // Quadrato + canna sopra.
-        final rect = Rect.fromCenter(
-            center: Offset(cx, cy), width: r * 1.1, height: r * 1.1);
-        canvas.drawRect(rect, _stroke);
-        _stroke.strokeWidth = 1.8;
-        canvas.drawLine(
-            Offset(cx, cy - r * 0.55), Offset(cx, cy - r * 0.95), _stroke);
-      case PetType.vampire:
-        // Goccia/triangolo invertito (sangue).
-        final path = Path()
-          ..moveTo(cx, cy - r * 0.75)
-          ..lineTo(cx + r * 0.55, cy + r * 0.55)
-          ..lineTo(cx - r * 0.55, cy + r * 0.55)
+      // Nuovi pet (swap roster): phoenix / blackHolePet / empDrone /
+      // tacticalSpotter. Icone stilizzate matching color + concept.
+      case PetType.phoenix:
+        // Fiamma stilizzata (ali spiegate + nucleo).
+        final wings = Path()
+          ..moveTo(cx, cy - r * 0.85)
+          ..lineTo(cx + r * 0.75, cy)
+          ..lineTo(cx + r * 0.4, cy + r * 0.25)
+          ..lineTo(cx, cy + r * 0.85)
+          ..lineTo(cx - r * 0.4, cy + r * 0.25)
+          ..lineTo(cx - r * 0.75, cy)
           ..close();
-        canvas.drawPath(path, _fill);
+        canvas.drawPath(wings, _fill);
+        // Spark interno bianco.
+        _fill.color = const Color(0xFFFFFFFF);
+        canvas.drawCircle(Offset(cx, cy), r * 0.18, _fill);
+      case PetType.blackHolePet:
+        // Disco scuro + anello viola (event horizon).
+        _stroke.strokeWidth = 1.8;
+        canvas.drawCircle(Offset(cx, cy), r * 0.85, _stroke);
+        // Disco centrale nero.
+        final blackDisc = Paint()
+          ..color = const Color(0xFF000000)
+          ..style = PaintingStyle.fill;
+        canvas.drawCircle(Offset(cx, cy), r * 0.45, blackDisc);
+        // Ring orbitale interno.
+        _stroke.strokeWidth = 1.2;
+        canvas.drawCircle(Offset(cx, cy), r * 0.55, _stroke);
+      case PetType.empDrone:
+        // Hexagon + 4 antenne cardinali (waveform feel).
+        final hex = Path();
+        for (int i = 0; i < 6; i++) {
+          final a = i * math.pi / 3;
+          final x = cx + math.cos(a) * r * 0.55;
+          final y = cy + math.sin(a) * r * 0.55;
+          if (i == 0) {
+            hex.moveTo(x, y);
+          } else {
+            hex.lineTo(x, y);
+          }
+        }
+        hex.close();
+        canvas.drawPath(hex, _fill);
+        // Antenne EMP (4 punte cardinali).
+        _stroke
+          ..color = const Color(0xFFFFFFFF)
+          ..strokeWidth = 1.6;
+        canvas.drawLine(Offset(cx, cy - r * 0.6),
+            Offset(cx, cy - r * 0.95), _stroke);
+        canvas.drawLine(Offset(cx, cy + r * 0.6),
+            Offset(cx, cy + r * 0.95), _stroke);
+        canvas.drawLine(Offset(cx - r * 0.6, cy),
+            Offset(cx - r * 0.95, cy), _stroke);
+        canvas.drawLine(Offset(cx + r * 0.6, cy),
+            Offset(cx + r * 0.95, cy), _stroke);
+      case PetType.tacticalSpotter:
+        // Scope: cerchio + crosshair + dot centrale.
+        _stroke
+          ..color = color
+          ..strokeWidth = 1.8;
+        canvas.drawCircle(Offset(cx, cy), r * 0.7, _stroke);
+        _stroke
+          ..color = const Color(0xFFFFFFFF)
+          ..strokeWidth = 1.0;
+        canvas.drawLine(Offset(cx - r * 0.95, cy),
+            Offset(cx + r * 0.95, cy), _stroke);
+        canvas.drawLine(Offset(cx, cy - r * 0.95),
+            Offset(cx, cy + r * 0.95), _stroke);
+        _fill.color = color;
+        canvas.drawCircle(Offset(cx, cy), r * 0.18, _fill);
     }
   }
 
