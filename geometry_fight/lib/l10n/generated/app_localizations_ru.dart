@@ -671,4 +671,357 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get tutorialTapToStart => 'НАЖМИ ДЛЯ СТАРТА';
+
+  @override
+  String get skinNameClassic => 'Classic';
+
+  @override
+  String get skinDescClassic => 'Оригинальный голубой корабль';
+
+  @override
+  String get skinNameStealth => 'Stealth';
+
+  @override
+  String get skinDescStealth => 'Чёрный с красными краями — скрытный стиль';
+
+  @override
+  String get skinNameCrystal => 'Crystal';
+
+  @override
+  String get skinDescCrystal => 'Призматический алмаз — радужные отражения';
+
+  @override
+  String get skinNameGhost => 'Ghost';
+
+  @override
+  String get skinDescGhost => 'Полупрозрачный со шлейфом частиц';
+
+  @override
+  String get skinNameOmega => 'Omega';
+
+  @override
+  String get skinDescOmega => 'Золотая 4-конечная звезда — уникальная форма';
+
+  @override
+  String get skinNamePhoenix => 'Phoenix';
+
+  @override
+  String get skinDescPhoenix =>
+      'Огненные крылья с перьями-углями — возрождается из пепла';
+
+  @override
+  String get skinNameCyber => 'Cyber';
+
+  @override
+  String get skinDescCyber =>
+      'Неоново-зелёная сетка схем — анимированный цифровой оверлей';
+
+  @override
+  String get skinNameVoidwalker => 'Voidwalker';
+
+  @override
+  String get skinDescVoidwalker => 'Фиолетовое ядро в пустоте — эфирный ореол';
+
+  @override
+  String get skinNameAurora => 'Aurora';
+
+  @override
+  String get skinDescAurora =>
+      'Северное сияние: голубой/розовый/зелёный потоки';
+
+  @override
+  String get skinNameTactical => 'Tactical';
+
+  @override
+  String get skinDescTactical =>
+      'Военная броня серо-синяя — бронированные пластины';
+
+  @override
+  String get skinNamePrism => 'Prism';
+
+  @override
+  String get skinDescPrism =>
+      'Полигональный кристалл — мульти-радужное преломление';
+
+  @override
+  String get skinNameTron => 'Tron';
+
+  @override
+  String get skinDescTron =>
+      'Чёрный корпус с неоновыми голубыми линиями — цифровая сетка схем';
+
+  @override
+  String get skinNameSamurai => 'Samurai';
+
+  @override
+  String get skinDescSamurai =>
+      'Чёрная броня с золото-красными деталями — честь и битва';
+
+  @override
+  String get skinNameRosegold => 'RoseGold';
+
+  @override
+  String get skinDescRosegold =>
+      'Металлическое розовое золото — современная элегантность';
+
+  @override
+  String get skinNameNinja => 'Ninja';
+
+  @override
+  String get skinDescNinja =>
+      'Теневой серый с акцентами сюрикена — тихий и смертоносный';
+
+  @override
+  String get skinNameGlitch => 'Glitch';
+
+  @override
+  String get skinDescGlitch =>
+      'RGB хроматический сдвиг — анимированная аберрация';
+
+  @override
+  String get trailNameNormal => 'Normal';
+
+  @override
+  String get trailDescNormal => 'Стандартный голубой след';
+
+  @override
+  String get trailNameFire => 'Fire';
+
+  @override
+  String get trailDescFire => 'Огненные частицы за кораблём';
+
+  @override
+  String get trailNameIce => 'Ice';
+
+  @override
+  String get trailDescIce => 'Сверкающие ледяные кристаллы';
+
+  @override
+  String get trailNamePlasma => 'Plasma';
+
+  @override
+  String get trailDescPlasma => 'Пульсирующая фиолетовая плазма';
+
+  @override
+  String get trailNameRainbow => 'Rainbow';
+
+  @override
+  String get trailDescRainbow => 'Непрерывно меняющиеся цвета';
+
+  @override
+  String get trailNameComet => 'Comet';
+
+  @override
+  String get trailDescComet => 'Яркая голова с медленно угасающим хвостом';
+
+  @override
+  String get trailNameInferno => 'Inferno';
+
+  @override
+  String get trailDescInferno => 'Многослойный огонь с разлетающимися углями';
+
+  @override
+  String get trailNameVoid => 'Void';
+
+  @override
+  String get trailDescVoid => 'Тёмный вихрь, поглощающий фиолетовые частицы';
+
+  @override
+  String get trailNameQuantum => 'Quantum';
+
+  @override
+  String get trailDescQuantum =>
+      'Связанные частицы в хроматической суперпозиции';
+
+  @override
+  String get trailNameGalaxy => 'Galaxy';
+
+  @override
+  String get trailDescGalaxy => 'Звёзды по спирали с космической пылью';
+
+  @override
+  String get trailNameLightning => 'Lightning';
+
+  @override
+  String get trailDescLightning =>
+      'Зигзагообразные электродуги между точками следа';
+
+  @override
+  String get trailNameNebula => 'Nebula';
+
+  @override
+  String get trailDescNebula =>
+      'Пульсирующее голубо-пурпурное космическое облако';
+
+  @override
+  String get trailNamePrism => 'Prism';
+
+  @override
+  String get trailDescPrism => 'Полный спектр течёт вдоль следа';
+
+  @override
+  String get trailNameHologram => 'Hologram';
+
+  @override
+  String get trailDescHologram => 'RGB хроматическая аберрация в стиле глитч';
+
+  @override
+  String get trailNameBiolume => 'Biolumin';
+
+  @override
+  String get trailDescBiolume => 'Водная биолюминесценция зелёная/голубая';
+
+  @override
+  String get trailNameNeonpulse => 'NeonPulse';
+
+  @override
+  String get trailDescNeonpulse => 'Расширяющиеся бело-голубые неоновые кольца';
+
+  @override
+  String get weaponNameBasic => 'Basic Gun';
+
+  @override
+  String get weaponDescBasic =>
+      'Двойной ряд параллельных жёлтых пуль — надёжно и точно.';
+
+  @override
+  String get weaponNameTriple => 'Triple Shot';
+
+  @override
+  String get weaponDescTriple =>
+      '3 плотных белых пули — концентрированный огонь.';
+
+  @override
+  String get weaponNameSpread => 'Spread Shot';
+
+  @override
+  String get weaponDescSpread =>
+      '5 оранжевых пуль узким веером — отлично против групп.';
+
+  @override
+  String get weaponNameRicochet => 'Ricochet';
+
+  @override
+  String get weaponDescRicochet =>
+      'Веер из 3 зелёных снарядов высокого урона, отскакивают 2 раза от стен.';
+
+  @override
+  String get weaponNameHoming => 'Homing';
+
+  @override
+  String get weaponDescHoming =>
+      '5 ракет преследуют разные цели — взрываются о стены.';
+
+  @override
+  String get weaponNamePlasma => 'Plasma';
+
+  @override
+  String get weaponDescPlasma =>
+      'Медленный фиолетовый шар со взрывным AoE — крушит боссов и группы.';
+
+  @override
+  String get weaponNameLaser => 'Laser';
+
+  @override
+  String get weaponDescLaser =>
+      'Непрерывный красный луч — режет всё на своём пути.';
+
+  @override
+  String get weaponNameGauss => 'Gauss Cannon';
+
+  @override
+  String get weaponDescGauss =>
+      'Фиолетовый выстрел с гравитационным притяжением 1с — собирает врагов для удара по всем.';
+
+  @override
+  String get weaponNameChain => 'Chain Lightning';
+
+  @override
+  String get weaponDescChain =>
+      'Электрическая молния скачет между 5 врагами — идеально против групп.';
+
+  @override
+  String get modeDescClassic =>
+      '100 волн с боссом каждые 10 — стандартный режим';
+
+  @override
+  String get modeDescBossRush => 'Только боссы, один за другим — без мобов';
+
+  @override
+  String get modeDescSurvival =>
+      'Бесконечные волны всё сложнее — сколько выдержишь?';
+
+  @override
+  String get modeDescTimeAttack =>
+      '3 минуты: набери максимум очков до окончания времени';
+
+  @override
+  String get modeDescZenMode =>
+      'Бесконечные жизни — играй без стресса, изучай всё';
+
+  @override
+  String get modeDescTunnel => 'Боковая прокрутка в бесконечном туннеле';
+
+  @override
+  String get modeDescPacifist =>
+      'Без выстрелов! Выживай с помощью Gates (GW Pacifism)';
+
+  @override
+  String get modeDescWaves =>
+      'Только кардинальные красные треугольники. Редкие чёрные дыры. Чистое уклонение.';
+
+  @override
+  String get modeDescGravityInferno =>
+      'Много чёрных дыр + мало смешанных мобов. Без боссов. Гравитационный хаос.';
+
+  @override
+  String get upgradeFirepower => 'УРОН';
+
+  @override
+  String get upgradeFirepowerDesc => '+5% урона за уровень (макс +25%)';
+
+  @override
+  String get upgradeFireRate => 'СКОРОСТРЕЛЬН.';
+
+  @override
+  String get upgradeFireRateDesc =>
+      '+5% скорострельности за уровень (макс +25%)';
+
+  @override
+  String get upgradeSpeed => 'СКОРОСТЬ';
+
+  @override
+  String get upgradeSpeedDesc => '+5% скорости за уровень (макс +25%)';
+
+  @override
+  String get upgradeShield => 'ЩИТ';
+
+  @override
+  String get upgradeShieldDesc =>
+      'Щит после смерти: 5с → 10с → 15с → 20с → 25с';
+
+  @override
+  String get upgradeLives => 'ЖИЗНИ';
+
+  @override
+  String get upgradeLivesDesc => 'Начальные жизни: 3 → 4 → 5';
+
+  @override
+  String get upgradeBombs => 'БОМБЫ';
+
+  @override
+  String get upgradeBombsDesc => 'Доступные бомбы: 3 → 4 → 5';
+
+  @override
+  String get upgradeMagnet => 'МАГНИТ';
+
+  @override
+  String get upgradeMagnetDesc =>
+      '+10px радиуса магнита за уровень (макс +50px)';
+
+  @override
+  String get upgradeXpBoost => 'БУСТ XP';
+
+  @override
+  String get upgradeXpBoostDesc => '+10% GoldGeom за уровень (макс +50%)';
 }

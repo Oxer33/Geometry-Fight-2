@@ -671,4 +671,350 @@ class AppLocalizationsPt extends AppLocalizations {
 
   @override
   String get tutorialTapToStart => 'TOQUE PARA COMEÇAR';
+
+  @override
+  String get skinNameClassic => 'Classic';
+
+  @override
+  String get skinDescClassic => 'A nave original ciano';
+
+  @override
+  String get skinNameStealth => 'Stealth';
+
+  @override
+  String get skinDescStealth => 'Preta com bordas vermelhas — estilo furtivo';
+
+  @override
+  String get skinNameCrystal => 'Crystal';
+
+  @override
+  String get skinDescCrystal => 'Diamante prismático — reflexos arco-íris';
+
+  @override
+  String get skinNameGhost => 'Ghost';
+
+  @override
+  String get skinDescGhost => 'Semitransparente com rastro de partículas';
+
+  @override
+  String get skinNameOmega => 'Omega';
+
+  @override
+  String get skinDescOmega => 'Estrela dourada de 4 pontas — forma única';
+
+  @override
+  String get skinNamePhoenix => 'Phoenix';
+
+  @override
+  String get skinDescPhoenix =>
+      'Asas de fogo com penas de brasa — renasce das cinzas';
+
+  @override
+  String get skinNameCyber => 'Cyber';
+
+  @override
+  String get skinDescCyber =>
+      'Malha de circuitos verde néon — overlay digital animado';
+
+  @override
+  String get skinNameVoidwalker => 'Voidwalker';
+
+  @override
+  String get skinDescVoidwalker =>
+      'Núcleo violeta suspenso no vazio — halo etéreo';
+
+  @override
+  String get skinNameAurora => 'Aurora';
+
+  @override
+  String get skinDescAurora => 'Boreal: ciano/rosa/verde fluindo';
+
+  @override
+  String get skinNameTactical => 'Tactical';
+
+  @override
+  String get skinDescTactical =>
+      'Armadura militar cinza/azul — placas blindadas';
+
+  @override
+  String get skinNamePrism => 'Prism';
+
+  @override
+  String get skinDescPrism => 'Cristal poligonal — refração multi-arco-íris';
+
+  @override
+  String get skinNameTron => 'Tron';
+
+  @override
+  String get skinDescTron =>
+      'Corpo preto com linhas ciano néon — grade digital';
+
+  @override
+  String get skinNameSamurai => 'Samurai';
+
+  @override
+  String get skinDescSamurai =>
+      'Armadura preta com detalhes ouro/vermelho — honra e batalha';
+
+  @override
+  String get skinNameRosegold => 'RoseGold';
+
+  @override
+  String get skinDescRosegold => 'Rosa-dourado metálico — elegância moderna';
+
+  @override
+  String get skinNameNinja => 'Ninja';
+
+  @override
+  String get skinDescNinja =>
+      'Cinza sombra com toques shuriken — silencioso e letal';
+
+  @override
+  String get skinNameGlitch => 'Glitch';
+
+  @override
+  String get skinDescGlitch => 'Mudança cromática RGB — aberração animada';
+
+  @override
+  String get trailNameNormal => 'Normal';
+
+  @override
+  String get trailDescNormal => 'Rastro ciano padrão';
+
+  @override
+  String get trailNameFire => 'Fire';
+
+  @override
+  String get trailDescFire => 'Partículas de fogo atrás da nave';
+
+  @override
+  String get trailNameIce => 'Ice';
+
+  @override
+  String get trailDescIce => 'Cristais de gelo brilhantes';
+
+  @override
+  String get trailNamePlasma => 'Plasma';
+
+  @override
+  String get trailDescPlasma => 'Energia plasma roxa pulsante';
+
+  @override
+  String get trailNameRainbow => 'Rainbow';
+
+  @override
+  String get trailDescRainbow => 'Cores mudando continuamente';
+
+  @override
+  String get trailNameComet => 'Comet';
+
+  @override
+  String get trailDescComet =>
+      'Cabeça brilhante com cauda que se apaga lentamente';
+
+  @override
+  String get trailNameInferno => 'Inferno';
+
+  @override
+  String get trailDescInferno => 'Fogo multicamada com brasas saltando';
+
+  @override
+  String get trailNameVoid => 'Void';
+
+  @override
+  String get trailDescVoid => 'Vórtice escuro sugando partículas violetas';
+
+  @override
+  String get trailNameQuantum => 'Quantum';
+
+  @override
+  String get trailDescQuantum =>
+      'Partículas acopladas em superposição cromática';
+
+  @override
+  String get trailNameGalaxy => 'Galaxy';
+
+  @override
+  String get trailDescGalaxy => 'Estrelas em espiral com poeira cósmica';
+
+  @override
+  String get trailNameLightning => 'Lightning';
+
+  @override
+  String get trailDescLightning =>
+      'Arcos elétricos em zigzag entre pontos do rastro';
+
+  @override
+  String get trailNameNebula => 'Nebula';
+
+  @override
+  String get trailDescNebula => 'Nuvem espacial ciano/magenta pulsante';
+
+  @override
+  String get trailNamePrism => 'Prism';
+
+  @override
+  String get trailDescPrism => 'Espectro completo fluindo pelo rastro';
+
+  @override
+  String get trailNameHologram => 'Hologram';
+
+  @override
+  String get trailDescHologram => 'Aberração cromática RGB estilo glitch';
+
+  @override
+  String get trailNameBiolume => 'Biolumin';
+
+  @override
+  String get trailDescBiolume => 'Bioluminescência aquática verde/ciano';
+
+  @override
+  String get trailNameNeonpulse => 'NeonPulse';
+
+  @override
+  String get trailDescNeonpulse => 'Anéis néon branco-ciano expandindo';
+
+  @override
+  String get weaponNameBasic => 'Basic Gun';
+
+  @override
+  String get weaponDescBasic =>
+      'Dupla fileira de balas amarelas paralelas — confiável e precisa.';
+
+  @override
+  String get weaponNameTriple => 'Triple Shot';
+
+  @override
+  String get weaponDescTriple => '3 balas brancas próximas — fogo concentrado.';
+
+  @override
+  String get weaponNameSpread => 'Spread Shot';
+
+  @override
+  String get weaponDescSpread =>
+      '5 balas laranjas em leque estreito — ótimo vs grupos.';
+
+  @override
+  String get weaponNameRicochet => 'Ricochet';
+
+  @override
+  String get weaponDescRicochet =>
+      'Leque de 3 tiros verdes de alto dano que ricocheteiam 2 vezes nas paredes.';
+
+  @override
+  String get weaponNameHoming => 'Homing';
+
+  @override
+  String get weaponDescHoming =>
+      '5 mísseis perseguindo alvos distintos — explodem nas paredes.';
+
+  @override
+  String get weaponNamePlasma => 'Plasma';
+
+  @override
+  String get weaponDescPlasma =>
+      'Orbe violeta lento com AoE explosiva — devasta chefes e grupos.';
+
+  @override
+  String get weaponNameLaser => 'Laser';
+
+  @override
+  String get weaponDescLaser =>
+      'Feixe vermelho contínuo — corta tudo que toca.';
+
+  @override
+  String get weaponNameGauss => 'Gauss Cannon';
+
+  @override
+  String get weaponDescGauss =>
+      'Tiro violeta com sucção gravitacional 1s — agrupa inimigos para atingir todos.';
+
+  @override
+  String get weaponNameChain => 'Chain Lightning';
+
+  @override
+  String get weaponDescChain =>
+      'Raio elétrico ricocheteia entre 5 inimigos — perfeito vs grupos.';
+
+  @override
+  String get modeDescClassic => '100 ondas com chefe a cada 10 — o modo padrão';
+
+  @override
+  String get modeDescBossRush => 'Só chefes, um após o outro — sem mobs';
+
+  @override
+  String get modeDescSurvival =>
+      'Ondas infinitas cada vez mais difíceis — quanto você aguenta?';
+
+  @override
+  String get modeDescTimeAttack =>
+      '3 minutos: faça o máximo de pontos antes do tempo acabar';
+
+  @override
+  String get modeDescZenMode =>
+      'Vidas infinitas — jogue sem estresse, explore tudo';
+
+  @override
+  String get modeDescTunnel => 'Rolagem lateral em um túnel infinito';
+
+  @override
+  String get modeDescPacifist =>
+      'Sem tiros! Sobreviva com os Gates (GW Pacifism)';
+
+  @override
+  String get modeDescWaves =>
+      'Só triângulos vermelhos cardinais. Raros buracos negros. Esquiva pura.';
+
+  @override
+  String get modeDescGravityInferno =>
+      'Muitos buracos negros + poucos mobs mistos. Sem chefes. Caos gravitacional.';
+
+  @override
+  String get upgradeFirepower => 'PODER';
+
+  @override
+  String get upgradeFirepowerDesc => '+5% dano por nível (máx +25%)';
+
+  @override
+  String get upgradeFireRate => 'CADÊNCIA';
+
+  @override
+  String get upgradeFireRateDesc => '+5% cadência por nível (máx +25%)';
+
+  @override
+  String get upgradeSpeed => 'VELOCIDADE';
+
+  @override
+  String get upgradeSpeedDesc => '+5% velocidade por nível (máx +25%)';
+
+  @override
+  String get upgradeShield => 'ESCUDO';
+
+  @override
+  String get upgradeShieldDesc =>
+      'Escudo pós-morte: 5s → 10s → 15s → 20s → 25s';
+
+  @override
+  String get upgradeLives => 'VIDAS';
+
+  @override
+  String get upgradeLivesDesc => 'Vidas iniciais: 3 → 4 → 5';
+
+  @override
+  String get upgradeBombs => 'BOMBAS';
+
+  @override
+  String get upgradeBombsDesc => 'Bombas disponíveis: 3 → 4 → 5';
+
+  @override
+  String get upgradeMagnet => 'ÍMÃ';
+
+  @override
+  String get upgradeMagnetDesc => '+10px de alcance ímã por nível (máx +50px)';
+
+  @override
+  String get upgradeXpBoost => 'BÔNUS XP';
+
+  @override
+  String get upgradeXpBoostDesc => '+10% GoldGeom por nível (máx +50%)';
 }

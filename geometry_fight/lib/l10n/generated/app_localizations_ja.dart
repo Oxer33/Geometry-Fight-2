@@ -668,4 +668,325 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get tutorialTapToStart => 'タップしてスタート';
+
+  @override
+  String get skinNameClassic => 'Classic';
+
+  @override
+  String get skinDescClassic => 'オリジナルのシアンの機体';
+
+  @override
+  String get skinNameStealth => 'Stealth';
+
+  @override
+  String get skinDescStealth => '黒に赤縁——ステルススタイル';
+
+  @override
+  String get skinNameCrystal => 'Crystal';
+
+  @override
+  String get skinDescCrystal => 'プリズム結晶——虹の反射';
+
+  @override
+  String get skinNameGhost => 'Ghost';
+
+  @override
+  String get skinDescGhost => '半透明、粒子の軌跡付き';
+
+  @override
+  String get skinNameOmega => 'Omega';
+
+  @override
+  String get skinDescOmega => '黄金の四芒星——独特な形';
+
+  @override
+  String get skinNamePhoenix => 'Phoenix';
+
+  @override
+  String get skinDescPhoenix => '炎の翼に燠羽根——灰から蘇る';
+
+  @override
+  String get skinNameCyber => 'Cyber';
+
+  @override
+  String get skinDescCyber => 'ネオングリーンの回路メッシュ——アニメーションデジタルオーバーレイ';
+
+  @override
+  String get skinNameVoidwalker => 'Voidwalker';
+
+  @override
+  String get skinDescVoidwalker => '紫のコアが虚空に浮遊——幽玄なハロー';
+
+  @override
+  String get skinNameAurora => 'Aurora';
+
+  @override
+  String get skinDescAurora => 'オーロラ:シアン/ピンク/グリーンが流れる';
+
+  @override
+  String get skinNameTactical => 'Tactical';
+
+  @override
+  String get skinDescTactical => '灰青の軍用アーマー——装甲プレート';
+
+  @override
+  String get skinNamePrism => 'Prism';
+
+  @override
+  String get skinDescPrism => '多角形クリスタル——マルチ虹の屈折';
+
+  @override
+  String get skinNameTron => 'Tron';
+
+  @override
+  String get skinDescTron => '黒ボディにシアンネオンライン——デジタル回路グリッド';
+
+  @override
+  String get skinNameSamurai => 'Samurai';
+
+  @override
+  String get skinDescSamurai => '黒鎧に金赤のディテール——名誉と戦い';
+
+  @override
+  String get skinNameRosegold => 'RoseGold';
+
+  @override
+  String get skinDescRosegold => 'メタリックローズゴールド——モダンな優雅さ';
+
+  @override
+  String get skinNameNinja => 'Ninja';
+
+  @override
+  String get skinDescNinja => '影色グレーに手裏剣アクセント——静かで致命的';
+
+  @override
+  String get skinNameGlitch => 'Glitch';
+
+  @override
+  String get skinDescGlitch => 'RGB色彩シフト——アニメーション収差';
+
+  @override
+  String get trailNameNormal => 'Normal';
+
+  @override
+  String get trailDescNormal => '標準シアン軌跡';
+
+  @override
+  String get trailNameFire => 'Fire';
+
+  @override
+  String get trailDescFire => '機体後方の火の粒子';
+
+  @override
+  String get trailNameIce => 'Ice';
+
+  @override
+  String get trailDescIce => 'きらめく氷の結晶';
+
+  @override
+  String get trailNamePlasma => 'Plasma';
+
+  @override
+  String get trailDescPlasma => '脈動する紫のプラズマエネルギー';
+
+  @override
+  String get trailNameRainbow => 'Rainbow';
+
+  @override
+  String get trailDescRainbow => '絶えず変化する色';
+
+  @override
+  String get trailNameComet => 'Comet';
+
+  @override
+  String get trailDescComet => '明るい頭部とゆっくり消えるテール';
+
+  @override
+  String get trailNameInferno => 'Inferno';
+
+  @override
+  String get trailDescInferno => '多層の炎と飛び散る燠';
+
+  @override
+  String get trailNameVoid => 'Void';
+
+  @override
+  String get trailDescVoid => '紫の粒子を吸い込む暗い渦';
+
+  @override
+  String get trailNameQuantum => 'Quantum';
+
+  @override
+  String get trailDescQuantum => '色彩重ね合わせの対粒子';
+
+  @override
+  String get trailNameGalaxy => 'Galaxy';
+
+  @override
+  String get trailDescGalaxy => '渦巻く星と宇宙塵';
+
+  @override
+  String get trailNameLightning => 'Lightning';
+
+  @override
+  String get trailDescLightning => '軌跡点間のジグザグ電弧';
+
+  @override
+  String get trailNameNebula => 'Nebula';
+
+  @override
+  String get trailDescNebula => '脈動するシアン/マゼンタの宇宙雲';
+
+  @override
+  String get trailNamePrism => 'Prism';
+
+  @override
+  String get trailDescPrism => '軌跡に沿って流れる全スペクトル';
+
+  @override
+  String get trailNameHologram => 'Hologram';
+
+  @override
+  String get trailDescHologram => 'RGB色収差グリッチスタイル';
+
+  @override
+  String get trailNameBiolume => 'Biolumin';
+
+  @override
+  String get trailDescBiolume => '水中生物発光 緑/シアン';
+
+  @override
+  String get trailNameNeonpulse => 'NeonPulse';
+
+  @override
+  String get trailDescNeonpulse => '拡大する白シアンのネオンリング';
+
+  @override
+  String get weaponNameBasic => 'Basic Gun';
+
+  @override
+  String get weaponDescBasic => '黄色弾の平行2列——信頼性と精度。';
+
+  @override
+  String get weaponNameTriple => 'Triple Shot';
+
+  @override
+  String get weaponDescTriple => '白弾3発を密集——集中射撃。';
+
+  @override
+  String get weaponNameSpread => 'Spread Shot';
+
+  @override
+  String get weaponDescSpread => 'オレンジ弾5発の狭い扇形——集団に最適。';
+
+  @override
+  String get weaponNameRicochet => 'Ricochet';
+
+  @override
+  String get weaponDescRicochet => '高ダメージ緑弾3発の扇形——壁で2回跳ね返る。';
+
+  @override
+  String get weaponNameHoming => 'Homing';
+
+  @override
+  String get weaponDescHoming => '個別ターゲット追跡5ミサイル——壁で爆発。';
+
+  @override
+  String get weaponNamePlasma => 'Plasma';
+
+  @override
+  String get weaponDescPlasma => '遅い紫オーブと爆発AoE——ボスと集団を蹂躙。';
+
+  @override
+  String get weaponNameLaser => 'Laser';
+
+  @override
+  String get weaponDescLaser => '連続する赤いビーム——触れたものすべてを切断。';
+
+  @override
+  String get weaponNameGauss => 'Gauss Cannon';
+
+  @override
+  String get weaponDescGauss => '紫の弾に1秒の重力吸引——敵を集めて全弾命中。';
+
+  @override
+  String get weaponNameChain => 'Chain Lightning';
+
+  @override
+  String get weaponDescChain => '電撃が5体の敵を跳ね回る——集団に最適。';
+
+  @override
+  String get modeDescClassic => '100ウェーブ・10ごとにボス——標準モード';
+
+  @override
+  String get modeDescBossRush => 'ボスのみ次々と——雑魚なし';
+
+  @override
+  String get modeDescSurvival => '無限ウェーブが徐々に難化——どこまで耐える?';
+
+  @override
+  String get modeDescTimeAttack => '3分間:時間切れまでに高得点を狙え';
+
+  @override
+  String get modeDescZenMode => '無限ライフ——ストレスなしで全てを探求';
+
+  @override
+  String get modeDescTunnel => '無限トンネル内の横スクロール';
+
+  @override
+  String get modeDescPacifist => '射撃禁止!ゲートで生き残れ(GW Pacifism)';
+
+  @override
+  String get modeDescWaves => '基本の赤い三角形のみ。稀にブラックホール。純粋な回避。';
+
+  @override
+  String get modeDescGravityInferno => '多数のブラックホール+混合雑魚少数。ボスなし。重力カオス。';
+
+  @override
+  String get upgradeFirepower => '火力';
+
+  @override
+  String get upgradeFirepowerDesc => 'レベルごとに+5%ダメージ(最大+25%)';
+
+  @override
+  String get upgradeFireRate => '連射';
+
+  @override
+  String get upgradeFireRateDesc => 'レベルごとに+5%発射速度(最大+25%)';
+
+  @override
+  String get upgradeSpeed => '速度';
+
+  @override
+  String get upgradeSpeedDesc => 'レベルごとに+5%速度(最大+25%)';
+
+  @override
+  String get upgradeShield => 'シールド';
+
+  @override
+  String get upgradeShieldDesc => '死亡後シールド:5秒→10秒→15秒→20秒→25秒';
+
+  @override
+  String get upgradeLives => 'ライフ';
+
+  @override
+  String get upgradeLivesDesc => '初期ライフ:3→4→5';
+
+  @override
+  String get upgradeBombs => 'ボム';
+
+  @override
+  String get upgradeBombsDesc => '使用可能ボム:3→4→5';
+
+  @override
+  String get upgradeMagnet => 'マグネット';
+
+  @override
+  String get upgradeMagnetDesc => 'レベルごとに+10px磁石範囲(最大+50px)';
+
+  @override
+  String get upgradeXpBoost => 'XPブースト';
+
+  @override
+  String get upgradeXpBoostDesc => 'レベルごとに+10% GoldGeom(最大+50%)';
 }

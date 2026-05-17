@@ -1365,6 +1365,648 @@ abstract class AppLocalizations {
   /// In it, this message translates to:
   /// **'TOCCA PER INIZIARE'**
   String get tutorialTapToStart;
+
+  /// No description provided for @skinNameClassic.
+  ///
+  /// In it, this message translates to:
+  /// **'Classic'**
+  String get skinNameClassic;
+
+  /// No description provided for @skinDescClassic.
+  ///
+  /// In it, this message translates to:
+  /// **'La navicella originale cyan'**
+  String get skinDescClassic;
+
+  /// No description provided for @skinNameStealth.
+  ///
+  /// In it, this message translates to:
+  /// **'Stealth'**
+  String get skinNameStealth;
+
+  /// No description provided for @skinDescStealth.
+  ///
+  /// In it, this message translates to:
+  /// **'Nera con bordi rossi — stile furtivo'**
+  String get skinDescStealth;
+
+  /// No description provided for @skinNameCrystal.
+  ///
+  /// In it, this message translates to:
+  /// **'Crystal'**
+  String get skinNameCrystal;
+
+  /// No description provided for @skinDescCrystal.
+  ///
+  /// In it, this message translates to:
+  /// **'Diamante prismatico — riflessi arcobaleno'**
+  String get skinDescCrystal;
+
+  /// No description provided for @skinNameGhost.
+  ///
+  /// In it, this message translates to:
+  /// **'Ghost'**
+  String get skinNameGhost;
+
+  /// No description provided for @skinDescGhost.
+  ///
+  /// In it, this message translates to:
+  /// **'Semi-trasparente con scia di particelle'**
+  String get skinDescGhost;
+
+  /// No description provided for @skinNameOmega.
+  ///
+  /// In it, this message translates to:
+  /// **'Omega'**
+  String get skinNameOmega;
+
+  /// No description provided for @skinDescOmega.
+  ///
+  /// In it, this message translates to:
+  /// **'Stella a 4 punte dorata — forma unica'**
+  String get skinDescOmega;
+
+  /// No description provided for @skinNamePhoenix.
+  ///
+  /// In it, this message translates to:
+  /// **'Phoenix'**
+  String get skinNamePhoenix;
+
+  /// No description provided for @skinDescPhoenix.
+  ///
+  /// In it, this message translates to:
+  /// **'Ali di fuoco con piume di brace — rinasce dalle ceneri'**
+  String get skinDescPhoenix;
+
+  /// No description provided for @skinNameCyber.
+  ///
+  /// In it, this message translates to:
+  /// **'Cyber'**
+  String get skinNameCyber;
+
+  /// No description provided for @skinDescCyber.
+  ///
+  /// In it, this message translates to:
+  /// **'Mesh circuiti neon verde — overlay digitale animato'**
+  String get skinDescCyber;
+
+  /// No description provided for @skinNameVoidwalker.
+  ///
+  /// In it, this message translates to:
+  /// **'Voidwalker'**
+  String get skinNameVoidwalker;
+
+  /// No description provided for @skinDescVoidwalker.
+  ///
+  /// In it, this message translates to:
+  /// **'Nucleo viola sospeso nel vuoto — alone etereo'**
+  String get skinDescVoidwalker;
+
+  /// No description provided for @skinNameAurora.
+  ///
+  /// In it, this message translates to:
+  /// **'Aurora'**
+  String get skinNameAurora;
+
+  /// No description provided for @skinDescAurora.
+  ///
+  /// In it, this message translates to:
+  /// **'Boreale: ciano/rosa/verde che fluiscono'**
+  String get skinDescAurora;
+
+  /// No description provided for @skinNameTactical.
+  ///
+  /// In it, this message translates to:
+  /// **'Tactical'**
+  String get skinNameTactical;
+
+  /// No description provided for @skinDescTactical.
+  ///
+  /// In it, this message translates to:
+  /// **'Corazza militare grigio/blu — placche corazzate'**
+  String get skinDescTactical;
+
+  /// No description provided for @skinNamePrism.
+  ///
+  /// In it, this message translates to:
+  /// **'Prism'**
+  String get skinNamePrism;
+
+  /// No description provided for @skinDescPrism.
+  ///
+  /// In it, this message translates to:
+  /// **'Cristallo poligonale — rifrazione arcobaleno multipla'**
+  String get skinDescPrism;
+
+  /// No description provided for @skinNameTron.
+  ///
+  /// In it, this message translates to:
+  /// **'Tron'**
+  String get skinNameTron;
+
+  /// No description provided for @skinDescTron.
+  ///
+  /// In it, this message translates to:
+  /// **'Body nero con linee neon ciano — circuit grid digitale'**
+  String get skinDescTron;
+
+  /// No description provided for @skinNameSamurai.
+  ///
+  /// In it, this message translates to:
+  /// **'Samurai'**
+  String get skinNameSamurai;
+
+  /// No description provided for @skinDescSamurai.
+  ///
+  /// In it, this message translates to:
+  /// **'Corazza nera con dettagli oro/rosso — onore e battaglia'**
+  String get skinDescSamurai;
+
+  /// No description provided for @skinNameRosegold.
+  ///
+  /// In it, this message translates to:
+  /// **'RoseGold'**
+  String get skinNameRosegold;
+
+  /// No description provided for @skinDescRosegold.
+  ///
+  /// In it, this message translates to:
+  /// **'Metallico rosa-oro — eleganza moderna'**
+  String get skinDescRosegold;
+
+  /// No description provided for @skinNameNinja.
+  ///
+  /// In it, this message translates to:
+  /// **'Ninja'**
+  String get skinNameNinja;
+
+  /// No description provided for @skinDescNinja.
+  ///
+  /// In it, this message translates to:
+  /// **'Grigio ombra con accenti shuriken — silenzioso e letale'**
+  String get skinDescNinja;
+
+  /// No description provided for @skinNameGlitch.
+  ///
+  /// In it, this message translates to:
+  /// **'Glitch'**
+  String get skinNameGlitch;
+
+  /// No description provided for @skinDescGlitch.
+  ///
+  /// In it, this message translates to:
+  /// **'RGB chromatic shift — aberration animata'**
+  String get skinDescGlitch;
+
+  /// No description provided for @trailNameNormal.
+  ///
+  /// In it, this message translates to:
+  /// **'Normal'**
+  String get trailNameNormal;
+
+  /// No description provided for @trailDescNormal.
+  ///
+  /// In it, this message translates to:
+  /// **'Scia cyan standard'**
+  String get trailDescNormal;
+
+  /// No description provided for @trailNameFire.
+  ///
+  /// In it, this message translates to:
+  /// **'Fire'**
+  String get trailNameFire;
+
+  /// No description provided for @trailDescFire.
+  ///
+  /// In it, this message translates to:
+  /// **'Particelle di fuoco dietro la nave'**
+  String get trailDescFire;
+
+  /// No description provided for @trailNameIce.
+  ///
+  /// In it, this message translates to:
+  /// **'Ice'**
+  String get trailNameIce;
+
+  /// No description provided for @trailDescIce.
+  ///
+  /// In it, this message translates to:
+  /// **'Cristalli di ghiaccio scintillanti'**
+  String get trailDescIce;
+
+  /// No description provided for @trailNamePlasma.
+  ///
+  /// In it, this message translates to:
+  /// **'Plasma'**
+  String get trailNamePlasma;
+
+  /// No description provided for @trailDescPlasma.
+  ///
+  /// In it, this message translates to:
+  /// **'Energia plasma viola pulsante'**
+  String get trailDescPlasma;
+
+  /// No description provided for @trailNameRainbow.
+  ///
+  /// In it, this message translates to:
+  /// **'Rainbow'**
+  String get trailNameRainbow;
+
+  /// No description provided for @trailDescRainbow.
+  ///
+  /// In it, this message translates to:
+  /// **'Colori che cambiano continuamente'**
+  String get trailDescRainbow;
+
+  /// No description provided for @trailNameComet.
+  ///
+  /// In it, this message translates to:
+  /// **'Comet'**
+  String get trailNameComet;
+
+  /// No description provided for @trailDescComet.
+  ///
+  /// In it, this message translates to:
+  /// **'Testa luminosa con coda che si spegne lentamente'**
+  String get trailDescComet;
+
+  /// No description provided for @trailNameInferno.
+  ///
+  /// In it, this message translates to:
+  /// **'Inferno'**
+  String get trailNameInferno;
+
+  /// No description provided for @trailDescInferno.
+  ///
+  /// In it, this message translates to:
+  /// **'Fuoco multi-strato con braci che schizzano'**
+  String get trailDescInferno;
+
+  /// No description provided for @trailNameVoid.
+  ///
+  /// In it, this message translates to:
+  /// **'Void'**
+  String get trailNameVoid;
+
+  /// No description provided for @trailDescVoid.
+  ///
+  /// In it, this message translates to:
+  /// **'Vortice oscuro che risucchia particelle viola'**
+  String get trailDescVoid;
+
+  /// No description provided for @trailNameQuantum.
+  ///
+  /// In it, this message translates to:
+  /// **'Quantum'**
+  String get trailNameQuantum;
+
+  /// No description provided for @trailDescQuantum.
+  ///
+  /// In it, this message translates to:
+  /// **'Particelle accoppiate in superposizione cromatica'**
+  String get trailDescQuantum;
+
+  /// No description provided for @trailNameGalaxy.
+  ///
+  /// In it, this message translates to:
+  /// **'Galaxy'**
+  String get trailNameGalaxy;
+
+  /// No description provided for @trailDescGalaxy.
+  ///
+  /// In it, this message translates to:
+  /// **'Stelle che spiraleggiano con polvere cosmica'**
+  String get trailDescGalaxy;
+
+  /// No description provided for @trailNameLightning.
+  ///
+  /// In it, this message translates to:
+  /// **'Lightning'**
+  String get trailNameLightning;
+
+  /// No description provided for @trailDescLightning.
+  ///
+  /// In it, this message translates to:
+  /// **'Archi elettrici a zigzag tra i punti scia'**
+  String get trailDescLightning;
+
+  /// No description provided for @trailNameNebula.
+  ///
+  /// In it, this message translates to:
+  /// **'Nebula'**
+  String get trailNameNebula;
+
+  /// No description provided for @trailDescNebula.
+  ///
+  /// In it, this message translates to:
+  /// **'Nuvola spaziale ciano/magenta che pulsa'**
+  String get trailDescNebula;
+
+  /// No description provided for @trailNamePrism.
+  ///
+  /// In it, this message translates to:
+  /// **'Prism'**
+  String get trailNamePrism;
+
+  /// No description provided for @trailDescPrism.
+  ///
+  /// In it, this message translates to:
+  /// **'Spettro completo che scorre lungo la scia'**
+  String get trailDescPrism;
+
+  /// No description provided for @trailNameHologram.
+  ///
+  /// In it, this message translates to:
+  /// **'Hologram'**
+  String get trailNameHologram;
+
+  /// No description provided for @trailDescHologram.
+  ///
+  /// In it, this message translates to:
+  /// **'RGB chromatic aberration in stile glitch'**
+  String get trailDescHologram;
+
+  /// No description provided for @trailNameBiolume.
+  ///
+  /// In it, this message translates to:
+  /// **'Biolumin'**
+  String get trailNameBiolume;
+
+  /// No description provided for @trailDescBiolume.
+  ///
+  /// In it, this message translates to:
+  /// **'Bioluminescenza acquatica verde/ciano'**
+  String get trailDescBiolume;
+
+  /// No description provided for @trailNameNeonpulse.
+  ///
+  /// In it, this message translates to:
+  /// **'NeonPulse'**
+  String get trailNameNeonpulse;
+
+  /// No description provided for @trailDescNeonpulse.
+  ///
+  /// In it, this message translates to:
+  /// **'Anelli neon expanding bianco-ciano'**
+  String get trailDescNeonpulse;
+
+  /// No description provided for @weaponNameBasic.
+  ///
+  /// In it, this message translates to:
+  /// **'Basic Gun'**
+  String get weaponNameBasic;
+
+  /// No description provided for @weaponDescBasic.
+  ///
+  /// In it, this message translates to:
+  /// **'Doppia fila di proiettili gialli paralleli — affidabile e preciso.'**
+  String get weaponDescBasic;
+
+  /// No description provided for @weaponNameTriple.
+  ///
+  /// In it, this message translates to:
+  /// **'Triple Shot'**
+  String get weaponNameTriple;
+
+  /// No description provided for @weaponDescTriple.
+  ///
+  /// In it, this message translates to:
+  /// **'3 proiettili bianchi ravvicinati — fuoco concentrato.'**
+  String get weaponDescTriple;
+
+  /// No description provided for @weaponNameSpread.
+  ///
+  /// In it, this message translates to:
+  /// **'Spread Shot'**
+  String get weaponNameSpread;
+
+  /// No description provided for @weaponDescSpread.
+  ///
+  /// In it, this message translates to:
+  /// **'5 proiettili arancioni a ventaglio stretto — ottimo vs gruppi.'**
+  String get weaponDescSpread;
+
+  /// No description provided for @weaponNameRicochet.
+  ///
+  /// In it, this message translates to:
+  /// **'Ricochet'**
+  String get weaponNameRicochet;
+
+  /// No description provided for @weaponDescRicochet.
+  ///
+  /// In it, this message translates to:
+  /// **'Ventaglio di 3 colpi verdi ad alto danno che rimbalzano 2 volte sui muri.'**
+  String get weaponDescRicochet;
+
+  /// No description provided for @weaponNameHoming.
+  ///
+  /// In it, this message translates to:
+  /// **'Homing'**
+  String get weaponNameHoming;
+
+  /// No description provided for @weaponDescHoming.
+  ///
+  /// In it, this message translates to:
+  /// **'5 missili che inseguono bersagli distinti — esplodono al muro.'**
+  String get weaponDescHoming;
+
+  /// No description provided for @weaponNamePlasma.
+  ///
+  /// In it, this message translates to:
+  /// **'Plasma'**
+  String get weaponNamePlasma;
+
+  /// No description provided for @weaponDescPlasma.
+  ///
+  /// In it, this message translates to:
+  /// **'Orb viola lento con AoE esplosiva — devasta boss e gruppi.'**
+  String get weaponDescPlasma;
+
+  /// No description provided for @weaponNameLaser.
+  ///
+  /// In it, this message translates to:
+  /// **'Laser'**
+  String get weaponNameLaser;
+
+  /// No description provided for @weaponDescLaser.
+  ///
+  /// In it, this message translates to:
+  /// **'Raggio rosso continuo — taglia tutto ciò che tocca.'**
+  String get weaponDescLaser;
+
+  /// No description provided for @weaponNameGauss.
+  ///
+  /// In it, this message translates to:
+  /// **'Gauss Cannon'**
+  String get weaponNameGauss;
+
+  /// No description provided for @weaponDescGauss.
+  ///
+  /// In it, this message translates to:
+  /// **'Colpo viola con aspirazione gravitazionale 1s — raggruppa i nemici per colpirli tutti.'**
+  String get weaponDescGauss;
+
+  /// No description provided for @weaponNameChain.
+  ///
+  /// In it, this message translates to:
+  /// **'Chain Lightning'**
+  String get weaponNameChain;
+
+  /// No description provided for @weaponDescChain.
+  ///
+  /// In it, this message translates to:
+  /// **'Fulmine elettrico rimbalza tra 5 nemici — perfetto vs gruppi.'**
+  String get weaponDescChain;
+
+  /// No description provided for @modeDescClassic.
+  ///
+  /// In it, this message translates to:
+  /// **'100 wave con boss ogni 10 — il modo standard'**
+  String get modeDescClassic;
+
+  /// No description provided for @modeDescBossRush.
+  ///
+  /// In it, this message translates to:
+  /// **'Solo boss, uno dopo l\'altro — niente mob'**
+  String get modeDescBossRush;
+
+  /// No description provided for @modeDescSurvival.
+  ///
+  /// In it, this message translates to:
+  /// **'Wave infinite sempre più difficili — quanto resisti?'**
+  String get modeDescSurvival;
+
+  /// No description provided for @modeDescTimeAttack.
+  ///
+  /// In it, this message translates to:
+  /// **'3 minuti: fai più punti possibile prima che scada'**
+  String get modeDescTimeAttack;
+
+  /// No description provided for @modeDescZenMode.
+  ///
+  /// In it, this message translates to:
+  /// **'Vite infinite — gioca senza stress, esplora tutto'**
+  String get modeDescZenMode;
+
+  /// No description provided for @modeDescTunnel.
+  ///
+  /// In it, this message translates to:
+  /// **'Scorrimento laterale in un tunnel infinito'**
+  String get modeDescTunnel;
+
+  /// No description provided for @modeDescPacifist.
+  ///
+  /// In it, this message translates to:
+  /// **'Niente colpi! Sopravvivi con i Gate (GW Pacifism)'**
+  String get modeDescPacifist;
+
+  /// No description provided for @modeDescWaves.
+  ///
+  /// In it, this message translates to:
+  /// **'Solo triangoli rossi cardinali. Rari buchi neri. Dodge puro.'**
+  String get modeDescWaves;
+
+  /// No description provided for @modeDescGravityInferno.
+  ///
+  /// In it, this message translates to:
+  /// **'Tanti buchi neri + pochi mob misti. Niente boss. Caos gravitazionale.'**
+  String get modeDescGravityInferno;
+
+  /// No description provided for @upgradeFirepower.
+  ///
+  /// In it, this message translates to:
+  /// **'FIREPOWER'**
+  String get upgradeFirepower;
+
+  /// No description provided for @upgradeFirepowerDesc.
+  ///
+  /// In it, this message translates to:
+  /// **'+5% danno per livello (max +25%)'**
+  String get upgradeFirepowerDesc;
+
+  /// No description provided for @upgradeFireRate.
+  ///
+  /// In it, this message translates to:
+  /// **'FIRE RATE'**
+  String get upgradeFireRate;
+
+  /// No description provided for @upgradeFireRateDesc.
+  ///
+  /// In it, this message translates to:
+  /// **'+5% cadenza per livello (max +25%)'**
+  String get upgradeFireRateDesc;
+
+  /// No description provided for @upgradeSpeed.
+  ///
+  /// In it, this message translates to:
+  /// **'SPEED'**
+  String get upgradeSpeed;
+
+  /// No description provided for @upgradeSpeedDesc.
+  ///
+  /// In it, this message translates to:
+  /// **'+5% velocità per livello (max +25%)'**
+  String get upgradeSpeedDesc;
+
+  /// No description provided for @upgradeShield.
+  ///
+  /// In it, this message translates to:
+  /// **'SHIELD'**
+  String get upgradeShield;
+
+  /// No description provided for @upgradeShieldDesc.
+  ///
+  /// In it, this message translates to:
+  /// **'Scudo post-morte: 5s → 10s → 15s → 20s → 25s'**
+  String get upgradeShieldDesc;
+
+  /// No description provided for @upgradeLives.
+  ///
+  /// In it, this message translates to:
+  /// **'LIVES'**
+  String get upgradeLives;
+
+  /// No description provided for @upgradeLivesDesc.
+  ///
+  /// In it, this message translates to:
+  /// **'Vite iniziali: 3 → 4 → 5'**
+  String get upgradeLivesDesc;
+
+  /// No description provided for @upgradeBombs.
+  ///
+  /// In it, this message translates to:
+  /// **'BOMBS'**
+  String get upgradeBombs;
+
+  /// No description provided for @upgradeBombsDesc.
+  ///
+  /// In it, this message translates to:
+  /// **'Bombe disponibili: 3 → 4 → 5'**
+  String get upgradeBombsDesc;
+
+  /// No description provided for @upgradeMagnet.
+  ///
+  /// In it, this message translates to:
+  /// **'MAGNET'**
+  String get upgradeMagnet;
+
+  /// No description provided for @upgradeMagnetDesc.
+  ///
+  /// In it, this message translates to:
+  /// **'+10px raggio magnete per livello (max +50px)'**
+  String get upgradeMagnetDesc;
+
+  /// No description provided for @upgradeXpBoost.
+  ///
+  /// In it, this message translates to:
+  /// **'XP BOOST'**
+  String get upgradeXpBoost;
+
+  /// No description provided for @upgradeXpBoostDesc.
+  ///
+  /// In it, this message translates to:
+  /// **'+10% GoldGeom per livello (max +50%)'**
+  String get upgradeXpBoostDesc;
 }
 
 class _AppLocalizationsDelegate

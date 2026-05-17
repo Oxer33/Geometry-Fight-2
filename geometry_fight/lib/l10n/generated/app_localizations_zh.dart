@@ -668,4 +668,325 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get tutorialTapToStart => '点击开始';
+
+  @override
+  String get skinNameClassic => 'Classic';
+
+  @override
+  String get skinDescClassic => '原版青色飞船';
+
+  @override
+  String get skinNameStealth => 'Stealth';
+
+  @override
+  String get skinDescStealth => '黑色红边——隐秘风格';
+
+  @override
+  String get skinNameCrystal => 'Crystal';
+
+  @override
+  String get skinDescCrystal => '棱镜钻石——彩虹反射';
+
+  @override
+  String get skinNameGhost => 'Ghost';
+
+  @override
+  String get skinDescGhost => '半透明带粒子尾迹';
+
+  @override
+  String get skinNameOmega => 'Omega';
+
+  @override
+  String get skinDescOmega => '金色四角星——独特形状';
+
+  @override
+  String get skinNamePhoenix => 'Phoenix';
+
+  @override
+  String get skinDescPhoenix => '火翼带余烬羽毛——浴火重生';
+
+  @override
+  String get skinNameCyber => 'Cyber';
+
+  @override
+  String get skinDescCyber => '霓虹绿电路网格——动态数字覆层';
+
+  @override
+  String get skinNameVoidwalker => 'Voidwalker';
+
+  @override
+  String get skinDescVoidwalker => '紫色核心悬于虚空——飘渺光环';
+
+  @override
+  String get skinNameAurora => 'Aurora';
+
+  @override
+  String get skinDescAurora => '北极光:青/粉/绿流动';
+
+  @override
+  String get skinNameTactical => 'Tactical';
+
+  @override
+  String get skinDescTactical => '灰蓝军用装甲——装甲板';
+
+  @override
+  String get skinNamePrism => 'Prism';
+
+  @override
+  String get skinDescPrism => '多边形水晶——多重彩虹折射';
+
+  @override
+  String get skinNameTron => 'Tron';
+
+  @override
+  String get skinDescTron => '黑色机身配霓虹青线——数字电路网格';
+
+  @override
+  String get skinNameSamurai => 'Samurai';
+
+  @override
+  String get skinDescSamurai => '黑色铠甲配金红细节——荣耀与战斗';
+
+  @override
+  String get skinNameRosegold => 'RoseGold';
+
+  @override
+  String get skinDescRosegold => '金属玫瑰金——现代优雅';
+
+  @override
+  String get skinNameNinja => 'Ninja';
+
+  @override
+  String get skinDescNinja => '暗影灰带手里剑装饰——无声致命';
+
+  @override
+  String get skinNameGlitch => 'Glitch';
+
+  @override
+  String get skinDescGlitch => 'RGB色移——动态色差';
+
+  @override
+  String get trailNameNormal => 'Normal';
+
+  @override
+  String get trailDescNormal => '标准青色尾迹';
+
+  @override
+  String get trailNameFire => 'Fire';
+
+  @override
+  String get trailDescFire => '飞船后的火焰粒子';
+
+  @override
+  String get trailNameIce => 'Ice';
+
+  @override
+  String get trailDescIce => '闪烁的冰晶';
+
+  @override
+  String get trailNamePlasma => 'Plasma';
+
+  @override
+  String get trailDescPlasma => '脉动紫色等离子能量';
+
+  @override
+  String get trailNameRainbow => 'Rainbow';
+
+  @override
+  String get trailDescRainbow => '持续变色';
+
+  @override
+  String get trailNameComet => 'Comet';
+
+  @override
+  String get trailDescComet => '明亮的头部带缓慢消逝的尾巴';
+
+  @override
+  String get trailNameInferno => 'Inferno';
+
+  @override
+  String get trailDescInferno => '多层火焰带飞溅余烬';
+
+  @override
+  String get trailNameVoid => 'Void';
+
+  @override
+  String get trailDescVoid => '黑暗漩涡吸入紫色粒子';
+
+  @override
+  String get trailNameQuantum => 'Quantum';
+
+  @override
+  String get trailDescQuantum => '成对粒子的色叠加';
+
+  @override
+  String get trailNameGalaxy => 'Galaxy';
+
+  @override
+  String get trailDescGalaxy => '螺旋星辰带宇宙尘埃';
+
+  @override
+  String get trailNameLightning => 'Lightning';
+
+  @override
+  String get trailDescLightning => '尾迹点之间的Z字形电弧';
+
+  @override
+  String get trailNameNebula => 'Nebula';
+
+  @override
+  String get trailDescNebula => '脉动青/品红色太空云';
+
+  @override
+  String get trailNamePrism => 'Prism';
+
+  @override
+  String get trailDescPrism => '完整光谱沿尾迹流动';
+
+  @override
+  String get trailNameHologram => 'Hologram';
+
+  @override
+  String get trailDescHologram => 'RGB色差故障风格';
+
+  @override
+  String get trailNameBiolume => 'Biolumin';
+
+  @override
+  String get trailDescBiolume => '水生生物发光 绿/青';
+
+  @override
+  String get trailNameNeonpulse => 'NeonPulse';
+
+  @override
+  String get trailDescNeonpulse => '扩张的白青色霓虹环';
+
+  @override
+  String get weaponNameBasic => 'Basic Gun';
+
+  @override
+  String get weaponDescBasic => '双排平行黄色子弹——可靠精确。';
+
+  @override
+  String get weaponNameTriple => 'Triple Shot';
+
+  @override
+  String get weaponDescTriple => '3发紧密白色子弹——集中火力。';
+
+  @override
+  String get weaponNameSpread => 'Spread Shot';
+
+  @override
+  String get weaponDescSpread => '5发橙色子弹紧密扇形——克制群敌。';
+
+  @override
+  String get weaponNameRicochet => 'Ricochet';
+
+  @override
+  String get weaponDescRicochet => '3发高伤害绿色扇形射击,可弹墙2次。';
+
+  @override
+  String get weaponNameHoming => 'Homing';
+
+  @override
+  String get weaponDescHoming => '5枚导弹追踪不同目标——撞墙爆炸。';
+
+  @override
+  String get weaponNamePlasma => 'Plasma';
+
+  @override
+  String get weaponDescPlasma => '缓慢紫色球带爆炸AoE——重创Boss和群敌。';
+
+  @override
+  String get weaponNameLaser => 'Laser';
+
+  @override
+  String get weaponDescLaser => '连续红色光束——切断一切。';
+
+  @override
+  String get weaponNameGauss => 'Gauss Cannon';
+
+  @override
+  String get weaponDescGauss => '紫色射击带1秒引力吸引——聚集敌人一击全中。';
+
+  @override
+  String get weaponNameChain => 'Chain Lightning';
+
+  @override
+  String get weaponDescChain => '电闪在5个敌人间弹跳——完美克制群敌。';
+
+  @override
+  String get modeDescClassic => '100波每10波一个Boss——标准模式';
+
+  @override
+  String get modeDescBossRush => '仅Boss,一个接一个——无小怪';
+
+  @override
+  String get modeDescSurvival => '无尽波次越来越难——你能撑多久?';
+
+  @override
+  String get modeDescTimeAttack => '3分钟:在时间结束前尽可能得分';
+
+  @override
+  String get modeDescZenMode => '无限生命——无压力游玩,探索一切';
+
+  @override
+  String get modeDescTunnel => '无尽隧道侧向滚动';
+
+  @override
+  String get modeDescPacifist => '禁止射击!用Gate生存(GW Pacifism)';
+
+  @override
+  String get modeDescWaves => '仅基本红色三角形。罕见黑洞。纯闪避。';
+
+  @override
+  String get modeDescGravityInferno => '众多黑洞+少量混合小怪。无Boss。引力混乱。';
+
+  @override
+  String get upgradeFirepower => '火力';
+
+  @override
+  String get upgradeFirepowerDesc => '每级+5%伤害(最大+25%)';
+
+  @override
+  String get upgradeFireRate => '射速';
+
+  @override
+  String get upgradeFireRateDesc => '每级+5%射速(最大+25%)';
+
+  @override
+  String get upgradeSpeed => '速度';
+
+  @override
+  String get upgradeSpeedDesc => '每级+5%速度(最大+25%)';
+
+  @override
+  String get upgradeShield => '护盾';
+
+  @override
+  String get upgradeShieldDesc => '死后护盾:5秒→10秒→15秒→20秒→25秒';
+
+  @override
+  String get upgradeLives => '生命';
+
+  @override
+  String get upgradeLivesDesc => '初始生命:3→4→5';
+
+  @override
+  String get upgradeBombs => '炸弹';
+
+  @override
+  String get upgradeBombsDesc => '可用炸弹:3→4→5';
+
+  @override
+  String get upgradeMagnet => '磁铁';
+
+  @override
+  String get upgradeMagnetDesc => '每级+10px磁铁范围(最大+50px)';
+
+  @override
+  String get upgradeXpBoost => 'XP加成';
+
+  @override
+  String get upgradeXpBoostDesc => '每级+10% GoldGeom(最大+50%)';
 }

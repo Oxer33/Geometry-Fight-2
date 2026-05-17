@@ -117,6 +117,194 @@ class _ShopScreenState extends State<ShopScreen>
     }
   }
 
+  // ==================== L10N HELPERS ====================
+  //
+  // Catalog name/description lookups by stable id. Fallback to the def's
+  // raw `name`/`description` field if id isn't recognized (defensive).
+
+  String _skinName(AppLocalizations l10n, String id, String fallback) =>
+      switch (id) {
+        'classic' => l10n.skinNameClassic,
+        'stealth' => l10n.skinNameStealth,
+        'crystal' => l10n.skinNameCrystal,
+        'ghost' => l10n.skinNameGhost,
+        'omega' => l10n.skinNameOmega,
+        'phoenix' => l10n.skinNamePhoenix,
+        'cyber' => l10n.skinNameCyber,
+        'voidwalker' => l10n.skinNameVoidwalker,
+        'aurora' => l10n.skinNameAurora,
+        'tactical' => l10n.skinNameTactical,
+        'prism' => l10n.skinNamePrism,
+        'tron' => l10n.skinNameTron,
+        'samurai' => l10n.skinNameSamurai,
+        'rosegold' => l10n.skinNameRosegold,
+        'ninja' => l10n.skinNameNinja,
+        'glitch' => l10n.skinNameGlitch,
+        _ => fallback,
+      };
+
+  String _skinDesc(AppLocalizations l10n, String id, String fallback) =>
+      switch (id) {
+        'classic' => l10n.skinDescClassic,
+        'stealth' => l10n.skinDescStealth,
+        'crystal' => l10n.skinDescCrystal,
+        'ghost' => l10n.skinDescGhost,
+        'omega' => l10n.skinDescOmega,
+        'phoenix' => l10n.skinDescPhoenix,
+        'cyber' => l10n.skinDescCyber,
+        'voidwalker' => l10n.skinDescVoidwalker,
+        'aurora' => l10n.skinDescAurora,
+        'tactical' => l10n.skinDescTactical,
+        'prism' => l10n.skinDescPrism,
+        'tron' => l10n.skinDescTron,
+        'samurai' => l10n.skinDescSamurai,
+        'rosegold' => l10n.skinDescRosegold,
+        'ninja' => l10n.skinDescNinja,
+        'glitch' => l10n.skinDescGlitch,
+        _ => fallback,
+      };
+
+  String _trailName(AppLocalizations l10n, String id, String fallback) =>
+      switch (id) {
+        'normal' => l10n.trailNameNormal,
+        'fire' => l10n.trailNameFire,
+        'ice' => l10n.trailNameIce,
+        'plasma' => l10n.trailNamePlasma,
+        'rainbow' => l10n.trailNameRainbow,
+        'comet' => l10n.trailNameComet,
+        'inferno' => l10n.trailNameInferno,
+        'void' => l10n.trailNameVoid,
+        'quantum' => l10n.trailNameQuantum,
+        'galaxy' => l10n.trailNameGalaxy,
+        'lightning' => l10n.trailNameLightning,
+        'nebula' => l10n.trailNameNebula,
+        'prism' => l10n.trailNamePrism,
+        'hologram' => l10n.trailNameHologram,
+        'biolume' => l10n.trailNameBiolume,
+        'neonpulse' => l10n.trailNameNeonpulse,
+        _ => fallback,
+      };
+
+  String _trailDesc(AppLocalizations l10n, String id, String fallback) =>
+      switch (id) {
+        'normal' => l10n.trailDescNormal,
+        'fire' => l10n.trailDescFire,
+        'ice' => l10n.trailDescIce,
+        'plasma' => l10n.trailDescPlasma,
+        'rainbow' => l10n.trailDescRainbow,
+        'comet' => l10n.trailDescComet,
+        'inferno' => l10n.trailDescInferno,
+        'void' => l10n.trailDescVoid,
+        'quantum' => l10n.trailDescQuantum,
+        'galaxy' => l10n.trailDescGalaxy,
+        'lightning' => l10n.trailDescLightning,
+        'nebula' => l10n.trailDescNebula,
+        'prism' => l10n.trailDescPrism,
+        'hologram' => l10n.trailDescHologram,
+        'biolume' => l10n.trailDescBiolume,
+        'neonpulse' => l10n.trailDescNeonpulse,
+        _ => fallback,
+      };
+
+  String _weaponName(AppLocalizations l10n, String id, String fallback) =>
+      switch (id) {
+        'basic' => l10n.weaponNameBasic,
+        'triple' => l10n.weaponNameTriple,
+        'spread' => l10n.weaponNameSpread,
+        'ricochet' => l10n.weaponNameRicochet,
+        'homing' => l10n.weaponNameHoming,
+        'plasma' => l10n.weaponNamePlasma,
+        'laser' => l10n.weaponNameLaser,
+        'gauss' => l10n.weaponNameGauss,
+        'chain' => l10n.weaponNameChain,
+        _ => fallback,
+      };
+
+  String _weaponDesc(AppLocalizations l10n, String id, String fallback) =>
+      switch (id) {
+        'basic' => l10n.weaponDescBasic,
+        'triple' => l10n.weaponDescTriple,
+        'spread' => l10n.weaponDescSpread,
+        'ricochet' => l10n.weaponDescRicochet,
+        'homing' => l10n.weaponDescHoming,
+        'plasma' => l10n.weaponDescPlasma,
+        'laser' => l10n.weaponDescLaser,
+        'gauss' => l10n.weaponDescGauss,
+        'chain' => l10n.weaponDescChain,
+        _ => fallback,
+      };
+
+  String _modeName(AppLocalizations l10n, String id, String fallback) =>
+      switch (id) {
+        'classic' => l10n.modeClassic,
+        'bossRush' => l10n.modeBossRush,
+        'survival' => l10n.modeSurvival,
+        'timeAttack' => l10n.modeTimeAttack,
+        'zenMode' => l10n.modeZen,
+        'tunnel' => l10n.modeTunnel,
+        'pacifist' => l10n.modePacifist,
+        'waves' => l10n.modeWaves,
+        'gravityInferno' => l10n.modeGravityInferno,
+        _ => fallback,
+      };
+
+  String _modeDesc(AppLocalizations l10n, String id, String fallback) =>
+      switch (id) {
+        'classic' => l10n.modeDescClassic,
+        'bossRush' => l10n.modeDescBossRush,
+        'survival' => l10n.modeDescSurvival,
+        'timeAttack' => l10n.modeDescTimeAttack,
+        'zenMode' => l10n.modeDescZenMode,
+        'tunnel' => l10n.modeDescTunnel,
+        'pacifist' => l10n.modeDescPacifist,
+        'waves' => l10n.modeDescWaves,
+        'gravityInferno' => l10n.modeDescGravityInferno,
+        _ => fallback,
+      };
+
+  String _upgradeName(AppLocalizations l10n, String id, String fallback) =>
+      switch (id) {
+        'firepower' => l10n.upgradeFirepower,
+        'fire_rate' => l10n.upgradeFireRate,
+        'speed' => l10n.upgradeSpeed,
+        'shield_capacity' => l10n.upgradeShield,
+        'starting_lives' => l10n.upgradeLives,
+        'bomb_capacity' => l10n.upgradeBombs,
+        'magnet_range' => l10n.upgradeMagnet,
+        'xp_boost' => l10n.upgradeXpBoost,
+        _ => fallback,
+      };
+
+  String _upgradeDesc(AppLocalizations l10n, String id, String fallback) =>
+      switch (id) {
+        'firepower' => l10n.upgradeFirepowerDesc,
+        'fire_rate' => l10n.upgradeFireRateDesc,
+        'speed' => l10n.upgradeSpeedDesc,
+        'shield_capacity' => l10n.upgradeShieldDesc,
+        'starting_lives' => l10n.upgradeLivesDesc,
+        'bomb_capacity' => l10n.upgradeBombsDesc,
+        'magnet_range' => l10n.upgradeMagnetDesc,
+        'xp_boost' => l10n.upgradeXpBoostDesc,
+        _ => fallback,
+      };
+
+  /// Catalog item name dispatch by runtime type — used in shared render code.
+  String _itemName(AppLocalizations l10n, _ShopItem item) {
+    if (item is _SkinDef) return _skinName(l10n, item.id, item.name);
+    if (item is _TrailDef) return _trailName(l10n, item.id, item.name);
+    if (item is _WeaponDef) return _weaponName(l10n, item.id, item.name);
+    if (item is _ModeDef) return _modeName(l10n, item.id, item.name);
+    return item.name;
+  }
+
+  String _itemDesc(AppLocalizations l10n, _ShopItem item) {
+    if (item is _SkinDef) return _skinDesc(l10n, item.id, item.description);
+    if (item is _TrailDef) return _trailDesc(l10n, item.id, item.description);
+    if (item is _WeaponDef) return _weaponDesc(l10n, item.id, item.description);
+    if (item is _ModeDef) return _modeDesc(l10n, item.id, item.description);
+    return item.description;
+  }
+
   void _purchase(String id, int cost, VoidCallback onSuccess) {
     if (_saveData.goldGeoms >= cost) {
       setState(() {
@@ -151,7 +339,7 @@ class _ShopScreenState extends State<ShopScreen>
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            l10n.shopAlreadyMax(item.name),
+            l10n.shopAlreadyMax(_upgradeName(l10n, item.id, item.name)),
             style: const TextStyle(fontFamily: 'monospace'),
           ),
           backgroundColor: Colors.blueGrey,
@@ -175,7 +363,8 @@ class _ShopScreenState extends State<ShopScreen>
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            l10n.shopUpgradedToLevel(item.name, currentLevel + 1),
+            l10n.shopUpgradedToLevel(
+                _upgradeName(l10n, item.id, item.name), currentLevel + 1),
             style: const TextStyle(fontFamily: 'monospace'),
           ),
           backgroundColor: Colors.green.shade700,
@@ -720,7 +909,7 @@ class _ShopScreenState extends State<ShopScreen>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(item.name,
+                Text(_upgradeName(l10n, item.id, item.name),
                     style: TextStyle(
                       color: item.color,
                       fontSize: 16,
@@ -729,7 +918,7 @@ class _ShopScreenState extends State<ShopScreen>
                       letterSpacing: 2,
                     )),
                 const SizedBox(height: 4),
-                Text(item.description,
+                Text(_upgradeDesc(l10n, item.id, item.description),
                     style: TextStyle(
                       color: Colors.white.withValues(alpha: 0.7),
                       fontSize: 11,
@@ -1009,7 +1198,7 @@ class _ShopScreenState extends State<ShopScreen>
                           Row(
                             children: [
                               Text(
-                                item.name.toUpperCase(),
+                                _modeName(l10n, item.id, item.name).toUpperCase(),
                                 style: TextStyle(
                                   color: owned ? item.color : Colors.white70,
                                   fontSize: 14,
@@ -1058,7 +1247,7 @@ class _ShopScreenState extends State<ShopScreen>
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            item.description,
+                            _modeDesc(l10n, item.id, item.description),
                             style: TextStyle(
                               color: Colors.white.withValues(alpha: 0.5),
                               fontSize: 10,
@@ -1141,6 +1330,7 @@ class _ShopScreenState extends State<ShopScreen>
     required ScrollController previewController,
     bool hideDescription = false,
   }) {
+    final l10n = AppLocalizations.of(context)!;
     return LayoutBuilder(
       builder: (context, constraints) {
         final isWide = constraints.maxWidth > 500;
@@ -1193,13 +1383,13 @@ class _ShopScreenState extends State<ShopScreen>
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(item.name, style: TextStyle(
+                                Text(_itemName(l10n, item), style: TextStyle(
                                   color: isActive ? Colors.greenAccent : Colors.white,
                                   fontSize: 12, fontWeight: FontWeight.bold,
                                   fontFamily: 'monospace',
                                 )),
                                 const SizedBox(height: 2),
-                                Text(item.description, style: TextStyle(
+                                Text(_itemDesc(l10n, item), style: TextStyle(
                                   color: Colors.white.withValues(alpha: 0.3),
                                   fontSize: 8, fontFamily: 'monospace',
                                 )),
@@ -1300,8 +1490,8 @@ class _ShopScreenState extends State<ShopScreen>
                             const SizedBox(height: 12),
                             // Description card (richiesta utente).
                             _InfoCard(
-                              title: item.name,
-                              description: item.description,
+                              title: _itemName(l10n, item),
+                              description: _itemDesc(l10n, item),
                               accentColor: item is _WeaponDef
                                   ? (item).color
                                   : Colors.cyanAccent,
