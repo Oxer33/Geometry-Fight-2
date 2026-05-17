@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../data/constants.dart';
 import '../../data/difficulty.dart';
+import '../../l10n/generated/app_localizations.dart';
 import '../widgets/neon_back_button.dart';
 
 /// Schermata dedicata selezione difficoltà (richiesta utente: "fare schermate
@@ -38,6 +39,7 @@ class _DifficultySelectScreenState extends State<DifficultySelectScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: Colors.black,
       body: SafeArea(
@@ -49,11 +51,11 @@ class _DifficultySelectScreenState extends State<DifficultySelectScreen> {
                 children: [
                   NeonBackButton(onTap: widget.onBack),
                   const SizedBox(width: 12),
-                  const Expanded(
+                  Expanded(
                     child: Text(
-                      'DIFFICOLTÀ',
+                      l10n.diffTitle,
                       textAlign: TextAlign.center,
-                      style: TextStyle(
+                      style: const TextStyle(
                         color: Colors.white,
                         fontSize: 18,
                         fontWeight: FontWeight.w900,
@@ -102,6 +104,7 @@ class _DifficultySelectScreenState extends State<DifficultySelectScreen> {
                         final cfg = difficultyConfigs[d]!;
                         final selected = _sel == d;
                         final color = _diffColor(d);
+                        final diffLabel = _diffName(l10n, d);
                         return GestureDetector(
                           onTap: () => setState(() => _sel = d),
                           child: SizedBox(
@@ -137,7 +140,7 @@ class _DifficultySelectScreenState extends State<DifficultySelectScreen> {
                                     CrossAxisAlignment.center,
                                 children: [
                                   Text(
-                                    cfg.name,
+                                    diffLabel,
                                     textAlign: TextAlign.center,
                                     style: TextStyle(
                                       color: color,
@@ -151,7 +154,7 @@ class _DifficultySelectScreenState extends State<DifficultySelectScreen> {
                                   ),
                                   const SizedBox(height: 3),
                                   Text(
-                                    '×${cfg.scoreMultiplier.toStringAsFixed(1)} score',
+                                    '×${cfg.scoreMultiplier.toStringAsFixed(1)} ${l10n.diffScoreMultiplier}',
                                     style: TextStyle(
                                       color: color.withValues(alpha: 0.8),
                                       // Iter 18: 9 → 11 (-15% dal 12).
@@ -184,9 +187,9 @@ class _DifficultySelectScreenState extends State<DifficultySelectScreen> {
                         width: 2),
                   ),
                   alignment: Alignment.center,
-                  child: const Text(
-                    'AVANTI',
-                    style: TextStyle(
+                  child: Text(
+                    l10n.diffNext,
+                    style: const TextStyle(
                       color: NeonColors.green,
                       fontSize: 16,
                       fontWeight: FontWeight.w900,
@@ -209,6 +212,15 @@ class _DifficultySelectScreenState extends State<DifficultySelectScreen> {
       case Difficulty.normal: return NeonColors.cyan;
       case Difficulty.hard: return NeonColors.orange;
       case Difficulty.nightmare: return NeonColors.red;
+    }
+  }
+
+  String _diffName(AppLocalizations l10n, Difficulty d) {
+    switch (d) {
+      case Difficulty.easy: return l10n.diffEasy;
+      case Difficulty.normal: return l10n.diffNormal;
+      case Difficulty.hard: return l10n.diffHard;
+      case Difficulty.nightmare: return l10n.diffNightmare;
     }
   }
 

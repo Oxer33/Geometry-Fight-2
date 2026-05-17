@@ -5,6 +5,7 @@ import '../../data/achievements.dart';
 import '../../data/save_data.dart';
 import '../../data/constants.dart';
 import '../../data/pet_types.dart';
+import '../../l10n/generated/app_localizations.dart';
 import '../widgets/neon_back_button.dart';
 
 /// Iter 13: total counts per collection achievement (`all_*`).
@@ -126,11 +127,13 @@ class _ShopScreenState extends State<ShopScreen>
       unawaited(SaveManager.save(_saveData));
     } else {
       if (!mounted) return;
+      final l10n = AppLocalizations.of(context)!;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Gold insufficiente!', style: TextStyle(fontFamily: 'monospace')),
+        SnackBar(
+          content: Text(l10n.shopGoldInsufficient,
+              style: const TextStyle(fontFamily: 'monospace')),
           backgroundColor: Colors.redAccent,
-          duration: Duration(seconds: 1),
+          duration: const Duration(seconds: 1),
         ),
       );
     }
@@ -144,10 +147,11 @@ class _ShopScreenState extends State<ShopScreen>
     // Idempotent on max-level: show hint snackbar and bail before _purchase.
     if (currentLevel >= item.maxLevel) {
       if (!mounted) return;
+      final l10n = AppLocalizations.of(context)!;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            '${item.name} già al massimo!',
+            l10n.shopAlreadyMax(item.name),
             style: const TextStyle(fontFamily: 'monospace'),
           ),
           backgroundColor: Colors.blueGrey,
@@ -167,10 +171,11 @@ class _ShopScreenState extends State<ShopScreen>
     // snackbar and we must not stack a second one).
     if (!mounted) return;
     if (_saveData.getUpgradeLevel(item.id) > currentLevel) {
+      final l10n = AppLocalizations.of(context)!;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            '${item.name} LIV ${currentLevel + 1}',
+            l10n.shopUpgradedToLevel(item.name, currentLevel + 1),
             style: const TextStyle(fontFamily: 'monospace'),
           ),
           backgroundColor: Colors.green.shade700,
@@ -182,6 +187,7 @@ class _ShopScreenState extends State<ShopScreen>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: Colors.black,
       body: SafeArea(
@@ -194,9 +200,9 @@ class _ShopScreenState extends State<ShopScreen>
                 children: [
                   NeonBackButton(onTap: widget.onBack),
                   const SizedBox(width: 16),
-                  const Text(
-                    'SHOP',
-                    style: TextStyle(
+                  Text(
+                    l10n.shopTitle,
+                    style: const TextStyle(
                       color: Colors.cyanAccent,
                       fontSize: 18,
                       fontFamily: 'monospace',
@@ -257,13 +263,13 @@ class _ShopScreenState extends State<ShopScreen>
                 fontWeight: FontWeight.bold,
                 letterSpacing: 1,
               ),
-              tabs: const [
-                Tab(text: 'UPGRADES'),
-                Tab(text: 'WEAPONS'),
-                Tab(text: 'PETS'),
-                Tab(text: 'MODES'),
-                Tab(text: 'SKINS'),
-                Tab(text: 'TRAILS'),
+              tabs: [
+                Tab(text: l10n.shopTabUpgrades),
+                Tab(text: l10n.shopTabWeapons),
+                Tab(text: l10n.shopTabPets),
+                Tab(text: l10n.shopTabModes),
+                Tab(text: l10n.shopTabSkins),
+                Tab(text: l10n.shopTabTrails),
               ],
             ),
             // Tab content
@@ -637,6 +643,7 @@ class _ShopScreenState extends State<ShopScreen>
   }
 
   Widget _buildUpgradeDetailPanel(List<_UpgradeNode> nodes) {
+    final l10n = AppLocalizations.of(context)!;
     final selected = _selectedUpgradeId == null
         ? null
         : nodes.firstWhere(
@@ -655,7 +662,7 @@ class _ShopScreenState extends State<ShopScreen>
           border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
         ),
         child: Text(
-          'TOCCA UN NODO PER VEDERE DETTAGLI',
+          l10n.shopTapNodeForDetails,
           style: TextStyle(
             color: Colors.white.withValues(alpha: 0.5),
             fontFamily: 'monospace',
@@ -753,7 +760,7 @@ class _ShopScreenState extends State<ShopScreen>
                   }),
                 ),
                 const SizedBox(height: 8),
-                Text('LIV $currentLevel / ${item.maxLevel}',
+                Text(l10n.shopLevelOf(currentLevel, item.maxLevel),
                     style: TextStyle(
                       color: Colors.white.withValues(alpha: 0.7),
                       fontSize: 11,
@@ -783,8 +790,8 @@ class _ShopScreenState extends State<ShopScreen>
                               Colors.greenAccent.withValues(alpha: 0.6)),
                       color: Colors.greenAccent.withValues(alpha: 0.1),
                     ),
-                    child: const Text('MAX',
-                        style: TextStyle(
+                    child: Text(l10n.shopMaxLevel,
+                        style: const TextStyle(
                           color: Colors.greenAccent,
                           fontFamily: 'monospace',
                           fontWeight: FontWeight.w900,
@@ -902,6 +909,7 @@ class _ShopScreenState extends State<ShopScreen>
   // ==================== MODES TAB ====================
 
   Widget _buildModesTab() {
+    final l10n = AppLocalizations.of(context)!;
     final modes = [
       _ModeDef('classic', 'Classic', 0, '100 wave con boss ogni 10 — il modo standard', Icons.games, NeonColors.cyan),
       _ModeDef('bossRush', 'Boss Rush', 2000, 'Solo boss, uno dopo l\'altro — niente mob', Icons.whatshot, const Color(0xFFFF4400)),
@@ -1034,9 +1042,9 @@ class _ShopScreenState extends State<ShopScreen>
                                       width: 0.8,
                                     ),
                                   ),
-                                  child: const Text(
-                                    'NEW',
-                                    style: TextStyle(
+                                  child: Text(
+                                    l10n.shopBadgeNew,
+                                    style: const TextStyle(
                                       color: Color(0xFFFFD700),
                                       fontSize: 8,
                                       fontFamily: 'monospace',
@@ -1077,15 +1085,15 @@ class _ShopScreenState extends State<ShopScreen>
                             width: 0.8,
                           ),
                         ),
-                        child: const Row(
+                        child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.check_circle_outline,
+                            const Icon(Icons.check_circle_outline,
                                 color: Colors.greenAccent, size: 12),
-                            SizedBox(width: 4),
+                            const SizedBox(width: 4),
                             Text(
-                              'UNLOCKED',
-                              style: TextStyle(
+                              l10n.shopBadgeUnlocked,
+                              style: const TextStyle(
                                 color: Colors.greenAccent,
                                 fontSize: 9,
                                 fontWeight: FontWeight.bold,
@@ -1365,6 +1373,7 @@ class _ShopActionButtonState extends State<_ShopActionButton> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     // Colori per stato
     final Color borderColor;
     final Color bgColor;
@@ -1391,14 +1400,14 @@ class _ShopActionButtonState extends State<_ShopActionButton> {
         borderColor = Colors.cyanAccent.withValues(alpha: 0.6);
         bgColor = Colors.cyanAccent.withValues(alpha: _pressed ? 0.18 : 0.06);
         textColor = Colors.cyanAccent;
-        label = 'EQUIP';
+        label = l10n.shopEquip;
         leadingIcon = null;
         tappable = true;
       case _ShopActionState.equipped:
         borderColor = Colors.greenAccent.withValues(alpha: 0.5);
         bgColor = Colors.greenAccent.withValues(alpha: 0.08);
         textColor = Colors.greenAccent;
-        label = 'EQUIPPED';
+        label = l10n.shopEquipped;
         leadingIcon = Icons.check_circle;
         tappable = false;
     }
@@ -3670,19 +3679,20 @@ class _PetActionButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final String label;
     final Color btnColor;
     final VoidCallback? onTap;
     if (isActive) {
-      label = 'EQUIPPED';
+      label = l10n.shopEquipped;
       btnColor = Colors.greenAccent;
       onTap = null;
     } else if (owned) {
-      label = 'EQUIP';
+      label = l10n.shopEquip;
       btnColor = color;
       onTap = onEquip;
     } else {
-      label = 'BUY ${cost}g';
+      label = l10n.shopBuyWithCost(cost);
       btnColor = const Color(0xFFFFD700);
       onTap = onBuy;
     }

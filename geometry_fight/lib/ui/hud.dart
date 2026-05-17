@@ -7,6 +7,7 @@ import '../data/wave_configs.dart';
 import '../game/game_world.dart';
 import '../game/entities/enemies/enemy_base.dart';
 import '../game/entities/bosses/boss_base.dart';
+import '../l10n/generated/app_localizations.dart';
 import 'widgets/animated_builder_widget.dart';
 
 /// HUD moderna e accattivante con effetti glassmorphism neon.
@@ -40,6 +41,7 @@ class _GameHudState extends State<GameHud> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return IgnorePointer(
       child: NeonAnimatedBuilder(
         animation: _notifier,
@@ -88,6 +90,7 @@ class _GameHudState extends State<GameHud> {
                       enemyCount: game.enemyCount,
                       isBossWave: game.bossCount > 0,
                       modifier: game.waveSystem.activeModifier,
+                      l10n: l10n,
                     ),
                   ),
                 ),
@@ -153,7 +156,7 @@ class _GameHudState extends State<GameHud> {
                 Positioned(
                   top: topPad + 70,
                   left: 12,
-                  child: _PowerUpBar(player: game.player),
+                  child: _PowerUpBar(player: game.player, l10n: l10n),
                 ),
 
               // === PERFECT WAVE! (centro schermo) ===
@@ -164,7 +167,7 @@ class _GameHudState extends State<GameHud> {
                     children: [
                       const SizedBox(height: 60),
                       Text(
-                        'PERFECT WAVE!',
+                        l10n.hudPerfectWave,
                         style: TextStyle(
                           color: const Color(0xFF00FF88),
                           fontSize: 28,
@@ -178,7 +181,7 @@ class _GameHudState extends State<GameHud> {
                         ),
                       ),
                       Text(
-                        '+10 GEOMI BONUS',
+                        l10n.hudPerfectBonus,
                         style: TextStyle(
                           color: const Color(0xFF00FF88).withValues(alpha: 0.6),
                           fontSize: 12,
@@ -209,7 +212,7 @@ class _GameHudState extends State<GameHud> {
                 left: 0,
                 right: 0,
                 child: Center(
-                  child: _EnemyCounter(count: game.enemyCount),
+                  child: _EnemyCounter(count: game.enemyCount, l10n: l10n),
                 ),
               ),
             ],
@@ -523,11 +526,13 @@ class _WaveIndicator extends StatelessWidget {
   final int enemyCount;
   final bool isBossWave;
   final WaveModifier modifier;
+  final AppLocalizations l10n;
 
   const _WaveIndicator({
     required this.wave,
     required this.enemyCount,
     required this.isBossWave,
+    required this.l10n,
     this.modifier = WaveModifier.none,
   });
 
@@ -559,7 +564,7 @@ class _WaveIndicator extends StatelessWidget {
                       color: color.withValues(alpha: 0.8), size: 14),
                 ),
               Text(
-                isBossWave ? 'BOSS WAVE $wave' : 'WAVE $wave',
+                isBossWave ? l10n.hudBossWave(wave) : l10n.hudWaveNumber(wave),
                 style: TextStyle(
                   color: color.withValues(alpha: 0.9),
                   fontSize: 13,
@@ -778,8 +783,9 @@ class _BossHpBarPainter extends CustomPainter {
 // ===================================================================
 class _PowerUpBar extends StatelessWidget {
   final dynamic player;
+  final AppLocalizations l10n;
 
-  const _PowerUpBar({required this.player});
+  const _PowerUpBar({required this.player, required this.l10n});
 
   @override
   Widget build(BuildContext context) {
@@ -787,7 +793,7 @@ class _PowerUpBar extends StatelessWidget {
 
     if (player.rapidFireTimer > 0) {
       items.add(_NeonPowerUpIndicator(
-        label: 'RAPID FIRE',
+        label: l10n.powerUpRapidFire,
         icon: Icons.speed,
         color: const Color(0xFFFF4400),
         remaining: player.rapidFireTimer / 15,
@@ -795,7 +801,7 @@ class _PowerUpBar extends StatelessWidget {
     }
     if (player.overdriveTimer > 0) {
       items.add(_NeonPowerUpIndicator(
-        label: 'OVERDRIVE',
+        label: l10n.powerUpOverdrive,
         icon: Icons.flash_on,
         color: const Color(0xFFFFFFFF),
         remaining: player.overdriveTimer / 15,
@@ -803,7 +809,7 @@ class _PowerUpBar extends StatelessWidget {
     }
     if (player.magnetTimer > 0) {
       items.add(_NeonPowerUpIndicator(
-        label: 'MAGNET',
+        label: l10n.powerUpMagnet,
         icon: Icons.all_inclusive,
         color: const Color(0xFFFFEE00),
         remaining: player.magnetTimer / 15,
@@ -811,7 +817,7 @@ class _PowerUpBar extends StatelessWidget {
     }
     if (player.timeSlowTimer > 0) {
       items.add(_NeonPowerUpIndicator(
-        label: 'TIME SLOW',
+        label: l10n.powerUpTimeSlow,
         icon: Icons.hourglass_bottom,
         color: const Color(0xFFAA00FF),
         remaining: player.timeSlowTimer / 15,
@@ -819,7 +825,7 @@ class _PowerUpBar extends StatelessWidget {
     }
     if (player.weaponTimer > 0) {
       items.add(_NeonPowerUpIndicator(
-        label: 'SPREAD SHOT',
+        label: l10n.powerUpSpreadShot,
         icon: Icons.gps_fixed,
         color: const Color(0xFFFF8800),
         remaining: player.weaponTimer / 15,
@@ -827,7 +833,7 @@ class _PowerUpBar extends StatelessWidget {
     }
     if (player.firePowerTimer > 0) {
       items.add(_NeonPowerUpIndicator(
-        label: 'FIRE POWER',
+        label: l10n.powerUpFirePower,
         icon: Icons.local_fire_department,
         color: const Color(0xFFFF3300),
         remaining: player.firePowerTimer / 20,
@@ -906,8 +912,9 @@ class _NeonPowerUpIndicator extends StatelessWidget {
 // ===================================================================
 class _EnemyCounter extends StatelessWidget {
   final int count;
+  final AppLocalizations l10n;
 
-  const _EnemyCounter({required this.count});
+  const _EnemyCounter({required this.count, required this.l10n});
 
   @override
   Widget build(BuildContext context) {
@@ -923,7 +930,7 @@ class _EnemyCounter extends StatelessWidget {
         ),
       ),
       child: Text(
-        '$count NEMICI',
+        l10n.hudEnemiesRemaining(count),
         style: TextStyle(
           color: Colors.white.withValues(alpha: 0.35),
           fontSize: 10,

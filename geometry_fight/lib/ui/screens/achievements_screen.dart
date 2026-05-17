@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import '../../data/achievements.dart';
+import '../../l10n/generated/app_localizations.dart';
 import '../widgets/neon_back_button.dart';
 
 class AchievementsScreen extends StatefulWidget {
@@ -35,13 +36,14 @@ class _AchievementsScreenState extends State<AchievementsScreen>
   };
 
   static const _categories = ['combat', 'score', 'progress', 'mastery', 'special'];
-  static const _categoryNames = {
-    'combat': 'COMBATTIMENTO',
-    'score': 'PUNTEGGIO',
-    'progress': 'PROGRESSO',
-    'mastery': 'MAESTRIA',
-    'special': 'SPECIALI',
-  };
+
+  Map<String, String> _categoryNames(AppLocalizations l10n) => {
+        'combat': l10n.achievementCategoryCombat,
+        'score': l10n.achievementCategoryScore,
+        'progress': l10n.achievementCategoryProgress,
+        'mastery': l10n.achievementCategoryMastery,
+        'special': l10n.achievementCategorySpecial,
+      };
 
   // Cached per-category lists (avoid rebuilding every frame)
   late final Map<String, List<AchievementDef>> _achievementsByCategory;
@@ -101,6 +103,8 @@ class _AchievementsScreenState extends State<AchievementsScreen>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final categoryNames = _categoryNames(l10n);
     return Scaffold(
       backgroundColor: Colors.black,
       body: SafeArea(
@@ -117,7 +121,7 @@ class _AchievementsScreenState extends State<AchievementsScreen>
             return Column(
               children: [
                 // Header
-                _buildHeader(entrance, _unlockedCount, _totalCount, _completionPct, glow),
+                _buildHeader(l10n, entrance, _unlockedCount, _totalCount, _completionPct, glow),
 
                 // Achievement list
                 Expanded(
@@ -136,7 +140,7 @@ class _AchievementsScreenState extends State<AchievementsScreen>
                     children: [
                       for (int ci = 0; ci < _categories.length; ci++) ...[
                         _buildCategoryHeader(
-                          _categoryNames[_categories[ci]]!,
+                          categoryNames[_categories[ci]]!,
                           _categoryColors[_categories[ci]]!,
                           _categoryIcons[_categories[ci]]!,
                           entrance,
@@ -167,8 +171,8 @@ class _AchievementsScreenState extends State<AchievementsScreen>
     );
   }
 
-  Widget _buildHeader(double entrance, int unlocked, int total,
-      double completionPct, double glow) {
+  Widget _buildHeader(AppLocalizations l10n, double entrance, int unlocked,
+      int total, double completionPct, double glow) {
     return Opacity(
       opacity: entrance,
       child: Transform.translate(
@@ -179,9 +183,9 @@ class _AchievementsScreenState extends State<AchievementsScreen>
             children: [
               NeonBackButton(onTap: widget.onBack),
               const SizedBox(width: 16),
-              const Text(
-                'ACHIEVEMENT',
-                style: TextStyle(
+              Text(
+                l10n.menuAchievementsAlt,
+                style: const TextStyle(
                   color: Colors.cyanAccent,
                   fontSize: 18,
                   fontWeight: FontWeight.bold,

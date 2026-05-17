@@ -1,0 +1,300 @@
+{
+  "@@locale": "ru",
+  "appTitle": "Geometry Fight 2",
+
+  "menuPlay": "ИГРАТЬ",
+  "menuShop": "МАГАЗИН",
+  "menuStore": "МАГАЗИН",
+  "menuSettings": "НАСТРОЙКИ",
+  "menuStats": "СТАТИСТИКА",
+  "menuAchievements": "ТРОФЕИ",
+  "menuAchievementsAlt": "ДОСТИЖЕНИЯ",
+  "menuLeaderboard": "ТАБЛИЦА ЛИДЕРОВ",
+  "menuQuit": "ВЫЙТИ",
+
+  "diffEasy": "ЛЕГКО",
+  "diffNormal": "НОРМАЛЬНО",
+  "diffHard": "СЛОЖНО",
+  "diffNightmare": "КОШМАР",
+  "diffNext": "ДАЛЕЕ",
+  "diffTitle": "СЛОЖНОСТЬ",
+  "diffScoreMultiplier": "очки",
+
+  "settingsTitle": "НАСТРОЙКИ",
+  "settingsAudio": "ЗВУК",
+  "settingsGameplay": "ИГРА",
+  "settingsMusic": "МУЗЫКА",
+  "settingsSfx": "SFX",
+  "settingsSfxLong": "ЗВУКОВЫЕ ЭФФЕКТЫ",
+  "settingsVibration": "ВИБРАЦИЯ",
+  "settingsShowFps": "ПОКАЗЫВАТЬ FPS",
+  "settingsLanguage": "ЯЗЫК",
+  "settingsCrashLogs": "ЛОГИ СБОЕВ",
+  "settingsReset": "СБРОС ДАННЫХ",
+  "settingsDangerZone": "ОПАСНАЯ ЗОНА",
+  "settingsTestDebug": "TEST / DEBUG",
+  "settingsAddCredits": "+1000 КРЕДИТОВ",
+  "settingsResetPurchases": "СБРОС ПОКУПОК",
+  "settingsPurchasesReset": "Покупки сброшены!",
+  "settingsCreditsAdded": "+1000 кредитов! Всего: {total}",
+  "@settingsCreditsAdded": {
+    "placeholders": { "total": { "type": "int" } }
+  },
+  "settingsCrashLogsTitle": "СБОИ ({count})",
+  "@settingsCrashLogsTitle": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "settingsNoCrash": "Сбоев не зарегистрировано.\nЕсли игра упадёт, появится здесь.",
+  "settingsCopy": "КОПИРОВАТЬ",
+  "settingsDelete": "УДАЛИТЬ",
+  "settingsLogsCopied": "Логи скопированы",
+
+  "shopTitle": "МАГАЗИН",
+  "shopGoldInsufficient": "Недостаточно золота!",
+  "shopEquip": "НАДЕТЬ",
+  "shopEquipped": "ЭКИПИРОВАНО",
+  "shopBuy": "КУПИТЬ",
+  "shopMaxLevel": "MAX",
+  "shopTabWeapons": "ОРУЖИЕ",
+  "shopTabSkins": "СКИНЫ",
+  "shopTabTrails": "СЛЕДЫ",
+  "shopTabPets": "ПИТОМЦЫ",
+  "shopTabUpgrades": "УЛУЧШЕНИЯ",
+  "shopTabModes": "РЕЖИМЫ",
+  "shopPurchased": "Куплено!",
+  "shopLocked": "ЗАБЛОКИРОВАНО",
+  "shopCost": "ЦЕНА",
+  "shopLevel": "УРОВЕНЬ",
+  "shopScrollMore": "Прокрути ещё",
+
+  "loadoutTitle": "СНАРЯЖЕНИЕ",
+  "loadoutWeapon": "ОРУЖИЕ",
+  "loadoutPet": "ПИТОМЕЦ",
+  "loadoutLocked": "Открой это оружие в МАГАЗИНЕ",
+  "loadoutPetLocked": "Открой этого питомца в МАГАЗИНЕ",
+  "loadoutStart": "НАЧАТЬ ИГРУ",
+  "loadoutPetNone": "НЕТ",
+
+  "shopAlreadyMax": "{name} уже максимум!",
+  "@shopAlreadyMax": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "shopUpgradedToLevel": "{name} УР {level}",
+  "@shopUpgradedToLevel": {
+    "placeholders": {
+      "name": { "type": "String" },
+      "level": { "type": "int" }
+    }
+  },
+  "shopLevelOf": "УР {current} / {max}",
+  "@shopLevelOf": {
+    "placeholders": {
+      "current": { "type": "int" },
+      "max": { "type": "int" }
+    }
+  },
+  "shopBadgeNew": "НОВОЕ",
+  "shopBadgeUnlocked": "ОТКРЫТО",
+  "shopBuyWithCost": "КУПИТЬ {cost}g",
+  "@shopBuyWithCost": {
+    "placeholders": { "cost": { "type": "int" } }
+  },
+  "shopTapNodeForDetails": "НАЖМИ НА УЗЕЛ ДЛЯ ПОДРОБНОСТЕЙ",
+
+  "modeTitle": "РЕЖИМ",
+  "modeSelectTitle": "ВЫБРАТЬ РЕЖИМ",
+  "modeEndless": "БЕСКОНЕЧНЫЙ",
+  "modeBossRush": "BOSS RUSH",
+  "modeSurvival": "ВЫЖИВАНИЕ",
+  "modeChallenge": "ВЫЗОВ",
+  "modeClassic": "КЛАССИКА",
+  "modePacifist": "ПАЦИФИСТ",
+  "modeTimeAttack": "НА ВРЕМЯ",
+  "modeZen": "ДЗЕН",
+  "modeTunnel": "ТОННЕЛЬ",
+  "modeDailyChallenge": "ЕЖЕДНЕВНЫЙ ВЫЗОВ",
+  "modeWaves": "ВОЛНЫ",
+  "modeGravityInferno": "ГРАВИТАЦИОННЫЙ АД",
+
+  "splashSkip": "ПРОПУСТИТЬ",
+  "splashTapToStart": "НАЖМИТЕ, ЧТОБЫ НАЧАТЬ",
+
+  "modifiersTitle": "МОДИФИКАТОРЫ",
+  "modifiersConfirm": "ПОДТВЕРДИТЬ",
+
+  "back": "НАЗАД",
+  "play": "ИГРАТЬ",
+  "pause": "ПАУЗА",
+  "resume": "ПРОДОЛЖИТЬ",
+  "restart": "ЗАНОВО",
+  "retry": "ПОВТОРИТЬ",
+  "quit": "ВЫЙТИ",
+  "close": "ЗАКРЫТЬ",
+  "next": "ДАЛЕЕ",
+  "start": "СТАРТ",
+  "yes": "ДА",
+  "no": "НЕТ",
+  "confirm": "ПОДТВЕРДИТЬ",
+  "cancel": "ОТМЕНА",
+  "continueAction": "ПРОДОЛЖИТЬ",
+
+  "score": "ОЧКИ",
+  "wave": "ВОЛНА",
+  "lives": "ЖИЗНИ",
+  "level": "УРОВЕНЬ",
+  "gold": "ЗОЛОТО",
+  "geoms": "GEOMS",
+  "best": "ЛУЧШИЙ",
+  "kills": "УБИЙСТВА",
+  "timeLabel": "ВРЕМЯ",
+  "highScore": "РЕКОРД",
+  "newRun": "НОВЫЙ ЗАБЕГ",
+
+  "gameOver": "КОНЕЦ ИГРЫ",
+  "newRecord": "НОВЫЙ РЕКОРД!",
+  "victory": "ПОБЕДА",
+
+  "achievementsTitle": "ТРОФЕИ",
+  "achievementUnlocked": "Трофей получен!",
+  "achievementCategoryCombat": "БОЙ",
+  "achievementCategoryScore": "ОЧКИ",
+  "achievementCategoryProgress": "ПРОГРЕСС",
+  "achievementCategoryMastery": "МАСТЕРСТВО",
+  "achievementCategorySpecial": "ОСОБЫЕ",
+
+  "leaderboardTitle": "ТАБЛИЦА ЛИДЕРОВ",
+  "leaderboardEmpty": "Пока нет результатов",
+
+  "statsTitle": "СТАТИСТИКА",
+  "summaryTitle": "ИТОГ",
+
+  "dailyRewardTitle": "ЕЖЕДНЕВНАЯ НАГРАДА",
+  "dailyRewardGeoms": "+{amount} GEOM",
+  "@dailyRewardGeoms": {
+    "placeholders": { "amount": { "type": "int" } }
+  },
+  "dailyRewardStreakOne": "Серия: {count} день",
+  "@dailyRewardStreakOne": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "dailyRewardStreakMany": "Серия: {count} дней",
+  "@dailyRewardStreakMany": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+
+  "settingsResetTitle": "СБРОС ДАННЫХ",
+  "settingsResetWarning": "Весь прогресс, улучшения и покупки будут удалены.",
+  "settingsResetButton": "СБРОС",
+  "settingsResetAllData": "СБРОСИТЬ ВСЕ ДАННЫЕ",
+  "badgeKiller": "УБИЙЦА",
+  "badgeMassacre": "БОЙНЯ",
+  "badgePersistent": "УПОРНЫЙ",
+  "badgeVeteran": "ВЕТЕРАН",
+  "badgeBossHunter": "ОХОТНИК НА БОССОВ",
+  "badgeRegicide": "ЦАРЕУБИЙЦА",
+  "newAchievementBanner": "★ НОВОЕ ДОСТИЖЕНИЕ! ★",
+
+  "columnDate": "ДАТА",
+  "leaderboardRecords": "{count} REC",
+  "@leaderboardRecords": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "leaderboardNoRecord": "НЕТ РЕКОРДОВ",
+  "leaderboardEmptyHint": "Сыграйте в этом режиме,\nчтобы попасть в таблицу!",
+
+  "statsSectionGeneral": "ОБЩЕЕ",
+  "statsSectionCombat": "БОЙ",
+  "statsSectionRecords": "РЕКОРДЫ",
+  "statsSectionAchievements": "ДОСТИЖЕНИЯ",
+  "statsSectionScoresByMode": "ОЧКИ ПО РЕЖИМАМ",
+  "statsGamesPlayed": "Сыграно игр",
+  "statsTotalPlaytime": "Общее время",
+  "statsTotalGoldEarned": "Всего золота",
+  "statsCurrentGold": "Текущее золото",
+  "statsEnemiesKilled": "Убито врагов",
+  "statsBossesDefeated": "Побеждено боссов",
+  "statsBombsUsed": "Использовано бомб",
+  "statsPowerUpsCollected": "Собрано усилений",
+  "statsGeomsCollected": "Собрано геомов",
+  "statsBestScore": "Лучший счёт",
+  "statsHighestWave": "Высшая волна",
+  "statsMaxMultiplier": "Макс. множитель",
+  "statsMaxSessionKills": "Макс. убийств за игру",
+  "statsMaxPerfectStreak": "Макс. идеальных волн",
+  "statsAchievementsUnlocked": "Открыто",
+
+  "summaryNone": "Нет",
+  "summaryScoreMultiplierTitle": "МНОЖИТЕЛЬ ОЧКОВ",
+  "summaryDifficultyRow": "Сложность",
+  "summaryModifiersRow": "Модификаторы",
+  "summaryTotal": "ИТОГО",
+  "summaryActiveModifiers": "{count} активно · ×{mult} score",
+  "@summaryActiveModifiers": {
+    "placeholders": {
+      "count": { "type": "int" },
+      "mult": { "type": "String" }
+    }
+  },
+
+  "languageItalian": "Italiano",
+  "languageEnglish": "English",
+  "languageSpanish": "Español",
+  "languageFrench": "Français",
+  "languageGerman": "Deutsch",
+  "languagePortuguese": "Português",
+  "languageChinese": "中文",
+  "languageJapanese": "日本語",
+  "languageRussian": "Русский",
+
+  "modifiersMaxActive": "МАКС {count} МОДИФИКАТОРОВ",
+  "@modifiersMaxActive": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "modifiersScoreLabel": "Score x{mult}",
+  "@modifiersScoreLabel": {
+    "placeholders": { "mult": { "type": "String" } }
+  },
+  "modifiersActiveCount": "Активно: {count}/{max}",
+  "@modifiersActiveCount": {
+    "placeholders": {
+      "count": { "type": "int" },
+      "max": { "type": "int" }
+    }
+  },
+
+  "hudBossWave": "БОСС ВОЛНА {wave}",
+  "@hudBossWave": {
+    "placeholders": { "wave": { "type": "int" } }
+  },
+  "hudWaveNumber": "ВОЛНА {wave}",
+  "@hudWaveNumber": {
+    "placeholders": { "wave": { "type": "int" } }
+  },
+  "hudPerfectWave": "ИДЕАЛЬНАЯ ВОЛНА!",
+  "hudPerfectBonus": "+10 GEOMS БОНУС",
+  "hudEnemiesRemaining": "{count} ВРАГОВ",
+  "@hudEnemiesRemaining": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "hudBoost2x": "2x BOOST",
+
+  "powerUpRapidFire": "СКОРОСТРЕЛ",
+  "powerUpOverdrive": "OVERDRIVE",
+  "powerUpMagnet": "МАГНИТ",
+  "powerUpTimeSlow": "ЗАМЕДЛЕНИЕ",
+  "powerUpSpreadShot": "ВЕЕРНЫЙ ВЫСТРЕЛ",
+  "powerUpFirePower": "ОГНЕВАЯ МОЩЬ",
+
+  "tutorialTitle": "КАК ИГРАТЬ",
+  "tutorialLeftJoystick": "ЛЕВЫЙ ДЖОЙСТИК",
+  "tutorialLeftJoystickDesc": "Двигай корабль",
+  "tutorialRightJoystick": "ПРАВЫЙ ДЖОЙСТИК",
+  "tutorialRightJoystickDesc": "Прицеливание и автострельба",
+  "tutorialBomb": "БОМБА",
+  "tutorialBombDesc": "Уничтожает всех ближайших врагов",
+  "tutorialGeoms": "GEOMS",
+  "tutorialGeomsDesc": "Собирай для очков и улучшений",
+  "tutorialPowerUp": "POWER-UP",
+  "tutorialPowerUpDesc": "Временные усиления",
+  "tutorialTapToStart": "НАЖМИ ДЛЯ СТАРТА"
+}

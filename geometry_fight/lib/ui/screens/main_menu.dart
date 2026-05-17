@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../../data/achievements.dart';
 import '../../data/save_data.dart';
 import '../../game/systems/music_manager.dart';
+import '../../l10n/generated/app_localizations.dart';
 import '../widgets/animated_builder_widget.dart';
 
 /// Menu principale con effetti neon cinematografici.
@@ -158,6 +159,7 @@ class _MainMenuScreenState extends State<MainMenuScreen>
     // Track streak achievement
     AchievementManager.updateProgress('daily_streak_7', streak);
     AchievementManager.updateProgress('daily_streak_30', streak);
+    final l10n = AppLocalizations.of(context)!;
     unawaited(showDialog<void>(
       context: context,
       barrierDismissible: false,
@@ -167,10 +169,10 @@ class _MainMenuScreenState extends State<MainMenuScreen>
           borderRadius: BorderRadius.circular(14),
           side: const BorderSide(color: Color(0xFFFFD700), width: 2),
         ),
-        title: const Text(
-          'DAILY REWARD',
+        title: Text(
+          l10n.dailyRewardTitle,
           textAlign: TextAlign.center,
-          style: TextStyle(
+          style: const TextStyle(
             color: Color(0xFFFFD700),
             fontWeight: FontWeight.w900,
             fontFamily: 'monospace',
@@ -183,7 +185,7 @@ class _MainMenuScreenState extends State<MainMenuScreen>
             const Icon(Icons.diamond, color: Color(0xFFFFD700), size: 48),
             const SizedBox(height: 12),
             Text(
-              '+$reward GEOM',
+              l10n.dailyRewardGeoms(reward),
               style: const TextStyle(
                 color: Color(0xFFFFD700),
                 fontSize: 28,
@@ -193,7 +195,9 @@ class _MainMenuScreenState extends State<MainMenuScreen>
             ),
             const SizedBox(height: 8),
             Text(
-              'Streak: $streak ${streak == 1 ? "giorno" : "giorni"}',
+              streak == 1
+                  ? l10n.dailyRewardStreakOne(streak)
+                  : l10n.dailyRewardStreakMany(streak),
               style: TextStyle(
                 color: Colors.white.withValues(alpha: 0.7),
                 fontSize: 12,
@@ -205,9 +209,9 @@ class _MainMenuScreenState extends State<MainMenuScreen>
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text(
-              'CONTINUA',
-              style: TextStyle(
+            child: Text(
+              l10n.continueAction,
+              style: const TextStyle(
                 color: Color(0xFFFFD700),
                 fontWeight: FontWeight.w900,
                 fontFamily: 'monospace',
@@ -543,6 +547,7 @@ class _MainMenuScreenState extends State<MainMenuScreen>
   // ==================== STATS BAR ====================
 
   Widget _buildStatsBar() {
+    final l10n = AppLocalizations.of(context)!;
     final totalKills = _saveData.stats['totalKills'] ?? 0;
     final bestScore = _saveData.highscores.values.fold<int>(0, (a, b) => a > b ? a : b);
     final gold = _saveData.goldGeoms;
@@ -566,16 +571,16 @@ class _MainMenuScreenState extends State<MainMenuScreen>
         mainAxisSize: MainAxisSize.min,
         children: [
           _StatChip(icon: Icons.hexagon_outlined, value: _formatNumber(gold),
-              color: const Color(0xFFFFD700), label: 'GEOMS'),
+              color: const Color(0xFFFFD700), label: l10n.geoms),
           _statDivider(),
           _StatChip(icon: Icons.emoji_events_outlined, value: _formatNumber(bestScore),
-              color: Colors.cyanAccent, label: 'BEST'),
+              color: Colors.cyanAccent, label: l10n.best),
           _statDivider(),
           _StatChip(icon: Icons.track_changes, value: _formatNumber(totalKills),
-              color: const Color(0xFFFF4466), label: 'KILLS'),
+              color: const Color(0xFFFF4466), label: l10n.kills),
           _statDivider(),
           _StatChip(icon: Icons.timer_outlined, value: _formatTime(playtime),
-              color: const Color(0xFF00FF88), label: 'TIME'),
+              color: const Color(0xFF00FF88), label: l10n.timeLabel),
         ],
       ),
     );
@@ -600,6 +605,7 @@ class _MainMenuScreenState extends State<MainMenuScreen>
   // ==================== RIGHT PANEL ====================
 
   Widget _buildRightPanel() {
+    final l10n = AppLocalizations.of(context)!;
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       mainAxisSize: MainAxisSize.min,
@@ -629,7 +635,7 @@ class _MainMenuScreenState extends State<MainMenuScreen>
         FadeTransition(
           opacity: _settingsFade,
           child: _NeonSmallButton(
-            text: 'IMPOSTAZIONI',
+            text: l10n.menuSettings,
             icon: Icons.settings_outlined,
             color: Colors.white,
             onTap: widget.onSettings,
@@ -640,6 +646,7 @@ class _MainMenuScreenState extends State<MainMenuScreen>
   }
 
   Widget _buildPlayButton() {
+    final l10n = AppLocalizations.of(context)!;
     return NeonAnimatedBuilder(
       animation: _pulseController,
       builder: (context, _) {
@@ -701,7 +708,7 @@ class _MainMenuScreenState extends State<MainMenuScreen>
                             ),
                             const SizedBox(width: 10),
                             Text(
-                              'GIOCA',
+                              l10n.menuPlay,
                               style: TextStyle(
                                 color: Colors.cyanAccent,
                                 fontSize: 24,
@@ -730,9 +737,10 @@ class _MainMenuScreenState extends State<MainMenuScreen>
   }
 
   Widget _buildButtonGrid() {
+    final l10n = AppLocalizations.of(context)!;
     final buttons = <Widget>[
       _NeonMenuButton(
-        text: 'NEGOZIO',
+        text: l10n.menuStore,
         icon: Icons.storefront_outlined,
         color: const Color(0xFFFFD700),
         onTap: widget.onShop,
@@ -740,21 +748,21 @@ class _MainMenuScreenState extends State<MainMenuScreen>
       ),
       if (widget.onLeaderboard != null)
         _NeonMenuButton(
-          text: 'CLASSIFICA',
+          text: l10n.menuLeaderboard,
           icon: Icons.emoji_events_outlined,
           color: const Color(0xFFFFAA44),
           onTap: widget.onLeaderboard!,
         ),
       if (widget.onAchievements != null)
         _NeonMenuButton(
-          text: 'ACHIEVEMENT',
+          text: l10n.menuAchievementsAlt,
           icon: Icons.military_tech_outlined,
           color: const Color(0xFF00FF88),
           onTap: widget.onAchievements!,
         ),
       if (widget.onStats != null)
         _NeonMenuButton(
-          text: 'STATISTICHE',
+          text: l10n.menuStats,
           icon: Icons.bar_chart_rounded,
           color: const Color(0xFFFF4466),
           onTap: widget.onStats!,

@@ -3,6 +3,7 @@ import 'dart:math';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../../data/achievements.dart';
+import '../../l10n/generated/app_localizations.dart';
 import '../widgets/shared_painters.dart';
 
 class GameOverScreen extends StatefulWidget {
@@ -161,6 +162,7 @@ class _GameOverScreenState extends State<GameOverScreen>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return AnimatedBuilder(
       animation: Listenable.merge([
         _entranceController,
@@ -227,7 +229,7 @@ class _GameOverScreenState extends State<GameOverScreen>
                       scale: _titleScale.value,
                       child: Opacity(
                         opacity: _titleFade.value,
-                        child: _buildTitle(pulse),
+                        child: _buildTitle(pulse, l10n.gameOver),
                       ),
                     ),
 
@@ -265,7 +267,7 @@ class _GameOverScreenState extends State<GameOverScreen>
                       offset: Offset(0, _statsSlide.value),
                       child: Opacity(
                         opacity: _statsFade.value,
-                        child: _buildStatsPanel(),
+                        child: _buildStatsPanel(l10n),
                       ),
                     ),
 
@@ -286,7 +288,7 @@ class _GameOverScreenState extends State<GameOverScreen>
                       const SizedBox(height: 8),
                       Opacity(
                         opacity: _badgesFade.value,
-                        child: _buildBadges(),
+                        child: _buildBadges(l10n),
                       ),
                     ],
 
@@ -295,7 +297,7 @@ class _GameOverScreenState extends State<GameOverScreen>
                       const SizedBox(height: 10),
                       Opacity(
                         opacity: _badgesFade.value,
-                        child: _buildAchievements(),
+                        child: _buildAchievements(l10n),
                       ),
                     ],
 
@@ -341,7 +343,7 @@ class _GameOverScreenState extends State<GameOverScreen>
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         _NeonGameOverButton(
-                          text: 'RIPROVA',
+                          text: l10n.retry,
                           icon: Icons.refresh_rounded,
                           color: Colors.cyanAccent,
                           onTap: widget.onRetry,
@@ -350,7 +352,7 @@ class _GameOverScreenState extends State<GameOverScreen>
                         ),
                         const SizedBox(height: 14),
                         _NeonGameOverButton(
-                          text: 'ESCI',
+                          text: l10n.quit,
                           icon: Icons.home_rounded,
                           color: Colors.white70,
                           onTap: widget.onQuit,
@@ -369,7 +371,7 @@ class _GameOverScreenState extends State<GameOverScreen>
     );
   }
 
-  Widget _buildTitle(double pulse) {
+  Widget _buildTitle(double pulse, String title) {
     final glowRadius = 15.0 + pulse * 8.0;
     return Stack(
       children: [
@@ -377,7 +379,7 @@ class _GameOverScreenState extends State<GameOverScreen>
         Transform.translate(
           offset: Offset(-1.5 + pulse * 0.3, 0),
           child: Text(
-            'GAME OVER',
+            title,
             style: TextStyle(
               color: Colors.redAccent.withValues(alpha: 0.4),
               fontSize: 38,
@@ -391,7 +393,7 @@ class _GameOverScreenState extends State<GameOverScreen>
         Transform.translate(
           offset: Offset(1.5 - pulse * 0.3, 0),
           child: Text(
-            'GAME OVER',
+            title,
             style: TextStyle(
               color: const Color(0xFFFF6600).withValues(alpha: 0.3),
               fontSize: 38,
@@ -403,7 +405,7 @@ class _GameOverScreenState extends State<GameOverScreen>
         ),
         // Main text
         Text(
-          'GAME OVER',
+          title,
           style: TextStyle(
             color: Colors.white,
             fontSize: 38,
@@ -422,7 +424,7 @@ class _GameOverScreenState extends State<GameOverScreen>
     );
   }
 
-  Widget _buildStatsPanel() {
+  Widget _buildStatsPanel(AppLocalizations l10n) {
     final counterVal = _counterController.value;
 
     return Container(
@@ -443,21 +445,21 @@ class _GameOverScreenState extends State<GameOverScreen>
         mainAxisSize: MainAxisSize.min,
         children: [
           _AnimatedStat(
-            label: 'SCORE',
+            label: l10n.score,
             value: (widget.score * counterVal).round(),
             color: Colors.white,
             icon: Icons.star_rounded,
           ),
           _statDivider(),
           _AnimatedStat(
-            label: 'WAVE',
+            label: l10n.wave,
             value: (widget.wave * counterVal).round(),
             color: Colors.cyanAccent,
             icon: Icons.waves_rounded,
           ),
           _statDivider(),
           _AnimatedStat(
-            label: 'KILLS',
+            label: l10n.kills,
             value: (widget.kills * counterVal).round(),
             color: const Color(0xFFFF4466),
             icon: Icons.local_fire_department_rounded,
@@ -557,29 +559,29 @@ class _GameOverScreenState extends State<GameOverScreen>
     );
   }
 
-  Widget _buildBadges() {
+  Widget _buildBadges(AppLocalizations l10n) {
     return Wrap(
       spacing: 6,
       runSpacing: 4,
       alignment: WrapAlignment.center,
       children: [
         if (widget.kills >= 200)
-          const _GlowBadge(text: 'KILLER', color: Colors.orangeAccent),
+          _GlowBadge(text: l10n.badgeKiller, color: Colors.orangeAccent),
         if (widget.kills >= 500)
-          const _GlowBadge(text: 'MASSACRO', color: Colors.redAccent),
+          _GlowBadge(text: l10n.badgeMassacre, color: Colors.redAccent),
         if (widget.wave >= 20)
-          const _GlowBadge(text: 'PERSISTENTE', color: Colors.cyanAccent),
+          _GlowBadge(text: l10n.badgePersistent, color: Colors.cyanAccent),
         if (widget.wave >= 50)
-          const _GlowBadge(text: 'VETERANO', color: Colors.purpleAccent),
+          _GlowBadge(text: l10n.badgeVeteran, color: Colors.purpleAccent),
         if (widget.bossKills >= 3)
-          const _GlowBadge(text: 'BOSS HUNTER', color: Colors.amberAccent),
+          _GlowBadge(text: l10n.badgeBossHunter, color: Colors.amberAccent),
         if (widget.bossKills >= 5)
-          const _GlowBadge(text: 'REGICIDA', color: Colors.amber),
+          _GlowBadge(text: l10n.badgeRegicide, color: Colors.amber),
       ],
     );
   }
 
-  Widget _buildAchievements() {
+  Widget _buildAchievements(AppLocalizations l10n) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 40),
       padding: const EdgeInsets.all(12),
@@ -604,9 +606,9 @@ class _GameOverScreenState extends State<GameOverScreen>
       ),
       child: Column(
         children: [
-          const Text(
-            '★ NUOVO ACHIEVEMENT! ★',
-            style: TextStyle(
+          Text(
+            l10n.newAchievementBanner,
+            style: const TextStyle(
               color: Colors.greenAccent,
               fontSize: 12,
               fontWeight: FontWeight.bold,

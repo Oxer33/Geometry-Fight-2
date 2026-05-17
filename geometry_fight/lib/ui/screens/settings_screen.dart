@@ -5,10 +5,28 @@ import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../data/achievements.dart';
 import '../../data/crash_reporter.dart';
+import '../../data/language_controller.dart';
 import '../../data/leaderboard.dart';
 import '../../data/save_data.dart';
 import '../../game/systems/audio_system.dart';
 import '../../game/systems/music_manager.dart';
+import '../../l10n/generated/app_localizations.dart';
+import '../../main.dart' show appLocale;
+
+/// Lingue supportate dal language selector. Mappatura codice ISO → label
+/// display (nome lingua nella propria lingua, "endonym"). L'ordine in lista
+/// è preservato (Map literal in Dart 2.x+ → insertion-ordered).
+const Map<String, String> _kSupportedLanguages = <String, String>{
+  'it': 'Italiano',
+  'en': 'English',
+  'es': 'Español',
+  'fr': 'Français',
+  'de': 'Deutsch',
+  'pt': 'Português',
+  'zh': '中文',
+  'ja': '日本語',
+  'ru': 'Русский',
+};
 
 class SettingsScreen extends StatefulWidget {
   final VoidCallback onBack;
@@ -25,6 +43,7 @@ class _SettingsScreenState extends State<SettingsScreen>
   double _sfxVolume = 0.8;
   bool _vibration = true;
   bool _showFps = false;
+  String _languageCode = 'it';
 
   late AnimationController _entranceController;
   late AnimationController _glowController;
@@ -59,13 +78,107 @@ class _SettingsScreenState extends State<SettingsScreen>
 
   Future<void> _loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
+    // Lingua: source of truth = SaveData (Hive), non SharedPreferences. Coerente
+    // con persistenza richiesta in Step 5 della task i18n.
+    final saved = SaveManager.load();
     if (!mounted) return;
     setState(() {
       _bgmVolume = prefs.getDouble('bgm_volume') ?? 0.7;
       _sfxVolume = prefs.getDouble('sfx_volume') ?? 0.8;
       _vibration = prefs.getBool('vibration') ?? true;
       _showFps = prefs.getBool('show_fps') ?? false;
+      _languageCode = saved.languageCode;
     });
+  }
+
+  /// Cambia lingua: aggiorna SaveData (Hive persist), aggiorna `appLocale`
+  /// globale così MaterialApp rebuilda con la nuova locale, aggiorna lo stato
+  /// locale del widget per la spunta nella list.
+  Future<void> _onLanguageSelected(String code) async {
+    if (!_kSupportedLanguages.containsKey(code)) return;
+    if (code == _languageCode) return;
+    setState(() => _languageCode = code);
+    await LanguageController.instance.setLanguage(code);
+    appLocale.value = Locale(code);
+  }
+
+  /// Wrap orizzontale di chip selezionabili per ogni lingua supportata.
+  /// Tocco su una chip = applica lingua immediatamente.
+  Widget _buildLanguageWrap({
+    required double entrance,
+    required double delay,
+  }) {
+    final e = (delay >= 1.0
+        ? 1.0
+        : ((entrance - delay) / (1.0 - delay)).clamp(0.0, 1.0));
+    const items = <(String, String)>[
+      ('it', '🇮🇹 Italiano'),
+      ('en', '🇬🇧 English'),
+      ('es', '🇪🇸 Español'),
+      ('fr', '🇫🇷 Français'),
+      ('de', '🇩🇪 Deutsch'),
+      ('pt', '🇵🇹 Português'),
+      ('ru', '🇷🇺 Русский'),
+      ('zh', '🇨🇳 中文'),
+      ('ja', '🇯🇵 日本語'),
+    ];
+    return Opacity(
+      opacity: e,
+      child: Transform.translate(
+        offset: Offset(0, 15 * (1 - e)),
+        child: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+            color: Colors.purpleAccent.withValues(alpha: 0.04),
+          ),
+          child: Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: items.map((item) {
+              final code = item.$1;
+              final label = item.$2;
+              final isSel = code == _languageCode;
+              return InkWell(
+                onTap: () async {
+                  await _onLanguageSelected(code);
+                  if (mounted) setState(() {});
+                },
+                borderRadius: BorderRadius.circular(8),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 14, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: isSel
+                        ? Colors.purpleAccent.withValues(alpha: 0.25)
+                        : Colors.transparent,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(
+                      color: isSel
+                          ? Colors.purpleAccent
+                          : Colors.white24,
+                      width: isSel ? 2 : 1,
+                    ),
+                  ),
+                  child: Text(
+                    label,
+                    style: TextStyle(
+                      color: isSel
+                          ? Colors.purpleAccent
+                          : Colors.white70,
+                      fontFamily: 'monospace',
+                      fontWeight: FontWeight.w700,
+                      fontSize: 13,
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        ),
+      ),
+    );
   }
 
   Future<void> _saveSettings() async {
@@ -85,6 +198,7 @@ class _SettingsScreenState extends State<SettingsScreen>
   /// per condividerli o cancellarli dopo aver risolto il problema.
   void _showCrashLogs() {
     final logs = CrashReporter.getLogs();
+    final l10n = AppLocalizations.of(context)!;
     showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -99,7 +213,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                 color: Colors.redAccent, size: 20),
             const SizedBox(width: 8),
             Text(
-              'CRASH LOGS (${logs.length})',
+              l10n.settingsCrashLogsTitle(logs.length),
               style: const TextStyle(
                 color: Colors.redAccent,
                 fontFamily: 'monospace',
@@ -112,11 +226,11 @@ class _SettingsScreenState extends State<SettingsScreen>
           width: double.maxFinite,
           height: 340,
           child: logs.isEmpty
-              ? const Center(
+              ? Center(
                   child: Text(
-                    'Nessun crash registrato.\nSe il gioco crasha, apparirà qui.',
+                    l10n.settingsNoCrash,
                     textAlign: TextAlign.center,
-                    style: TextStyle(
+                    style: const TextStyle(
                       color: Colors.white54,
                       fontFamily: 'monospace',
                       fontSize: 12,
@@ -157,9 +271,9 @@ class _SettingsScreenState extends State<SettingsScreen>
             TextButton.icon(
               icon: const Icon(Icons.copy_rounded,
                   color: Colors.cyanAccent, size: 16),
-              label: const Text(
-                'COPIA',
-                style: TextStyle(
+              label: Text(
+                l10n.settingsCopy,
+                style: const TextStyle(
                     color: Colors.cyanAccent, fontFamily: 'monospace'),
               ),
               onPressed: () async {
@@ -167,11 +281,11 @@ class _SettingsScreenState extends State<SettingsScreen>
                     ClipboardData(text: logs.join('\n\n')));
                 if (!ctx.mounted) return;
                 ScaffoldMessenger.of(ctx).showSnackBar(
-                  const SnackBar(
-                    content: Text('Logs copiati',
-                        style: TextStyle(fontFamily: 'monospace')),
+                  SnackBar(
+                    content: Text(l10n.settingsLogsCopied,
+                        style: const TextStyle(fontFamily: 'monospace')),
                     backgroundColor: Colors.cyanAccent,
-                    duration: Duration(seconds: 1),
+                    duration: const Duration(seconds: 1),
                   ),
                 );
               },
@@ -180,9 +294,9 @@ class _SettingsScreenState extends State<SettingsScreen>
             TextButton.icon(
               icon: const Icon(Icons.delete_outline,
                   color: Colors.redAccent, size: 16),
-              label: const Text(
-                'CANCELLA',
-                style: TextStyle(
+              label: Text(
+                l10n.settingsDelete,
+                style: const TextStyle(
                     color: Colors.redAccent, fontFamily: 'monospace'),
               ),
               onPressed: () async {
@@ -193,8 +307,8 @@ class _SettingsScreenState extends State<SettingsScreen>
             ),
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('CHIUDI',
-                style: TextStyle(
+            child: Text(l10n.close,
+                style: const TextStyle(
                     color: Colors.white54, fontFamily: 'monospace')),
           ),
         ],
@@ -204,6 +318,7 @@ class _SettingsScreenState extends State<SettingsScreen>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: Colors.black,
       body: SafeArea(
@@ -216,7 +331,7 @@ class _SettingsScreenState extends State<SettingsScreen>
             return Column(
               children: [
                 // Header
-                _buildHeader(entrance),
+                _buildHeader(entrance, l10n),
 
                 // Settings
                 Expanded(
@@ -233,42 +348,65 @@ class _SettingsScreenState extends State<SettingsScreen>
                     controller: _settingsCtrl,
                     padding: const EdgeInsets.all(20),
                     children: [
+                      // Language section (added BEFORE Audio per task)
+                      _buildSectionHeader(
+                          l10n.settingsLanguage,
+                          Icons.language_rounded,
+                          Colors.purpleAccent,
+                          entrance,
+                          0.0),
+                      const SizedBox(height: 12),
+                      _buildLanguageWrap(
+                        entrance: entrance,
+                        delay: 0.02,
+                      ),
+
+                      const SizedBox(height: 24),
+
                       // Audio section
-                      _buildSectionHeader('AUDIO', Icons.volume_up_rounded,
-                          Colors.cyanAccent, entrance, 0.0),
+                      _buildSectionHeader(
+                          l10n.settingsAudio,
+                          Icons.volume_up_rounded,
+                          Colors.cyanAccent,
+                          entrance,
+                          0.05),
                       const SizedBox(height: 12),
                       _buildSlider(
-                        label: 'MUSICA',
+                        label: l10n.settingsMusic,
                         value: _bgmVolume,
                         icon: Icons.music_note_rounded,
                         color: Colors.cyanAccent,
                         onChanged: (v) => setState(() => _bgmVolume = v),
                         onChangeEnd: (_) => _saveSettings(),
                         entrance: entrance,
-                        delay: 0.05,
+                        delay: 0.08,
                         glow: glow,
                       ),
                       const SizedBox(height: 16),
                       _buildSlider(
-                        label: 'EFFETTI SONORI',
+                        label: l10n.settingsSfxLong,
                         value: _sfxVolume,
                         icon: Icons.surround_sound_rounded,
                         color: const Color(0xFFFF4466),
                         onChanged: (v) => setState(() => _sfxVolume = v),
                         onChangeEnd: (_) => _saveSettings(),
                         entrance: entrance,
-                        delay: 0.1,
+                        delay: 0.12,
                         glow: glow,
                       ),
 
                       const SizedBox(height: 24),
 
                       // Gameplay section
-                      _buildSectionHeader('GAMEPLAY', Icons.tune_rounded,
-                          const Color(0xFFCC00FF), entrance, 0.15),
+                      _buildSectionHeader(
+                          l10n.settingsGameplay,
+                          Icons.tune_rounded,
+                          const Color(0xFFCC00FF),
+                          entrance,
+                          0.18),
                       const SizedBox(height: 12),
                       _buildToggle(
-                        label: 'VIBRAZIONE',
+                        label: l10n.settingsVibration,
                         value: _vibration,
                         icon: Icons.vibration_rounded,
                         color: const Color(0xFFCC00FF),
@@ -277,12 +415,12 @@ class _SettingsScreenState extends State<SettingsScreen>
                           _saveSettings();
                         },
                         entrance: entrance,
-                        delay: 0.2,
+                        delay: 0.22,
                         glow: glow,
                       ),
                       const SizedBox(height: 12),
                       _buildToggle(
-                        label: 'MOSTRA FPS',
+                        label: l10n.settingsShowFps,
                         value: _showFps,
                         icon: Icons.speed_rounded,
                         color: Colors.greenAccent,
@@ -291,26 +429,34 @@ class _SettingsScreenState extends State<SettingsScreen>
                           _saveSettings();
                         },
                         entrance: entrance,
-                        delay: 0.25,
+                        delay: 0.26,
                         glow: glow,
                       ),
 
                       const SizedBox(height: 32),
 
                       // Danger zone
-                      _buildSectionHeader('ZONA PERICOLOSA',
-                          Icons.warning_rounded, Colors.redAccent, entrance, 0.3),
+                      _buildSectionHeader(
+                          l10n.settingsDangerZone,
+                          Icons.warning_rounded,
+                          Colors.redAccent,
+                          entrance,
+                          0.3),
                       const SizedBox(height: 12),
-                      _buildResetButton(entrance, glow),
+                      _buildResetButton(entrance, glow, l10n),
 
                       const SizedBox(height: 32),
 
                       // Test / Debug section
-                      _buildSectionHeader('TEST / DEBUG',
-                          Icons.bug_report_rounded, Colors.amberAccent, entrance, 0.4),
+                      _buildSectionHeader(
+                          l10n.settingsTestDebug,
+                          Icons.bug_report_rounded,
+                          Colors.amberAccent,
+                          entrance,
+                          0.4),
                       const SizedBox(height: 12),
                       _buildTestButton(
-                        label: '+1000 CREDITI',
+                        label: l10n.settingsAddCredits,
                         icon: Icons.add_circle_outline,
                         color: Colors.amberAccent,
                         entrance: entrance,
@@ -323,8 +469,10 @@ class _SettingsScreenState extends State<SettingsScreen>
                           if (!mounted) return;
                           messenger.showSnackBar(
                             SnackBar(
-                              content: Text('+1000 crediti! Totale: ${save.goldGeoms}',
-                                  style: const TextStyle(fontFamily: 'monospace')),
+                              content: Text(
+                                  l10n.settingsCreditsAdded(save.goldGeoms),
+                                  style: const TextStyle(
+                                      fontFamily: 'monospace')),
                               backgroundColor: Colors.amberAccent.shade700,
                               duration: const Duration(seconds: 1),
                             ),
@@ -333,7 +481,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                       ),
                       const SizedBox(height: 12),
                       _buildTestButton(
-                        label: 'RESET ACQUISTI',
+                        label: l10n.settingsResetPurchases,
                         icon: Icons.restart_alt_rounded,
                         color: Colors.orangeAccent,
                         entrance: entrance,
@@ -366,18 +514,19 @@ class _SettingsScreenState extends State<SettingsScreen>
                           await SaveManager.save(save);
                           if (!mounted) return;
                           messenger.showSnackBar(
-                            const SnackBar(
-                              content: Text('Acquisti resettati!',
-                                  style: TextStyle(fontFamily: 'monospace')),
+                            SnackBar(
+                              content: Text(l10n.settingsPurchasesReset,
+                                  style: const TextStyle(
+                                      fontFamily: 'monospace')),
                               backgroundColor: Colors.orangeAccent,
-                              duration: Duration(seconds: 1),
+                              duration: const Duration(seconds: 1),
                             ),
                           );
                         },
                       ),
                       const SizedBox(height: 12),
                       _buildTestButton(
-                        label: 'CRASH LOGS',
+                        label: l10n.settingsCrashLogs,
                         icon: Icons.report_problem_rounded,
                         color: Colors.redAccent,
                         entrance: entrance,
@@ -396,7 +545,7 @@ class _SettingsScreenState extends State<SettingsScreen>
     );
   }
 
-  Widget _buildHeader(double entrance) {
+  Widget _buildHeader(double entrance, AppLocalizations l10n) {
     return Opacity(
       opacity: entrance,
       child: Transform.translate(
@@ -420,9 +569,9 @@ class _SettingsScreenState extends State<SettingsScreen>
                 ),
               ),
               const SizedBox(width: 16),
-              const Text(
-                'SETTINGS',
-                style: TextStyle(
+              Text(
+                l10n.settingsTitle,
+                style: const TextStyle(
                   color: Colors.cyanAccent,
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -740,7 +889,8 @@ class _SettingsScreenState extends State<SettingsScreen>
     );
   }
 
-  Widget _buildResetButton(double entrance, double glow) {
+  Widget _buildResetButton(
+      double entrance, double glow, AppLocalizations l10n) {
     final e = ((entrance - 0.35) / 0.65).clamp(0.0, 1.0);
 
     return Opacity(
@@ -759,22 +909,22 @@ class _SettingsScreenState extends State<SettingsScreen>
                     side: BorderSide(
                         color: Colors.redAccent.withValues(alpha: 0.3)),
                   ),
-                  title: const Row(
+                  title: Row(
                     children: [
-                      Icon(Icons.warning_rounded,
+                      const Icon(Icons.warning_rounded,
                           color: Colors.redAccent, size: 20),
-                      SizedBox(width: 8),
-                      Text('RESET DATA',
-                          style: TextStyle(
+                      const SizedBox(width: 8),
+                      Text(l10n.settingsResetTitle,
+                          style: const TextStyle(
                             color: Colors.redAccent,
                             fontFamily: 'monospace',
                             fontSize: 16,
                           )),
                     ],
                   ),
-                  content: const Text(
-                    'Tutti i progressi, upgrade e acquisti verranno cancellati.',
-                    style: TextStyle(
+                  content: Text(
+                    l10n.settingsResetWarning,
+                    style: const TextStyle(
                         color: Colors.white70,
                         fontFamily: 'monospace',
                         fontSize: 12),
@@ -782,14 +932,15 @@ class _SettingsScreenState extends State<SettingsScreen>
                   actions: [
                     TextButton(
                       onPressed: () => Navigator.pop(context, false),
-                      child: const Text('ANNULLA',
-                          style: TextStyle(
-                              color: Colors.white54, fontFamily: 'monospace')),
+                      child: Text(l10n.cancel,
+                          style: const TextStyle(
+                              color: Colors.white54,
+                              fontFamily: 'monospace')),
                     ),
                     TextButton(
                       onPressed: () => Navigator.pop(context, true),
-                      child: const Text('RESET',
-                          style: TextStyle(
+                      child: Text(l10n.settingsResetButton,
+                          style: const TextStyle(
                               color: Colors.redAccent,
                               fontFamily: 'monospace',
                               fontWeight: FontWeight.bold)),
@@ -813,6 +964,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                   _sfxVolume = 0.8;
                   _vibration = true;
                   _showFps = false;
+                  _languageCode = 'it';
                 });
                 // Riapplico i volumi runtime: `prefs.remove` pulisce il
                 // persistente ma il mixer live conserva l'ultimo valore
@@ -822,6 +974,10 @@ class _SettingsScreenState extends State<SettingsScreen>
                 AudioSystem.setBgmVolume(_bgmVolume);
                 AudioSystem.setVibration(_vibration);
                 unawaited(MusicManager.setVolume(_bgmVolume));
+                // Reset locale a default 'it': `SaveManager.clear()` ha
+                // wipato il save quindi load() restituirà un nuovo SaveData
+                // con languageCode='it'. Sync appLocale globale.
+                appLocale.value = const Locale('it');
               }
             },
             child: Container(
@@ -837,15 +993,15 @@ class _SettingsScreenState extends State<SettingsScreen>
                   ],
                 ),
               ),
-              child: const Row(
+              child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.delete_forever_rounded,
+                  const Icon(Icons.delete_forever_rounded,
                       color: Colors.redAccent, size: 18),
-                  SizedBox(width: 8),
+                  const SizedBox(width: 8),
                   Text(
-                    'RESET ALL DATA',
-                    style: TextStyle(
+                    l10n.settingsResetAllData,
+                    style: const TextStyle(
                       color: Colors.redAccent,
                       fontFamily: 'monospace',
                       fontWeight: FontWeight.bold,

@@ -1,0 +1,300 @@
+{
+  "@@locale": "ja",
+  "appTitle": "Geometry Fight 2",
+
+  "menuPlay": "プレイ",
+  "menuShop": "ショップ",
+  "menuStore": "ショップ",
+  "menuSettings": "設定",
+  "menuStats": "統計",
+  "menuAchievements": "トロフィー",
+  "menuAchievementsAlt": "実績",
+  "menuLeaderboard": "ランキング",
+  "menuQuit": "終了",
+
+  "diffEasy": "イージー",
+  "diffNormal": "ノーマル",
+  "diffHard": "ハード",
+  "diffNightmare": "ナイトメア",
+  "diffNext": "次へ",
+  "diffTitle": "難易度",
+  "diffScoreMultiplier": "スコア",
+
+  "settingsTitle": "設定",
+  "settingsAudio": "オーディオ",
+  "settingsGameplay": "ゲームプレイ",
+  "settingsMusic": "ミュージック",
+  "settingsSfx": "SFX",
+  "settingsSfxLong": "効果音",
+  "settingsVibration": "バイブレーション",
+  "settingsShowFps": "FPS表示",
+  "settingsLanguage": "言語",
+  "settingsCrashLogs": "クラッシュログ",
+  "settingsReset": "データリセット",
+  "settingsDangerZone": "危険ゾーン",
+  "settingsTestDebug": "TEST / DEBUG",
+  "settingsAddCredits": "+1000 クレジット",
+  "settingsResetPurchases": "購入リセット",
+  "settingsPurchasesReset": "購入がリセットされました!",
+  "settingsCreditsAdded": "+1000クレジット!合計: {total}",
+  "@settingsCreditsAdded": {
+    "placeholders": { "total": { "type": "int" } }
+  },
+  "settingsCrashLogsTitle": "クラッシュ ({count})",
+  "@settingsCrashLogsTitle": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "settingsNoCrash": "クラッシュ記録はありません。\nゲームが落ちた場合ここに表示されます。",
+  "settingsCopy": "コピー",
+  "settingsDelete": "削除",
+  "settingsLogsCopied": "ログをコピーしました",
+
+  "shopTitle": "ショップ",
+  "shopGoldInsufficient": "ゴールドが足りません!",
+  "shopEquip": "装備",
+  "shopEquipped": "装備中",
+  "shopBuy": "購入",
+  "shopMaxLevel": "MAX",
+  "shopTabWeapons": "武器",
+  "shopTabSkins": "スキン",
+  "shopTabTrails": "トレイル",
+  "shopTabPets": "ペット",
+  "shopTabUpgrades": "アップグレード",
+  "shopTabModes": "モード",
+  "shopPurchased": "購入しました!",
+  "shopLocked": "ロック中",
+  "shopCost": "価格",
+  "shopLevel": "レベル",
+  "shopScrollMore": "スクロールでもっと",
+
+  "loadoutTitle": "装備品",
+  "loadoutWeapon": "武器",
+  "loadoutPet": "ペット",
+  "loadoutLocked": "ショップでこの武器を解除",
+  "loadoutPetLocked": "ショップでこのペットを解除",
+  "loadoutStart": "ゲーム開始",
+  "loadoutPetNone": "なし",
+
+  "shopAlreadyMax": "{name} は最大レベルです！",
+  "@shopAlreadyMax": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "shopUpgradedToLevel": "{name} LV {level}",
+  "@shopUpgradedToLevel": {
+    "placeholders": {
+      "name": { "type": "String" },
+      "level": { "type": "int" }
+    }
+  },
+  "shopLevelOf": "LV {current} / {max}",
+  "@shopLevelOf": {
+    "placeholders": {
+      "current": { "type": "int" },
+      "max": { "type": "int" }
+    }
+  },
+  "shopBadgeNew": "新",
+  "shopBadgeUnlocked": "解除済み",
+  "shopBuyWithCost": "購入 {cost}g",
+  "@shopBuyWithCost": {
+    "placeholders": { "cost": { "type": "int" } }
+  },
+  "shopTapNodeForDetails": "ノードをタップして詳細を表示",
+
+  "modeTitle": "モード",
+  "modeSelectTitle": "モードを選択",
+  "modeEndless": "エンドレス",
+  "modeBossRush": "ボスラッシュ",
+  "modeSurvival": "サバイバル",
+  "modeChallenge": "チャレンジ",
+  "modeClassic": "クラシック",
+  "modePacifist": "パシフィスト",
+  "modeTimeAttack": "タイムアタック",
+  "modeZen": "禅",
+  "modeTunnel": "トンネル",
+  "modeDailyChallenge": "デイリーチャレンジ",
+  "modeWaves": "ウェーブ",
+  "modeGravityInferno": "重力インフェルノ",
+
+  "splashSkip": "スキップ",
+  "splashTapToStart": "タップしてスタート",
+
+  "modifiersTitle": "モディファイア",
+  "modifiersConfirm": "確認",
+
+  "back": "戻る",
+  "play": "プレイ",
+  "pause": "一時停止",
+  "resume": "再開",
+  "restart": "リスタート",
+  "retry": "リトライ",
+  "quit": "終了",
+  "close": "閉じる",
+  "next": "次へ",
+  "start": "スタート",
+  "yes": "はい",
+  "no": "いいえ",
+  "confirm": "確認",
+  "cancel": "キャンセル",
+  "continueAction": "続ける",
+
+  "score": "スコア",
+  "wave": "ウェーブ",
+  "lives": "ライフ",
+  "level": "レベル",
+  "gold": "ゴールド",
+  "geoms": "GEOMS",
+  "best": "ベスト",
+  "kills": "キル",
+  "timeLabel": "タイム",
+  "highScore": "ハイスコア",
+  "newRun": "ニューラン",
+
+  "gameOver": "ゲームオーバー",
+  "newRecord": "新記録!",
+  "victory": "勝利",
+
+  "achievementsTitle": "トロフィー",
+  "achievementUnlocked": "トロフィー獲得!",
+  "achievementCategoryCombat": "戦闘",
+  "achievementCategoryScore": "スコア",
+  "achievementCategoryProgress": "進捗",
+  "achievementCategoryMastery": "マスタリー",
+  "achievementCategorySpecial": "スペシャル",
+
+  "leaderboardTitle": "ランキング",
+  "leaderboardEmpty": "まだスコアがありません",
+
+  "statsTitle": "統計",
+  "summaryTitle": "サマリー",
+
+  "dailyRewardTitle": "デイリーリワード",
+  "dailyRewardGeoms": "+{amount} GEOM",
+  "@dailyRewardGeoms": {
+    "placeholders": { "amount": { "type": "int" } }
+  },
+  "dailyRewardStreakOne": "連続: {count}日",
+  "@dailyRewardStreakOne": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "dailyRewardStreakMany": "連続: {count}日",
+  "@dailyRewardStreakMany": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+
+  "settingsResetTitle": "データリセット",
+  "settingsResetWarning": "全ての進行状況、アップグレード、購入が削除されます。",
+  "settingsResetButton": "リセット",
+  "settingsResetAllData": "全データをリセット",
+  "badgeKiller": "キラー",
+  "badgeMassacre": "大虐殺",
+  "badgePersistent": "粘り強い",
+  "badgeVeteran": "ベテラン",
+  "badgeBossHunter": "ボスハンター",
+  "badgeRegicide": "国王殺し",
+  "newAchievementBanner": "★ 新しい実績! ★",
+
+  "columnDate": "日付",
+  "leaderboardRecords": "{count} REC",
+  "@leaderboardRecords": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "leaderboardNoRecord": "記録なし",
+  "leaderboardEmptyHint": "このモードをプレイして\nランキングに挑戦！",
+
+  "statsSectionGeneral": "全般",
+  "statsSectionCombat": "戦闘",
+  "statsSectionRecords": "記録",
+  "statsSectionAchievements": "実績",
+  "statsSectionScoresByMode": "モード別スコア",
+  "statsGamesPlayed": "プレイ回数",
+  "statsTotalPlaytime": "総プレイ時間",
+  "statsTotalGoldEarned": "獲得ゴールド合計",
+  "statsCurrentGold": "現在のゴールド",
+  "statsEnemiesKilled": "倒した敵",
+  "statsBossesDefeated": "倒したボス",
+  "statsBombsUsed": "使用したボム",
+  "statsPowerUpsCollected": "取得したパワーアップ",
+  "statsGeomsCollected": "取得したGeom",
+  "statsBestScore": "ベストスコア",
+  "statsHighestWave": "最高ウェーブ",
+  "statsMaxMultiplier": "最大倍率",
+  "statsMaxSessionKills": "1ゲーム最大キル",
+  "statsMaxPerfectStreak": "最大パーフェクトウェーブ",
+  "statsAchievementsUnlocked": "解除済み",
+
+  "summaryNone": "なし",
+  "summaryScoreMultiplierTitle": "スコア倍率",
+  "summaryDifficultyRow": "難易度",
+  "summaryModifiersRow": "モディファイア",
+  "summaryTotal": "合計",
+  "summaryActiveModifiers": "{count} 有効 · ×{mult} score",
+  "@summaryActiveModifiers": {
+    "placeholders": {
+      "count": { "type": "int" },
+      "mult": { "type": "String" }
+    }
+  },
+
+  "languageItalian": "Italiano",
+  "languageEnglish": "English",
+  "languageSpanish": "Español",
+  "languageFrench": "Français",
+  "languageGerman": "Deutsch",
+  "languagePortuguese": "Português",
+  "languageChinese": "中文",
+  "languageJapanese": "日本語",
+  "languageRussian": "Русский",
+
+  "modifiersMaxActive": "最大 {count} モディファイア",
+  "@modifiersMaxActive": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "modifiersScoreLabel": "スコア x{mult}",
+  "@modifiersScoreLabel": {
+    "placeholders": { "mult": { "type": "String" } }
+  },
+  "modifiersActiveCount": "有効: {count}/{max}",
+  "@modifiersActiveCount": {
+    "placeholders": {
+      "count": { "type": "int" },
+      "max": { "type": "int" }
+    }
+  },
+
+  "hudBossWave": "ボス ウェーブ {wave}",
+  "@hudBossWave": {
+    "placeholders": { "wave": { "type": "int" } }
+  },
+  "hudWaveNumber": "ウェーブ {wave}",
+  "@hudWaveNumber": {
+    "placeholders": { "wave": { "type": "int" } }
+  },
+  "hudPerfectWave": "パーフェクトウェーブ！",
+  "hudPerfectBonus": "+10 GEOMS ボーナス",
+  "hudEnemiesRemaining": "敵 {count}",
+  "@hudEnemiesRemaining": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "hudBoost2x": "2x ブースト",
+
+  "powerUpRapidFire": "ラピッドファイア",
+  "powerUpOverdrive": "オーバードライブ",
+  "powerUpMagnet": "マグネット",
+  "powerUpTimeSlow": "タイムスロー",
+  "powerUpSpreadShot": "スプレッドショット",
+  "powerUpFirePower": "ファイアパワー",
+
+  "tutorialTitle": "遊び方",
+  "tutorialLeftJoystick": "左スティック",
+  "tutorialLeftJoystickDesc": "機体を移動",
+  "tutorialRightJoystick": "右スティック",
+  "tutorialRightJoystickDesc": "自動で照準・射撃",
+  "tutorialBomb": "ボム",
+  "tutorialBombDesc": "近くの敵をすべて破壊",
+  "tutorialGeoms": "GEOMS",
+  "tutorialGeomsDesc": "集めてスコアとアップグレード",
+  "tutorialPowerUp": "パワーアップ",
+  "tutorialPowerUpDesc": "一時的なブースト",
+  "tutorialTapToStart": "タップしてスタート"
+}

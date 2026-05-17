@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../../data/constants.dart';
 import '../../data/pet_types.dart';
 import '../../data/save_data.dart';
+import '../../l10n/generated/app_localizations.dart';
 import '../widgets/neon_back_button.dart';
 
 /// Schermata Loadout — pre-game weapon + pet selection in DUE STEP
@@ -59,7 +60,8 @@ class _LoadoutScreenState extends State<LoadoutScreen> {
 
   void _selectWeapon(String id) {
     if (!_saveData.unlockedWeapons.contains(id)) {
-      _showLockedSnack('Sblocca questa arma nello SHOP');
+      final l10n = AppLocalizations.of(context)!;
+      _showLockedSnack(l10n.loadoutLocked);
       return;
     }
     setState(() => _saveData = _saveData.copyWith(startingWeapon: id));
@@ -68,7 +70,8 @@ class _LoadoutScreenState extends State<LoadoutScreen> {
 
   void _selectPet(String id) {
     if (id != 'none' && !_saveData.unlockedPets.contains(id)) {
-      _showLockedSnack('Sblocca questo pet nello SHOP');
+      final l10n = AppLocalizations.of(context)!;
+      _showLockedSnack(l10n.loadoutPetLocked);
       return;
     }
     setState(() => _saveData = _saveData.copyWith(activePet: id));
@@ -103,6 +106,7 @@ class _LoadoutScreenState extends State<LoadoutScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final isWeaponsStep = _step == 0;
     return Scaffold(
       backgroundColor: Colors.black,
@@ -118,7 +122,9 @@ class _LoadoutScreenState extends State<LoadoutScreen> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
-                      isWeaponsStep ? 'LOADOUT — ARMA' : 'LOADOUT — PET',
+                      isWeaponsStep
+                          ? '${l10n.loadoutTitle} — ${l10n.loadoutWeapon}'
+                          : '${l10n.loadoutTitle} — ${l10n.loadoutPet}',
                       textAlign: TextAlign.center,
                       style: const TextStyle(
                         color: Colors.white,
@@ -183,7 +189,7 @@ class _LoadoutScreenState extends State<LoadoutScreen> {
                   ),
                   alignment: Alignment.center,
                   child: Text(
-                    isWeaponsStep ? 'AVANTI' : 'AVVIA PARTITA',
+                    isWeaponsStep ? l10n.next : l10n.loadoutStart,
                     style: const TextStyle(
                       color: NeonColors.green,
                       fontSize: 16,
@@ -226,6 +232,7 @@ class _LoadoutScreenState extends State<LoadoutScreen> {
   }
 
   Widget _buildPetsGrid() {
+    final l10n = AppLocalizations.of(context)!;
     return Center(
       child: Wrap(
         spacing: 10,
@@ -233,7 +240,7 @@ class _LoadoutScreenState extends State<LoadoutScreen> {
         alignment: WrapAlignment.center,
         children: [
           _NeonLoadoutCard(
-            title: 'NESSUNO',
+            title: l10n.loadoutPetNone,
             isSelected: _saveData.activePet == 'none',
             isUnlocked: true,
             color: const Color(0xFF888888),
@@ -287,6 +294,7 @@ class _NeonLoadoutCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final disabled = !isUnlocked;
     final eff = disabled ? const Color(0xFF555555) : color;
     // Caveman-review: locked cards still tappable so the selector can show a
@@ -405,7 +413,7 @@ class _NeonLoadoutCard extends StatelessWidget {
                                   Colors.amber.withValues(alpha: 0.7)),
                           const SizedBox(width: 3),
                           Text(
-                            'SHOP',
+                            l10n.menuShop,
                             style: TextStyle(
                               color:
                                   Colors.amber.withValues(alpha: 0.7),

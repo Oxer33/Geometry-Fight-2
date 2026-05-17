@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../data/modifiers.dart';
+import '../../l10n/generated/app_localizations.dart';
 
 class ModifiersSheet extends StatefulWidget {
   final List<String> activeModifiers;
@@ -37,16 +38,17 @@ class _ModifiersSheetState extends State<ModifiersSheet> {
     if (wasAtCap) {
       // Feedback utente: cap raggiunto, drop silenzioso → SnackBar esplicita.
       if (!mounted) return;
+      final l10n = AppLocalizations.of(context)!;
       ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
         ..showSnackBar(
-          const SnackBar(
-            duration: Duration(milliseconds: 1500),
-            backgroundColor: Color(0xFF0A0A1A),
+          SnackBar(
+            duration: const Duration(milliseconds: 1500),
+            backgroundColor: const Color(0xFF0A0A1A),
             behavior: SnackBarBehavior.floating,
             content: Text(
-              'MAX 3 MODIFICATORI',
-              style: TextStyle(
+              l10n.modifiersMaxActive(3),
+              style: const TextStyle(
                 color: Colors.orangeAccent,
                 fontFamily: 'monospace',
                 letterSpacing: 2,
@@ -69,6 +71,7 @@ class _ModifiersSheetState extends State<ModifiersSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final multiplier = combinedScoreMultiplier(_active);
 
     return Container(
@@ -95,9 +98,9 @@ class _ModifiersSheetState extends State<ModifiersSheet> {
             padding: const EdgeInsets.all(16),
             child: Row(
               children: [
-                const Text(
-                  'MODIFICATORI',
-                  style: TextStyle(
+                Text(
+                  l10n.modifiersTitle,
+                  style: const TextStyle(
                     color: Colors.cyanAccent,
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
@@ -118,7 +121,7 @@ class _ModifiersSheetState extends State<ModifiersSheet> {
                       borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(
-                      'Score x${multiplier.toStringAsFixed(1)}',
+                      l10n.modifiersScoreLabel(multiplier.toStringAsFixed(1)),
                       style: TextStyle(
                         color: multiplier > 1.0 ? Colors.greenAccent : Colors.orangeAccent,
                         fontSize: 11,

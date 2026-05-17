@@ -1,0 +1,300 @@
+{
+  "@@locale": "zh",
+  "appTitle": "Geometry Fight 2",
+
+  "menuPlay": "开始游戏",
+  "menuShop": "商店",
+  "menuStore": "商店",
+  "menuSettings": "设置",
+  "menuStats": "统计",
+  "menuAchievements": "奖杯",
+  "menuAchievementsAlt": "成就",
+  "menuLeaderboard": "排行榜",
+  "menuQuit": "退出",
+
+  "diffEasy": "简单",
+  "diffNormal": "普通",
+  "diffHard": "困难",
+  "diffNightmare": "噩梦",
+  "diffNext": "下一步",
+  "diffTitle": "难度",
+  "diffScoreMultiplier": "得分",
+
+  "settingsTitle": "设置",
+  "settingsAudio": "音频",
+  "settingsGameplay": "玩法",
+  "settingsMusic": "音乐",
+  "settingsSfx": "音效",
+  "settingsSfxLong": "音效",
+  "settingsVibration": "震动",
+  "settingsShowFps": "显示 FPS",
+  "settingsLanguage": "语言",
+  "settingsCrashLogs": "崩溃日志",
+  "settingsReset": "重置数据",
+  "settingsDangerZone": "危险区",
+  "settingsTestDebug": "测试 / 调试",
+  "settingsAddCredits": "+1000 点数",
+  "settingsResetPurchases": "重置购买",
+  "settingsPurchasesReset": "购买已重置!",
+  "settingsCreditsAdded": "+1000 点数!总计:{total}",
+  "@settingsCreditsAdded": {
+    "placeholders": { "total": { "type": "int" } }
+  },
+  "settingsCrashLogsTitle": "崩溃 ({count})",
+  "@settingsCrashLogsTitle": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "settingsNoCrash": "没有崩溃记录。\n如果游戏崩溃,将显示在这里。",
+  "settingsCopy": "复制",
+  "settingsDelete": "删除",
+  "settingsLogsCopied": "日志已复制",
+
+  "shopTitle": "商店",
+  "shopGoldInsufficient": "金币不足!",
+  "shopEquip": "装备",
+  "shopEquipped": "已装备",
+  "shopBuy": "购买",
+  "shopMaxLevel": "MAX",
+  "shopTabWeapons": "武器",
+  "shopTabSkins": "皮肤",
+  "shopTabTrails": "尾迹",
+  "shopTabPets": "宠物",
+  "shopTabUpgrades": "升级",
+  "shopTabModes": "模式",
+  "shopPurchased": "已购买!",
+  "shopLocked": "已锁定",
+  "shopCost": "价格",
+  "shopLevel": "等级",
+  "shopScrollMore": "滚动查看更多",
+
+  "loadoutTitle": "装备",
+  "loadoutWeapon": "武器",
+  "loadoutPet": "宠物",
+  "loadoutLocked": "在商店解锁此武器",
+  "loadoutPetLocked": "在商店解锁此宠物",
+  "loadoutStart": "开始游戏",
+  "loadoutPetNone": "无",
+
+  "shopAlreadyMax": "{name} 已满级！",
+  "@shopAlreadyMax": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "shopUpgradedToLevel": "{name} 等级 {level}",
+  "@shopUpgradedToLevel": {
+    "placeholders": {
+      "name": { "type": "String" },
+      "level": { "type": "int" }
+    }
+  },
+  "shopLevelOf": "等级 {current} / {max}",
+  "@shopLevelOf": {
+    "placeholders": {
+      "current": { "type": "int" },
+      "max": { "type": "int" }
+    }
+  },
+  "shopBadgeNew": "新",
+  "shopBadgeUnlocked": "已解锁",
+  "shopBuyWithCost": "购买 {cost}g",
+  "@shopBuyWithCost": {
+    "placeholders": { "cost": { "type": "int" } }
+  },
+  "shopTapNodeForDetails": "点击节点查看详情",
+
+  "modeTitle": "模式",
+  "modeSelectTitle": "选择模式",
+  "modeEndless": "无尽",
+  "modeBossRush": "BOSS 冲刺",
+  "modeSurvival": "生存",
+  "modeChallenge": "挑战",
+  "modeClassic": "经典",
+  "modePacifist": "和平主义",
+  "modeTimeAttack": "限时挑战",
+  "modeZen": "禅意",
+  "modeTunnel": "隧道",
+  "modeDailyChallenge": "每日挑战",
+  "modeWaves": "波次",
+  "modeGravityInferno": "引力炼狱",
+
+  "splashSkip": "跳过",
+  "splashTapToStart": "点击开始",
+
+  "modifiersTitle": "修饰符",
+  "modifiersConfirm": "确认",
+
+  "back": "返回",
+  "play": "开始",
+  "pause": "暂停",
+  "resume": "继续",
+  "restart": "重新开始",
+  "retry": "重试",
+  "quit": "退出",
+  "close": "关闭",
+  "next": "下一步",
+  "start": "开始",
+  "yes": "是",
+  "no": "否",
+  "confirm": "确认",
+  "cancel": "取消",
+  "continueAction": "继续",
+
+  "score": "得分",
+  "wave": "波次",
+  "lives": "生命",
+  "level": "等级",
+  "gold": "金币",
+  "geoms": "GEOMS",
+  "best": "最佳",
+  "kills": "击杀",
+  "timeLabel": "时间",
+  "highScore": "最高分",
+  "newRun": "新一轮",
+
+  "gameOver": "游戏结束",
+  "newRecord": "新纪录!",
+  "victory": "胜利",
+
+  "achievementsTitle": "奖杯",
+  "achievementUnlocked": "奖杯解锁!",
+  "achievementCategoryCombat": "战斗",
+  "achievementCategoryScore": "得分",
+  "achievementCategoryProgress": "进度",
+  "achievementCategoryMastery": "精通",
+  "achievementCategorySpecial": "特别",
+
+  "leaderboardTitle": "排行榜",
+  "leaderboardEmpty": "暂无成绩",
+
+  "statsTitle": "统计",
+  "summaryTitle": "总结",
+
+  "dailyRewardTitle": "每日奖励",
+  "dailyRewardGeoms": "+{amount} GEOM",
+  "@dailyRewardGeoms": {
+    "placeholders": { "amount": { "type": "int" } }
+  },
+  "dailyRewardStreakOne": "连续:{count} 天",
+  "@dailyRewardStreakOne": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "dailyRewardStreakMany": "连续:{count} 天",
+  "@dailyRewardStreakMany": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+
+  "settingsResetTitle": "重置数据",
+  "settingsResetWarning": "所有进度、升级和购买将被清除。",
+  "settingsResetButton": "重置",
+  "settingsResetAllData": "重置所有数据",
+  "badgeKiller": "杀手",
+  "badgeMassacre": "大屠杀",
+  "badgePersistent": "坚持者",
+  "badgeVeteran": "老兵",
+  "badgeBossHunter": "BOSS猎手",
+  "badgeRegicide": "弑君者",
+  "newAchievementBanner": "★ 新成就! ★",
+
+  "columnDate": "日期",
+  "leaderboardRecords": "{count} 记录",
+  "@leaderboardRecords": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "leaderboardNoRecord": "暂无记录",
+  "leaderboardEmptyHint": "在此模式下游玩\n以进入排行榜！",
+
+  "statsSectionGeneral": "综合",
+  "statsSectionCombat": "战斗",
+  "statsSectionRecords": "记录",
+  "statsSectionAchievements": "成就",
+  "statsSectionScoresByMode": "各模式得分",
+  "statsGamesPlayed": "游戏场数",
+  "statsTotalPlaytime": "总游戏时间",
+  "statsTotalGoldEarned": "累计金币",
+  "statsCurrentGold": "当前金币",
+  "statsEnemiesKilled": "击杀敌人",
+  "statsBossesDefeated": "击败BOSS",
+  "statsBombsUsed": "使用炸弹",
+  "statsPowerUpsCollected": "收集道具",
+  "statsGeomsCollected": "收集Geom",
+  "statsBestScore": "最高得分",
+  "statsHighestWave": "最高波次",
+  "statsMaxMultiplier": "最大倍率",
+  "statsMaxSessionKills": "单局最多击杀",
+  "statsMaxPerfectStreak": "最长完美波次",
+  "statsAchievementsUnlocked": "已解锁",
+
+  "summaryNone": "无",
+  "summaryScoreMultiplierTitle": "得分倍率",
+  "summaryDifficultyRow": "难度",
+  "summaryModifiersRow": "修改器",
+  "summaryTotal": "总计",
+  "summaryActiveModifiers": "{count} 个激活 · ×{mult} score",
+  "@summaryActiveModifiers": {
+    "placeholders": {
+      "count": { "type": "int" },
+      "mult": { "type": "String" }
+    }
+  },
+
+  "languageItalian": "Italiano",
+  "languageEnglish": "English",
+  "languageSpanish": "Español",
+  "languageFrench": "Français",
+  "languageGerman": "Deutsch",
+  "languagePortuguese": "Português",
+  "languageChinese": "中文",
+  "languageJapanese": "日本語",
+  "languageRussian": "Русский",
+
+  "modifiersMaxActive": "最多 {count} 个修饰符",
+  "@modifiersMaxActive": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "modifiersScoreLabel": "分数 x{mult}",
+  "@modifiersScoreLabel": {
+    "placeholders": { "mult": { "type": "String" } }
+  },
+  "modifiersActiveCount": "已启用: {count}/{max}",
+  "@modifiersActiveCount": {
+    "placeholders": {
+      "count": { "type": "int" },
+      "max": { "type": "int" }
+    }
+  },
+
+  "hudBossWave": "BOSS 第 {wave} 波",
+  "@hudBossWave": {
+    "placeholders": { "wave": { "type": "int" } }
+  },
+  "hudWaveNumber": "第 {wave} 波",
+  "@hudWaveNumber": {
+    "placeholders": { "wave": { "type": "int" } }
+  },
+  "hudPerfectWave": "完美一波！",
+  "hudPerfectBonus": "+10 GEOMS 奖励",
+  "hudEnemiesRemaining": "{count} 个敌人",
+  "@hudEnemiesRemaining": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "hudBoost2x": "2x 加成",
+
+  "powerUpRapidFire": "快速射击",
+  "powerUpOverdrive": "超载",
+  "powerUpMagnet": "磁铁",
+  "powerUpTimeSlow": "时间减缓",
+  "powerUpSpreadShot": "散射",
+  "powerUpFirePower": "火力",
+
+  "tutorialTitle": "如何游玩",
+  "tutorialLeftJoystick": "左摇杆",
+  "tutorialLeftJoystickDesc": "移动飞船",
+  "tutorialRightJoystick": "右摇杆",
+  "tutorialRightJoystickDesc": "瞄准并自动射击",
+  "tutorialBomb": "炸弹",
+  "tutorialBombDesc": "摧毁附近所有敌人",
+  "tutorialGeoms": "GEOMS",
+  "tutorialGeomsDesc": "收集以获得积分和升级",
+  "tutorialPowerUp": "强化道具",
+  "tutorialPowerUpDesc": "临时加成",
+  "tutorialTapToStart": "点击开始"
+}

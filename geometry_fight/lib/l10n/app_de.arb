@@ -1,0 +1,300 @@
+{
+  "@@locale": "de",
+  "appTitle": "Geometry Fight 2",
+
+  "menuPlay": "SPIELEN",
+  "menuShop": "SHOP",
+  "menuStore": "SHOP",
+  "menuSettings": "EINSTELLUNGEN",
+  "menuStats": "STATISTIKEN",
+  "menuAchievements": "TROPHÄEN",
+  "menuAchievementsAlt": "ERFOLGE",
+  "menuLeaderboard": "BESTENLISTE",
+  "menuQuit": "BEENDEN",
+
+  "diffEasy": "LEICHT",
+  "diffNormal": "NORMAL",
+  "diffHard": "SCHWER",
+  "diffNightmare": "ALPTRAUM",
+  "diffNext": "WEITER",
+  "diffTitle": "SCHWIERIGKEIT",
+  "diffScoreMultiplier": "punkte",
+
+  "settingsTitle": "EINSTELLUNGEN",
+  "settingsAudio": "AUDIO",
+  "settingsGameplay": "GAMEPLAY",
+  "settingsMusic": "MUSIK",
+  "settingsSfx": "SFX",
+  "settingsSfxLong": "SOUND-EFFEKTE",
+  "settingsVibration": "VIBRATION",
+  "settingsShowFps": "FPS ANZEIGEN",
+  "settingsLanguage": "SPRACHE",
+  "settingsCrashLogs": "ABSTURZBERICHTE",
+  "settingsReset": "DATEN ZURÜCKSETZEN",
+  "settingsDangerZone": "GEFAHRENZONE",
+  "settingsTestDebug": "TEST / DEBUG",
+  "settingsAddCredits": "+1000 KREDITS",
+  "settingsResetPurchases": "KÄUFE ZURÜCKSETZEN",
+  "settingsPurchasesReset": "Käufe zurückgesetzt!",
+  "settingsCreditsAdded": "+1000 Kredits! Gesamt: {total}",
+  "@settingsCreditsAdded": {
+    "placeholders": { "total": { "type": "int" } }
+  },
+  "settingsCrashLogsTitle": "ABSTÜRZE ({count})",
+  "@settingsCrashLogsTitle": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "settingsNoCrash": "Keine Abstürze protokolliert.\nBei Absturz erscheint er hier.",
+  "settingsCopy": "KOPIEREN",
+  "settingsDelete": "LÖSCHEN",
+  "settingsLogsCopied": "Protokolle kopiert",
+
+  "shopTitle": "SHOP",
+  "shopGoldInsufficient": "Nicht genug Gold!",
+  "shopEquip": "AUSRÜSTEN",
+  "shopEquipped": "AUSGERÜSTET",
+  "shopBuy": "KAUFEN",
+  "shopMaxLevel": "MAX",
+  "shopTabWeapons": "WAFFEN",
+  "shopTabSkins": "SKINS",
+  "shopTabTrails": "SPUREN",
+  "shopTabPets": "GEFÄHRTEN",
+  "shopTabUpgrades": "UPGRADES",
+  "shopTabModes": "MODI",
+  "shopPurchased": "Gekauft!",
+  "shopLocked": "GESPERRT",
+  "shopCost": "KOSTEN",
+  "shopLevel": "STUFE",
+  "shopScrollMore": "Scrollen für mehr",
+
+  "loadoutTitle": "AUSRÜSTUNG",
+  "loadoutWeapon": "WAFFE",
+  "loadoutPet": "GEFÄHRTE",
+  "loadoutLocked": "Schalte diese Waffe im SHOP frei",
+  "loadoutPetLocked": "Schalte diesen Gefährten im SHOP frei",
+  "loadoutStart": "SPIEL STARTEN",
+  "loadoutPetNone": "KEINER",
+
+  "shopAlreadyMax": "{name} bereits maximal!",
+  "@shopAlreadyMax": {
+    "placeholders": { "name": { "type": "String" } }
+  },
+  "shopUpgradedToLevel": "{name} LV {level}",
+  "@shopUpgradedToLevel": {
+    "placeholders": {
+      "name": { "type": "String" },
+      "level": { "type": "int" }
+    }
+  },
+  "shopLevelOf": "LV {current} / {max}",
+  "@shopLevelOf": {
+    "placeholders": {
+      "current": { "type": "int" },
+      "max": { "type": "int" }
+    }
+  },
+  "shopBadgeNew": "NEU",
+  "shopBadgeUnlocked": "FREIGESCHALTET",
+  "shopBuyWithCost": "KAUFEN {cost}g",
+  "@shopBuyWithCost": {
+    "placeholders": { "cost": { "type": "int" } }
+  },
+  "shopTapNodeForDetails": "TIPPE EINEN KNOTEN AN FÜR DETAILS",
+
+  "modeTitle": "MODUS",
+  "modeSelectTitle": "MODUS WÄHLEN",
+  "modeEndless": "ENDLOS",
+  "modeBossRush": "BOSS RUSH",
+  "modeSurvival": "ÜBERLEBEN",
+  "modeChallenge": "HERAUSFORDERUNG",
+  "modeClassic": "KLASSISCH",
+  "modePacifist": "PAZIFIST",
+  "modeTimeAttack": "ZEITANGRIFF",
+  "modeZen": "ZEN",
+  "modeTunnel": "TUNNEL",
+  "modeDailyChallenge": "TÄGLICHE HERAUSFORDERUNG",
+  "modeWaves": "WELLEN",
+  "modeGravityInferno": "GRAVITATIONS-INFERNO",
+
+  "splashSkip": "ÜBERSPRINGEN",
+  "splashTapToStart": "TIPPE ZUM STARTEN",
+
+  "modifiersTitle": "MODIFIKATOREN",
+  "modifiersConfirm": "BESTÄTIGEN",
+
+  "back": "ZURÜCK",
+  "play": "SPIELEN",
+  "pause": "PAUSE",
+  "resume": "FORTSETZEN",
+  "restart": "NEUSTART",
+  "retry": "ERNEUT",
+  "quit": "BEENDEN",
+  "close": "SCHLIESSEN",
+  "next": "WEITER",
+  "start": "START",
+  "yes": "JA",
+  "no": "NEIN",
+  "confirm": "BESTÄTIGEN",
+  "cancel": "ABBRECHEN",
+  "continueAction": "WEITER",
+
+  "score": "PUNKTE",
+  "wave": "WELLE",
+  "lives": "LEBEN",
+  "level": "STUFE",
+  "gold": "GOLD",
+  "geoms": "GEOMS",
+  "best": "BEST",
+  "kills": "KILLS",
+  "timeLabel": "ZEIT",
+  "highScore": "REKORD",
+  "newRun": "NEUE RUNDE",
+
+  "gameOver": "SPIEL VORBEI",
+  "newRecord": "NEUER REKORD!",
+  "victory": "SIEG",
+
+  "achievementsTitle": "TROPHÄEN",
+  "achievementUnlocked": "Trophäe freigeschaltet!",
+  "achievementCategoryCombat": "KAMPF",
+  "achievementCategoryScore": "PUNKTE",
+  "achievementCategoryProgress": "FORTSCHRITT",
+  "achievementCategoryMastery": "MEISTERSCHAFT",
+  "achievementCategorySpecial": "SPEZIAL",
+
+  "leaderboardTitle": "BESTENLISTE",
+  "leaderboardEmpty": "Noch keine Punkte",
+
+  "statsTitle": "STATISTIKEN",
+  "summaryTitle": "ZUSAMMENFASSUNG",
+
+  "dailyRewardTitle": "TÄGLICHE BELOHNUNG",
+  "dailyRewardGeoms": "+{amount} GEOM",
+  "@dailyRewardGeoms": {
+    "placeholders": { "amount": { "type": "int" } }
+  },
+  "dailyRewardStreakOne": "Serie: {count} Tag",
+  "@dailyRewardStreakOne": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "dailyRewardStreakMany": "Serie: {count} Tage",
+  "@dailyRewardStreakMany": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+
+  "settingsResetTitle": "ZURÜCKSETZEN",
+  "settingsResetWarning": "Alle Fortschritte, Upgrades und Käufe werden gelöscht.",
+  "settingsResetButton": "RESET",
+  "settingsResetAllData": "ALLE DATEN LÖSCHEN",
+  "badgeKiller": "KILLER",
+  "badgeMassacre": "MASSAKER",
+  "badgePersistent": "BEHARRLICH",
+  "badgeVeteran": "VETERAN",
+  "badgeBossHunter": "BOSS-JÄGER",
+  "badgeRegicide": "KÖNIGSMÖRDER",
+  "newAchievementBanner": "★ NEUER ERFOLG! ★",
+
+  "columnDate": "DATUM",
+  "leaderboardRecords": "{count} REC",
+  "@leaderboardRecords": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "leaderboardNoRecord": "KEINE REKORDE",
+  "leaderboardEmptyHint": "Spiele diesen Modus,\num in die Bestenliste zu kommen!",
+
+  "statsSectionGeneral": "ALLGEMEIN",
+  "statsSectionCombat": "KAMPF",
+  "statsSectionRecords": "REKORDE",
+  "statsSectionAchievements": "ERFOLGE",
+  "statsSectionScoresByMode": "PUNKTE NACH MODUS",
+  "statsGamesPlayed": "Gespielte Spiele",
+  "statsTotalPlaytime": "Gesamtspielzeit",
+  "statsTotalGoldEarned": "Gesamtes Gold verdient",
+  "statsCurrentGold": "Aktuelles Gold",
+  "statsEnemiesKilled": "Getötete Gegner",
+  "statsBossesDefeated": "Besiegte Bosse",
+  "statsBombsUsed": "Verwendete Bomben",
+  "statsPowerUpsCollected": "Power-ups gesammelt",
+  "statsGeomsCollected": "Geoms gesammelt",
+  "statsBestScore": "Beste Punktzahl",
+  "statsHighestWave": "Höchste Welle",
+  "statsMaxMultiplier": "Max. Multiplikator",
+  "statsMaxSessionKills": "Max. Kills pro Runde",
+  "statsMaxPerfectStreak": "Max. perfekte Wellen",
+  "statsAchievementsUnlocked": "Freigeschaltet",
+
+  "summaryNone": "Keine",
+  "summaryScoreMultiplierTitle": "PUNKTE-MULTIPLIKATOR",
+  "summaryDifficultyRow": "Schwierigkeit",
+  "summaryModifiersRow": "Modifikatoren",
+  "summaryTotal": "GESAMT",
+  "summaryActiveModifiers": "{count} aktiv · ×{mult} score",
+  "@summaryActiveModifiers": {
+    "placeholders": {
+      "count": { "type": "int" },
+      "mult": { "type": "String" }
+    }
+  },
+
+  "languageItalian": "Italiano",
+  "languageEnglish": "English",
+  "languageSpanish": "Español",
+  "languageFrench": "Français",
+  "languageGerman": "Deutsch",
+  "languagePortuguese": "Português",
+  "languageChinese": "中文",
+  "languageJapanese": "日本語",
+  "languageRussian": "Русский",
+
+  "modifiersMaxActive": "MAX {count} MODIFIKATOREN",
+  "@modifiersMaxActive": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "modifiersScoreLabel": "Score x{mult}",
+  "@modifiersScoreLabel": {
+    "placeholders": { "mult": { "type": "String" } }
+  },
+  "modifiersActiveCount": "Aktiv: {count}/{max}",
+  "@modifiersActiveCount": {
+    "placeholders": {
+      "count": { "type": "int" },
+      "max": { "type": "int" }
+    }
+  },
+
+  "hudBossWave": "BOSS WELLE {wave}",
+  "@hudBossWave": {
+    "placeholders": { "wave": { "type": "int" } }
+  },
+  "hudWaveNumber": "WELLE {wave}",
+  "@hudWaveNumber": {
+    "placeholders": { "wave": { "type": "int" } }
+  },
+  "hudPerfectWave": "PERFEKTE WELLE!",
+  "hudPerfectBonus": "+10 GEOMS BONUS",
+  "hudEnemiesRemaining": "{count} GEGNER",
+  "@hudEnemiesRemaining": {
+    "placeholders": { "count": { "type": "int" } }
+  },
+  "hudBoost2x": "2x BOOST",
+
+  "powerUpRapidFire": "SCHNELLFEUER",
+  "powerUpOverdrive": "OVERDRIVE",
+  "powerUpMagnet": "MAGNET",
+  "powerUpTimeSlow": "ZEITLUPE",
+  "powerUpSpreadShot": "STREUSCHUSS",
+  "powerUpFirePower": "FEUERKRAFT",
+
+  "tutorialTitle": "SO WIRD GESPIELT",
+  "tutorialLeftJoystick": "LINKER JOYSTICK",
+  "tutorialLeftJoystickDesc": "Bewege das Schiff",
+  "tutorialRightJoystick": "RECHTER JOYSTICK",
+  "tutorialRightJoystickDesc": "Ziele und schieße automatisch",
+  "tutorialBomb": "BOMBE",
+  "tutorialBombDesc": "Zerstört alle nahen Gegner",
+  "tutorialGeoms": "GEOMS",
+  "tutorialGeomsDesc": "Sammle sie für Punkte und Upgrades",
+  "tutorialPowerUp": "POWER-UP",
+  "tutorialPowerUpDesc": "Zeitlich begrenzte Boosts",
+  "tutorialTapToStart": "TIPPEN ZUM STARTEN"
+}

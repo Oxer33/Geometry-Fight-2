@@ -1,8 +1,12 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+// ignore: unused_import
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'l10n/generated/app_localizations.dart';
+import 'data/language_controller.dart';
 import 'data/save_data.dart';
 import 'data/crash_reporter.dart';
 import 'game/systems/audio_system.dart';
@@ -80,6 +84,13 @@ void main() async {
     await initOrResetBox(
         'geometry_fight_achievements', AchievementManager.init);
 
+    // Seed locale globale dal save tramite `LanguageController` (Hive →
+    // ChangeNotifier). MaterialApp ascolta il controller via AnimatedBuilder
+    // per refresh live al cambio lingua. `appLocale` resta come shim per
+    // chiamate legacy (es. settings_screen) ed è tenuto in sync sotto.
+    await LanguageController.instance.init();
+    appLocale.value = LanguageController.instance.locale;
+
     // Initialize audio system (SFX) + music manager (BGM)
     await AudioSystem.init();
     await MusicManager.init();
@@ -95,22 +106,61 @@ void main() async {
   }, CrashReporter.handleZoneError);
 }
 
-class GeometryFightApp extends StatelessWidget {
+/// Legacy locale notifier kept for backward compatibility with screens that
+/// still import `appLocale` directly (e.g. `settings_screen.dart`).
+/// The new source of truth is [LanguageController.instance]; this notifier
+/// mirrors the controller's locale via a listener registered in
+/// [GeometryFightApp.initState] so existing callers keep working.
+final ValueNotifier<Locale> appLocale = ValueNotifier<Locale>(const Locale('it'));
+
+class GeometryFightApp extends StatefulWidget {
   const GeometryFightApp({super.key});
 
   @override
+  State<GeometryFightApp> createState() => _GeometryFightAppState();
+}
+
+class _GeometryFightAppState extends State<GeometryFightApp> {
+  @override
+  void initState() {
+    super.initState();
+    // Keep the legacy `appLocale` notifier in sync with the new
+    // LanguageController source-of-truth so existing screens
+    // (e.g. settings_screen.dart) continue to read the right value.
+    LanguageController.instance.addListener(_syncLegacyAppLocale);
+  }
+
+  @override
+  void dispose() {
+    LanguageController.instance.removeListener(_syncLegacyAppLocale);
+    super.dispose();
+  }
+
+  void _syncLegacyAppLocale() {
+    appLocale.value = LanguageController.instance.locale;
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Geometry Fight',
-      debugShowCheckedModeBanner: false,
-      // color: background a livello OS/task-switcher durante launch
-      // + fallback se theme non si applica ancora.
-      color: Colors.black,
-      theme: ThemeData.dark().copyWith(
-        scaffoldBackgroundColor: Colors.black,
-        canvasColor: Colors.black,
-      ),
-      home: const NavigationWrapper(),
+    return AnimatedBuilder(
+      animation: LanguageController.instance,
+      builder: (context, _) {
+        return MaterialApp(
+          title: 'Geometry Fight',
+          debugShowCheckedModeBanner: false,
+          // color: background a livello OS/task-switcher durante launch
+          // + fallback se theme non si applica ancora.
+          color: Colors.black,
+          theme: ThemeData.dark().copyWith(
+            scaffoldBackgroundColor: Colors.black,
+            canvasColor: Colors.black,
+          ),
+          locale: LanguageController.instance.locale,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: const NavigationWrapper(),
+        );
+      },
     );
   }
 }

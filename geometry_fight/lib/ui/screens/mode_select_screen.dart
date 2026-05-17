@@ -2,6 +2,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../../data/difficulty.dart';
 import '../../data/save_data.dart';
+import '../../l10n/generated/app_localizations.dart';
 import '../widgets/neon_back_button.dart';
 import 'modifiers_screen.dart';
 
@@ -71,6 +72,7 @@ class _ModeSelectScreenState extends State<ModeSelectScreen>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final saveData = _saveData;
     return Scaffold(
       backgroundColor: Colors.black,
@@ -86,7 +88,7 @@ class _ModeSelectScreenState extends State<ModeSelectScreen>
             return Column(
               children: [
                 // Header (con step indicator 1/5 a destra integrato — iter 8).
-                _buildHeader(entrance, glow),
+                _buildHeader(l10n, entrance, glow),
 
                 // Mode list orizzontale (con scroll arrow indicator)
                 Expanded(
@@ -100,7 +102,7 @@ class _ModeSelectScreenState extends State<ModeSelectScreen>
                         // Iter 13 (utente: "togliamo freccia scroll"):
                         // rimossi Stack + chevron icon + black gradient fade.
                         Expanded(
-                          child: _buildModeList(saveData, entrance, glow),
+                          child: _buildModeList(l10n, saveData, entrance, glow),
                         ),
                       ],
                     ),
@@ -108,7 +110,7 @@ class _ModeSelectScreenState extends State<ModeSelectScreen>
                 ),
 
                 // Pulsante AVANTI (era START)
-                _buildStartButton(entrance, startPulse),
+                _buildStartButton(l10n, entrance, startPulse),
               ],
             );
           },
@@ -117,7 +119,7 @@ class _ModeSelectScreenState extends State<ModeSelectScreen>
     );
   }
 
-  Widget _buildHeader(double entrance, double glow) {
+  Widget _buildHeader(AppLocalizations l10n, double entrance, double glow) {
     return Opacity(
       opacity: entrance,
       child: Transform.translate(
@@ -128,10 +130,10 @@ class _ModeSelectScreenState extends State<ModeSelectScreen>
             children: [
               NeonBackButton(onTap: widget.onBack),
               const SizedBox(width: 16),
-              const Expanded(
+              Expanded(
                 child: Text(
-                  'SELEZIONA MODALITÀ',
-                  style: TextStyle(
+                  l10n.modeSelectTitle,
+                  style: const TextStyle(
                     color: Colors.cyanAccent,
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -170,7 +172,8 @@ class _ModeSelectScreenState extends State<ModeSelectScreen>
 
   // Iter 8: rimosso _buildSectionLabel (unused dopo cleanup duplicato).
 
-  Widget _buildModeList(SaveData saveData, double entrance, double glow) {
+  Widget _buildModeList(
+      AppLocalizations l10n, SaveData saveData, double entrance, double glow) {
     final e = ((entrance - 0.15) / 0.85).clamp(0.0, 1.0);
     // Iter 12 (utente: "card alte la metà + 2 file"). GridView 2 row.
     return Opacity(
@@ -194,6 +197,7 @@ class _ModeSelectScreenState extends State<ModeSelectScreen>
               final isSelected = _selectedMode == mode;
               return _NeonModeCard(
                 config: config,
+                modeName: _modeName(l10n, mode),
                 mode: mode,
                 isSelected: isSelected,
                 isUnlocked: isUnlocked,
@@ -207,6 +211,21 @@ class _ModeSelectScreenState extends State<ModeSelectScreen>
         ),
       ),
     );
+  }
+
+  String _modeName(AppLocalizations l10n, GameMode mode) {
+    switch (mode) {
+      case GameMode.classic: return l10n.modeClassic;
+      case GameMode.bossRush: return l10n.modeBossRush;
+      case GameMode.survival: return l10n.modeSurvival;
+      case GameMode.timeAttack: return l10n.modeTimeAttack;
+      case GameMode.zenMode: return l10n.modeZen;
+      case GameMode.tunnel: return l10n.modeTunnel;
+      case GameMode.dailyChallenge: return l10n.modeDailyChallenge;
+      case GameMode.pacifist: return l10n.modePacifist;
+      case GameMode.waves: return l10n.modeWaves;
+      case GameMode.gravityInferno: return l10n.modeGravityInferno;
+    }
   }
 
   // Removed _buildDifficultyList: difficoltà ora in DifficultySelectScreen.
@@ -394,7 +413,7 @@ class _ModeSelectScreenState extends State<ModeSelectScreen>
     );
   }
 
-  Widget _buildStartButton(double entrance, double pulse) {
+  Widget _buildStartButton(AppLocalizations l10n, double entrance, double pulse) {
     final e = ((entrance - 0.5) / 0.5).clamp(0.0, 1.0);
     return Opacity(
       opacity: e,
@@ -434,10 +453,10 @@ class _ModeSelectScreenState extends State<ModeSelectScreen>
                   ],
                 ),
               ),
-              child: const Center(
+              child: Center(
                 child: Text(
-                  'AVANTI',
-                  style: TextStyle(
+                  l10n.next,
+                  style: const TextStyle(
                     color: Colors.cyanAccent,
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -490,6 +509,7 @@ Color _modeColor(GameMode m) {
 
 class _NeonModeCard extends StatelessWidget {
   final GameModeConfig config;
+  final String modeName;
   final bool isSelected;
   final bool isUnlocked;
   final double glow;
@@ -499,6 +519,7 @@ class _NeonModeCard extends StatelessWidget {
 
   const _NeonModeCard({
     required this.config,
+    required this.modeName,
     required this.isSelected,
     required this.isUnlocked,
     required this.glow,
@@ -590,7 +611,7 @@ class _NeonModeCard extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
-                            config.name,
+                            modeName,
                             style: TextStyle(
                               // Iter 13 contrast (utente: "scritta selected
                               // stesso colore della card"): selected → white

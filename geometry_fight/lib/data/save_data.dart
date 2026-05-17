@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart' show Locale;
 import 'package:hive/hive.dart';
 
 class SaveData {
@@ -29,6 +30,11 @@ class SaveData {
   String lastDailyClaim;
   int dailyStreak;
 
+  /// Codice lingua attiva (ISO 639-1, es. 'it', 'en', 'es', 'fr', 'de', 'pt',
+  /// 'zh', 'ja', 'ru'). Default 'it' (lingua di sviluppo originale).
+  /// Cambiabile da Settings → LINGUA. Usato per `MaterialApp.locale`.
+  String languageCode;
+
   SaveData({
     this.goldGeoms = 0,
     Map<String, int>? upgrades,
@@ -48,6 +54,7 @@ class SaveData {
     List<String>? unlockedPets,
     this.lastDailyClaim = '',
     this.dailyStreak = 0,
+    this.languageCode = 'it',
   })  : upgrades = upgrades ?? {},
         unlockedSkins = unlockedSkins ?? ['classic'],
         unlockedTrails = unlockedTrails ?? ['normal'],
@@ -60,6 +67,9 @@ class SaveData {
         unlockedPets = unlockedPets ?? ['none'];
 
   int getUpgradeLevel(String id) => upgrades[id] ?? 0;
+
+  /// Locale Flutter derivata da `languageCode`. Usata da `MaterialApp.locale`.
+  Locale get locale => Locale(languageCode);
 
   double get damageMultiplier {
     final level = getUpgradeLevel('firepower');
@@ -150,7 +160,11 @@ class SaveData {
 
   /// Minimal copyWith for loadout-style mutations that need to swap a single
   /// field without sharing the existing instance reference.
-  SaveData copyWith({String? startingWeapon, String? activePet}) {
+  SaveData copyWith({
+    String? startingWeapon,
+    String? activePet,
+    String? languageCode,
+  }) {
     return SaveData(
       goldGeoms: goldGeoms,
       upgrades: Map<String, int>.from(upgrades),
@@ -170,6 +184,7 @@ class SaveData {
       unlockedPets: List<String>.from(unlockedPets),
       lastDailyClaim: lastDailyClaim,
       dailyStreak: dailyStreak,
+      languageCode: languageCode ?? this.languageCode,
     );
   }
 
@@ -192,6 +207,7 @@ class SaveData {
         'unlockedPets': unlockedPets,
         'lastDailyClaim': lastDailyClaim,
         'dailyStreak': dailyStreak,
+        'languageCode': languageCode,
       };
 
   factory SaveData.fromJson(Map<String, dynamic> json) => SaveData(
@@ -222,6 +238,9 @@ class SaveData {
         unlockedPets: List<String>.from(json['unlockedPets'] ?? ['none']),
         lastDailyClaim: json['lastDailyClaim'] ?? '',
         dailyStreak: (json['dailyStreak'] as num?)?.toInt() ?? 0,
+        // Default 'it' per back-compat: save vecchi senza il campo prendono
+        // la lingua di sviluppo originale.
+        languageCode: (json['languageCode'] as String?) ?? 'it',
       );
 }
 

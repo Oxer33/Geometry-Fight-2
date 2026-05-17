@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import '../../l10n/generated/app_localizations.dart';
 import '../widgets/animated_builder_widget.dart';
 
 /// Splash screen cinematografico: navicella cyan insegue un drone rosa
@@ -95,6 +96,7 @@ class _SplashScreenState extends State<SplashScreen>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: Colors.black,
       body: GestureDetector(
@@ -114,6 +116,7 @@ class _SplashScreenState extends State<SplashScreen>
                     logoScale: _showLogo ? _logoScale.value : 0,
                     showExplosion: _showExplosion,
                     explosionPhase: _explosionPhase,
+                    tapToStartText: l10n.splashTapToStart,
                   ),
                   size: screenSize,
                 );
@@ -171,7 +174,7 @@ class _SplashScreenState extends State<SplashScreen>
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Text(
-                            'SKIP',
+                            l10n.splashSkip,
                             style: TextStyle(
                               color: neonColor,
                               fontSize: 13,
@@ -217,6 +220,7 @@ class _SplashPainter extends CustomPainter {
   final double logoScale;
   final bool showExplosion;
   final double explosionPhase;
+  final String tapToStartText;
 
   // Paint cache statici — evitano migliaia di alloc/sec durante la splash.
   // Il chase-scene renderizza 18 trail nave × 2 layer × 60fps = 2160 alloc,
@@ -339,6 +343,7 @@ class _SplashPainter extends CustomPainter {
   static int _cachedTitleScaleQ = -1;
   static TextPainter? _cachedSubPainter;
   static int _cachedSubAlphaPulseQ = -1;
+  static String? _cachedSubText;
 
   _SplashPainter({
     required this.chaseProgress,
@@ -347,6 +352,7 @@ class _SplashPainter extends CustomPainter {
     required this.logoScale,
     required this.showExplosion,
     required this.explosionPhase,
+    required this.tapToStartText,
   });
 
   @override
@@ -1067,12 +1073,14 @@ class _SplashPainter extends CustomPainter {
       // Pulsazione del sottotitolo
       final pulse = 0.3 + math.sin(bgPhase * math.pi * 4) * 0.15;
       // Cache sub-painter per alpha*pulse quantizzato (stesso approccio).
+      // Cache invalidata anche se il testo localizzato cambia (es. cambio lingua).
       final subAlphaPulseQ = (subAlpha * pulse * 255).round();
       if (_cachedSubPainter == null ||
-          _cachedSubAlphaPulseQ != subAlphaPulseQ) {
+          _cachedSubAlphaPulseQ != subAlphaPulseQ ||
+          _cachedSubText != tapToStartText) {
         _cachedSubPainter = TextPainter(
           text: TextSpan(
-            text: 'TOCCA PER INIZIARE',
+            text: tapToStartText,
             style: TextStyle(
               color: Color.fromRGBO(255, 255, 255, subAlpha * pulse),
               fontSize: 12,
@@ -1083,6 +1091,7 @@ class _SplashPainter extends CustomPainter {
           textDirection: TextDirection.ltr,
         )..layout();
         _cachedSubAlphaPulseQ = subAlphaPulseQ;
+        _cachedSubText = tapToStartText;
       }
       final subPainter = _cachedSubPainter!;
       subPainter.paint(

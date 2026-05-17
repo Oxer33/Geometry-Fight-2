@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import '../../l10n/generated/app_localizations.dart';
 import '../widgets/shared_painters.dart';
 
 class PauseScreen extends StatefulWidget {
@@ -87,6 +88,7 @@ class _PauseScreenState extends State<PauseScreen>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return AnimatedBuilder(
       animation: Listenable.merge([
         _entranceController,
@@ -136,7 +138,7 @@ class _PauseScreenState extends State<PauseScreen>
                     offset: Offset(0, _titleSlide.value),
                     child: Opacity(
                       opacity: _titleFade.value,
-                      child: _buildTitle(pulse),
+                      child: _buildTitle(pulse, l10n.pause),
                     ),
                   ),
 
@@ -179,7 +181,7 @@ class _PauseScreenState extends State<PauseScreen>
                       child: Column(
                         children: [
                           _NeonPauseButton(
-                            text: 'RESUME',
+                            text: l10n.resume,
                             color: Colors.cyanAccent,
                             icon: Icons.play_arrow_rounded,
                             onTap: widget.onResume,
@@ -188,7 +190,7 @@ class _PauseScreenState extends State<PauseScreen>
                           ),
                           const SizedBox(height: 16),
                           _NeonPauseButton(
-                            text: 'QUIT',
+                            text: l10n.quit,
                             color: const Color(0xFFFF4466),
                             icon: Icons.exit_to_app_rounded,
                             onTap: widget.onQuit,
@@ -226,7 +228,7 @@ class _PauseScreenState extends State<PauseScreen>
     );
   }
 
-  Widget _buildTitle(double pulse) {
+  Widget _buildTitle(double pulse, String title) {
     final glowRadius = 15.0 + pulse * 10.0;
     return Stack(
       children: [
@@ -234,7 +236,7 @@ class _PauseScreenState extends State<PauseScreen>
         Transform.translate(
           offset: Offset(-1.5 + pulse * 0.5, 0),
           child: Text(
-            'PAUSED',
+            title,
             style: TextStyle(
               color: Colors.cyanAccent.withValues(alpha: 0.4),
               fontSize: 48,
@@ -248,7 +250,7 @@ class _PauseScreenState extends State<PauseScreen>
         Transform.translate(
           offset: Offset(1.5 - pulse * 0.5, 0),
           child: Text(
-            'PAUSED',
+            title,
             style: TextStyle(
               color: const Color(0xFFFF4466).withValues(alpha: 0.3),
               fontSize: 48,
@@ -260,7 +262,7 @@ class _PauseScreenState extends State<PauseScreen>
         ),
         // Main text
         Text(
-          'PAUSED',
+          title,
           style: TextStyle(
             color: Colors.white,
             fontSize: 48,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../l10n/generated/app_localizations.dart';
 
 /// Tutorial overlay che appare al primo avvio del gioco.
 /// Mostra i controlli base: joystick sinistro (movimento), destro (mira/sparo),
@@ -10,6 +11,7 @@ class TutorialOverlay extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     // PopScope: Android back NON deve bypassare il tutorial e popare la
     // schermata gioco senza marcare `tutorial_seen`. Intercetta → dismiss.
     return PopScope(
@@ -29,9 +31,9 @@ class TutorialOverlay extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   // Titolo
-                  const Text(
-                    'COME GIOCARE',
-                    style: TextStyle(
+                  Text(
+                    l10n.tutorialTitle,
+                    style: const TextStyle(
                       color: Colors.cyanAccent,
                       fontSize: 28,
                       fontWeight: FontWeight.w900,
@@ -45,39 +47,39 @@ class TutorialOverlay extends StatelessWidget {
                   const SizedBox(height: 24),
 
                   // Controlli
-                  const _ControlRow(
+                  _ControlRow(
                     icon: Icons.gamepad,
-                    label: 'JOYSTICK SINISTRO',
-                    description: 'Muovi la navicella',
+                    label: l10n.tutorialLeftJoystick,
+                    description: l10n.tutorialLeftJoystickDesc,
                     color: Colors.cyanAccent,
                   ),
                   const SizedBox(height: 12),
-                  const _ControlRow(
+                  _ControlRow(
                     icon: Icons.gps_fixed,
-                    label: 'JOYSTICK DESTRO',
-                    description: 'Mira e spara automaticamente',
-                    color: Color(0xFFFF4444),
+                    label: l10n.tutorialRightJoystick,
+                    description: l10n.tutorialRightJoystickDesc,
+                    color: const Color(0xFFFF4444),
                   ),
                   const SizedBox(height: 12),
-                  const _ControlRow(
+                  _ControlRow(
                     icon: Icons.flash_on,
-                    label: 'BOMBA',
-                    description: 'Distrugge tutti i nemici vicini',
-                    color: Color(0xFFFF6600),
+                    label: l10n.tutorialBomb,
+                    description: l10n.tutorialBombDesc,
+                    color: const Color(0xFFFF6600),
                   ),
                   const SizedBox(height: 12),
-                  const _ControlRow(
+                  _ControlRow(
                     icon: Icons.diamond,
-                    label: 'GEOMI',
-                    description: 'Raccoglili per punti e upgrade',
-                    color: Color(0xFF00FFFF),
+                    label: l10n.tutorialGeoms,
+                    description: l10n.tutorialGeomsDesc,
+                    color: const Color(0xFF00FFFF),
                   ),
                   const SizedBox(height: 12),
-                  const _ControlRow(
+                  _ControlRow(
                     icon: Icons.star,
-                    label: 'POWER-UP',
-                    description: 'Potenziamenti temporanei',
-                    color: Color(0xFFFFD700),
+                    label: l10n.tutorialPowerUp,
+                    description: l10n.tutorialPowerUpDesc,
+                    color: const Color(0xFFFFD700),
                   ),
 
                   const SizedBox(height: 32),
@@ -92,9 +94,9 @@ class TutorialOverlay extends StatelessWidget {
                         BoxShadow(color: Colors.cyanAccent.withValues(alpha: 0.3), blurRadius: 12),
                       ],
                     ),
-                    child: const Text(
-                      'TOCCA PER INIZIARE',
-                      style: TextStyle(
+                    child: Text(
+                      l10n.tutorialTapToStart,
+                      style: const TextStyle(
                         color: Colors.cyanAccent,
                         fontSize: 14,
                         fontWeight: FontWeight.bold,

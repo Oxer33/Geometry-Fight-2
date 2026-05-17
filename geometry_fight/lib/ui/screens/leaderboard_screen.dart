@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../data/leaderboard.dart';
+import '../../l10n/generated/app_localizations.dart';
 import '../widgets/neon_back_button.dart';
 
 /// Schermata leaderboard locale — classifica per modalità + difficoltà.
@@ -32,25 +33,25 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
         LeaderboardManager.getEntries(_selectedMode, _selectedDifficulty);
   }
 
-  static final _modes = [
-    ('classic', 'CLASSICA', Icons.bolt_rounded, const Color(0xFF00FFFF)),
-    ('bossRush', 'BOSS RUSH', Icons.shield_rounded, const Color(0xFFCC00FF)),
-    ('survival', 'SOPRAVVIVENZA', Icons.all_inclusive_rounded, const Color(0xFFFF4466)),
-    ('timeAttack', 'TEMPO', Icons.timer_rounded, const Color(0xFFFF8800)),
-    ('zenMode', 'ZEN', Icons.self_improvement_rounded, const Color(0xFF44FF44)),
-    ('tunnel', 'TUNNEL', Icons.rotate_90_degrees_ccw_rounded, const Color(0xFF4488FF)),
-    ('dailyChallenge', 'GIORNALIERA', Icons.calendar_today_rounded, const Color(0xFFFFD700)),
-    ('pacifist', 'PACIFISTA', Icons.spa_outlined, const Color(0xFF77FFD4)),
-    ('waves', 'WAVES', Icons.change_history, const Color(0xFFFF3344)),
-    ('gravityInferno', 'GRAVITY', Icons.blur_circular, const Color(0xFF9933FF)),
-  ];
+  List<(String, String, IconData, Color)> _modes(AppLocalizations l10n) => [
+        ('classic', l10n.modeClassic, Icons.bolt_rounded, const Color(0xFF00FFFF)),
+        ('bossRush', l10n.modeBossRush, Icons.shield_rounded, const Color(0xFFCC00FF)),
+        ('survival', l10n.modeSurvival, Icons.all_inclusive_rounded, const Color(0xFFFF4466)),
+        ('timeAttack', l10n.modeTimeAttack, Icons.timer_rounded, const Color(0xFFFF8800)),
+        ('zenMode', l10n.modeZen, Icons.self_improvement_rounded, const Color(0xFF44FF44)),
+        ('tunnel', l10n.modeTunnel, Icons.rotate_90_degrees_ccw_rounded, const Color(0xFF4488FF)),
+        ('dailyChallenge', l10n.modeDailyChallenge, Icons.calendar_today_rounded, const Color(0xFFFFD700)),
+        ('pacifist', l10n.modePacifist, Icons.spa_outlined, const Color(0xFF77FFD4)),
+        ('waves', l10n.modeWaves, Icons.change_history, const Color(0xFFFF3344)),
+        ('gravityInferno', l10n.modeGravityInferno, Icons.blur_circular, const Color(0xFF9933FF)),
+      ];
 
-  static const _difficulties = [
-    ('easy', 'FACILE', Color(0xFF44FF44)),
-    ('normal', 'NORMALE', Color(0xFF4488FF)),
-    ('hard', 'DIFFICILE', Color(0xFFFF8800)),
-    ('nightmare', 'INCUBO', Color(0xFFFF2244)),
-  ];
+  List<(String, String, Color)> _difficulties(AppLocalizations l10n) => [
+        ('easy', l10n.diffEasy, const Color(0xFF44FF44)),
+        ('normal', l10n.diffNormal, const Color(0xFF4488FF)),
+        ('hard', l10n.diffHard, const Color(0xFFFF8800)),
+        ('nightmare', l10n.diffNightmare, const Color(0xFFFF2244)),
+      ];
 
   @override
   void initState() {
@@ -78,6 +79,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final entries = _cachedEntries;
 
     return Scaffold(
@@ -92,20 +94,20 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
             return Column(
               children: [
                 // ── Header ──
-                _buildHeader(entrance, glow),
+                _buildHeader(l10n, entrance, glow),
 
                 // ── Filtro Modalità ──
-                _buildModeFilter(entrance),
+                _buildModeFilter(l10n, entrance),
 
                 const SizedBox(height: 6),
 
                 // ── Filtro Difficoltà ──
-                _buildDifficultyFilter(entrance, glow),
+                _buildDifficultyFilter(l10n, entrance, glow),
 
                 const SizedBox(height: 10),
 
                 // ── Intestazione colonne ──
-                _buildColumnHeaders(entrance),
+                _buildColumnHeaders(l10n, entrance),
 
                 // ── Divider ──
                 Padding(
@@ -131,7 +133,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
                 // ── Lista entries ──
                 Expanded(
                   child: entries.isEmpty
-                      ? _buildEmptyState(entrance, glow)
+                      ? _buildEmptyState(l10n, entrance, glow)
                       : _buildEntryList(entries, entrance, glow),
                 ),
               ],
@@ -142,7 +144,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
     );
   }
 
-  Widget _buildHeader(double entrance, double glow) {
+  Widget _buildHeader(AppLocalizations l10n, double entrance, double glow) {
     return Opacity(
       opacity: entrance,
       child: Transform.translate(
@@ -179,9 +181,9 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
                     color: Color(0xFFFFD700), size: 16),
               ),
               const SizedBox(width: 10),
-              const Text(
-                'CLASSIFICA',
-                style: TextStyle(
+              Text(
+                l10n.leaderboardTitle,
+                style: const TextStyle(
                   color: Color(0xFFFFD700),
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -203,7 +205,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
                   color: const Color(0xFFFFD700).withValues(alpha: 0.05),
                 ),
                 child: Text(
-                  '${_cachedEntries.length} REC',
+                  l10n.leaderboardRecords(_cachedEntries.length),
                   style: TextStyle(
                     color: const Color(0xFFFFD700).withValues(alpha: 0.6),
                     fontSize: 10,
@@ -219,7 +221,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
     );
   }
 
-  Widget _buildModeFilter(double entrance) {
+  Widget _buildModeFilter(AppLocalizations l10n, double entrance) {
     final e = ((entrance - 0.1) / 0.9).clamp(0.0, 1.0);
     return Opacity(
       opacity: e,
@@ -240,7 +242,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
             controller: _modeCtrl,
             scrollDirection: Axis.horizontal,
             child: Row(
-              children: _modes.map((m) {
+              children: _modes(l10n).map((m) {
                 final isSelected = _selectedMode == m.$1;
                 return _NeonModeChip(
                   label: m.$2,
@@ -261,7 +263,8 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
     );
   }
 
-  Widget _buildDifficultyFilter(double entrance, double glow) {
+  Widget _buildDifficultyFilter(
+      AppLocalizations l10n, double entrance, double glow) {
     final e = ((entrance - 0.15) / 0.85).clamp(0.0, 1.0);
     return Opacity(
       opacity: e,
@@ -270,7 +273,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12),
           child: Row(
-            children: _difficulties.map((d) {
+            children: _difficulties(l10n).map((d) {
               final isSelected = _selectedDifficulty == d.$1;
               return Expanded(
                 child: _NeonDifficultyTab(
@@ -291,7 +294,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
     );
   }
 
-  Widget _buildColumnHeaders(double entrance) {
+  Widget _buildColumnHeaders(AppLocalizations l10n, double entrance) {
     final e = ((entrance - 0.2) / 0.8).clamp(0.0, 1.0);
     return Opacity(
       opacity: e * 0.5,
@@ -301,17 +304,17 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
           children: [
             SizedBox(width: 30, child: Text('#', style: _headerStyle)),
             const SizedBox(width: 8),
-            Expanded(flex: 4, child: Text('PUNTEGGIO', style: _headerStyle)),
-            Expanded(flex: 2, child: Text('WAVE', style: _headerStyle)),
-            Expanded(flex: 2, child: Text('KILLS', style: _headerStyle)),
-            SizedBox(width: 50, child: Text('DATA', style: _headerStyle)),
+            Expanded(flex: 4, child: Text(l10n.score, style: _headerStyle)),
+            Expanded(flex: 2, child: Text(l10n.wave, style: _headerStyle)),
+            Expanded(flex: 2, child: Text(l10n.kills, style: _headerStyle)),
+            SizedBox(width: 50, child: Text(l10n.columnDate, style: _headerStyle)),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildEmptyState(double entrance, double glow) {
+  Widget _buildEmptyState(AppLocalizations l10n, double entrance, double glow) {
     final e = ((entrance - 0.3) / 0.7).clamp(0.0, 1.0);
     return Center(
       child: Opacity(
@@ -340,7 +343,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
               ),
               const SizedBox(height: 12),
               Text(
-                'NESSUN RECORD',
+                l10n.leaderboardNoRecord,
                 style: TextStyle(
                   color: Colors.white.withValues(alpha: 0.25),
                   fontSize: 14,
@@ -351,7 +354,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
               ),
               const SizedBox(height: 6),
               Text(
-                'Gioca in questa modalità\nper entrare in classifica!',
+                l10n.leaderboardEmptyHint,
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: Colors.white.withValues(alpha: 0.12),

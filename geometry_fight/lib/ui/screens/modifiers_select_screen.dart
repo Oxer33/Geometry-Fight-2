@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../data/constants.dart';
 import '../../data/difficulty.dart';
 import '../../data/modifiers.dart';
+import '../../l10n/generated/app_localizations.dart';
 import '../widgets/neon_back_button.dart';
 
 /// Iter 9: filtra modifier incompatibili con mode rules.
@@ -105,14 +106,15 @@ class _ModifiersSelectScreenState extends State<ModifiersSelectScreen> {
     });
     if (showCapSnack) {
       if (!mounted) return;
+      final l10n = AppLocalizations.of(context)!;
       ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
-        ..showSnackBar(const SnackBar(
-          duration: Duration(milliseconds: 1200),
-          backgroundColor: Color(0xFF0A0A1A),
+        ..showSnackBar(SnackBar(
+          duration: const Duration(milliseconds: 1200),
+          backgroundColor: const Color(0xFF0A0A1A),
           behavior: SnackBarBehavior.floating,
-          content: Text('MAX $_maxActive MODIFICATORI',
-              style: TextStyle(
+          content: Text(l10n.modifiersMaxActive(_maxActive),
+              style: const TextStyle(
                   color: Colors.amber,
                   fontFamily: 'monospace',
                   fontWeight: FontWeight.w900)),
@@ -122,6 +124,7 @@ class _ModifiersSelectScreenState extends State<ModifiersSelectScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: Colors.black,
       body: SafeArea(
@@ -133,11 +136,11 @@ class _ModifiersSelectScreenState extends State<ModifiersSelectScreen> {
                 children: [
                   NeonBackButton(onTap: widget.onBack),
                   const SizedBox(width: 12),
-                  const Expanded(
+                  Expanded(
                     child: Text(
-                      'MODIFICATORI',
+                      l10n.modifiersTitle,
                       textAlign: TextAlign.center,
-                      style: TextStyle(
+                      style: const TextStyle(
                         color: Colors.white,
                         fontSize: 18,
                         fontWeight: FontWeight.w900,
@@ -173,7 +176,7 @@ class _ModifiersSelectScreenState extends State<ModifiersSelectScreen> {
               child: Row(
                 children: [
                   Text(
-                    'Attivi: ${_active.length}/$_maxActive',
+                    l10n.modifiersActiveCount(_active.length, _maxActive),
                     style: TextStyle(
                       color: Colors.white.withValues(alpha: 0.6),
                       fontSize: 11,
@@ -182,7 +185,8 @@ class _ModifiersSelectScreenState extends State<ModifiersSelectScreen> {
                   ),
                   const Spacer(),
                   Text(
-                    'Score ×${combinedScoreMultiplier(_active).toStringAsFixed(2)}',
+                    l10n.modifiersScoreLabel(
+                        combinedScoreMultiplier(_active).toStringAsFixed(2)),
                     style: const TextStyle(
                       color: NeonColors.gold,
                       fontSize: 11,
@@ -295,9 +299,9 @@ class _ModifiersSelectScreenState extends State<ModifiersSelectScreen> {
                         width: 2),
                   ),
                   alignment: Alignment.center,
-                  child: const Text(
-                    'AVANTI',
-                    style: TextStyle(
+                  child: Text(
+                    l10n.next,
+                    style: const TextStyle(
                       color: NeonColors.green,
                       fontSize: 16,
                       fontWeight: FontWeight.w900,

@@ -4,6 +4,7 @@ import '../../data/difficulty.dart';
 import '../../data/modifiers.dart';
 import '../../data/pet_types.dart';
 import '../../data/save_data.dart';
+import '../../l10n/generated/app_localizations.dart';
 import '../widgets/neon_back_button.dart';
 
 /// Schermata RIEPILOGO pre-game (richiesta utente: "schermata di riepilogo
@@ -62,6 +63,7 @@ class _SummaryScreenState extends State<SummaryScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final saveData = _saveData;
     final diffCfg = difficultyConfigs[difficulty]!;
     final modScore = combinedScoreMultiplier(activeModifiers);
@@ -78,11 +80,11 @@ class _SummaryScreenState extends State<SummaryScreen> {
                 children: [
                   NeonBackButton(onTap: onBack),
                   const SizedBox(width: 12),
-                  const Expanded(
+                  Expanded(
                     child: Text(
-                      'RIEPILOGO',
+                      l10n.summaryTitle,
                       textAlign: TextAlign.center,
-                      style: TextStyle(
+                      style: const TextStyle(
                         color: Colors.white,
                         fontSize: 18,
                         fontWeight: FontWeight.w900,
@@ -126,27 +128,27 @@ class _SummaryScreenState extends State<SummaryScreen> {
                 controller: _scrollCtrl,
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 children: [
-                  _section('MODALITÀ', _modeName(mode), NeonColors.cyan),
-                  _section('DIFFICOLTÀ', diffCfg.name, _diffColor(difficulty),
+                  _section(l10n.modeTitle, _modeName(mode), NeonColors.cyan),
+                  _section(l10n.diffTitle, diffCfg.name, _diffColor(difficulty),
                       sub: '×${diffCfg.scoreMultiplier.toStringAsFixed(2)} score · '
                           'HP ×${diffCfg.enemyHpMultiplier} · '
                           'SPD ×${diffCfg.enemySpeedMultiplier}'),
                   // Pacifist: skip ARMA + PET (non si spara, no pet).
                   if (mode != GameMode.pacifist) ...[
-                    _section('ARMA',
+                    _section(l10n.loadoutWeapon,
                         saveData.startingWeapon.toUpperCase(),
                         NeonColors.bulletYellow),
                     _section(
-                        'PET',
+                        l10n.loadoutPet,
                         saveData.activePet == 'none'
-                            ? 'NESSUNO'
+                            ? l10n.loadoutPetNone
                             : (petDefById(saveData.activePet)?.displayName ??
                                 saveData.activePet.toUpperCase()),
                         NeonColors.pink),
                   ],
-                  _modifiersSection(),
+                  _modifiersSection(l10n),
                   const SizedBox(height: 12),
-                  _multiplierBreakdown(diffCfg.scoreMultiplier, modScore,
+                  _multiplierBreakdown(l10n, diffCfg.scoreMultiplier, modScore,
                       totalScore),
                 ],
               ),
@@ -171,9 +173,9 @@ class _SummaryScreenState extends State<SummaryScreen> {
                     ],
                   ),
                   alignment: Alignment.center,
-                  child: const Text(
-                    'AVVIA PARTITA',
-                    style: TextStyle(
+                  child: Text(
+                    l10n.loadoutStart,
+                    style: const TextStyle(
                       color: NeonColors.green,
                       fontSize: 18,
                       fontWeight: FontWeight.w900,
@@ -191,17 +193,18 @@ class _SummaryScreenState extends State<SummaryScreen> {
   }
 
   String _modeName(GameMode m) {
+    final l10n = AppLocalizations.of(context)!;
     switch (m) {
-      case GameMode.classic: return 'CLASSIC';
-      case GameMode.zenMode: return 'ZEN';
-      case GameMode.tunnel: return 'TUNNEL';
-      case GameMode.bossRush: return 'BOSS RUSH';
-      case GameMode.timeAttack: return 'TIME ATTACK';
-      case GameMode.survival: return 'SURVIVAL';
-      case GameMode.dailyChallenge: return 'DAILY';
-      case GameMode.pacifist: return 'PACIFIST';
-      case GameMode.waves: return 'WAVES';
-      case GameMode.gravityInferno: return 'GRAVITY INFERNO';
+      case GameMode.classic: return l10n.modeClassic;
+      case GameMode.zenMode: return l10n.modeZen;
+      case GameMode.tunnel: return l10n.modeTunnel;
+      case GameMode.bossRush: return l10n.modeBossRush;
+      case GameMode.timeAttack: return l10n.modeTimeAttack;
+      case GameMode.survival: return l10n.modeSurvival;
+      case GameMode.dailyChallenge: return l10n.modeDailyChallenge;
+      case GameMode.pacifist: return l10n.modePacifist;
+      case GameMode.waves: return l10n.modeWaves;
+      case GameMode.gravityInferno: return l10n.modeGravityInferno;
     }
   }
 
@@ -272,20 +275,22 @@ class _SummaryScreenState extends State<SummaryScreen> {
     );
   }
 
-  Widget _modifiersSection() {
+  Widget _modifiersSection(AppLocalizations l10n) {
     if (activeModifiers.isEmpty) {
-      return _section('MODIFICATORI', 'Nessuno',
+      return _section(l10n.modifiersTitle, l10n.summaryNone,
           Colors.white.withValues(alpha: 0.5));
     }
     final names = activeModifiers
         .map((id) => getModifier(id)?.name ?? id)
         .join(', ');
     final mult = combinedScoreMultiplier(activeModifiers);
-    return _section('MODIFICATORI', names, const Color(0xFFFF4466),
-        sub: '${activeModifiers.length} attivi · ×${mult.toStringAsFixed(2)} score');
+    return _section(l10n.modifiersTitle, names, const Color(0xFFFF4466),
+        sub: l10n.summaryActiveModifiers(
+            activeModifiers.length, mult.toStringAsFixed(2)));
   }
 
-  Widget _multiplierBreakdown(double diffMul, double modMul, double total) {
+  Widget _multiplierBreakdown(
+      AppLocalizations l10n, double diffMul, double modMul, double total) {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -304,9 +309,9 @@ class _SummaryScreenState extends State<SummaryScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'MOLTIPLICATORE PUNTEGGIO',
-            style: TextStyle(
+          Text(
+            l10n.summaryScoreMultiplierTitle,
+            style: const TextStyle(
               color: NeonColors.gold,
               fontSize: 11,
               fontWeight: FontWeight.w900,
@@ -315,10 +320,10 @@ class _SummaryScreenState extends State<SummaryScreen> {
             ),
           ),
           const SizedBox(height: 10),
-          _row('Difficoltà', '×${diffMul.toStringAsFixed(2)}'),
-          _row('Modificatori', '×${modMul.toStringAsFixed(2)}'),
+          _row(l10n.summaryDifficultyRow, '×${diffMul.toStringAsFixed(2)}'),
+          _row(l10n.summaryModifiersRow, '×${modMul.toStringAsFixed(2)}'),
           const Divider(color: Colors.white24),
-          _row('TOTALE', '×${total.toStringAsFixed(2)}',
+          _row(l10n.summaryTotal, '×${total.toStringAsFixed(2)}',
               big: true),
         ],
       ),

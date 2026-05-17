@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../data/save_data.dart';
 import '../../data/achievements.dart';
+import '../../l10n/generated/app_localizations.dart';
 import '../widgets/neon_back_button.dart';
 
 class StatsScreen extends StatefulWidget {
@@ -70,6 +71,7 @@ class _StatsScreenState extends State<StatsScreen>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final saveData = _saveData;
     final stats = _stats;
 
@@ -91,7 +93,7 @@ class _StatsScreenState extends State<StatsScreen>
             return Column(
               children: [
                 // Header
-                _buildHeader(entrance),
+                _buildHeader(l10n, entrance),
 
                 // Stats list
                 Expanded(
@@ -110,43 +112,43 @@ class _StatsScreenState extends State<StatsScreen>
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _buildSection('GENERALE', Colors.cyanAccent, entrance, 0.0, [
-                          _StatData('Partite giocate', '${_animInt(stats['gamesPlayed'] ?? 0, counter)}', Icons.videogame_asset_rounded, Colors.cyanAccent),
-                          _StatData('Tempo totale', _formatPlaytime(saveData.totalPlaytime), Icons.timer_rounded, Colors.cyanAccent),
-                          _StatData('Gold totale guadagnato', '${_animInt(stats['totalGoldEarned'] ?? saveData.goldGeoms, counter)}', Icons.diamond_rounded, const Color(0xFFFFD700)),
-                          _StatData('Gold attuale', '${_animInt(saveData.goldGeoms, counter)}', Icons.account_balance_wallet_rounded, const Color(0xFFFFD700)),
+                        _buildSection(l10n.statsSectionGeneral, Colors.cyanAccent, entrance, 0.0, [
+                          _StatData(l10n.statsGamesPlayed, '${_animInt(stats['gamesPlayed'] ?? 0, counter)}', Icons.videogame_asset_rounded, Colors.cyanAccent),
+                          _StatData(l10n.statsTotalPlaytime, _formatPlaytime(saveData.totalPlaytime), Icons.timer_rounded, Colors.cyanAccent),
+                          _StatData(l10n.statsTotalGoldEarned, '${_animInt(stats['totalGoldEarned'] ?? saveData.goldGeoms, counter)}', Icons.diamond_rounded, const Color(0xFFFFD700)),
+                          _StatData(l10n.statsCurrentGold, '${_animInt(saveData.goldGeoms, counter)}', Icons.account_balance_wallet_rounded, const Color(0xFFFFD700)),
                         ], glow),
 
                         const SizedBox(height: 16),
 
-                        _buildSection('COMBATTIMENTO', const Color(0xFFFF4466), entrance, 0.1, [
-                          _StatData('Nemici uccisi', _animFormatNumber(stats['totalKills'] ?? 0, counter), Icons.local_fire_department_rounded, const Color(0xFFFF4466)),
-                          _StatData('Boss sconfitti', '${_animInt(stats['totalBosses'] ?? 0, counter)}', Icons.shield_rounded, const Color(0xFFCC00FF)),
-                          _StatData('Bombe usate', '${_animInt(stats['totalBombs'] ?? 0, counter)}', Icons.flash_on_rounded, Colors.orangeAccent),
-                          _StatData('Power-up raccolti', '${_animInt(stats['totalPowerUps'] ?? 0, counter)}', Icons.bolt_rounded, Colors.yellowAccent),
-                          _StatData('Geom raccolti', _animFormatNumber(stats['totalGeoms'] ?? 0, counter), Icons.hexagon_rounded, Colors.cyanAccent),
+                        _buildSection(l10n.statsSectionCombat, const Color(0xFFFF4466), entrance, 0.1, [
+                          _StatData(l10n.statsEnemiesKilled, _animFormatNumber(stats['totalKills'] ?? 0, counter), Icons.local_fire_department_rounded, const Color(0xFFFF4466)),
+                          _StatData(l10n.statsBossesDefeated, '${_animInt(stats['totalBosses'] ?? 0, counter)}', Icons.shield_rounded, const Color(0xFFCC00FF)),
+                          _StatData(l10n.statsBombsUsed, '${_animInt(stats['totalBombs'] ?? 0, counter)}', Icons.flash_on_rounded, Colors.orangeAccent),
+                          _StatData(l10n.statsPowerUpsCollected, '${_animInt(stats['totalPowerUps'] ?? 0, counter)}', Icons.bolt_rounded, Colors.yellowAccent),
+                          _StatData(l10n.statsGeomsCollected, _animFormatNumber(stats['totalGeoms'] ?? 0, counter), Icons.hexagon_rounded, Colors.cyanAccent),
                         ], glow),
 
                         const SizedBox(height: 16),
 
-                        _buildSection('RECORD', const Color(0xFFFFD700), entrance, 0.2, [
-                          _StatData('Punteggio migliore', _animFormatNumber(_bestScore(saveData), counter), Icons.emoji_events_rounded, const Color(0xFFFFD700)),
-                          _StatData('Wave più alta', '${_animInt(stats['maxWave'] ?? 0, counter)}', Icons.waves_rounded, Colors.cyanAccent),
-                          _StatData('Moltiplicatore massimo', '${_animInt(stats['maxMultiplier'] ?? 0, counter)}x', Icons.close_fullscreen_rounded, const Color(0xFFCC00FF)),
-                          _StatData('Max kill in una partita', '${_animInt(stats['maxSessionKills'] ?? 0, counter)}', Icons.whatshot_rounded, const Color(0xFFFF4466)),
-                          _StatData('Max wave perfette', '${_animInt(stats['maxPerfectStreak'] ?? 0, counter)}', Icons.auto_awesome_rounded, Colors.greenAccent),
+                        _buildSection(l10n.statsSectionRecords, const Color(0xFFFFD700), entrance, 0.2, [
+                          _StatData(l10n.statsBestScore, _animFormatNumber(_bestScore(saveData), counter), Icons.emoji_events_rounded, const Color(0xFFFFD700)),
+                          _StatData(l10n.statsHighestWave, '${_animInt(stats['maxWave'] ?? 0, counter)}', Icons.waves_rounded, Colors.cyanAccent),
+                          _StatData(l10n.statsMaxMultiplier, '${_animInt(stats['maxMultiplier'] ?? 0, counter)}x', Icons.close_fullscreen_rounded, const Color(0xFFCC00FF)),
+                          _StatData(l10n.statsMaxSessionKills, '${_animInt(stats['maxSessionKills'] ?? 0, counter)}', Icons.whatshot_rounded, const Color(0xFFFF4466)),
+                          _StatData(l10n.statsMaxPerfectStreak, '${_animInt(stats['maxPerfectStreak'] ?? 0, counter)}', Icons.auto_awesome_rounded, Colors.greenAccent),
                         ], glow),
 
                         const SizedBox(height: 16),
 
-                        _buildSection('ACHIEVEMENT', Colors.greenAccent, entrance, 0.3, [
-                          _StatData('Sbloccati', '$_achUnlocked / $_achTotal', Icons.military_tech_rounded, Colors.greenAccent,
+                        _buildSection(l10n.statsSectionAchievements, Colors.greenAccent, entrance, 0.3, [
+                          _StatData(l10n.statsAchievementsUnlocked, '$_achUnlocked / $_achTotal', Icons.military_tech_rounded, Colors.greenAccent,
                             progress: _achTotal > 0 ? _achUnlocked / _achTotal : 0.0),
                         ], glow),
 
                         if (saveData.highscores.isNotEmpty) ...[
                           const SizedBox(height: 16),
-                          _buildSection('PUNTEGGI PER MODALITÀ', Colors.purpleAccent, entrance, 0.4,
+                          _buildSection(l10n.statsSectionScoresByMode, Colors.purpleAccent, entrance, 0.4,
                             saveData.highscores.entries.map((e) =>
                               _StatData(e.key.toUpperCase(), _animFormatNumber(e.value, counter), Icons.leaderboard_rounded, Colors.purpleAccent),
                             ).toList(),
@@ -167,7 +169,7 @@ class _StatsScreenState extends State<StatsScreen>
     );
   }
 
-  Widget _buildHeader(double entrance) {
+  Widget _buildHeader(AppLocalizations l10n, double entrance) {
     return Opacity(
       opacity: entrance,
       child: Transform.translate(
@@ -178,9 +180,9 @@ class _StatsScreenState extends State<StatsScreen>
             children: [
               NeonBackButton(onTap: widget.onBack),
               const SizedBox(width: 16),
-              const Text(
-                'STATISTICHE',
-                style: TextStyle(
+              Text(
+                l10n.statsTitle,
+                style: const TextStyle(
                   color: Colors.cyanAccent,
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
