@@ -31,6 +31,10 @@ class DifficultySelectScreen extends StatefulWidget {
 class _DifficultySelectScreenState extends State<DifficultySelectScreen> {
   late Difficulty _sel;
 
+  // Caveman-review: guard against rapid double-tap firing onConfirm twice.
+  // Widget unmounts on advance — no reset needed.
+  bool _isAdvancing = false;
+
   @override
   void initState() {
     super.initState();
@@ -109,7 +113,11 @@ class _DifficultySelectScreenState extends State<DifficultySelectScreen> {
                           // Iter 19 (utente: "tap auto-advance pre-game"):
                           // setState + onConfirm. Re-tap same → still advance
                           // (no toggle-off).
+                          // Caveman-review: _isAdvancing guard blocks double-tap
+                          // race during page transition.
                           onTap: () {
+                            if (_isAdvancing) return;
+                            _isAdvancing = true;
                             setState(() => _sel = d);
                             widget.onConfirm(d);
                           },

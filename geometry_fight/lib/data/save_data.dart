@@ -66,7 +66,12 @@ class SaveData {
         activeModifiers = activeModifiers ?? [],
         unlockedPets = unlockedPets ?? ['none'];
 
-  int getUpgradeLevel(String id) => upgrades[id] ?? 0;
+  /// Restituisce il livello di un upgrade, clamped a `[0, kMaxUpgradeLevel]`
+  /// per difendersi da save corrotti o tampered (es. utenti che editano la
+  /// Hive box). Tutte le formule scaling (damage/speed/bomb/etc.) usano
+  /// questo getter, quindi la clamp è single source-of-truth.
+  int getUpgradeLevel(String id) =>
+      (upgrades[id] ?? 0).clamp(0, kMaxUpgradeLevel);
 
   /// Locale Flutter derivata da `languageCode`. Usata da `MaterialApp.locale`.
   Locale get locale => Locale(languageCode);
@@ -106,7 +111,11 @@ class SaveData {
 
   double get bombRadius {
     final level = getUpgradeLevel('bomb_capacity');
-    // L0: 375 (half arena diagonal-ish). L10: 750 (full arena width).
+    // Arena classica 1121x630 (diag ~1285). L0=375 (~30% diag, copertura
+    // locale), L10=750 (~58% diag, copre la maggior parte dell'arena
+    // visibile dal player). Tunnel mode usa stesso raggio: il viewport
+    // tunnel resta ~arenaWidth anche se la mappa è 3000x3000, quindi 750
+    // copre la zona visibile attorno al player.
     return 375.0 + level * 37.5;
   }
 
@@ -294,3 +303,8 @@ class SaveManager {
 
 /// Reward giornaliero in geom (utente: "daily reward che dà +100 geom").
 const int kDailyRewardAmount = 100;
+
+/// Livello max per tutti gli upgrade dello shop (10-level scaling iter).
+/// Usato da `SaveData.getUpgradeLevel` per il clamp difensivo e da
+/// `_checkAllUpgrades` (game_screen) per l'achievement "all_upgrades".
+const int kMaxUpgradeLevel = 10;

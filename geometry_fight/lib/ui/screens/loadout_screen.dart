@@ -35,6 +35,12 @@ class _LoadoutScreenState extends State<LoadoutScreen> {
   late SaveData _saveData;
   int _step = 0; // 0 = weapons, 1 = pets
 
+  // Caveman-review: guard rapid double-tap on pet card from re-firing
+  // widget.onConfirm() (which navigates to summary). Weapon tap calls
+  // _next() which is internal step transition — also guarded to avoid
+  // skipping past pet step. Widget unmounts on onConfirm so no reset.
+  bool _isAdvancing = false;
+
   @override
   void initState() {
     super.initState();
@@ -60,7 +66,10 @@ class _LoadoutScreenState extends State<LoadoutScreen> {
 
   // Iter 19 (utente: "tap auto-advance pre-game"). Weapon tap:
   // unlocked → select + advance to pets; locked → snackbar, no advance.
+  // Caveman-review: locked tap does NOT set _isAdvancing (snackbar only),
+  // so user can immediately retap an unlocked card.
   void _selectWeapon(String id) {
+    if (_isAdvancing) return;
     if (!_saveData.unlockedWeapons.contains(id)) {
       final l10n = AppLocalizations.of(context)!;
       _showLockedSnack(l10n.loadoutLocked);
@@ -73,12 +82,16 @@ class _LoadoutScreenState extends State<LoadoutScreen> {
 
   // Iter 19: pet tap. Unlocked (incluso 'none') → select + onConfirm
   // (advance to summary). Locked → snackbar, no advance.
+  // Caveman-review: _isAdvancing guards against double-tap re-firing
+  // onConfirm which would push summary route twice. Locked tap skips guard.
   void _selectPet(String id) {
+    if (_isAdvancing) return;
     if (id != 'none' && !_saveData.unlockedPets.contains(id)) {
       final l10n = AppLocalizations.of(context)!;
       _showLockedSnack(l10n.loadoutPetLocked);
       return;
     }
+    _isAdvancing = true;
     setState(() => _saveData = _saveData.copyWith(activePet: id));
     unawaited(SaveManager.save(_saveData));
     widget.onConfirm();

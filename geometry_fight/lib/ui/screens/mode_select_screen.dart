@@ -34,6 +34,10 @@ class _ModeSelectScreenState extends State<ModeSelectScreen>
   List<String> _activeModifiers = [];
   late final SaveData _saveData;
 
+  // Caveman-review: guard against rapid double-tap firing onConfirm twice
+  // (page transition race). Reset is unnecessary — widget unmounts on advance.
+  bool _isAdvancing = false;
+
   late AnimationController _entranceController;
   late AnimationController _glowController;
 
@@ -197,10 +201,14 @@ class _ModeSelectScreenState extends State<ModeSelectScreen>
                 onTap: () {
                   // Iter 19 (utente: "tap auto-advance"). Locked → snackbar
                   // "Sblocca nello SHOP"; unlocked → seleziona + onConfirm.
+                  // Caveman-review: _isAdvancing guard blocks double-tap race
+                  // (PageRoute push not yet committed → second tap re-fires).
+                  if (_isAdvancing) return;
                   if (!isUnlocked) {
                     _showLockedSnack(l10n);
                     return;
                   }
+                  _isAdvancing = true;
                   setState(() => _selectedMode = mode);
                   widget.onConfirm(mode);
                 },
@@ -574,11 +582,18 @@ class _NeonModeCard extends StatelessWidget {
                           // 39/35 era troppo per griglia 4-col. Riportato a
                           // 18/16 con FittedBox per auto-shrink su nomi lunghi
                           // ("BOSS RUSH", "TIME ATTACK", "GRAVITY INFERNO").
+                          // Caveman-review: FittedBox(scaleDown) already
+                          // shrinks to fit — TextOverflow.ellipsis + maxLines
+                          // on inner Text cause "CLASS..." weird shrinkage
+                          // when FittedBox starts scaling. Remove ellipsis,
+                          // keep maxLines:1 (FittedBox needs single line).
                           FittedBox(
                             fit: BoxFit.scaleDown,
                             alignment: Alignment.centerLeft,
                             child: Text(
                               modeName,
+                              maxLines: 1,
+                              softWrap: false,
                               style: TextStyle(
                                 color: !isUnlocked
                                     ? Colors.white30
@@ -601,8 +616,6 @@ class _NeonModeCard extends StatelessWidget {
                                       ]
                                     : null,
                               ),
-                              overflow: TextOverflow.ellipsis,
-                              maxLines: 1,
                             ),
                           ),
                           if (!isUnlocked)

@@ -683,6 +683,8 @@ class _ShopScreenState extends State<ShopScreen>
   /// renderizzati sotto ogni nodo.
   Widget _buildUpgradesTab() {
     final upgrades = _upgradeNodes();
+    // Hoist l10n fuori dal loop dei nodi (prima ogni nodo lo lookup-ava 2×).
+    final l10n = AppLocalizations.of(context)!;
     return _cyanScrollbar(
       controller: _upgradesScrollCtrl,
       child: SingleChildScrollView(
@@ -704,6 +706,8 @@ class _ShopScreenState extends State<ShopScreen>
                     // connector lines"): repaint listenable = talent
                     // wave controller (2s period). Painter calcola
                     // pulse traveling per ogni linea attiva.
+                    // Painter usa super(repaint: waveT) → CustomPaint si
+                    // re-paint da solo senza rebuild del Stack / Positioned.
                     child: CustomPaint(
                       painter: _UpgradeMapPainter(
                         nodes: upgrades,
@@ -724,13 +728,16 @@ class _ShopScreenState extends State<ShopScreen>
                         item: node.item,
                         currentLevel:
                             _saveData.getUpgradeLevel(node.item.id),
-                        l10n: AppLocalizations.of(context)!,
+                        l10n: l10n,
                         upgradeName: _upgradeName(
-                            AppLocalizations.of(context)!,
-                            node.item.id,
-                            node.item.name),
+                            l10n, node.item.id, node.item.name),
                         unlocked: _isUpgradeUnlocked(node.item.id),
                         onTap: () {
+                          // Locked node tap = no-op (defensive: il
+                          // GestureDetector dentro `_UpgradeMapNode` già passa
+                          // onTap=null quando locked, ma manteniamo il check
+                          // qui per sicurezza in caso di future modifiche al
+                          // node widget).
                           if (!_isUpgradeUnlocked(node.item.id)) return;
                           _tryBuyUpgrade(node.item);
                         },
@@ -749,18 +756,13 @@ class _ShopScreenState extends State<ShopScreen>
   /// Nodo unlocked solo quando TUTTI i prereq raggiungono il loro livello.
   /// Vertical-chain layout (diamond): speed root → firepower/fire_rate →
   /// shield → bomb/lives → magnet → xp_boost.
-  static const Map<String, List<(String, int)>> _prereqs = {
-    'speed': [],
-    'firepower': [('speed', 5)],
-    'fire_rate': [('speed', 5)],
-    'shield_capacity': [('firepower', 5), ('fire_rate', 5)],
-    'bomb_capacity': [('shield_capacity', 5)],
-    'starting_lives': [('shield_capacity', 5)],
-    'magnet_range': [('bomb_capacity', 5), ('starting_lives', 5)],
-    'xp_boost': [('magnet_range', 5)],
-  };
+  /// Iter 19 fix: single source-of-truth. Painter usa lo stesso `_prereqsLookup`
+  /// module-scope per evitare duplicazione (DRY) e drift tra le due copie.
+  static const Map<String, List<(String, int)>> _prereqs = _prereqsLookup;
 
   bool _isUpgradeUnlocked(String id) {
+    // Lookup defensive: id sconosciuto → unlocked (no prereqs). Evita
+    // crash se il chiamante passa un id non in _prereqs.
     final reqs = _prereqs[id];
     if (reqs == null || reqs.isEmpty) return true;
     for (final (prereqId, minLevel) in reqs) {
@@ -899,195 +901,42 @@ class _ShopScreenState extends State<ShopScreen>
 
     // Single-column list con card grosse: icona+nome+descrizione+stato.
     // Glow pulsante sui posseduti, "NEW" badge su Pacifist (ultima aggiunta).
-    return AnimatedBuilder(
-      animation: _previewController,
-      builder: (context, _) {
-        final pulse = (math.sin(_previewController.value * math.pi * 2) * 0.5 + 0.5);
-        return _cyanScrollbar(
-          controller: _modesScrollCtrl,
-          child: ListView.builder(
-          controller: _modesScrollCtrl,
-          padding: const EdgeInsets.all(14),
-          itemCount: modes.length,
-          itemBuilder: (context, index) {
-            final item = modes[index];
-            final owned = _saveData.unlockedModes.contains(item.id);
-            final canAfford = _saveData.goldGeoms >= item.cost;
-            final isNew = item.id == 'pacifist';
-
-            // Border glow alpha pulsa per gli item posseduti
-            final borderAlpha = owned ? 0.35 + pulse * 0.25 : 0.12;
-            final fillAlpha = owned ? 0.10 + pulse * 0.04 : 0.03;
-
-            return Container(
-              margin: const EdgeInsets.only(bottom: 10),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                  color: item.color.withValues(alpha: borderAlpha),
-                  width: owned ? 1.5 : 1,
-                ),
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    item.color.withValues(alpha: fillAlpha),
-                    Colors.black.withValues(alpha: 0.4),
-                    Colors.transparent,
-                  ],
-                  stops: const [0.0, 0.6, 1.0],
-                ),
-                boxShadow: owned
-                    ? [
-                        BoxShadow(
-                          color: item.color.withValues(alpha: 0.15 + pulse * 0.1),
-                          blurRadius: 12,
-                          spreadRadius: 1,
-                        ),
-                      ]
-                    : null,
-              ),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                child: Row(
-                  children: [
-                    // Icona dentro cerchio glowing
-                    Container(
-                      width: 48,
-                      height: 48,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: item.color.withValues(alpha: owned ? 0.6 : 0.2),
-                          width: 1.2,
-                        ),
-                        gradient: RadialGradient(
-                          colors: [
-                            item.color.withValues(alpha: owned ? 0.2 : 0.05),
-                            Colors.transparent,
-                          ],
-                        ),
-                      ),
-                      child: Icon(
-                        item.icon,
-                        color: item.color.withValues(alpha: owned ? 1.0 : 0.4),
-                        size: 24,
-                      ),
-                    ),
-                    const SizedBox(width: 14),
-                    // Name + description
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Row(
-                            children: [
-                              Text(
-                                _modeName(l10n, item.id, item.name).toUpperCase(),
-                                style: TextStyle(
-                                  color: owned ? item.color : Colors.white70,
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold,
-                                  fontFamily: 'monospace',
-                                  letterSpacing: 1.5,
-                                  shadows: owned
-                                      ? [
-                                          Shadow(
-                                            color: item.color
-                                                .withValues(alpha: 0.6),
-                                            blurRadius: 6,
-                                          ),
-                                        ]
-                                      : null,
-                                ),
-                              ),
-                              if (isNew) ...[
-                                const SizedBox(width: 8),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 5, vertical: 1),
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(3),
-                                    color: const Color(0xFFFFD700)
-                                        .withValues(alpha: 0.15 + pulse * 0.15),
-                                    border: Border.all(
-                                      color: const Color(0xFFFFD700)
-                                          .withValues(alpha: 0.7),
-                                      width: 0.8,
-                                    ),
-                                  ),
-                                  child: Text(
-                                    l10n.shopBadgeNew,
-                                    style: const TextStyle(
-                                      color: Color(0xFFFFD700),
-                                      fontSize: 8,
-                                      fontFamily: 'monospace',
-                                      fontWeight: FontWeight.bold,
-                                      letterSpacing: 1,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    // Cost / unlocked badge
-                    if (owned)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 6),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(6),
-                          color: Colors.greenAccent.withValues(alpha: 0.08),
-                          border: Border.all(
-                            color: Colors.greenAccent.withValues(alpha: 0.4),
-                            width: 0.8,
-                          ),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(Icons.check_circle_outline,
-                                color: Colors.greenAccent, size: 12),
-                            const SizedBox(width: 4),
-                            Text(
-                              l10n.shopBadgeUnlocked,
-                              style: const TextStyle(
-                                color: Colors.greenAccent,
-                                fontSize: 9,
-                                fontWeight: FontWeight.bold,
-                                fontFamily: 'monospace',
-                                letterSpacing: 1,
-                              ),
-                            ),
-                          ],
-                        ),
-                      )
-                    else
-                      _PurchaseButton(
-                        cost: item.cost,
-                        canAfford: canAfford,
-                        color: item.color,
-                        onTap: () {
-                          _purchase(item.id, item.cost, () {
-                            if (!_saveData.unlockedModes.contains(item.id)) {
-                              _saveData.unlockedModes.add(item.id);
-                            }
-                          });
-                        },
-                      ),
-                  ],
-                ),
-              ),
-            );
-          },
-        ),
-        );
-      },
+    //
+    // Iter 19 fix: prima un singolo AnimatedBuilder al top-level ricostruiva
+    // l'INTERA ListView per frame (>100 widgets per pulse). Ora lo scrollbar+
+    // listview è statico, e ogni card delega l'animazione a `_ModeCard`
+    // (StatelessWidget interno che wrappa un AnimatedBuilder con scope locale
+    // al solo decoration del container — niente rebuild di sub-trees statici).
+    return _cyanScrollbar(
+      controller: _modesScrollCtrl,
+      child: ListView.builder(
+        controller: _modesScrollCtrl,
+        padding: const EdgeInsets.all(14),
+        itemCount: modes.length,
+        itemBuilder: (context, index) {
+          final item = modes[index];
+          final owned = _saveData.unlockedModes.contains(item.id);
+          final canAfford = _saveData.goldGeoms >= item.cost;
+          final isNew = item.id == 'pacifist';
+          return _ModeCard(
+            item: item,
+            owned: owned,
+            canAfford: canAfford,
+            isNew: isNew,
+            label: _modeName(l10n, item.id, item.name).toUpperCase(),
+            newBadgeText: l10n.shopBadgeNew,
+            unlockedBadgeText: l10n.shopBadgeUnlocked,
+            pulseSource: _previewController,
+            onBuy: () {
+              _purchase(item.id, item.cost, () {
+                if (!_saveData.unlockedModes.contains(item.id)) {
+                  _saveData.unlockedModes.add(item.id);
+                }
+              });
+            },
+          );
+        },
+      ),
     );
   }
 
@@ -1213,73 +1062,75 @@ class _ShopScreenState extends State<ShopScreen>
             ),
 
             // === PREVIEW AREA ===
+            //
+            // Iter 19 fix: AnimatedBuilder scoped al solo CustomPaint del
+            // preview. Prima wrappava l'intero Column (preview + InfoCard +
+            // FittedBox), rebuild dell'InfoCard / FittedBox / decoration per
+            // frame. Ora InfoCard + decoration sono statici, solo il pixel
+            // della preview ricicla il painter via Listenable.
             Expanded(
-              child: AnimatedBuilder(
-                animation: _previewController,
-                builder: (context, _) {
+              child: LayoutBuilder(
+                builder: (context, previewConstraints) {
                   final previewIndex = _selectedPreviewIndex ?? 0;
                   final item = items[previewIndex.clamp(0, items.length - 1)];
-
-                  return LayoutBuilder(
-                    builder: (context, previewConstraints) {
-                      // Preview dinamica: nessun bottone equip qui (sidebar lo gestisce).
-                      final previewSize = (previewConstraints.maxHeight - 100)
-                          .clamp(60.0, 220.0);
-                      // FIX: pannello preview FISSO — niente SingleChildScrollView.
-                      // Su schermi cortissimi FittedBox scala il contenuto invece di
-                      // abilitare scroll, così l'utente non vede mai la preview
-                      // muoversi verticalmente.
-                      return Center(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          child: FittedBox(
-                            fit: BoxFit.scaleDown,
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                // Preview canvas
-                                Container(
-                                  width: previewSize,
-                                  height: previewSize,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                      color: Colors.cyanAccent
-                                          .withValues(alpha: 0.08),
-                                    ),
-                                    gradient: RadialGradient(
-                                      colors: [
-                                        Colors.cyanAccent
-                                            .withValues(alpha: 0.03),
-                                        Colors.transparent,
-                                      ],
-                                    ),
-                                  ),
-                                  child: CustomPaint(
-                                    painter: previewBuilder(
-                                        item, _previewController.value * 10),
-                                    size: Size(previewSize, previewSize),
-                                  ),
+                  // Preview dinamica: nessun bottone equip qui (sidebar lo gestisce).
+                  final previewSize = (previewConstraints.maxHeight - 100)
+                      .clamp(60.0, 220.0);
+                  // Pannello preview FISSO — niente SingleChildScrollView.
+                  // Su schermi cortissimi FittedBox scala il contenuto invece
+                  // di abilitare scroll, così l'utente non vede mai la preview
+                  // muoversi verticalmente.
+                  return Center(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            // Preview canvas — l'unico nodo che ascolta il tick.
+                            Container(
+                              width: previewSize,
+                              height: previewSize,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: Colors.cyanAccent
+                                      .withValues(alpha: 0.08),
                                 ),
-                                const SizedBox(height: 12),
-                                // Description card (richiesta utente).
-                                _InfoCard(
-                                  title: _itemName(l10n, item),
-                                  description: _itemDesc(l10n, item),
-                                  accentColor: item is _WeaponDef
-                                      ? (item).color
-                                      : Colors.cyanAccent,
-                                  stats: item is _WeaponDef
-                                      ? (item).stats
-                                      : const [],
-                                  showDescription: !hideDescription,
+                                gradient: RadialGradient(
+                                  colors: [
+                                    Colors.cyanAccent
+                                        .withValues(alpha: 0.03),
+                                    Colors.transparent,
+                                  ],
                                 ),
-                              ],
+                              ),
+                              child: AnimatedBuilder(
+                                animation: _previewController,
+                                builder: (context, _) => CustomPaint(
+                                  painter: previewBuilder(
+                                      item, _previewController.value * 10),
+                                  size: Size(previewSize, previewSize),
+                                ),
+                              ),
                             ),
-                          ),
+                            const SizedBox(height: 12),
+                            // Description card statica (no animation dep).
+                            _InfoCard(
+                              title: _itemName(l10n, item),
+                              description: _itemDesc(l10n, item),
+                              accentColor: item is _WeaponDef
+                                  ? (item).color
+                                  : Colors.cyanAccent,
+                              stats:
+                                  item is _WeaponDef ? (item).stats : const [],
+                              showDescription: !hideDescription,
+                            ),
+                          ],
                         ),
-                      );
-                    },
+                      ),
+                    ),
                   );
                 },
               ),
@@ -1632,6 +1483,214 @@ class _ModeDef extends _ShopItem {
   _ModeDef(super.id, super.name, super.cost, super.description, this.icon, this.color);
 }
 
+/// Iter 19 perf fix: card delle modalità con AnimatedBuilder scoped al solo
+/// container decoration. Prima un AnimatedBuilder al top di `_buildModesTab`
+/// ricostruiva l'intera ListView per frame; ora il listview è statico e ogni
+/// card pulsa indipendentemente solo sui pixel decorativi.
+class _ModeCard extends StatelessWidget {
+  final _ModeDef item;
+  final bool owned;
+  final bool canAfford;
+  final bool isNew;
+  final String label;
+  final String newBadgeText;
+  final String unlockedBadgeText;
+  final Animation<double> pulseSource;
+  final VoidCallback onBuy;
+
+  const _ModeCard({
+    required this.item,
+    required this.owned,
+    required this.canAfford,
+    required this.isNew,
+    required this.label,
+    required this.newBadgeText,
+    required this.unlockedBadgeText,
+    required this.pulseSource,
+    required this.onBuy,
+  });
+
+  double _pulseValue() {
+    return math.sin(pulseSource.value * math.pi * 2) * 0.5 + 0.5;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Sub-tree statico: icon, name, badge (eccetto alpha) — non rebuild.
+    final iconCircle = Container(
+      width: 48,
+      height: 48,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        border: Border.all(
+          color: item.color.withValues(alpha: owned ? 0.6 : 0.2),
+          width: 1.2,
+        ),
+        gradient: RadialGradient(
+          colors: [
+            item.color.withValues(alpha: owned ? 0.2 : 0.05),
+            Colors.transparent,
+          ],
+        ),
+      ),
+      child: Icon(
+        item.icon,
+        color: item.color.withValues(alpha: owned ? 1.0 : 0.4),
+        size: 24,
+      ),
+    );
+
+    final ownedBadge = Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(6),
+        color: Colors.greenAccent.withValues(alpha: 0.08),
+        border: Border.all(
+          color: Colors.greenAccent.withValues(alpha: 0.4),
+          width: 0.8,
+        ),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(Icons.check_circle_outline,
+              color: Colors.greenAccent, size: 12),
+          const SizedBox(width: 4),
+          Text(
+            unlockedBadgeText,
+            style: const TextStyle(
+              color: Colors.greenAccent,
+              fontSize: 9,
+              fontWeight: FontWeight.bold,
+              fontFamily: 'monospace',
+              letterSpacing: 1,
+            ),
+          ),
+        ],
+      ),
+    );
+
+    return AnimatedBuilder(
+      animation: pulseSource,
+      builder: (context, child) {
+        final pulse = _pulseValue();
+        // Pulse alpha tunings: solo decoration cambia per frame.
+        final borderAlpha = owned ? 0.35 + pulse * 0.25 : 0.12;
+        final fillAlpha = owned ? 0.10 + pulse * 0.04 : 0.03;
+
+        return Container(
+          margin: const EdgeInsets.only(bottom: 10),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: item.color.withValues(alpha: borderAlpha),
+              width: owned ? 1.5 : 1,
+            ),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                item.color.withValues(alpha: fillAlpha),
+                Colors.black.withValues(alpha: 0.4),
+                Colors.transparent,
+              ],
+              stops: const [0.0, 0.6, 1.0],
+            ),
+            boxShadow: owned
+                ? [
+                    BoxShadow(
+                      color:
+                          item.color.withValues(alpha: 0.15 + pulse * 0.1),
+                      blurRadius: 12,
+                      spreadRadius: 1,
+                    ),
+                  ]
+                : null,
+          ),
+          child: Padding(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            child: Row(
+              children: [
+                iconCircle,
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Row(
+                        children: [
+                          Text(
+                            label,
+                            style: TextStyle(
+                              color: owned ? item.color : Colors.white70,
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              fontFamily: 'monospace',
+                              letterSpacing: 1.5,
+                              shadows: owned
+                                  ? [
+                                      Shadow(
+                                        color: item.color
+                                            .withValues(alpha: 0.6),
+                                        blurRadius: 6,
+                                      ),
+                                    ]
+                                  : null,
+                            ),
+                          ),
+                          if (isNew) ...[
+                            const SizedBox(width: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 5, vertical: 1),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(3),
+                                color: const Color(0xFFFFD700).withValues(
+                                    alpha: 0.15 + pulse * 0.15),
+                                border: Border.all(
+                                  color: const Color(0xFFFFD700)
+                                      .withValues(alpha: 0.7),
+                                  width: 0.8,
+                                ),
+                              ),
+                              child: Text(
+                                newBadgeText,
+                                style: const TextStyle(
+                                  color: Color(0xFFFFD700),
+                                  fontSize: 8,
+                                  fontFamily: 'monospace',
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 1,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 12),
+                if (owned)
+                  ownedBadge
+                else
+                  _PurchaseButton(
+                    cost: item.cost,
+                    canAfford: canAfford,
+                    color: item.color,
+                    onTap: onBuy,
+                  ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
 /// Wrapper di [PetDef] (kPetCatalog) come [_ShopItem] per integrarsi con
 /// `_buildPreviewGrid`. Tiene color + petType per il painter dell'anteprima.
 class _PetDef extends _ShopItem {
@@ -1671,11 +1730,37 @@ class _UpgradeNode {
 /// Pulse: 20% segmento lungo la linea, hue shift cyan→green→cyan via
 /// `waveT.value`. Repaint trigger via `CustomPaint(repaint: waveT)`.
 class _UpgradeMapPainter extends CustomPainter {
+  // Magic numbers extracted (iter 19 caveman-review).
+  static const double _nodeRadius = 26.0;
+  static const double _basePulseHalfBand = 0.10;
+  static const double _hueCenter = 150.0;
+  static const double _hueAmplitude = 30.0;
+  static const Color _activeBaseColor = Color(0xFF00FFFF);
+  static const Color _availableBaseColor = Color(0xFF66E6FF);
+
+  // Paint objects cached at painter level — prima 2 alloc per frame, ora 0.
+  // Per-line state colors mutati in place. NOTA: questo painter è ricreato
+  // ogni volta che il widget viene ricostruito (nuovo SaveData ref); paint
+  // restano statici per evitare alloc su ogni listenable tick.
+  static final Paint _baseLinePaint = Paint()
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 1.8
+    ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2);
+  static final Paint _pulsePaint = Paint()
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 3.0
+    ..strokeCap = StrokeCap.round
+    ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
+
   final List<_UpgradeNode> nodes;
   final List<(String, String)> connections;
   final SaveData saveData;
   // Listenable per repaint + valore animazione 0..1.
   final Animation<double> waveT;
+  // O(1) lookup by id; prima ogni connection faceva 2× O(N) firstWhere/frame.
+  late final Map<String, _UpgradeNode> _nodesById = {
+    for (final n in nodes) n.item.id: n,
+  };
 
   _UpgradeMapPainter({
     required this.nodes,
@@ -1684,8 +1769,8 @@ class _UpgradeMapPainter extends CustomPainter {
     required this.waveT,
   }) : super(repaint: waveT);
 
-  /// Prereq di `bId` soddisfatti (replicato da `_ShopScreenState._prereqs`).
-  /// Tenuto privato perché painter è in module scope.
+  /// Prereq di `bId` soddisfatti. Single source-of-truth: `_prereqsLookup`
+  /// è ora condivisa con `_ShopScreenState._prereqs`.
   bool _prereqSatisfied(String bId) {
     final reqs = _prereqsLookup[bId];
     if (reqs == null || reqs.isEmpty) return true;
@@ -1697,25 +1782,14 @@ class _UpgradeMapPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    // Endpoint shortening: icon node has radius 26 (vedi _UpgradeMapNode).
-    const double nodeRadius = 26;
-    final basePaint = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.8
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2);
-    final pulsePaint = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 3.0
-      ..strokeCap = StrokeCap.round
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
-
     final t = waveT.value.clamp(0.0, 1.0);
 
     for (final (aId, bId) in connections) {
-      final a = nodes.firstWhere((n) => n.item.id == aId,
-          orElse: () => nodes.first);
-      final b = nodes.firstWhere((n) => n.item.id == bId,
-          orElse: () => nodes.first);
+      // O(1) lookup: skip se uno dei nodi non esiste (defensive vs id typo).
+      final a = _nodesById[aId];
+      final b = _nodesById[bId];
+      if (a == null || b == null) continue;
+
       final lvlA = saveData.getUpgradeLevel(aId);
       final lvlB = saveData.getUpgradeLevel(bId);
       final bUnlocked = _prereqSatisfied(bId);
@@ -1725,7 +1799,7 @@ class _UpgradeMapPainter extends CustomPainter {
       final isActive = bUnlocked && lvlA > 0 && lvlB > 0;
       final isAvailable = bUnlocked && !isActive;
 
-      // Compute endpoint shortened by nodeRadius along direction.
+      // Compute endpoint shortened by _nodeRadius along direction.
       final ax = a.x * size.width;
       final ay = a.y * size.height;
       final bx = b.x * size.width;
@@ -1733,55 +1807,46 @@ class _UpgradeMapPainter extends CustomPainter {
       final dx = bx - ax;
       final dy = by - ay;
       final len = math.sqrt(dx * dx + dy * dy);
-      if (len <= nodeRadius * 2) continue;
+      if (len <= _nodeRadius * 2) continue;
       final nx = dx / len;
       final ny = dy / len;
-      final p0 = Offset(ax + nx * nodeRadius, ay + ny * nodeRadius);
-      final p1 = Offset(bx - nx * nodeRadius, by - ny * nodeRadius);
+      final p0 = Offset(ax + nx * _nodeRadius, ay + ny * _nodeRadius);
+      final p1 = Offset(bx - nx * _nodeRadius, by - ny * _nodeRadius);
 
       // Base line color/alpha per stato.
       if (isActive) {
-        basePaint.color = const Color(0xFF00FFFF).withValues(alpha: 0.3);
+        _baseLinePaint.color = _activeBaseColor.withValues(alpha: 0.3);
       } else if (isAvailable) {
-        basePaint.color = const Color(0xFF66E6FF).withValues(alpha: 0.5);
+        _baseLinePaint.color = _availableBaseColor.withValues(alpha: 0.5);
       } else {
         // INACTIVE: dim grey (mantenuto come iter 13).
-        basePaint.color = Colors.white.withValues(alpha: 0.12);
+        _baseLinePaint.color = Colors.white.withValues(alpha: 0.12);
       }
-      canvas.drawLine(p0, p1, basePaint);
+      canvas.drawLine(p0, p1, _baseLinePaint);
 
       // Pulse traveling solo per ACTIVE.
       if (!isActive) continue;
 
       // Hue shift cyan(180°) → green(120°) → cyan via sine sul valore t.
       // Mantiene pulse "vivo" senza saltare di colpo. Saturazione/Value alti.
-      final hue = 150.0 + math.sin(t * math.pi * 2) * 30.0; // 120..180
+      final hue = _hueCenter + math.sin(t * math.pi * 2) * _hueAmplitude;
       final pulseColor = HSVColor.fromAHSV(1.0, hue, 0.95, 1.0).toColor();
 
-      // Path completo + computeMetrics per extract segmento.
-      final fullPath = Path()
-        ..moveTo(p0.dx, p0.dy)
-        ..lineTo(p1.dx, p1.dy);
-      final metrics = fullPath.computeMetrics().toList();
-      if (metrics.isEmpty) continue;
-      final metric = metrics.first;
-      // Pulse band larga 20% della line length, centrata su t.
-      const halfBand = 0.10;
-      final s = (t - halfBand).clamp(0.0, 1.0);
-      final e = (t + halfBand).clamp(0.0, 1.0);
+      // Pulse band centrata su t. Per la linea retta non serve computeMetrics:
+      // basta interpolare lungo p0→p1 (più veloce + zero alloc Path/metrics).
+      final s = (t - _basePulseHalfBand).clamp(0.0, 1.0);
+      final e = (t + _basePulseHalfBand).clamp(0.0, 1.0);
       if (e <= s) continue;
-      final extracted = metric.extractPath(
-        s * metric.length,
-        e * metric.length,
-      );
-      pulsePaint.color = pulseColor.withValues(alpha: 0.9);
-      canvas.drawPath(extracted, pulsePaint);
+      final ps = Offset.lerp(p0, p1, s)!;
+      final pe = Offset.lerp(p0, p1, e)!;
+      _pulsePaint.color = pulseColor.withValues(alpha: 0.9);
+      canvas.drawLine(ps, pe, _pulsePaint);
     }
   }
 
   @override
   bool shouldRepaint(_UpgradeMapPainter old) {
-    // Repaint triggera via Listenable (super.repaint=waveT). saveData
+    // Repaint trigger via Listenable (super.repaint=waveT). saveData
     // mutato in-place + setState dopo purchase ricrea painter, quindi
     // basta confrontare reference per coprire purchase updates.
     return old.saveData != saveData ||
@@ -3738,6 +3803,41 @@ class _WeaponPreviewPainter extends CustomPainter {
 // TacticalSpotter slow-mo) usano un ciclo demo ~3.5s.
 
 class _PetPreviewPainter extends CustomPainter {
+  // ─── ANIMATION TIMINGS ─────────────────────────────────────────────
+  // Iter 19 fix: nomi espliciti al posto di magic numbers sparsi nei branch
+  // del switch. Cambi futuri (velocità, raggio) si fanno in un punto solo.
+  static const double _demoPeriod = 3.5; // sec — full demo cycle.
+  static const double _firingWindow = 0.6; // sec — first slice del cycle.
+  static const double _ramPeriod = 2.5;
+  static const double _ramApproachHalf = 0.5;
+  static const double _ramReturnHalf = 1.0;
+
+  // ─── PET ORBIT RADII ──────────────────────────────────────────────
+  // Scalati ~0.5× rispetto al gioco per stare in canvas 220×220.
+  static const double _attackOrbitRadius = 50.0;
+  static const double _collectXAmp = 65.0;
+  static const double _collectYAmp = 35.0;
+  static const double _sweepOrbitRadius = 70.0;
+  static const double _defendBackOffset = 45.0;
+  static const double _snipeOrbitRadius = 75.0;
+  static const double _ramTargetRadius = 90.0;
+  static const double _ramIdleRadius = 60.0;
+  static const double _phoenixOrbitRadius = 50.0;
+  static const double _blackHoleBackOffset = 60.0;
+  static const double _empOrbitRadius = 55.0;
+  static const double _spotterOrbitRadius = 58.0;
+  static const double _snipeTargetRadius = 95.0;
+
+  // ─── PET ANGULAR SPEEDS (rad/s) ───────────────────────────────────
+  static const double _attackOmega = 1.2;
+  static const double _collectOmega = 0.8;
+  static const double _sweepOmega = 5.0;
+  static const double _snipeOmega = 0.8;
+  static const double _ramIdleOmega = 1.5;
+  static const double _phoenixOmega = 1.4;
+  static const double _empOmega = 1.7;
+  static const double _spotterOmega = 2.2;
+
   // Paints cached — riusati tra frame per evitare alloc per repaint.
   static final Paint _glowPaint = Paint();
   static final Paint _fillPaint = Paint();
@@ -3767,12 +3867,11 @@ class _PetPreviewPainter extends CustomPainter {
     final cx = size.width / 2;
     final cy = size.height / 2;
 
-    // Demo cycle: ogni ~3.5s un effetto periodico (Phoenix flash, EMP ring,
-    // TacticalSpotter glow) parte e svanisce in 0.6s.
-    const demoPeriod = 3.5;
-    final demoT = time % demoPeriod;
-    final demoFiring = demoT < 0.6;
-    final demoFireT = demoFiring ? (1.0 - demoT / 0.6) : 0.0;
+    // Demo cycle: ogni `_demoPeriod`s un effetto periodico (Phoenix flash,
+    // EMP ring, TacticalSpotter glow) parte e svanisce in `_firingWindow`s.
+    final demoT = time % _demoPeriod;
+    final demoFiring = demoT < _firingWindow;
+    final demoFireT = demoFiring ? (1.0 - demoT / _firingWindow) : 0.0;
 
     // 1. Screen flash globale per Phoenix.
     if (petType == PetType.phoenix && demoFiring) {
@@ -3825,74 +3924,71 @@ class _PetPreviewPainter extends CustomPainter {
   // ─── PET POSITION ──────────────────────────────────────────────────
   /// Computa la posizione del pet relativa al player center secondo il tipo.
   /// Tutti i raggi/velocità sono scalati ~0.5× rispetto al gioco per stare
-  /// nel canvas 220×220px senza tagliare ai bordi.
+  /// nel canvas 220×220px senza tagliare ai bordi. I valori sono definiti
+  /// come `_*Radius`/`_*Omega` const al top della classe per facile tweaking.
   Offset _computePetPosition(double cx, double cy, double demoT) {
     switch (petType) {
       case PetType.attack:
-        // AttackPet: orbita stretta a 50px raggio, fase * 1.2.
-        final ang = time * 1.2;
-        return Offset(cx + math.cos(ang) * 50, cy + math.sin(ang) * 50);
+        final ang = time * _attackOmega;
+        return Offset(cx + math.cos(ang) * _attackOrbitRadius,
+            cy + math.sin(ang) * _attackOrbitRadius);
 
       case PetType.collect:
-        // CollectPet: wandering — figura di otto per dare l'idea di "vola libero".
-        final t = time * 0.8;
-        return Offset(
-            cx + math.cos(t) * 65, cy + math.sin(t * 2) * 35);
+        // Figura di otto: x sin/cos a `_collectOmega`, y sin(2t) per il loop.
+        final t = time * _collectOmega;
+        return Offset(cx + math.cos(t) * _collectXAmp,
+            cy + math.sin(t * 2) * _collectYAmp);
 
       case PetType.sweep:
-        // SweepPet: orbita veloce 5.0 rad/s a 80px (proporzionato → 70px).
-        final ang = time * 5.0;
-        return Offset(cx + math.cos(ang) * 70, cy + math.sin(ang) * 70);
+        final ang = time * _sweepOmega;
+        return Offset(cx + math.cos(ang) * _sweepOrbitRadius,
+            cy + math.sin(ang) * _sweepOrbitRadius);
 
       case PetType.defend:
-        // DefendPet: dietro al player. Il "back" è verso il basso (player
-        // punta in alto). Pulse leggera.
-        return Offset(cx, cy + 45 + math.sin(time * 2) * 2);
+        // Back-offset vertical (player punta in alto). Pulse leggera.
+        return Offset(cx, cy + _defendBackOffset + math.sin(time * 2) * 2);
 
       case PetType.snipe:
-        // SnipePet: orbita lenta 0.8 rad/s a 95px (proporzionato → 75px).
-        final ang = time * 0.8;
-        return Offset(cx + math.cos(ang) * 75, cy + math.sin(ang) * 75);
+        final ang = time * _snipeOmega;
+        return Offset(cx + math.cos(ang) * _snipeOrbitRadius,
+            cy + math.sin(ang) * _snipeOrbitRadius);
 
       case PetType.ram:
-        // RamPet: dash periodico verso un target fittizio (cardinale rotante).
-        // Periodo 2.5s: 0-0.5 = approach, 0.5-1.0 = back, then idle orbit.
-        const ramPeriod = 2.5;
-        final rt = time % ramPeriod;
-        final targetAng = (time / ramPeriod).floor() * (math.pi / 2);
-        final targetX = cx + math.cos(targetAng) * 90;
-        final targetY = cy + math.sin(targetAng) * 90;
-        if (rt < 0.5) {
-          // Approach 0→1
-          final p = rt / 0.5;
+        // Periodo `_ramPeriod`: 0..0.5 = approach, 0.5..1.0 = back, idle.
+        final rt = time % _ramPeriod;
+        final targetAng = (time / _ramPeriod).floor() * (math.pi / 2);
+        final targetX = cx + math.cos(targetAng) * _ramTargetRadius;
+        final targetY = cy + math.sin(targetAng) * _ramTargetRadius;
+        if (rt < _ramApproachHalf) {
+          final p = rt / _ramApproachHalf;
           return Offset(cx + (targetX - cx) * p, cy + (targetY - cy) * p);
-        } else if (rt < 1.0) {
-          // Return 1→0
-          final p = 1.0 - (rt - 0.5) / 0.5;
+        } else if (rt < _ramReturnHalf) {
+          final p =
+              1.0 - (rt - _ramApproachHalf) / _ramApproachHalf;
           return Offset(cx + (targetX - cx) * p, cy + (targetY - cy) * p);
         }
-        // Idle orbit
-        final ang = time * 1.5;
-        return Offset(cx + math.cos(ang) * 60, cy + math.sin(ang) * 60);
+        final ang = time * _ramIdleOmega;
+        return Offset(cx + math.cos(ang) * _ramIdleRadius,
+            cy + math.sin(ang) * _ramIdleRadius);
 
       case PetType.phoenix:
-        // PhoenixPet: orbita lenta a 46px (proporzionato → 50px).
-        final ang = time * 1.4;
-        return Offset(cx + math.cos(ang) * 50, cy + math.sin(ang) * 50);
+        final ang = time * _phoenixOmega;
+        return Offset(cx + math.cos(ang) * _phoenixOrbitRadius,
+            cy + math.sin(ang) * _phoenixOrbitRadius);
 
       case PetType.blackHolePet:
-        // BlackHole: fisso 60px sotto al player (back-offset → vertical "back").
-        return Offset(cx, cy + 60);
+        // BlackHole: fisso `_blackHoleBackOffset`px sotto al player.
+        return Offset(cx, cy + _blackHoleBackOffset);
 
       case PetType.empDrone:
-        // EmpDrone: orbita 1.7 rad/s a 52px.
-        final ang = time * 1.7;
-        return Offset(cx + math.cos(ang) * 55, cy + math.sin(ang) * 55);
+        final ang = time * _empOmega;
+        return Offset(cx + math.cos(ang) * _empOrbitRadius,
+            cy + math.sin(ang) * _empOrbitRadius);
 
       case PetType.tacticalSpotter:
-        // TacticalSpotter: orbita 2.2 rad/s a 58px.
-        final ang = time * 2.2;
-        return Offset(cx + math.cos(ang) * 58, cy + math.sin(ang) * 58);
+        final ang = time * _spotterOmega;
+        return Offset(cx + math.cos(ang) * _spotterOrbitRadius,
+            cy + math.sin(ang) * _spotterOrbitRadius);
 
       case PetType.none:
         return Offset(cx, cy);
@@ -3946,9 +4042,10 @@ class _PetPreviewPainter extends CustomPainter {
     // SnipePet: laser ray verso target fittizio durante demo cycle.
     if (petType == PetType.snipe && firing) {
       // Target alla destra del player (esempio statico, switcha ogni 2 demo).
-      final targetAng = ((time / 3.5).floor() * 0.7) % (math.pi * 2);
-      final target = Offset(
-          cx + math.cos(targetAng) * 95, cy + math.sin(targetAng) * 95);
+      final targetAng =
+          ((time / _demoPeriod).floor() * 0.7) % (math.pi * 2);
+      final target = Offset(cx + math.cos(targetAng) * _snipeTargetRadius,
+          cy + math.sin(targetAng) * _snipeTargetRadius);
       _strokePaint
         ..color = NeonColors.laserRed.withValues(alpha: demoFireT)
         ..strokeWidth = 4 * demoFireT + 1;
@@ -3991,7 +4088,7 @@ class _PetPreviewPainter extends CustomPainter {
       ..maskFilter = null;
     canvas.drawCircle(pos, 14, _glowPaint);
     // Body diamond rotato (aim verso esterno orbit).
-    final aimAng = time * 1.2 + math.pi / 2;
+    final aimAng = time * _attackOmega + math.pi / 2;
     canvas.save();
     canvas.translate(pos.dx, pos.dy);
     canvas.rotate(aimAng);
@@ -4117,7 +4214,8 @@ class _PetPreviewPainter extends CustomPainter {
       ..maskFilter = null;
     canvas.drawCircle(pos, 14, _glowPaint);
     // Triangolo scope orientato verso il target fittizio.
-    final targetAng = ((time / 3.5).floor() * 0.7) % (math.pi * 2);
+    final targetAng =
+        ((time / _demoPeriod).floor() * 0.7) % (math.pi * 2);
     canvas.save();
     canvas.translate(pos.dx, pos.dy);
     canvas.rotate(targetAng);
@@ -4149,16 +4247,15 @@ class _PetPreviewPainter extends CustomPainter {
     canvas.drawCircle(pos, 15, _glowPaint);
     // Chevron arrow puntato lungo direzione movimento. Calcola velocità via
     // delta di posizione (approssimato dal tipo di moto del computePos).
-    const ramPeriod = 2.5;
-    final rt = time % ramPeriod;
-    final targetAng = (time / ramPeriod).floor() * (math.pi / 2);
+    final rt = time % _ramPeriod;
+    final targetAng = (time / _ramPeriod).floor() * (math.pi / 2);
     double aimAng;
-    if (rt < 0.5) {
+    if (rt < _ramApproachHalf) {
       aimAng = targetAng;
-    } else if (rt < 1.0) {
+    } else if (rt < _ramReturnHalf) {
       aimAng = targetAng + math.pi;
     } else {
-      aimAng = time * 1.5 + math.pi / 2;
+      aimAng = time * _ramIdleOmega + math.pi / 2;
     }
     canvas.save();
     canvas.translate(pos.dx, pos.dy);
@@ -4281,9 +4378,8 @@ class _PetPreviewPainter extends CustomPainter {
     canvas.drawRect(const Rect.fromLTWH(7, -1, 4, 2), _fillPaint);
     canvas.restore();
     // Ring di carica esterno (alpha cresce con avvicinarsi al pulse).
-    const demoPeriod = 3.5;
-    final demoT = time % demoPeriod;
-    final charge = (demoT / demoPeriod).clamp(0.0, 1.0);
+    final demoT = time % _demoPeriod;
+    final charge = (demoT / _demoPeriod).clamp(0.0, 1.0);
     _ringPaint
       ..color = color.withValues(alpha: 0.2 + charge * 0.6)
       ..strokeWidth = 2;
@@ -4314,9 +4410,8 @@ class _PetPreviewPainter extends CustomPainter {
     canvas.drawCircle(Offset.zero, 2, _fillPaint);
     canvas.restore();
     // Arc cooldown indicator (demo cycle: cresce e scompare).
-    const demoPeriod = 3.5;
-    final demoT = time % demoPeriod;
-    final fraction = (1.0 - demoT / demoPeriod).clamp(0.0, 1.0);
+    final demoT = time % _demoPeriod;
+    final fraction = (1.0 - demoT / _demoPeriod).clamp(0.0, 1.0);
     if (fraction > 0.01) {
       _strokePaint
         ..color = color.withValues(alpha: 0.55)

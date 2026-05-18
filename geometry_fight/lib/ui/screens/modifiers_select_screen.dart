@@ -68,6 +68,10 @@ class _ModifiersSelectScreenState extends State<ModifiersSelectScreen> {
   late List<GameModifier> _availableModifiers;
   static const _maxActive = 3;
 
+  // Caveman-review: guard rapid double-tap from re-firing onConfirm (which
+  // navigates to next screen). Widget unmounts on advance — no reset needed.
+  bool _isAdvancing = false;
+
   final ScrollController _scrollCtrl = ScrollController();
 
   @override
@@ -99,6 +103,8 @@ class _ModifiersSelectScreenState extends State<ModifiersSelectScreen> {
   // Multi-select rimane possibile usando il back+forward del wizard;
   // semantica primaria è "tap = scegli e prosegui".
   void _tapMod(String id) {
+    // Caveman-review: guard against rapid double-tap during page transition.
+    if (_isAdvancing) return;
     final wasActive = _active.contains(id);
     final atCap = !wasActive && _active.length >= _maxActive;
     setState(() {
@@ -107,6 +113,8 @@ class _ModifiersSelectScreenState extends State<ModifiersSelectScreen> {
       }
     });
     if (atCap) {
+      // Snackbar happens synchronously here — no await before context use.
+      // mounted check kept defensive in case future code adds async work.
       if (!mounted) return;
       final l10n = AppLocalizations.of(context)!;
       ScaffoldMessenger.of(context)
@@ -122,6 +130,7 @@ class _ModifiersSelectScreenState extends State<ModifiersSelectScreen> {
                   fontWeight: FontWeight.w900)),
         ));
     }
+    _isAdvancing = true;
     widget.onConfirm(_active);
   }
 

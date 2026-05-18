@@ -161,13 +161,18 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
   }
 
   bool _checkAllUpgrades(SaveData data) {
-    const maxLevels = {
-      'firepower': 5, 'speed': 5, 'fire_rate': 5,
-      'shield_capacity': 3, 'starting_lives': 2, 'bomb_capacity': 2,
-      'magnet_range': 3, 'xp_boost': 3,
-    };
-    for (final entry in maxLevels.entries) {
-      if (data.getUpgradeLevel(entry.key) < entry.value) return false;
+    // Iter (10-level scaling): tutti gli upgrade ora hanno cap L10
+    // (vedi shop_screen `_UpgradeItem` defs). Achievement "all_upgrades"
+    // = "Compra tutti gli upgrade" → richiede ognuno al massimo (10).
+    // Pre-fix: max levels stale (3,2,2,3,3) → achievement triggerava troppo
+    // presto. Single source-of-truth: `kMaxUpgradeLevel` da save_data.
+    const upgradeIds = [
+      'firepower', 'speed', 'fire_rate',
+      'shield_capacity', 'starting_lives', 'bomb_capacity',
+      'magnet_range', 'xp_boost',
+    ];
+    for (final id in upgradeIds) {
+      if (data.getUpgradeLevel(id) < kMaxUpgradeLevel) return false;
     }
     return true;
   }
