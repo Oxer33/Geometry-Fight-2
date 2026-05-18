@@ -43,11 +43,8 @@ class _ShopScreenState extends State<ShopScreen>
   final ScrollController _upgradesScrollCtrl = ScrollController();
   final ScrollController _modesScrollCtrl = ScrollController();
   final ScrollController _weaponsListCtrl = ScrollController();
-  final ScrollController _weaponsPreviewCtrl = ScrollController();
   final ScrollController _skinsListCtrl = ScrollController();
-  final ScrollController _skinsPreviewCtrl = ScrollController();
   final ScrollController _trailsListCtrl = ScrollController();
-  final ScrollController _trailsPreviewCtrl = ScrollController();
 
   @override
   void initState() {
@@ -79,11 +76,8 @@ class _ShopScreenState extends State<ShopScreen>
     _upgradesScrollCtrl.dispose();
     _modesScrollCtrl.dispose();
     _weaponsListCtrl.dispose();
-    _weaponsPreviewCtrl.dispose();
     _skinsListCtrl.dispose();
-    _skinsPreviewCtrl.dispose();
     _trailsListCtrl.dispose();
-    _trailsPreviewCtrl.dispose();
     super.dispose();
   }
 
@@ -519,7 +513,6 @@ class _ShopScreenState extends State<ShopScreen>
         time: time,
       ),
       listController: _skinsListCtrl,
-      previewController: _skinsPreviewCtrl,
     );
   }
 
@@ -567,7 +560,6 @@ class _ShopScreenState extends State<ShopScreen>
         time: time,
       ),
       listController: _trailsListCtrl,
-      previewController: _trailsPreviewCtrl,
     );
   }
 
@@ -635,121 +627,52 @@ class _ShopScreenState extends State<ShopScreen>
         time: time,
       ),
       listController: _weaponsListCtrl,
-      previewController: _weaponsPreviewCtrl,
       hideDescription: true,
     );
   }
 
   // ==================== PETS TAB ====================
 
-  /// Pets tab: lista pet companion (kPetCatalog) con buy/equip.
-  /// Diversa dagli altri tab perché non serve preview painter — i pet
-  /// sono visibili in-game, qui basta nome + descrizione + costo.
+  /// Pets tab: usa la stessa struttura 2-pane di weapons/skins/trails.
+  /// LEFT: sidebar verticale con riga per ogni pet (nome + BUY/EQUIP).
+  /// RIGHT: preview animata che mostra il player + pet con il comportamento
+  /// (orbit/dash/ring/swirl) replicato in puro Canvas painter.
   Widget _buildPetsTab() {
-    return _cyanScrollbar(
-      controller: _petsScrollCtrl,
-      child: ListView.builder(
-      controller: _petsScrollCtrl,
-      padding: const EdgeInsets.all(12),
-      itemCount: kPetCatalog.length,
-      itemBuilder: (context, index) {
-        final p = kPetCatalog[index];
-        final owned = _saveData.unlockedPets.contains(p.id);
-        final isActive = _saveData.activePet == p.id;
+    // Adatta kPetCatalog → _PetDef (estende _ShopItem) per integrarsi con
+    // _buildPreviewGrid che lavora su List<_ShopItem>.
+    final pets = kPetCatalog
+        .map((p) => _PetDef(
+              p.id,
+              p.displayName,
+              p.cost,
+              p.description,
+              p.color,
+              p.type,
+            ))
+        .toList();
 
-        return Container(
-          margin: const EdgeInsets.only(bottom: 10),
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(
-                color: isActive
-                    ? p.color.withValues(alpha: 0.9)
-                    : p.color.withValues(alpha: 0.3),
-                width: isActive ? 2 : 1),
-            color: p.color.withValues(alpha: isActive ? 0.10 : 0.04),
-          ),
-          child: Row(
-            children: [
-              // Pet badge (cerchio colorato + iconCode)
-              Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: p.color.withValues(alpha: 0.18),
-                  border: Border.all(
-                      color: p.color.withValues(alpha: 0.7), width: 2),
-                  boxShadow: [
-                    BoxShadow(
-                        color: p.color.withValues(alpha: 0.5), blurRadius: 8)
-                  ],
-                ),
-                alignment: Alignment.center,
-                child: Text(
-                  p.iconCode,
-                  style: TextStyle(
-                    color: p.color,
-                    fontSize: 24,
-                    fontWeight: FontWeight.w900,
-                    fontFamily: 'monospace',
-                  ),
-                ),
-              ),
-              const SizedBox(width: 14),
-              // Nome + descrizione
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      p.displayName,
-                      style: TextStyle(
-                        color: p.color,
-                        fontSize: 15,
-                        fontWeight: FontWeight.w900,
-                        fontFamily: 'monospace',
-                        letterSpacing: 2,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      p.description,
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.7),
-                        fontSize: 11,
-                        fontFamily: 'monospace',
-                        height: 1.3,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 10),
-              // Action button (BUY o EQUIP/EQUIPPED)
-              _PetActionButton(
-                cost: p.cost,
-                owned: owned,
-                isActive: isActive,
-                color: p.color,
-                onBuy: () {
-                  _purchase(p.id, p.cost, () {
-                    if (!_saveData.unlockedPets.contains(p.id)) {
-                      _saveData.unlockedPets.add(p.id);
-                    }
-                    _saveData.activePet = p.id;
-                  });
-                },
-                onEquip: () {
-                  setState(() => _saveData.activePet = p.id);
-                  SaveManager.save(_saveData);
-                },
-              ),
-            ],
-          ),
-        );
+    return _buildPreviewGrid(
+      items: pets,
+      unlocked: _saveData.unlockedPets,
+      activeId: _saveData.activePet,
+      onPurchase: (item) {
+        _purchase(item.id, item.cost, () {
+          if (!_saveData.unlockedPets.contains(item.id)) {
+            _saveData.unlockedPets.add(item.id);
+          }
+          _saveData.activePet = item.id;
+        });
       },
-    ),
+      onSelect: (item) {
+        setState(() => _saveData.activePet = item.id);
+        SaveManager.save(_saveData);
+      },
+      previewBuilder: (item, time) => _PetPreviewPainter(
+        petType: (item as _PetDef).petType,
+        color: item.color,
+        time: time,
+      ),
+      listController: _petsScrollCtrl,
     );
   }
 
@@ -1178,7 +1101,6 @@ class _ShopScreenState extends State<ShopScreen>
     required void Function(_ShopItem) onSelect,
     required CustomPainter Function(_ShopItem item, double time) previewBuilder,
     required ScrollController listController,
-    required ScrollController previewController,
     bool hideDescription = false,
   }) {
     final l10n = AppLocalizations.of(context)!;
@@ -1301,50 +1223,60 @@ class _ShopScreenState extends State<ShopScreen>
                   return LayoutBuilder(
                     builder: (context, previewConstraints) {
                       // Preview dinamica: nessun bottone equip qui (sidebar lo gestisce).
-                      final previewSize = (previewConstraints.maxHeight - 100).clamp(60.0, 220.0);
-                      // Preview content non scrolla davvero — niente scrollbar.
-                      // SingleChildScrollView mantenuto come safety per overflow
-                      // su schermi cortissimi, ma senza barre laterali visibili.
-                      return SingleChildScrollView(
-                        controller: previewController,
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            // Preview canvas
-                            Container(
-                              width: previewSize, height: previewSize,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: Colors.cyanAccent.withValues(alpha: 0.08),
+                      final previewSize = (previewConstraints.maxHeight - 100)
+                          .clamp(60.0, 220.0);
+                      // FIX: pannello preview FISSO — niente SingleChildScrollView.
+                      // Su schermi cortissimi FittedBox scala il contenuto invece di
+                      // abilitare scroll, così l'utente non vede mai la preview
+                      // muoversi verticalmente.
+                      return Center(
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                // Preview canvas
+                                Container(
+                                  width: previewSize,
+                                  height: previewSize,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: Colors.cyanAccent
+                                          .withValues(alpha: 0.08),
+                                    ),
+                                    gradient: RadialGradient(
+                                      colors: [
+                                        Colors.cyanAccent
+                                            .withValues(alpha: 0.03),
+                                        Colors.transparent,
+                                      ],
+                                    ),
+                                  ),
+                                  child: CustomPaint(
+                                    painter: previewBuilder(
+                                        item, _previewController.value * 10),
+                                    size: Size(previewSize, previewSize),
+                                  ),
                                 ),
-                                gradient: RadialGradient(
-                                  colors: [
-                                    Colors.cyanAccent.withValues(alpha: 0.03),
-                                    Colors.transparent,
-                                  ],
+                                const SizedBox(height: 12),
+                                // Description card (richiesta utente).
+                                _InfoCard(
+                                  title: _itemName(l10n, item),
+                                  description: _itemDesc(l10n, item),
+                                  accentColor: item is _WeaponDef
+                                      ? (item).color
+                                      : Colors.cyanAccent,
+                                  stats: item is _WeaponDef
+                                      ? (item).stats
+                                      : const [],
+                                  showDescription: !hideDescription,
                                 ),
-                              ),
-                              child: CustomPaint(
-                                painter: previewBuilder(item, _previewController.value * 10),
-                                size: Size(previewSize, previewSize),
-                              ),
+                              ],
                             ),
-                            const SizedBox(height: 12),
-                            // Description card (richiesta utente).
-                            _InfoCard(
-                              title: _itemName(l10n, item),
-                              description: _itemDesc(l10n, item),
-                              accentColor: item is _WeaponDef
-                                  ? (item).color
-                                  : Colors.cyanAccent,
-                              stats: item is _WeaponDef
-                                  ? (item).stats
-                                  : const [],
-                              showDescription: !hideDescription,
-                            ),
-                          ],
+                          ),
                         ),
                       );
                     },
@@ -1698,6 +1630,15 @@ class _ModeDef extends _ShopItem {
   final IconData icon;
   final Color color;
   _ModeDef(super.id, super.name, super.cost, super.description, this.icon, this.color);
+}
+
+/// Wrapper di [PetDef] (kPetCatalog) come [_ShopItem] per integrarsi con
+/// `_buildPreviewGrid`. Tiene color + petType per il painter dell'anteprima.
+class _PetDef extends _ShopItem {
+  final Color color;
+  final PetType petType;
+  _PetDef(super.id, super.name, super.cost, super.description, this.color,
+      this.petType);
 }
 
 class _UpgradeItem {
@@ -3786,66 +3727,611 @@ class _WeaponPreviewPainter extends CustomPainter {
   bool shouldRepaint(covariant _WeaponPreviewPainter old) => old.time != time;
 }
 
-/// Pulsante azione per la riga di un pet nel tab PETS:
-/// - se non posseduto → "BUY [cost]g"
-/// - se posseduto + non attivo → "EQUIP"
-/// - se attivo → "EQUIPPED" (read-only verde)
-class _PetActionButton extends StatelessWidget {
-  final int cost;
-  final bool owned;
-  final bool isActive;
-  final Color color;
-  final VoidCallback onBuy;
-  final VoidCallback onEquip;
+// ==================== PET PREVIEW PAINTER ====================
+//
+// Replica il comportamento + il render dei pet (lib/game/entities/pets/
+// pet_base.dart) come puro CustomPainter, senza dipendenze Flame. Estrae solo
+// la matematica del movimento e i disegni Canvas.
+//
+// Layout: player al centro come piccolo triangolo cyan; pet si muove relativo
+// in base al tipo. Le animazioni periodiche (Phoenix flash, EMP ring,
+// TacticalSpotter slow-mo) usano un ciclo demo ~3.5s.
 
-  const _PetActionButton({
-    required this.cost,
-    required this.owned,
-    required this.isActive,
+class _PetPreviewPainter extends CustomPainter {
+  // Paints cached — riusati tra frame per evitare alloc per repaint.
+  static final Paint _glowPaint = Paint();
+  static final Paint _fillPaint = Paint();
+  static final Paint _strokePaint = Paint()
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 1.6;
+  static final Paint _ringPaint = Paint()
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 2;
+  static final Paint _flashPaint = Paint();
+  static final Paint _arcPaint = Paint()
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 2.2;
+
+  final PetType petType;
+  final Color color;
+  final double time;
+
+  _PetPreviewPainter({
+    required this.petType,
     required this.color,
-    required this.onBuy,
-    required this.onEquip,
+    required this.time,
   });
 
   @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    final String label;
-    final Color btnColor;
-    final VoidCallback? onTap;
-    if (isActive) {
-      label = l10n.shopEquipped;
-      btnColor = Colors.greenAccent;
-      onTap = null;
-    } else if (owned) {
-      label = l10n.shopEquip;
-      btnColor = color;
-      onTap = onEquip;
-    } else {
-      label = l10n.shopBuyWithCost(cost);
-      btnColor = const Color(0xFFFFD700);
-      onTap = onBuy;
+  void paint(Canvas canvas, Size size) {
+    final cx = size.width / 2;
+    final cy = size.height / 2;
+
+    // Demo cycle: ogni ~3.5s un effetto periodico (Phoenix flash, EMP ring,
+    // TacticalSpotter glow) parte e svanisce in 0.6s.
+    const demoPeriod = 3.5;
+    final demoT = time % demoPeriod;
+    final demoFiring = demoT < 0.6;
+    final demoFireT = demoFiring ? (1.0 - demoT / 0.6) : 0.0;
+
+    // 1. Screen flash globale per Phoenix.
+    if (petType == PetType.phoenix && demoFiring) {
+      _flashPaint.color =
+          const Color(0xFFFF8800).withValues(alpha: demoFireT * 0.25);
+      canvas.drawRect(Offset.zero & size, _flashPaint);
     }
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(8),
-          color: btnColor.withValues(alpha: 0.12),
-          border: Border.all(color: btnColor.withValues(alpha: 0.7)),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            color: btnColor,
-            fontSize: 11,
-            fontWeight: FontWeight.w900,
-            fontFamily: 'monospace',
-            letterSpacing: 1.5,
-          ),
-        ),
-      ),
-    );
+
+    // 2. Player ship al centro (cyan triangle minimal — sostituto delle skin).
+    _drawPlayerStub(canvas, cx, cy);
+
+    // 3. Calcola posizione pet in base al tipo.
+    final petPos = _computePetPosition(cx, cy, demoT);
+
+    // 4. Effetti pre-pet (BlackHole swirl background, EMP ring expanding,
+    //    TacticalSpotter cooldown arc).
+    _drawPetAuxEffects(canvas, petPos, demoT, demoFireT, demoFiring);
+
+    // 5. Render pet body.
+    _drawPet(canvas, petPos);
+
+    // 6. Effetti post-pet (Phoenix wings pulse, SnipePet ray, RamPet trail).
+    _drawPetPostEffects(canvas, cx, cy, petPos, demoT, demoFireT, demoFiring);
   }
+
+  // ─── PLAYER STUB ────────────────────────────────────────────────────
+  void _drawPlayerStub(Canvas canvas, double cx, double cy) {
+    final pulse = 0.4 + math.sin(time * 1.5) * 0.15;
+    _glowPaint
+      ..color = NeonColors.cyan.withValues(alpha: pulse)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 10);
+    canvas.drawCircle(Offset(cx, cy), 14, _glowPaint);
+    _glowPaint.maskFilter = null;
+
+    // Forma classica nave (triangolo cyan up-pointing).
+    final path = Path()
+      ..moveTo(cx, cy - 12)
+      ..lineTo(cx + 9, cy + 9)
+      ..lineTo(cx, cy + 4)
+      ..lineTo(cx - 9, cy + 9)
+      ..close();
+    _fillPaint.color = NeonColors.cyan;
+    canvas.drawPath(path, _fillPaint);
+    _strokePaint
+      ..color = Colors.white.withValues(alpha: 0.7)
+      ..strokeWidth = 1.0;
+    canvas.drawPath(path, _strokePaint);
+  }
+
+  // ─── PET POSITION ──────────────────────────────────────────────────
+  /// Computa la posizione del pet relativa al player center secondo il tipo.
+  /// Tutti i raggi/velocità sono scalati ~0.5× rispetto al gioco per stare
+  /// nel canvas 220×220px senza tagliare ai bordi.
+  Offset _computePetPosition(double cx, double cy, double demoT) {
+    switch (petType) {
+      case PetType.attack:
+        // AttackPet: orbita stretta a 50px raggio, fase * 1.2.
+        final ang = time * 1.2;
+        return Offset(cx + math.cos(ang) * 50, cy + math.sin(ang) * 50);
+
+      case PetType.collect:
+        // CollectPet: wandering — figura di otto per dare l'idea di "vola libero".
+        final t = time * 0.8;
+        return Offset(
+            cx + math.cos(t) * 65, cy + math.sin(t * 2) * 35);
+
+      case PetType.sweep:
+        // SweepPet: orbita veloce 5.0 rad/s a 80px (proporzionato → 70px).
+        final ang = time * 5.0;
+        return Offset(cx + math.cos(ang) * 70, cy + math.sin(ang) * 70);
+
+      case PetType.defend:
+        // DefendPet: dietro al player. Il "back" è verso il basso (player
+        // punta in alto). Pulse leggera.
+        return Offset(cx, cy + 45 + math.sin(time * 2) * 2);
+
+      case PetType.snipe:
+        // SnipePet: orbita lenta 0.8 rad/s a 95px (proporzionato → 75px).
+        final ang = time * 0.8;
+        return Offset(cx + math.cos(ang) * 75, cy + math.sin(ang) * 75);
+
+      case PetType.ram:
+        // RamPet: dash periodico verso un target fittizio (cardinale rotante).
+        // Periodo 2.5s: 0-0.5 = approach, 0.5-1.0 = back, then idle orbit.
+        const ramPeriod = 2.5;
+        final rt = time % ramPeriod;
+        final targetAng = (time / ramPeriod).floor() * (math.pi / 2);
+        final targetX = cx + math.cos(targetAng) * 90;
+        final targetY = cy + math.sin(targetAng) * 90;
+        if (rt < 0.5) {
+          // Approach 0→1
+          final p = rt / 0.5;
+          return Offset(cx + (targetX - cx) * p, cy + (targetY - cy) * p);
+        } else if (rt < 1.0) {
+          // Return 1→0
+          final p = 1.0 - (rt - 0.5) / 0.5;
+          return Offset(cx + (targetX - cx) * p, cy + (targetY - cy) * p);
+        }
+        // Idle orbit
+        final ang = time * 1.5;
+        return Offset(cx + math.cos(ang) * 60, cy + math.sin(ang) * 60);
+
+      case PetType.phoenix:
+        // PhoenixPet: orbita lenta a 46px (proporzionato → 50px).
+        final ang = time * 1.4;
+        return Offset(cx + math.cos(ang) * 50, cy + math.sin(ang) * 50);
+
+      case PetType.blackHolePet:
+        // BlackHole: fisso 60px sotto al player (back-offset → vertical "back").
+        return Offset(cx, cy + 60);
+
+      case PetType.empDrone:
+        // EmpDrone: orbita 1.7 rad/s a 52px.
+        final ang = time * 1.7;
+        return Offset(cx + math.cos(ang) * 55, cy + math.sin(ang) * 55);
+
+      case PetType.tacticalSpotter:
+        // TacticalSpotter: orbita 2.2 rad/s a 58px.
+        final ang = time * 2.2;
+        return Offset(cx + math.cos(ang) * 58, cy + math.sin(ang) * 58);
+
+      case PetType.none:
+        return Offset(cx, cy);
+    }
+  }
+
+  // ─── PET AUX EFFECTS (background) ──────────────────────────────────
+  void _drawPetAuxEffects(Canvas canvas, Offset petPos, double demoT,
+      double demoFireT, bool firing) {
+    // EmpDrone: ring expanding in fase di pulse.
+    if (petType == PetType.empDrone && firing) {
+      final ringR = 12 + (1.0 - demoFireT) * 60;
+      _ringPaint
+        ..color = color.withValues(alpha: demoFireT * 0.8)
+        ..strokeWidth = 2 + demoFireT * 1.5;
+      canvas.drawCircle(petPos, ringR, _ringPaint);
+    }
+  }
+
+  // ─── PET RENDER ─────────────────────────────────────────────────────
+  void _drawPet(Canvas canvas, Offset pos) {
+    switch (petType) {
+      case PetType.attack:
+        _drawAttackPet(canvas, pos);
+      case PetType.collect:
+        _drawCollectPet(canvas, pos);
+      case PetType.sweep:
+        _drawSweepPet(canvas, pos);
+      case PetType.defend:
+        _drawDefendPet(canvas, pos);
+      case PetType.snipe:
+        _drawSnipePet(canvas, pos);
+      case PetType.ram:
+        _drawRamPet(canvas, pos);
+      case PetType.phoenix:
+        _drawPhoenixPet(canvas, pos);
+      case PetType.blackHolePet:
+        _drawBlackHolePet(canvas, pos);
+      case PetType.empDrone:
+        _drawEmpDronePet(canvas, pos);
+      case PetType.tacticalSpotter:
+        _drawTacticalSpotterPet(canvas, pos);
+      case PetType.none:
+        break;
+    }
+  }
+
+  // ─── PET POST EFFECTS (foreground) ─────────────────────────────────
+  void _drawPetPostEffects(Canvas canvas, double cx, double cy, Offset petPos,
+      double demoT, double demoFireT, bool firing) {
+    // SnipePet: laser ray verso target fittizio durante demo cycle.
+    if (petType == PetType.snipe && firing) {
+      // Target alla destra del player (esempio statico, switcha ogni 2 demo).
+      final targetAng = ((time / 3.5).floor() * 0.7) % (math.pi * 2);
+      final target = Offset(
+          cx + math.cos(targetAng) * 95, cy + math.sin(targetAng) * 95);
+      _strokePaint
+        ..color = NeonColors.laserRed.withValues(alpha: demoFireT)
+        ..strokeWidth = 4 * demoFireT + 1;
+      canvas.drawLine(petPos, target, _strokePaint);
+      _strokePaint
+        ..color = const Color(0xFFFFFFFF).withValues(alpha: demoFireT * 0.9)
+        ..strokeWidth = 1.5 * demoFireT;
+      canvas.drawLine(petPos, target, _strokePaint);
+    }
+
+    // Phoenix: pulse extra-glow al fire.
+    if (petType == PetType.phoenix && firing) {
+      _glowPaint
+        ..color = const Color(0xFFFF8800).withValues(alpha: demoFireT * 0.7)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 16);
+      canvas.drawCircle(petPos, 28 * (1.0 + (1 - demoFireT)), _glowPaint);
+      _glowPaint.maskFilter = null;
+    }
+
+    // TacticalSpotter: dim slow-mo glow al fire.
+    if (petType == PetType.tacticalSpotter && firing) {
+      _flashPaint.color = color.withValues(alpha: demoFireT * 0.12);
+      // Vignette: cerchio scuro centrato sul player con ring chiaro.
+      _glowPaint
+        ..color = color.withValues(alpha: demoFireT * 0.5)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 14);
+      canvas.drawCircle(Offset(cx, cy), 60, _glowPaint);
+      _glowPaint.maskFilter = null;
+    }
+  }
+
+  // ─── PET BODY DRAWS ────────────────────────────────────────────────
+  // Replicano la geometria dei render() in pet_base.dart, semplificati per
+  // dimensioni costanti (size 28×28 in-game → ~28×28 nel preview).
+
+  void _drawAttackPet(Canvas canvas, Offset pos) {
+    final pulse = 0.6 + math.sin(time * 6) * 0.4;
+    _glowPaint
+      ..color = color.withValues(alpha: 0.45 * pulse)
+      ..maskFilter = null;
+    canvas.drawCircle(pos, 14, _glowPaint);
+    // Body diamond rotato (aim verso esterno orbit).
+    final aimAng = time * 1.2 + math.pi / 2;
+    canvas.save();
+    canvas.translate(pos.dx, pos.dy);
+    canvas.rotate(aimAng);
+    final path = Path()
+      ..moveTo(11, 0)
+      ..lineTo(0, 7)
+      ..lineTo(-7, 0)
+      ..lineTo(0, -7)
+      ..close();
+    _fillPaint.color = color;
+    canvas.drawPath(path, _fillPaint);
+    _strokePaint
+      ..color = const Color(0xFFFFFFFF)
+      ..strokeWidth = 1.6;
+    canvas.drawPath(path, _strokePaint);
+    // Twin barrels.
+    _fillPaint.color = const Color(0xFFFFFFFF);
+    canvas.drawRect(const Rect.fromLTWH(2, -4, 9, 1.5), _fillPaint);
+    canvas.drawRect(const Rect.fromLTWH(2, 2.5, 9, 1.5), _fillPaint);
+    canvas.restore();
+  }
+
+  void _drawCollectPet(Canvas canvas, Offset pos) {
+    final pulse = 0.6 + math.sin(time * 5) * 0.4;
+    _glowPaint
+      ..color = color.withValues(alpha: 0.45 * pulse)
+      ..maskFilter = null;
+    canvas.drawCircle(pos, 14, _glowPaint);
+    // Hexagon body con rotazione.
+    canvas.save();
+    canvas.translate(pos.dx, pos.dy);
+    canvas.rotate(time * 0.5);
+    final path = Path();
+    for (int i = 0; i < 6; i++) {
+      final a = i * math.pi / 3;
+      final x = math.cos(a) * 8;
+      final y = math.sin(a) * 8;
+      if (i == 0) {
+        path.moveTo(x, y);
+      } else {
+        path.lineTo(x, y);
+      }
+    }
+    path.close();
+    _fillPaint.color = color;
+    canvas.drawPath(path, _fillPaint);
+    _strokePaint
+      ..color = const Color(0xFFFFFFFF)
+      ..strokeWidth = 1.6;
+    canvas.drawPath(path, _strokePaint);
+    canvas.restore();
+    // Rotating ring (collector field).
+    _ringPaint
+      ..color = color.withValues(alpha: 0.6 + math.sin(time * 8) * 0.3)
+      ..strokeWidth = 2;
+    final ringR = 11 + math.sin(time * 4) * 2;
+    canvas.drawCircle(pos, ringR, _ringPaint);
+    // Inner white dot.
+    _fillPaint.color = const Color(0xFFFFFFFF);
+    canvas.drawCircle(pos, 2.5, _fillPaint);
+  }
+
+  void _drawSweepPet(Canvas canvas, Offset pos) {
+    final pulse = 0.5 + math.sin(time * 8) * 0.5;
+    _glowPaint
+      ..color = color.withValues(alpha: 0.5 * pulse)
+      ..maskFilter = null;
+    canvas.drawCircle(pos, 16, _glowPaint);
+    // Pinwheel 4 lame triangolari rotanti.
+    canvas.save();
+    canvas.translate(pos.dx, pos.dy);
+    canvas.rotate(time * 6);
+    for (int i = 0; i < 4; i++) {
+      final a = i * math.pi / 2;
+      final path = Path()
+        ..moveTo(0, 0)
+        ..lineTo(math.cos(a) * 13, math.sin(a) * 13)
+        ..lineTo(math.cos(a + 0.5) * 6, math.sin(a + 0.5) * 6)
+        ..close();
+      _fillPaint.color = color;
+      canvas.drawPath(path, _fillPaint);
+      _strokePaint
+        ..color = const Color(0xFFFFFFFF).withValues(alpha: 0.7)
+        ..strokeWidth = 1.5;
+      canvas.drawPath(path, _strokePaint);
+    }
+    canvas.restore();
+    // Nucleo bianco.
+    _fillPaint.color = const Color(0xFFFFFFFF);
+    canvas.drawCircle(pos, 3.5, _fillPaint);
+  }
+
+  void _drawDefendPet(Canvas canvas, Offset pos) {
+    final pulse = 0.6 + math.sin(time * 5) * 0.4;
+    _glowPaint
+      ..color = color.withValues(alpha: 0.45 * pulse)
+      ..maskFilter = null;
+    canvas.drawCircle(pos, 14, _glowPaint);
+    // Shield half-circle puntato verso il basso (back-aim quando player up).
+    canvas.save();
+    canvas.translate(pos.dx, pos.dy);
+    canvas.rotate(math.pi / 2);
+    final shieldPath = Path()
+      ..moveTo(-7, -8)
+      ..quadraticBezierTo(8, 0, -7, 8)
+      ..close();
+    _fillPaint.color = color;
+    canvas.drawPath(shieldPath, _fillPaint);
+    _strokePaint
+      ..color = const Color(0xFFFFFFFF)
+      ..strokeWidth = 1.6;
+    canvas.drawPath(shieldPath, _strokePaint);
+    // Cannon barrel.
+    _fillPaint.color = const Color(0xFFFFFFFF);
+    canvas.drawRect(const Rect.fromLTWH(4, -1.5, 8, 3), _fillPaint);
+    canvas.restore();
+  }
+
+  void _drawSnipePet(Canvas canvas, Offset pos) {
+    final pulse = 0.6 + math.sin(time * 5) * 0.4;
+    _glowPaint
+      ..color = color.withValues(alpha: 0.5 * pulse)
+      ..maskFilter = null;
+    canvas.drawCircle(pos, 14, _glowPaint);
+    // Triangolo scope orientato verso il target fittizio.
+    final targetAng = ((time / 3.5).floor() * 0.7) % (math.pi * 2);
+    canvas.save();
+    canvas.translate(pos.dx, pos.dy);
+    canvas.rotate(targetAng);
+    final path = Path()
+      ..moveTo(11, 0)
+      ..lineTo(-7, -7)
+      ..lineTo(-7, 7)
+      ..close();
+    _fillPaint.color = color;
+    canvas.drawPath(path, _fillPaint);
+    _strokePaint
+      ..color = const Color(0xFFFFFFFF)
+      ..strokeWidth = 1.6;
+    canvas.drawPath(path, _strokePaint);
+    // Crosshair lines.
+    _strokePaint
+      ..color = const Color(0xFFFFFFFF).withValues(alpha: 0.9)
+      ..strokeWidth = 1;
+    canvas.drawLine(const Offset(-3, 0), const Offset(8, 0), _strokePaint);
+    canvas.drawLine(const Offset(2, -4), const Offset(2, 4), _strokePaint);
+    canvas.restore();
+  }
+
+  void _drawRamPet(Canvas canvas, Offset pos) {
+    final pulse = 0.6 + math.sin(time * 7) * 0.4;
+    _glowPaint
+      ..color = color.withValues(alpha: 0.5 * pulse)
+      ..maskFilter = null;
+    canvas.drawCircle(pos, 15, _glowPaint);
+    // Chevron arrow puntato lungo direzione movimento. Calcola velocità via
+    // delta di posizione (approssimato dal tipo di moto del computePos).
+    const ramPeriod = 2.5;
+    final rt = time % ramPeriod;
+    final targetAng = (time / ramPeriod).floor() * (math.pi / 2);
+    double aimAng;
+    if (rt < 0.5) {
+      aimAng = targetAng;
+    } else if (rt < 1.0) {
+      aimAng = targetAng + math.pi;
+    } else {
+      aimAng = time * 1.5 + math.pi / 2;
+    }
+    canvas.save();
+    canvas.translate(pos.dx, pos.dy);
+    canvas.rotate(aimAng);
+    final path = Path()
+      ..moveTo(13, 0)
+      ..lineTo(-3, -8)
+      ..lineTo(0, 0)
+      ..lineTo(-3, 8)
+      ..close();
+    _fillPaint.color = color;
+    canvas.drawPath(path, _fillPaint);
+    _strokePaint
+      ..color = const Color(0xFFFFFFFF)
+      ..strokeWidth = 1.6;
+    canvas.drawPath(path, _strokePaint);
+    // Trail/thrust dietro.
+    _fillPaint.color =
+        const Color(0xFFFFFFFF).withValues(alpha: 0.6 * pulse);
+    canvas.drawCircle(const Offset(-5, 0), 2.5, _fillPaint);
+    canvas.restore();
+  }
+
+  void _drawPhoenixPet(Canvas canvas, Offset pos) {
+    final pulse = 0.6 + math.sin(time * 6) * 0.4;
+    _glowPaint
+      ..color = color.withValues(alpha: 0.6 * pulse)
+      ..maskFilter = null;
+    canvas.drawCircle(pos, 16, _glowPaint);
+    // Body: ali stilizzate ai lati + corpo a fiamma centrale.
+    canvas.save();
+    canvas.translate(pos.dx, pos.dy);
+    canvas.rotate(time * 0.8);
+    final path = Path()
+      ..moveTo(0, -10)
+      ..lineTo(8, -2)
+      ..lineTo(5, 4)
+      ..lineTo(0, 9)
+      ..lineTo(-5, 4)
+      ..lineTo(-8, -2)
+      ..close();
+    _fillPaint.color = color;
+    canvas.drawPath(path, _fillPaint);
+    _strokePaint
+      ..color = const Color(0xFFFFFFFF)
+      ..strokeWidth = 1.6;
+    canvas.drawPath(path, _strokePaint);
+    canvas.restore();
+    // Nucleo bianco pulsante.
+    _fillPaint.color = const Color(0xFFFFFFFF);
+    canvas.drawCircle(pos, 2.5 + math.sin(time * 8) * 1, _fillPaint);
+  }
+
+  void _drawBlackHolePet(Canvas canvas, Offset pos) {
+    final pulse = 0.5 + math.sin(time * 4) * 0.5;
+    _glowPaint
+      ..color = color.withValues(alpha: 0.5 * pulse)
+      ..maskFilter = null;
+    canvas.drawCircle(pos, 16, _glowPaint);
+    // Event horizon nero.
+    _fillPaint.color = const Color(0xFF000000);
+    canvas.drawCircle(pos, 7, _fillPaint);
+    // Bordo viola.
+    _arcPaint
+      ..color = color
+      ..strokeWidth = 1.6;
+    canvas.drawCircle(pos, 7, _arcPaint);
+    // 4 archi rotanti (accretion).
+    canvas.save();
+    canvas.translate(pos.dx, pos.dy);
+    canvas.rotate(time * 2.6);
+    _arcPaint.strokeWidth = 2.2;
+    for (int i = 0; i < 4; i++) {
+      final start = i * math.pi / 2;
+      _arcPaint.color =
+          color.withValues(alpha: 0.55 + math.sin(time * 6 + i) * 0.3);
+      canvas.drawArc(
+        Rect.fromCircle(center: Offset.zero, radius: 11),
+        start,
+        math.pi / 3,
+        false,
+        _arcPaint,
+      );
+    }
+    canvas.restore();
+  }
+
+  void _drawEmpDronePet(Canvas canvas, Offset pos) {
+    final pulse = 0.6 + math.sin(time * 5) * 0.4;
+    _glowPaint
+      ..color = color.withValues(alpha: 0.45 * pulse)
+      ..maskFilter = null;
+    canvas.drawCircle(pos, 14, _glowPaint);
+    canvas.save();
+    canvas.translate(pos.dx, pos.dy);
+    // Hexagon body.
+    final body = Path();
+    for (int i = 0; i < 6; i++) {
+      final a = i * math.pi / 3;
+      final x = math.cos(a) * 7;
+      final y = math.sin(a) * 7;
+      if (i == 0) {
+        body.moveTo(x, y);
+      } else {
+        body.lineTo(x, y);
+      }
+    }
+    body.close();
+    _fillPaint.color = color;
+    canvas.drawPath(body, _fillPaint);
+    _strokePaint
+      ..color = const Color(0xFFFFFFFF)
+      ..strokeWidth = 1.6;
+    canvas.drawPath(body, _strokePaint);
+    // Antenne EMP — 4 punte cardinali bianche.
+    _fillPaint.color = const Color(0xFFFFFFFF);
+    canvas.drawRect(const Rect.fromLTWH(-1, -11, 2, 4), _fillPaint);
+    canvas.drawRect(const Rect.fromLTWH(-1, 7, 2, 4), _fillPaint);
+    canvas.drawRect(const Rect.fromLTWH(-11, -1, 4, 2), _fillPaint);
+    canvas.drawRect(const Rect.fromLTWH(7, -1, 4, 2), _fillPaint);
+    canvas.restore();
+    // Ring di carica esterno (alpha cresce con avvicinarsi al pulse).
+    const demoPeriod = 3.5;
+    final demoT = time % demoPeriod;
+    final charge = (demoT / demoPeriod).clamp(0.0, 1.0);
+    _ringPaint
+      ..color = color.withValues(alpha: 0.2 + charge * 0.6)
+      ..strokeWidth = 2;
+    canvas.drawCircle(pos, 13 + math.sin(time * 4) * 1.5, _ringPaint);
+  }
+
+  void _drawTacticalSpotterPet(Canvas canvas, Offset pos) {
+    final pulse = 0.6 + math.sin(time * 7) * 0.4;
+    _glowPaint
+      ..color = color.withValues(alpha: 0.5 * pulse)
+      ..maskFilter = null;
+    canvas.drawCircle(pos, 14, _glowPaint);
+    canvas.save();
+    canvas.translate(pos.dx, pos.dy);
+    // Scope cerchio.
+    _strokePaint
+      ..color = color
+      ..strokeWidth = 2;
+    canvas.drawCircle(Offset.zero, 9, _strokePaint);
+    // Crosshair reticolo.
+    _strokePaint
+      ..color = const Color(0xFFFFFFFF)
+      ..strokeWidth = 1.2;
+    canvas.drawLine(const Offset(-9, 0), const Offset(9, 0), _strokePaint);
+    canvas.drawLine(const Offset(0, -9), const Offset(0, 9), _strokePaint);
+    // Punto centrale.
+    _fillPaint.color = color;
+    canvas.drawCircle(Offset.zero, 2, _fillPaint);
+    canvas.restore();
+    // Arc cooldown indicator (demo cycle: cresce e scompare).
+    const demoPeriod = 3.5;
+    final demoT = time % demoPeriod;
+    final fraction = (1.0 - demoT / demoPeriod).clamp(0.0, 1.0);
+    if (fraction > 0.01) {
+      _strokePaint
+        ..color = color.withValues(alpha: 0.55)
+        ..strokeWidth = 2;
+      canvas.drawArc(
+        Rect.fromCircle(center: pos, radius: 13),
+        -math.pi / 2,
+        math.pi * 2 * fraction,
+        false,
+        _strokePaint,
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _PetPreviewPainter old) =>
+      old.time != time || old.petType != petType || old.color != color;
 }
