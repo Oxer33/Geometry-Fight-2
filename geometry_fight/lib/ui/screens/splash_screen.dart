@@ -35,6 +35,36 @@ class _SplashScreenState extends State<SplashScreen>
     widget.onComplete();
   }
 
+  // === Iter 15: steering-based ship motion ===
+  // Stato mutabile per integrazione frame-by-frame (al posto della formula
+  // pre-computed). Il chaseController tick driva l'update.
+  static const double _chaseDurationSec = 3.5;
+  // Posizione/velocità ship in world-space (px). Inizializzati al primo
+  // frame quando conosciamo size.
+  double _shipX = 0;
+  double _shipY = 0;
+  double _shipVx = 0;
+  double _shipVy = 0;
+  double _shipAim = math.pi / 2; // default: muso a destra
+  bool _shipInit = false;
+  double _prevChaseT = 0.0;
+  Size? _lastSize;
+  // Snapshot ship pos/aim quando ogni burst-start viene attraversato
+  // (per bullet origins). 3 burst → fino a 3 snapshot. captured=false
+  // finché il burst non è iniziato.
+  final List<bool> _burstCaptured = [false, false, false];
+  final List<double> _burstSnapX = [0, 0, 0];
+  final List<double> _burstSnapY = [0, 0, 0];
+  final List<double> _burstSnapDx = [1, 0, 0]; // dir aim al snapshot
+  final List<double> _burstSnapDy = [0, 0, 0];
+  // Trail ring buffer: 18 past positions per la scia cyan (mantiene il
+  // look del trail in-game `Player._renderTrail`). Push ad ogni frame.
+  static const int _trailLen = 18;
+  final List<double> _trailX = List.filled(_trailLen, 0);
+  final List<double> _trailY = List.filled(_trailLen, 0);
+  int _trailHead = 0; // index del sample più recente
+  int _trailFilled = 0; // numero di sample validi (0..18)
+
   @override
   void initState() {
     super.initState();
@@ -42,7 +72,7 @@ class _SplashScreenState extends State<SplashScreen>
     // Fase 1: Inseguimento (3.5 secondi — più lungo e cinematografico)
     _chaseController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 3500),
+      duration: Duration(milliseconds: (_chaseDurationSec * 1000).round()),
     );
 
     // Fase 2: Logo (dopo esplosione)
@@ -64,6 +94,7 @@ class _SplashScreenState extends State<SplashScreen>
     )..repeat();
 
     _chaseController.forward();
+    _chaseController.addListener(_updateShipSteering);
     _chaseController.addStatusListener((status) {
       if (status == AnimationStatus.completed && mounted) {
         setState(() {
@@ -84,6 +115,202 @@ class _SplashScreenState extends State<SplashScreen>
         if (_explosionPhase > 1.5) _showExplosion = false;
       }
     });
+  }
+
+  /// Iter 15: integrazione steering frame-by-frame della nave.
+  /// - seek mob (lerp velocity verso desiredVel)
+  /// - strafe perpendicolare entro 200px (orbita invece di "baciare" il mob)
+  /// - boundary keepaway entro 60px dal bordo canvas
+  /// - subtle bob perpendicolare (8px amp, 0.6Hz)
+  /// - speed clamp 300-400 px/s
+  /// - aim segue velocity vector (non target)
+  void _updateShipSteering() {
+    if (!mounted) return;
+    final size = _lastSize;
+    if (size == null || size.width <= 0 || size.height <= 0) return;
+
+    final t = _chaseController.value;
+    // dt in secondi reali. Il chase è 3.5s di durata controller.
+    var dtT = t - _prevChaseT;
+    _prevChaseT = t;
+    if (dtT < 0) dtT = 0; // restart o reverse: skip frame
+    // Cap dt per evitare scatti su frame drop pesanti.
+    if (dtT > 0.05) dtT = 0.05;
+    final dt = dtT * _chaseDurationSec; // chase-units → secondi
+
+    // Mob (weaver) target: stessa traiettoria del painter, calcolata qui
+    // così steering e render condividono la verità geometrica.
+    final cy = size.height / 2;
+    final droneX = size.width * (-0.15 + t * 1.20);
+    final droneJitter = math.sin(t * math.pi * 8) * 6;
+    final droneY = cy +
+        math.sin(t * math.pi * 2) * size.height * 0.32 +
+        droneJitter;
+
+    // Init lazy: prima frame con size valido → ship parte un po' a sx del
+    // mob, allineata verticalmente. Velocity iniziale verso il mob.
+    if (!_shipInit) {
+      _shipX = -size.width * 0.10;
+      _shipY = cy;
+      final dx0 = droneX - _shipX;
+      final dy0 = droneY - _shipY;
+      final len0 = math.sqrt(dx0 * dx0 + dy0 * dy0);
+      if (len0 > 0.01) {
+        _shipVx = (dx0 / len0) * 350;
+        _shipVy = (dy0 / len0) * 350;
+      } else {
+        _shipVx = 350;
+        _shipVy = 0;
+      }
+      _shipInit = true;
+    }
+
+    // === SEEK: desiredVel verso il mob a maxSpeed. ===
+    const maxSpeed = 400.0;
+    const minSpeed = 300.0;
+    final dxM = droneX - _shipX;
+    final dyM = droneY - _shipY;
+    final distM = math.sqrt(dxM * dxM + dyM * dyM);
+    double desiredVx;
+    double desiredVy;
+    if (distM > 0.01) {
+      desiredVx = (dxM / distM) * maxSpeed;
+      desiredVy = (dyM / distM) * maxSpeed;
+    } else {
+      desiredVx = _shipVx;
+      desiredVy = _shipVy;
+    }
+
+    // Blend ratio: 0.04 per chase-unit (3.5s) → ~0.0114/s. Per stabilità
+    // numerica usiamo `1 - exp(-rate * dt)` invece di blending lineare.
+    // Con rate scelto in modo che blendT ≈ 0.04 quando dt = 1 chase-unit.
+    // rate = -ln(1 - 0.04) ≈ 0.0408 per chase-unit → /3.5 per sec.
+    const seekRatePerChaseUnit = 0.0408;
+    final seekBlend = 1 - math.exp(-seekRatePerChaseUnit * dtT);
+    _shipVx += (desiredVx - _shipVx) * seekBlend;
+    _shipVy += (desiredVy - _shipVy) * seekBlend;
+
+    // === STRAFE: entro 200px aggiungi componente perpendicolare. ===
+    // Sceglie il lato perpendicolare consistente in base al cross product
+    // tra velocità attuale e direzione-al-mob → no flip-flop di lato.
+    if (distM < 200 && distM > 0.01) {
+      // Quanto più vicino, tanto più strafe. strafe peak a distM≈40.
+      final strafeIntensity = ((200 - distM) / 200).clamp(0.0, 1.0);
+      final dirX = dxM / distM;
+      final dirY = dyM / distM;
+      // Perpendicolare (rotazione +90°): (-dy, dx).
+      var perpX = -dirY;
+      var perpY = dirX;
+      // Allinea il segno della perpendicolare con la velocità corrente
+      // così la ship "continua a girare nella stessa direzione".
+      final dot = perpX * _shipVx + perpY * _shipVy;
+      if (dot < 0) {
+        perpX = -perpX;
+        perpY = -perpY;
+      }
+      // Force perpendicolare in unità px/s² · dt → contributo px/s.
+      const strafeAccel = 900.0;
+      _shipVx += perpX * strafeAccel * strafeIntensity * dt;
+      _shipVy += perpY * strafeAccel * strafeIntensity * dt;
+    }
+
+    // === BOUNDARY KEEPAWAY: entro 60px dal bordo, push verso il centro. ===
+    const edgeMargin = 60.0;
+    const edgeAccel = 1200.0;
+    if (_shipX < edgeMargin) {
+      final k = ((edgeMargin - _shipX) / edgeMargin).clamp(0.0, 1.0);
+      _shipVx += edgeAccel * k * dt;
+    } else if (_shipX > size.width - edgeMargin) {
+      final k = ((_shipX - (size.width - edgeMargin)) / edgeMargin)
+          .clamp(0.0, 1.0);
+      _shipVx -= edgeAccel * k * dt;
+    }
+    if (_shipY < edgeMargin) {
+      final k = ((edgeMargin - _shipY) / edgeMargin).clamp(0.0, 1.0);
+      _shipVy += edgeAccel * k * dt;
+    } else if (_shipY > size.height - edgeMargin) {
+      final k = ((_shipY - (size.height - edgeMargin)) / edgeMargin)
+          .clamp(0.0, 1.0);
+      _shipVy -= edgeAccel * k * dt;
+    }
+
+    // === SUBTLE BOB: piccola onda perpendicolare alla velocità. ===
+    // amplitude 8px, frequency 0.6Hz → ω=2π·0.6. Forza = amp·ω² (analogia
+    // SHM) modulata per dt → la nave guadagna oscillazione leggera.
+    final vLen = math.sqrt(_shipVx * _shipVx + _shipVy * _shipVy);
+    if (vLen > 1) {
+      const bobAmp = 8.0;
+      const bobFreq = 0.6;
+      final omega = 2 * math.pi * bobFreq;
+      // Velocità impulsiva perpendicolare (SHM derivata):
+      // v_perp(t) = amp · ω · cos(ω · t)
+      // Approssimazione: settiamo direttamente un offset di velocità
+      // perpendicolare, additivo, piccolo.
+      final realT = t * _chaseDurationSec;
+      final bobV = bobAmp * omega * math.cos(omega * realT);
+      final pX = -_shipVy / vLen;
+      final pY = _shipVx / vLen;
+      _shipVx += pX * bobV * dt;
+      _shipVy += pY * bobV * dt;
+    }
+
+    // === SPEED CLAMP 300..400 px/s. ===
+    final speed = math.sqrt(_shipVx * _shipVx + _shipVy * _shipVy);
+    if (speed > maxSpeed) {
+      final k = maxSpeed / speed;
+      _shipVx *= k;
+      _shipVy *= k;
+    } else if (speed > 0.01 && speed < minSpeed) {
+      final k = minSpeed / speed;
+      _shipVx *= k;
+      _shipVy *= k;
+    }
+
+    // === INTEGRAZIONE POSIZIONE. ===
+    _shipX += _shipVx * dt;
+    _shipY += _shipVy * dt;
+
+    // === AIM: segue velocity (non target). Convenzione game:
+    // _rotation = atan2(v.y, v.x) + π/2. ===
+    if (speed > 1) {
+      _shipAim = math.atan2(_shipVy, _shipVx) + math.pi / 2;
+    }
+
+    // === BURST SNAPSHOT: quando t supera ogni burst-start, cattura
+    // pos/aim correnti → usate da painter per origin/direction proiettili
+    // (stessa logica dell'old: snapshot al burst-start, tutte le coppie
+    // del burst sparate dalla stessa origine in fila). ===
+    const burstStarts = [0.10, 0.40, 0.70];
+    for (int i = 0; i < burstStarts.length; i++) {
+      if (!_burstCaptured[i] && t >= burstStarts[i]) {
+        _burstCaptured[i] = true;
+        _burstSnapX[i] = _shipX;
+        _burstSnapY[i] = _shipY;
+        // Direzione bullet: verso il mob al momento del snapshot.
+        final aimDxB = droneX - _shipX;
+        final aimDyB = droneY - _shipY;
+        final aimLenB = math.sqrt(aimDxB * aimDxB + aimDyB * aimDyB);
+        if (aimLenB > 0.1) {
+          _burstSnapDx[i] = aimDxB / aimLenB;
+          _burstSnapDy[i] = aimDyB / aimLenB;
+        } else {
+          // Fallback: usa aim corrente (velocity dir).
+          if (speed > 0.1) {
+            _burstSnapDx[i] = _shipVx / speed;
+            _burstSnapDy[i] = _shipVy / speed;
+          } else {
+            _burstSnapDx[i] = 1;
+            _burstSnapDy[i] = 0;
+          }
+        }
+      }
+    }
+
+    // === TRAIL PUSH: ring buffer di 18 past pos per scia cyan render. ===
+    _trailHead = (_trailHead + 1) % _trailLen;
+    _trailX[_trailHead] = _shipX;
+    _trailY[_trailHead] = _shipY;
+    if (_trailFilled < _trailLen) _trailFilled++;
   }
 
   @override
@@ -108,6 +335,9 @@ class _SplashScreenState extends State<SplashScreen>
               animation: Listenable.merge([_chaseController, _bgController, _logoController]),
               builder: (context, _) {
                 final screenSize = MediaQuery.of(context).size;
+                // Memorizza size per `_updateShipSteering` (chiamato dal
+                // listener del chaseController, che non ha accesso al context).
+                _lastSize = screenSize;
                 return CustomPaint(
                   painter: _SplashPainter(
                     chaseProgress: _chaseController.value,
@@ -117,6 +347,20 @@ class _SplashScreenState extends State<SplashScreen>
                     showExplosion: _showExplosion,
                     explosionPhase: _explosionPhase,
                     tapToStartText: l10n.splashTapToStart,
+                    shipX: _shipX,
+                    shipY: _shipY,
+                    shipAim: _shipAim,
+                    shipInit: _shipInit,
+                    burstCaptured: _burstCaptured,
+                    burstSnapX: _burstSnapX,
+                    burstSnapY: _burstSnapY,
+                    burstSnapDx: _burstSnapDx,
+                    burstSnapDy: _burstSnapDy,
+                    trailX: _trailX,
+                    trailY: _trailY,
+                    trailHead: _trailHead,
+                    trailFilled: _trailFilled,
+                    trailLen: _trailLen,
                   ),
                   size: screenSize,
                 );
@@ -221,6 +465,24 @@ class _SplashPainter extends CustomPainter {
   final bool showExplosion;
   final double explosionPhase;
   final String tapToStartText;
+  // Iter 15: ship state da steering (vedi `_updateShipSteering` nello State).
+  final double shipX;
+  final double shipY;
+  final double shipAim;
+  final bool shipInit;
+  // Snapshot per bullet origins (3 burst). `burstCaptured[i]` controlla
+  // se il burst è già stato avviato; coordinate fisse al momento del snapshot.
+  final List<bool> burstCaptured;
+  final List<double> burstSnapX;
+  final List<double> burstSnapY;
+  final List<double> burstSnapDx;
+  final List<double> burstSnapDy;
+  // Trail ring buffer (vedi `_SplashScreenState._trailX/Y`).
+  final List<double> trailX;
+  final List<double> trailY;
+  final int trailHead;
+  final int trailFilled;
+  final int trailLen;
 
   // Paint cache statici — evitano migliaia di alloc/sec durante la splash.
   // Il chase-scene renderizza 18 trail nave × 2 layer × 60fps = 2160 alloc,
@@ -353,6 +615,20 @@ class _SplashPainter extends CustomPainter {
     required this.showExplosion,
     required this.explosionPhase,
     required this.tapToStartText,
+    required this.shipX,
+    required this.shipY,
+    required this.shipAim,
+    required this.shipInit,
+    required this.burstCaptured,
+    required this.burstSnapX,
+    required this.burstSnapY,
+    required this.burstSnapDx,
+    required this.burstSnapDy,
+    required this.trailX,
+    required this.trailY,
+    required this.trailHead,
+    required this.trailFilled,
+    required this.trailLen,
   });
 
   @override
@@ -531,27 +807,28 @@ class _SplashPainter extends CustomPainter {
     final droneY = cy + math.sin(t * math.pi * 2) * size.height * 0.32 +
         droneJitter;
 
-    // La navicella insegue con ritardo. Iter 12 (utente: "navicella si
-    // muove strana"): smussato traiettoria ship → 1 oscillazione lenta
-    // invece di 5+3 (era jittery). Wobble ridotto a 0.10 (era 0.13+0.05).
+    // === Iter 15: ship pos da steering (NON più formula). ===
+    // Lo state `_updateShipSteering` integra velocity + position frame-by-frame.
+    // Se non ancora inizializzata (primissimi frame), usa pos iniziale
+    // ragionevole per evitare disegno della nave a (0,0).
+    final double effShipX;
+    final double effShipY;
+    final double effAim;
+    if (shipInit) {
+      effShipX = shipX;
+      effShipY = shipY;
+      effAim = shipAim;
+    } else {
+      effShipX = -size.width * 0.10;
+      effShipY = cy;
+      effAim = math.pi / 2;
+    }
+    // shipT è usato dalle animazioni interne della nave (thrust pulse,
+    // cockpit glow, wing lights) — manteniamo la stessa derivazione dal
+    // chase progress in modo che le animazioni rimangano fluide.
     const shipDelay = 0.1;
     final shipT = (t - shipDelay).clamp(0.0, 1.0);
-    final shipX = size.width * (-0.15 + shipT * 1.20);
-    final shipY = cy + math.sin(shipT * math.pi * 1.5) * size.height * 0.10;
-
-    // Angolo: la nave si orienta verso la sua DIREZIONE DI MOTO (velocità),
-    // non verso il drone. Convenzione `_rotation = atan2(v.y, v.x) + π/2`.
-    // Velocità = derivata della traiettoria della nave rispetto a t:
-    //   x(t) = size.w * (-0.15 + shipT * 1.20)
-    //   y(t) = cy + sin(shipT * π * 1.5) * size.h * 0.10
-    // ⇒ vx = size.w * 1.20 (costante)
-    //   vy = cos(shipT * π * 1.5) * size.h * 0.10 * π * 1.5
-    final vxShip = size.width * 1.20;
-    final vyShip = math.cos(shipT * math.pi * 1.5) *
-        size.height * 0.10 * math.pi * 1.5;
-    final aimAngle = (vxShip * vxShip + vyShip * vyShip < 0.01)
-        ? math.pi / 2 // muso a destra (default chase direction)
-        : math.atan2(vyShip, vxShip) + math.pi / 2;
+    final aimAngle = effAim;
 
     // === SCIA WEAVER (verde, matching ampia sinusoide nuova trajectory) ===
     for (int i = 1; i <= 12; i++) {
@@ -570,125 +847,138 @@ class _SplashPainter extends CustomPainter {
       canvas.drawCircle(Offset(dtx, dty), s, _droneTrailPaint);
     }
 
-    // === SCIA NAVICELLA (cyan — simile al trail del Player in gioco) ===
-    // Due layer per ogni punto: soft glow esterno + core luminoso come
-    // `Player._renderTrail`. Skip i sample non ancora "storici" (st == 0)
-    // quando shipT è prossimo a 0: altrimenti 18 cerchi si sovrappongono
-    // sullo stesso punto iniziale al primo frame.
-    for (int i = 1; i <= 18; i++) {
-      final rawSt = shipT - i * 0.008;
-      if (rawSt <= 0) break; // tutti i sample successivi sarebbero clampati
-      final st = rawSt.clamp(0.0, 1.0);
-      final stx = size.width * (-0.15 + st * 1.20);
-      // Iter 12: trajectory smussata matching ship.
-      final sty = cy + math.sin(st * math.pi * 1.5) * size.height * 0.10;
-      final a = (1 - i / 18.0) * 0.4;
-      final s = (1 - i / 18.0) * 3.5;
+    // === SCIA NAVICELLA (cyan — usa ring buffer past pos da state). ===
+    // i=1 = sample appena precedente; i=trailFilled-1 = sample più vecchio.
+    // Skip i>=trailFilled (non ancora popolati nei primissimi frame).
+    final maxTrail = trailFilled < trailLen ? trailFilled : trailLen;
+    for (int i = 1; i < maxTrail; i++) {
+      final idx = (trailHead - i + trailLen) % trailLen;
+      final tx = trailX[idx];
+      final ty = trailY[idx];
+      final a = (1 - i / trailLen.toDouble()) * 0.4;
+      final s = (1 - i / trailLen.toDouble()) * 3.5;
       _shipTrailGlowPaint.color =
           const Color(0xFF00FFFF).withValues(alpha: a * 0.4);
-      canvas.drawCircle(Offset(stx, sty), s * 1.8, _shipTrailGlowPaint);
+      canvas.drawCircle(Offset(tx, ty), s * 1.8, _shipTrailGlowPaint);
       _shipTrailCorePaint.color =
           const Color(0xFF00FFFF).withValues(alpha: a);
-      canvas.drawCircle(Offset(stx, sty), s, _shipTrailCorePaint);
+      canvas.drawCircle(Offset(tx, ty), s, _shipTrailCorePaint);
     }
 
-    // === PROIETTILI: spawn periodico OGNI 0.25s real-time, lungo la
-    // direzione di VELOCITÀ della nave (snapshot al fireTime). Bullet
-    // viaggia a 400 px/s real-time in linea retta e despawna al bordo.
-    // Visuals identici a `PlayerBullet.render` in-game:
-    //   - trail: ultimi 4 punti, alpha (1 - i/4) * 0.3, size 1.5 fissa
-    //   - glow esterno: alpha 0.35, r=4
-    //   - corpo: yellow pieno, r=3
-    //   - core: bianco alpha 0.7, r=1.2
-    // Chase dura 3.5s → 0.25s real = 0.25/3.5 ≈ 0.0714 chase-units fra spari.
-    // Velocità 400 px/s × 3.5s = 1400 px per chase-unit.
+    // === PROIETTILI in-game basic weapon: 3 RAFFICHE × 4 COPPIE.
+    // Iter 11 (utente: "in fila come arma base + 2-3 raffiche, mob schiva").
+    // Pattern in-game: ogni `_shoot()` spawna 1 coppia (2 bullet ±6px perp).
+    // baseFireRate=8/s → fireInterval=0.125s tra coppie. In chase-units
+    // (chase=3.5s): 0.125/3.5 ≈ 0.0357 per coppia. Burst = 4 coppie =
+    // 0.143 chase-units (~0.5s). 3 burst start a t=0.10, 0.40, 0.70.
+    // AIM SNAPSHOT al burst-start (NON per coppia) → tutte 4 coppie del
+    // burst stessa direzione → "in fila" come gioco. Mob schiva grazie al
+    // dodge che continua a muoverlo durante i 0.5s del burst. ===
     if (t > 0.1 && t < 0.99) {
-      const fireInterval = 0.0714; // 0.25s @ chase=3.5s = 4 colpi/sec
+      const burstStarts = [0.10, 0.40, 0.70];
+      const pairsPerBurst = 4;
+      const pairInterval = 0.0357; // 0.125s @ chase=3.5s = baseFireRate 8/s
       const bulletColor = Color(0xFFFFE500); // NeonColors.bulletYellow
-      const bulletSpeedPxPerSec = 400.0;
-      const chaseDurationSec = 3.5;
-      const bulletSpeedPerChaseT =
-          bulletSpeedPxPerSec * chaseDurationSec; // 1400 px per chase-unit
-      // Tip nave a -14*s con s=1.35 in `_drawShip` → 18.9. NoseOffset
-      // leggermente sopra per far emergere bullet OLTRE la punta.
-      const noseOffset = 22.0;
-      // Numero di sample tempo: itera sui fireTime nell'intervallo [0.1, t).
-      // floor((t - 0.1) / fireInterval) + 1 colpi sparati finora.
-      final firstFireT = 0.1;
-      final shotsFired = ((t - firstFireT) / fireInterval).floor() + 1;
-      for (int i = 0; i < shotsFired; i++) {
-        final fireTime = firstFireT + i * fireInterval;
-        if (t <= fireTime) continue;
-        final dtSinceFire = t - fireTime;
-        // Posizione + velocità della nave al fireTime (snapshot).
-        final fireShipT = (fireTime - shipDelay).clamp(0.0, 1.0);
-        final fireShipX = size.width * (-0.15 + fireShipT * 1.20);
-        final fireShipY = cy +
-            math.sin(fireShipT * math.pi * 1.5) * size.height * 0.10;
-        final fireVx = size.width * 1.20;
-        final fireVy = math.cos(fireShipT * math.pi * 1.5) *
-            size.height * 0.10 * math.pi * 1.5;
-        final vLen = math.sqrt(fireVx * fireVx + fireVy * fireVy);
-        if (vLen < 0.1) continue;
-        final dirX = fireVx / vLen;
-        final dirY = fireVy / vLen;
-        // Nose del muso = ship center + dir × noseOffset.
-        final fromX = fireShipX + dirX * noseOffset;
-        final fromY = fireShipY + dirY * noseOffset;
-        // Posizione corrente del bullet: linea retta a velocità costante.
-        final travel = bulletSpeedPerChaseT * dtSinceFire;
-        final bx = fromX + dirX * travel;
-        final by = fromY + dirY * travel;
-        // Despawn al bordo canvas (+margine per smoothing).
-        const margin = 8.0;
-        if (bx < -margin ||
-            bx > size.width + margin ||
-            by < -margin ||
-            by > size.height + margin) {
-          continue;
-        }
-        // Trail: 4 dot fissi dietro al bullet lungo -dir, ognuno
-        // spaced bulletSpeedPerChaseT * (fireInterval × 0.02) per simulare
-        // sample di posizione passata. Alpha decrescente come in-game.
-        for (int ti = 1; ti <= 4; ti++) {
-          final tAlpha = (1.0 - ti / 4.0) * 0.3;
-          _bulletTrailPaint.color =
-              bulletColor.withValues(alpha: tAlpha);
-          canvas.drawCircle(
-            Offset(bx - dirX * ti * 4, by - dirY * ti * 4),
-            1.5,
-            _bulletTrailPaint,
-          );
-        }
-        // Glow esterno (alpha 0.35, r=4)
-        _bulletGlowPaint.color = bulletColor.withValues(alpha: 0.35);
-        canvas.drawCircle(Offset(bx, by), 4, _bulletGlowPaint);
-        // Corpo (cerchio pieno, r=3)
-        _bulletBodyPaint.color = bulletColor;
-        canvas.drawCircle(Offset(bx, by), 3, _bulletBodyPaint);
-        // Core bianco (alpha 0.7, r=1.2)
-        _bulletCorePaint.color =
-            const Color(0xFFFFFFFF).withValues(alpha: 0.7);
-        canvas.drawCircle(Offset(bx, by), 1.2, _bulletCorePaint);
-        // Muzzle flash al nose nei primi 0.05 chase-units dopo fire
-        if (dtSinceFire < 0.05) {
-          final flashAlpha = (1 - dtSinceFire / 0.05) * 0.7;
-          _muzzleGlowPaint.color =
-              bulletColor.withValues(alpha: flashAlpha * 0.5);
-          canvas.drawCircle(Offset(fromX, fromY), 8, _muzzleGlowPaint);
-          _muzzleCorePaint.color =
-              const Color(0xFFFFFFFF).withValues(alpha: flashAlpha);
-          canvas.drawCircle(Offset(fromX, fromY), 4, _muzzleCorePaint);
-        }
-      }
+      const pairOffset = 6.0;
+      // Velocità bullet: matchata ad in-game (700 px/s). 1.4 width/s →
+      // bullet attraversa schermo in ~0.7s = velocità realistica.
+      final bulletSpeedWorldPerSec = size.width * 1.4;
+
+      for (int b = 0; b < burstStarts.length; b++) {
+        final burstStart = burstStarts[b];
+        if (t <= burstStart) continue;
+        // Iter 15: usa SNAPSHOT catturato dallo state al burst-start
+        // (steering-based pos/aim) invece di ricalcolare dalla formula.
+        // Skip se snapshot non ancora catturato (transitorio raro).
+        if (!burstCaptured[b]) continue;
+        final burstShipX = burstSnapX[b];
+        final burstShipY = burstSnapY[b];
+        final dirX = burstSnapDx[b];
+        final dirY = burstSnapDy[b];
+        // Guard: snapshot dir invalido (vector ~zero) → skip.
+        if (dirX * dirX + dirY * dirY < 0.5) continue;
+        final perpX = -dirY;
+        final perpY = dirX;
+        // Iter 14 (utente: "bullets dal centro non punta"): noseOffset
+        // bumped 16.8 → 24 → bullet emerge OLTRE tip nave (era esattamente
+        // sul tip → sembrava centro). Tip nave a -14*s=-18.9 local.
+        const noseOffset = 24.0;
+        // Iter 12 (utente: "bullets non in fila"): tutte le coppie del burst
+        // emergono dalla STESSA ship pos (snapshot al burst-start) → bullet
+        // perfettamente in fila lungo aimDir, distanziati solo da
+        // velocità × pairInterval → linea retta come basic weapon in-game.
+        final shipCenterX = burstShipX;
+        final shipCenterY = burstShipY;
+
+        // Itera coppie del burst.
+        for (int p = 0; p < pairsPerBurst; p++) {
+          final fireTime = burstStart + p * pairInterval;
+          if (t <= fireTime) continue;
+          final dtSinceFire = t - fireTime;
+
+          // Distanza percorsa dal bullet: velocity costante × dt.
+          final travel = bulletSpeedWorldPerSec * dtSinceFire;
+
+        // Disegna COPPIA di bullet paralleli (±perp offset come basic weapon)
+        for (int side = -1; side <= 1; side += 2) {
+          final offsetX = perpX * pairOffset * side;
+          final offsetY = perpY * pairOffset * side;
+          final fromX = shipCenterX + dirX * noseOffset + offsetX;
+          final fromY = shipCenterY + dirY * noseOffset + offsetY;
+          final bx = fromX + dirX * travel;
+          final by = fromY + dirY * travel;
+
+          // Culling: bullet fuori schermo (+margine) → skip render
+          const margin = 60.0;
+          if (bx < -margin ||
+              bx > size.width + margin ||
+              by < -margin ||
+              by > size.height + margin) {
+            continue;
+          }
+
+          // Trail (cerchietti dietro al bullet lungo -aimDir)
+          for (int ti = 1; ti <= 5; ti++) {
+            final tAlpha = (1 - ti / 5) * 0.35;
+            _bulletTrailPaint.color =
+                bulletColor.withValues(alpha: tAlpha);
+            canvas.drawCircle(
+              Offset(bx - dirX * ti * 4, by - dirY * ti * 4),
+              1.6 * (1 - ti / 5.5),
+              _bulletTrailPaint,
+            );
+          }
+
+          // Glow + corpo + core del bullet
+          _bulletGlowPaint.color = bulletColor.withValues(alpha: 0.4);
+          canvas.drawCircle(Offset(bx, by), 5, _bulletGlowPaint);
+          _bulletBodyPaint.color = bulletColor;
+          canvas.drawCircle(Offset(bx, by), 3.2, _bulletBodyPaint);
+          _bulletCorePaint.color =
+              const Color(0xFFFFFFFF).withValues(alpha: 0.85);
+          canvas.drawCircle(Offset(bx, by), 1.3, _bulletCorePaint);
+
+          // Muzzle flash al nose durante primi 0.05 chase-time del bullet
+          if (dtSinceFire < 0.05) {
+            final flashAlpha = (1 - dtSinceFire / 0.05) * 0.7;
+            _muzzleGlowPaint.color =
+                bulletColor.withValues(alpha: flashAlpha * 0.5);
+            canvas.drawCircle(Offset(fromX, fromY), 8, _muzzleGlowPaint);
+            _muzzleCorePaint.color =
+                const Color(0xFFFFFFFF).withValues(alpha: flashAlpha);
+            canvas.drawCircle(Offset(fromX, fromY), 4, _muzzleCorePaint);
+          }
+        } // for side
+        } // for p (pair within burst)
+      } // for b (burst)
     } // if (t > 0.1)
 
     // === WEAVER: schiva TUTTI i proiettili, non viene mai colpito.
     // Nessun fumo/damage — il mob sopravvive per tutto lo splash. ===
     _drawDrone(canvas, droneX, droneY, t, false);
 
-    // === NAVICELLA (in-game graphics, ruota verso il drone) ===
-    _drawShip(canvas, shipX, shipY, shipT, aimAngle);
+    // === NAVICELLA (in-game graphics, ruota verso velocity per Iter 15). ===
+    _drawShip(canvas, effShipX, effShipY, shipT, aimAngle);
   }
 
   /// Weaver verde (stile `WeaverEnemy` in gioco): rombo ALLUNGATO vertical

@@ -15,9 +15,12 @@ import '../entities/enemies/enemy_base.dart';
 class GaussImplosion extends PositionComponent
     with HasGameReference<GeometryFightGame> {
   static const double duration = 2.0;
-  static const double pullRadius = 250.0;
+  // Iter 15 (utente: "esplosione 1/4 size"): scaled da 250/60 → 62.5/15.
+  // Stessa intensità DoT (5/tick × 0.1s × 2s = 100 max) ma in area
+  // più concentrata (706px² vs 11310px²) → premia mira precisa.
+  static const double pullRadius = 62.5;
   static const double pullSpeed = 400.0;
-  static const double damageRadius = 60.0;
+  static const double damageRadius = 15.0;
   static const double damageTickInterval = 0.1;
   static const double damagePerTick = 5.0;
 
@@ -85,7 +88,9 @@ class GaussImplosion extends PositionComponent
 
     // Core "nucleo" pulsante al centro: gradient cyan→viola luminoso.
     final pulse = 0.7 + math.sin(_age * 18) * 0.3;
-    final coreR = (28 + math.sin(_age * 10) * 6) * (0.6 + 0.4 * (1 - t));
+    // Iter 15: base 28→7, ampiezza oscillazione 6→1.5 (scale 0.25).
+    // Moltiplicatori `* 1.8` e `* 0.4` (sotto) restano invariati.
+    final coreR = (7 + math.sin(_age * 10) * 1.5) * (0.6 + 0.4 * (1 - t));
     _corePaint.color =
         const Color(0xFF66DDFF).withValues(alpha: 0.45 * alpha * pulse);
     canvas.drawCircle(Offset.zero, coreR * 1.8, _corePaint);
