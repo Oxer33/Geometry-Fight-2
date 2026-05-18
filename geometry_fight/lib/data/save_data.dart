@@ -100,9 +100,14 @@ class SaveData {
   }
 
   int get bombCapacity {
+    // Bomb count is fixed at 3; the bomb_capacity upgrade now boosts radius.
+    return 3;
+  }
+
+  double get bombRadius {
     final level = getUpgradeLevel('bomb_capacity');
-    // Integer step: bomb granted every 2 levels (max +5 a L10).
-    return 3 + (level * 5) ~/ 10;
+    // L0: 375 (half arena diagonal-ish). L10: 750 (full arena width).
+    return 375.0 + level * 37.5;
   }
 
   double get magnetRange {

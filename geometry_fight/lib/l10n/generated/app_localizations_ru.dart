@@ -1007,10 +1007,11 @@ class AppLocalizationsRu extends AppLocalizations {
   String get upgradeLivesDesc => 'Начальные жизни: 3 → 4 → 5';
 
   @override
-  String get upgradeBombs => 'БОМБЫ';
+  String get upgradeBombs => 'РАДИУС БОМБЫ';
 
   @override
-  String get upgradeBombsDesc => 'Доступные бомбы: 3 → 4 → 5';
+  String get upgradeBombsDesc =>
+      '+радиус взрыва за уровень (L0 пол-арены, L10 вся арена)';
 
   @override
   String get upgradeMagnet => 'МАГНИТ';

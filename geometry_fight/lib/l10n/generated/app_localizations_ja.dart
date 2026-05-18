@@ -973,10 +973,10 @@ class AppLocalizationsJa extends AppLocalizations {
   String get upgradeLivesDesc => '初期ライフ:3→4→5';
 
   @override
-  String get upgradeBombs => 'ボム';
+  String get upgradeBombs => 'ボム範囲';
 
   @override
-  String get upgradeBombsDesc => '使用可能ボム:3→4→5';
+  String get upgradeBombsDesc => 'レベルごとに+爆発半径(L0半アリーナ,L10全アリーナ)';
 
   @override
   String get upgradeMagnet => 'マグネット';

@@ -759,8 +759,8 @@ class _ShopScreenState extends State<ShopScreen>
         child: LayoutBuilder(
           builder: (context, constraints) {
             final mapW = constraints.maxWidth;
-            // Aspect 1.25× → 4 righe leggibili anche su schermi corti.
-            final mapH = mapW * 1.25;
+            // Aspect 1.55× → 6 righe (diamond chain) leggibili senza scroll.
+            final mapH = mapW * 1.55;
             return SizedBox(
               width: mapW,
               height: mapH,
@@ -814,18 +814,17 @@ class _ShopScreenState extends State<ShopScreen>
 
   /// Prereq map: id → list of (prereqId, requiredLevel) pairs.
   /// Nodo unlocked solo quando TUTTI i prereq raggiungono il loro livello.
+  /// Vertical-chain layout (diamond): speed root → firepower/fire_rate →
+  /// shield → bomb/lives → magnet → xp_boost.
   static const Map<String, List<(String, int)>> _prereqs = {
-    // Tier 1 (root): nessun prereq
-    'firepower': [],
-    'fire_rate': [],
     'speed': [],
-    // Tier 2: richiede tier 1 a L3
-    'shield_capacity': [('firepower', 3)],
-    'starting_lives': [('speed', 3)],
-    'bomb_capacity': [('fire_rate', 3)],
-    // Tier 3: richiede tier 2 a L5
-    'magnet_range': [('starting_lives', 5)],
-    'xp_boost': [('shield_capacity', 5)],
+    'firepower': [('speed', 5)],
+    'fire_rate': [('speed', 5)],
+    'shield_capacity': [('firepower', 5), ('fire_rate', 5)],
+    'bomb_capacity': [('shield_capacity', 5)],
+    'starting_lives': [('shield_capacity', 5)],
+    'magnet_range': [('bomb_capacity', 5), ('starting_lives', 5)],
+    'xp_boost': [('magnet_range', 5)],
   };
 
   bool _isUpgradeUnlocked(String id) {
@@ -837,13 +836,25 @@ class _ShopScreenState extends State<ShopScreen>
     return true;
   }
 
-  /// Talent-tree node layout: 3 tier diagonali (zig-zag).
+  /// Talent-tree node layout: chain verticale a diamante (6 righe).
   /// Coordinate normalizzate (x,y in [0,1] = % della grid area).
   List<_UpgradeNode> _upgradeNodes() => const [
-        // Tier 1 (y=0.10): combat core
+        // Row 0 (y=0.06): root
         _UpgradeNode(
-            x: 0.18,
-            y: 0.10,
+            x: 0.50,
+            y: 0.06,
+            item: _UpgradeItem(
+                'speed',
+                'SPEED',
+                [50, 100, 150, 200, 250, 300, 350, 400, 450, 500],
+                10,
+                '+2.5% velocità per livello (max +25% al L10)',
+                Icons.speed,
+                NeonColors.cyan)),
+        // Row 1 (y=0.22): combat core
+        _UpgradeNode(
+            x: 0.30,
+            y: 0.22,
             item: _UpgradeItem(
                 'firepower',
                 'FIREPOWER',
@@ -853,8 +864,8 @@ class _ShopScreenState extends State<ShopScreen>
                 Icons.local_fire_department,
                 Color(0xFFFF4400))),
         _UpgradeNode(
-            x: 0.50,
-            y: 0.10,
+            x: 0.70,
+            y: 0.22,
             item: _UpgradeItem(
                 'fire_rate',
                 'FIRE RATE',
@@ -863,21 +874,10 @@ class _ShopScreenState extends State<ShopScreen>
                 '+2.5% cadenza per livello (max +25% al L10)',
                 Icons.bolt,
                 NeonColors.bulletYellow)),
+        // Row 2 (y=0.38): shield join
         _UpgradeNode(
-            x: 0.82,
-            y: 0.10,
-            item: _UpgradeItem(
-                'speed',
-                'SPEED',
-                [50, 100, 150, 200, 250, 300, 350, 400, 450, 500],
-                10,
-                '+2.5% velocità per livello (max +25% al L10)',
-                Icons.speed,
-                NeonColors.cyan)),
-        // Tier 2 (y=0.45): defense + resources, sfalsati diagonalmente
-        _UpgradeNode(
-            x: 0.30,
-            y: 0.45,
+            x: 0.50,
+            y: 0.38,
             item: _UpgradeItem(
                 'shield_capacity',
                 'SHIELD',
@@ -886,20 +886,21 @@ class _ShopScreenState extends State<ShopScreen>
                 'Scudo post-morte: +2.5s per livello (max 25s al L10)',
                 Icons.shield_outlined,
                 Color(0xFF00AAFF))),
+        // Row 3 (y=0.54): bomb / lives split
         _UpgradeNode(
-            x: 0.62,
-            y: 0.45,
+            x: 0.30,
+            y: 0.54,
             item: _UpgradeItem(
                 'bomb_capacity',
-                'BOMBS',
+                'BOMB RANGE',
                 [60, 120, 180, 240, 300, 360, 420, 480, 540, 600],
                 10,
-                'Bombe disponibili: +1 ogni 2 livelli (max +5 al L10)',
+                '+raggio esplosione per livello (L0 metà arena, L10 arena intera)',
                 Icons.blur_circular,
                 NeonColors.orange)),
         _UpgradeNode(
-            x: 0.88,
-            y: 0.45,
+            x: 0.70,
+            y: 0.54,
             item: _UpgradeItem(
                 'starting_lives',
                 'LIVES',
@@ -908,21 +909,10 @@ class _ShopScreenState extends State<ShopScreen>
                 'Vite iniziali: +1 ogni 2 livelli (max +5 al L10)',
                 Icons.favorite,
                 Color(0xFFFF4466))),
-        // Tier 3 (y=0.80): utility avanzata
+        // Row 4 (y=0.70): magnet join
         _UpgradeNode(
-            x: 0.32,
-            y: 0.82,
-            item: _UpgradeItem(
-                'xp_boost',
-                'XP BOOST',
-                [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000],
-                10,
-                '+5% GoldGeom per livello (max +50% al L10)',
-                Icons.auto_awesome,
-                Color(0xFFFFD700))),
-        _UpgradeNode(
-            x: 0.75,
-            y: 0.82,
+            x: 0.50,
+            y: 0.70,
             item: _UpgradeItem(
                 'magnet_range',
                 'MAGNET',
@@ -931,17 +921,31 @@ class _ShopScreenState extends State<ShopScreen>
                 '+5px raggio magnete per livello (max +50px al L10)',
                 Icons.radar,
                 NeonColors.purple)),
+        // Row 5 (y=0.86): xp tail
+        _UpgradeNode(
+            x: 0.50,
+            y: 0.86,
+            item: _UpgradeItem(
+                'xp_boost',
+                'XP BOOST',
+                [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000],
+                10,
+                '+5% GoldGeom per livello (max +50% al L10)',
+                Icons.auto_awesome,
+                Color(0xFFFFD700))),
       ];
 
   /// Connessioni skill-tree (id_a, id_b) — linee tra prereq e dipendenti.
-  static const _upgradeConnections = [
-    // Tier 1 → Tier 2
+  static const _upgradeConnections = <(String, String)>[
+    ('speed', 'firepower'),
+    ('speed', 'fire_rate'),
     ('firepower', 'shield_capacity'),
-    ('fire_rate', 'bomb_capacity'),
-    ('speed', 'starting_lives'),
-    // Tier 2 → Tier 3
-    ('shield_capacity', 'xp_boost'),
+    ('fire_rate', 'shield_capacity'),
+    ('shield_capacity', 'bomb_capacity'),
+    ('shield_capacity', 'starting_lives'),
+    ('bomb_capacity', 'magnet_range'),
     ('starting_lives', 'magnet_range'),
+    ('magnet_range', 'xp_boost'),
   ];
 
   // ==================== MODES TAB ====================
@@ -1283,13 +1287,11 @@ class _ShopScreenState extends State<ShopScreen>
                 builder: (context, _) {
                   final previewIndex = _selectedPreviewIndex ?? 0;
                   final item = items[previewIndex.clamp(0, items.length - 1)];
-                  final owned = unlocked.contains(item.id);
 
                   return LayoutBuilder(
                     builder: (context, previewConstraints) {
-                      // Preview dinamica: riduci molto su schermi corti per lasciar posto al bottone.
-                      final previewSize = (previewConstraints.maxHeight - 140).clamp(60.0, 200.0);
-                      final isActive = item.id == activeId;
+                      // Preview dinamica: nessun bottone equip qui (sidebar lo gestisce).
+                      final previewSize = (previewConstraints.maxHeight - 100).clamp(60.0, 220.0);
                       // Preview content non scrolla davvero — niente scrollbar.
                       // SingleChildScrollView mantenuto come safety per overflow
                       // su schermi cortissimi, ma senza barre laterali visibili.
@@ -1332,25 +1334,6 @@ class _ShopScreenState extends State<ShopScreen>
                                   : const [],
                               showDescription: !hideDescription,
                             ),
-                            const SizedBox(height: 12),
-                            _ShopActionButton(
-                              state: isActive
-                                  ? _ShopActionState.equipped
-                                  : owned
-                                      ? _ShopActionState.equip
-                                      : _ShopActionState.buy,
-                              cost: item.cost,
-                              canAfford: _saveData.goldGeoms >= item.cost,
-                              large: true,
-                              onTap: () {
-                                if (isActive) return;
-                                if (owned) {
-                                  onSelect(item);
-                                } else {
-                                  onPurchase(item);
-                                }
-                              },
-                            ),
                           ],
                         ),
                       );
@@ -1375,14 +1358,12 @@ class _ShopActionButton extends StatefulWidget {
   final int cost;
   final bool canAfford;
   final VoidCallback onTap;
-  final bool large;
 
   const _ShopActionButton({
     required this.state,
     required this.cost,
     required this.canAfford,
     required this.onTap,
-    this.large = false,
   });
 
   @override
@@ -1446,9 +1427,9 @@ class _ShopActionButtonState extends State<_ShopActionButton> {
         scale: _pressed ? 0.93 : 1.0,
         duration: const Duration(milliseconds: 80),
         child: Container(
-          padding: EdgeInsets.symmetric(
-            horizontal: widget.large ? 20 : 10,
-            vertical: widget.large ? 8 : 5,
+          padding: const EdgeInsets.symmetric(
+            horizontal: 10,
+            vertical: 5,
           ),
           decoration: BoxDecoration(
             border: Border.all(color: borderColor),
@@ -1459,8 +1440,8 @@ class _ShopActionButtonState extends State<_ShopActionButton> {
             mainAxisSize: MainAxisSize.min,
             children: [
               if (leadingIcon != null) ...[
-                Icon(leadingIcon, color: textColor, size: widget.large ? 14 : 11),
-                SizedBox(width: widget.large ? 6 : 3),
+                Icon(leadingIcon, color: textColor, size: 11),
+                const SizedBox(width: 3),
               ],
               Text(
                 label,
@@ -1468,7 +1449,7 @@ class _ShopActionButtonState extends State<_ShopActionButton> {
                   color: textColor,
                   fontFamily: 'monospace',
                   fontWeight: FontWeight.bold,
-                  fontSize: widget.large ? 13 : 10,
+                  fontSize: 10,
                   letterSpacing: 1,
                 ),
               ),
@@ -1751,8 +1732,8 @@ class _UpgradeMapPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.8
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2);
-    // Shorten endpoints by icon radius (28) per non sovrapporre i nodi.
-    const double nodeRadius = 30;
+    // Shorten endpoints by icon radius per non sovrapporre i nodi.
+    const double nodeRadius = 26;
     for (final (aId, bId) in connections) {
       final a = nodes.firstWhere((n) => n.item.id == aId,
           orElse: () => nodes.first);

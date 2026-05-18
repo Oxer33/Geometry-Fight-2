@@ -1975,13 +1975,13 @@ abstract class AppLocalizations {
   /// No description provided for @upgradeBombs.
   ///
   /// In it, this message translates to:
-  /// **'BOMBS'**
+  /// **'RAGGIO BOMBA'**
   String get upgradeBombs;
 
   /// No description provided for @upgradeBombsDesc.
   ///
   /// In it, this message translates to:
-  /// **'Bombe disponibili: 3 → 4 → 5'**
+  /// **'+raggio esplosione per livello (L0 metà arena, L10 arena intera)'**
   String get upgradeBombsDesc;
 
   /// No description provided for @upgradeMagnet.

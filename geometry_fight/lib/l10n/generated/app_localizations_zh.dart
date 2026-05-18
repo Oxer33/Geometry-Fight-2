@@ -973,10 +973,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get upgradeLivesDesc => '初始生命:3→4→5';
 
   @override
-  String get upgradeBombs => '炸弹';
+  String get upgradeBombs => '炸弹范围';
 
   @override
-  String get upgradeBombsDesc => '可用炸弹:3→4→5';
+  String get upgradeBombsDesc => '每级+爆炸半径(L0半场,L10全场)';
 
   @override
   String get upgradeMagnet => '磁铁';

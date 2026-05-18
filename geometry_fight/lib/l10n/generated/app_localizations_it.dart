@@ -1002,10 +1002,11 @@ class AppLocalizationsIt extends AppLocalizations {
   String get upgradeLivesDesc => 'Vite iniziali: 3 → 4 → 5';
 
   @override
-  String get upgradeBombs => 'BOMBS';
+  String get upgradeBombs => 'RAGGIO BOMBA';
 
   @override
-  String get upgradeBombsDesc => 'Bombe disponibili: 3 → 4 → 5';
+  String get upgradeBombsDesc =>
+      '+raggio esplosione per livello (L0 metà arena, L10 arena intera)';
 
   @override
   String get upgradeMagnet => 'MAGNET';

@@ -1006,10 +1006,11 @@ class AppLocalizationsFr extends AppLocalizations {
   String get upgradeLivesDesc => 'Vies de départ : 3 → 4 → 5';
 
   @override
-  String get upgradeBombs => 'BOMBES';
+  String get upgradeBombs => 'RAYON BOMBE';
 
   @override
-  String get upgradeBombsDesc => 'Bombes disponibles : 3 → 4 → 5';
+  String get upgradeBombsDesc =>
+      '+rayon d\'explosion par niveau (L0 demi-arène, L10 arène entière)';
 
   @override
   String get upgradeMagnet => 'AIMANT';

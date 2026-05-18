@@ -1347,7 +1347,7 @@ class GeometryFightGame extends FlameGame
     // Uccidi TUTTI i nemici nell'area dell'esplosione (raggio = visual)
     // Bomba = danno AREA → splitter immuni (evita cascata di divisioni
     // simultanee che può crashare il frame).
-    const bombRadius = 800.0;
+    final bombRadius = saveData.bombRadius;
     final enemies = world.children.whereType<EnemyBase>().toList();
     for (final enemy in enemies) {
       final dist = enemy.position.distanceTo(player.position);
@@ -1374,19 +1374,19 @@ class GeometryFightGame extends FlameGame
       _DelayedExplosion(
         timeLeft: 0.1,
         color: NeonColors.cyan,
-        radius: 600,
+        radius: bombRadius * 0.75,
         particleCount: 60,
       ),
       _DelayedExplosion(
         timeLeft: 0.2,
         color: NeonColors.spreadOrange,
-        radius: 400,
+        radius: bombRadius * 0.5,
         particleCount: 40,
       ),
     ];
     _bombExplosionPos = player.position.clone();
     spawnExplosion(_bombExplosionPos!, NeonColors.white,
-        radius: 800, particleCount: 80);
+        radius: bombRadius, particleCount: 80);
 
     // Screen shake intenso e prolungato
     triggerScreenShake(12, 0.6);
