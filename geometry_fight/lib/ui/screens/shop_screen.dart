@@ -982,7 +982,7 @@ class _ShopScreenState extends State<ShopScreen>
                     child: AnimatedContainer(
                       duration: const Duration(milliseconds: 200),
                       margin: const EdgeInsets.only(bottom: 8),
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 8),
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(
@@ -1002,15 +1002,30 @@ class _ShopScreenState extends State<ShopScreen>
                       child: Row(
                         children: [
                           Expanded(
-                            child: Text(_itemName(l10n, item),
+                            // FittedBox scaleDown garantisce che nomi lunghi
+                            // (es. "TACTICAL SPOTTER", "CHAIN LIGHTNING") si
+                            // riducano orizzontalmente invece di andare a capo
+                            // su 2-3 righe. softWrap=false + maxLines=1 evita
+                            // wrapping; FittedBox prima ridimensiona il glyph
+                            // così entra in una sola riga visivamente leggibile.
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              alignment: Alignment.centerLeft,
+                              child: Text(
+                                _itemName(l10n, item),
+                                softWrap: false,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
                                 style: TextStyle(
                                   color: isActive
                                       ? Colors.greenAccent
                                       : Colors.white,
-                                  fontSize: 12,
+                                  fontSize: 11,
                                   fontWeight: FontWeight.bold,
                                   fontFamily: 'monospace',
-                                )),
+                                ),
+                              ),
+                            ),
                           ),
                           const SizedBox(width: 6),
                           _ShopActionButton(
@@ -1068,67 +1083,76 @@ class _ShopScreenState extends State<ShopScreen>
             // FittedBox), rebuild dell'InfoCard / FittedBox / decoration per
             // frame. Ora InfoCard + decoration sono statici, solo il pixel
             // della preview ricicla il painter via Listenable.
+            //
+            // Bug-fix: FittedBox(BoxFit.scaleDown) wrapping a Column with
+            // CustomPaint at fixed Size collapsed to 0x0 in some layouts
+            // (preview invisibile). Sostituito con LayoutBuilder + sized
+            // SizedBox per il canvas e un'area separata per la card info.
             Expanded(
               child: LayoutBuilder(
                 builder: (context, previewConstraints) {
                   final previewIndex = _selectedPreviewIndex ?? 0;
                   final item = items[previewIndex.clamp(0, items.length - 1)];
-                  // Preview dinamica: nessun bottone equip qui (sidebar lo gestisce).
-                  final previewSize = (previewConstraints.maxHeight - 100)
-                      .clamp(60.0, 220.0);
-                  // Pannello preview FISSO — niente SingleChildScrollView.
-                  // Su schermi cortissimi FittedBox scala il contenuto invece
-                  // di abilitare scroll, così l'utente non vede mai la preview
-                  // muoversi verticalmente.
-                  return Center(
+                  // Canvas size: prende ~maxWidth meno padding, height
+                  // clamp 140..380 lasciando spazio alla card sotto.
+                  final canvasW = (previewConstraints.maxWidth - 32)
+                      .clamp(140.0, 380.0);
+                  final canvasH = (previewConstraints.maxHeight - 200)
+                      .clamp(140.0, 380.0);
+                  final canvasSize = math.min(canvasW, canvasH);
+                  return ClipRect(
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      child: FittedBox(
-                        fit: BoxFit.scaleDown,
-                        child: Column(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            // Preview canvas — l'unico nodo che ascolta il tick.
-                            Container(
-                              width: previewSize,
-                              height: previewSize,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: Colors.cyanAccent
-                                      .withValues(alpha: 0.08),
-                                ),
-                                gradient: RadialGradient(
-                                  colors: [
-                                    Colors.cyanAccent
-                                        .withValues(alpha: 0.03),
-                                    Colors.transparent,
-                                  ],
-                                ),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 12),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          // Preview canvas — l'unico nodo che ascolta il tick.
+                          Container(
+                            width: canvasSize,
+                            height: canvasSize,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: Colors.cyanAccent
+                                    .withValues(alpha: 0.08),
                               ),
-                              child: AnimatedBuilder(
-                                animation: _previewController,
-                                builder: (context, _) => CustomPaint(
-                                  painter: previewBuilder(
-                                      item, _previewController.value * 10),
-                                  size: Size(previewSize, previewSize),
-                                ),
+                              gradient: RadialGradient(
+                                colors: [
+                                  Colors.cyanAccent
+                                      .withValues(alpha: 0.03),
+                                  Colors.transparent,
+                                ],
                               ),
                             ),
-                            const SizedBox(height: 12),
-                            // Description card statica (no animation dep).
-                            _InfoCard(
-                              title: _itemName(l10n, item),
-                              description: _itemDesc(l10n, item),
-                              accentColor: item is _WeaponDef
-                                  ? (item).color
-                                  : Colors.cyanAccent,
-                              stats:
-                                  item is _WeaponDef ? (item).stats : const [],
-                              showDescription: !hideDescription,
+                            child: AnimatedBuilder(
+                              animation: _previewController,
+                              builder: (context, _) => CustomPaint(
+                                painter: previewBuilder(
+                                    item, _previewController.value * 10),
+                                size: Size(canvasSize, canvasSize),
+                              ),
                             ),
-                          ],
-                        ),
+                          ),
+                          const SizedBox(height: 12),
+                          // Description card statica (no animation dep).
+                          Flexible(
+                            child: SingleChildScrollView(
+                              child: _InfoCard(
+                                title: _itemName(l10n, item),
+                                description: _itemDesc(l10n, item),
+                                accentColor: item is _WeaponDef
+                                    ? (item).color
+                                    : Colors.cyanAccent,
+                                stats: item is _WeaponDef
+                                    ? (item).stats
+                                    : const [],
+                                showDescription: !hideDescription,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   );
