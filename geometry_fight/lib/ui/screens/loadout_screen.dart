@@ -58,6 +58,8 @@ class _LoadoutScreenState extends State<LoadoutScreen> {
     _WeaponEntry('chain', 'CHAIN'),
   ];
 
+  // Iter 19 (utente: "tap auto-advance pre-game"). Weapon tap:
+  // unlocked → select + advance to pets; locked → snackbar, no advance.
   void _selectWeapon(String id) {
     if (!_saveData.unlockedWeapons.contains(id)) {
       final l10n = AppLocalizations.of(context)!;
@@ -66,8 +68,11 @@ class _LoadoutScreenState extends State<LoadoutScreen> {
     }
     setState(() => _saveData = _saveData.copyWith(startingWeapon: id));
     unawaited(SaveManager.save(_saveData));
+    _next();
   }
 
+  // Iter 19: pet tap. Unlocked (incluso 'none') → select + onConfirm
+  // (advance to summary). Locked → snackbar, no advance.
   void _selectPet(String id) {
     if (id != 'none' && !_saveData.unlockedPets.contains(id)) {
       final l10n = AppLocalizations.of(context)!;
@@ -76,6 +81,7 @@ class _LoadoutScreenState extends State<LoadoutScreen> {
     }
     setState(() => _saveData = _saveData.copyWith(activePet: id));
     unawaited(SaveManager.save(_saveData));
+    widget.onConfirm();
   }
 
   void _showLockedSnack(String msg) {
@@ -168,39 +174,9 @@ class _LoadoutScreenState extends State<LoadoutScreen> {
                     isWeaponsStep ? _buildWeaponsGrid() : _buildPetsGrid(),
               ),
             ),
-            // Footer button
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
-              child: GestureDetector(
-                onTap: isWeaponsStep ? _next : widget.onConfirm,
-                child: Container(
-                  height: 48,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(10),
-                    color: NeonColors.green.withValues(alpha: 0.12),
-                    border: Border.all(
-                        color: NeonColors.green.withValues(alpha: 0.7),
-                        width: 2),
-                    boxShadow: [
-                      BoxShadow(
-                          color: NeonColors.green.withValues(alpha: 0.4),
-                          blurRadius: 12)
-                    ],
-                  ),
-                  alignment: Alignment.center,
-                  child: Text(
-                    isWeaponsStep ? l10n.next : l10n.loadoutStart,
-                    style: const TextStyle(
-                      color: NeonColors.green,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w900,
-                      fontFamily: 'monospace',
-                      letterSpacing: 4,
-                    ),
-                  ),
-                ),
-              ),
-            ),
+            // Iter 19 (utente: "auto-advance on tap"): rimosso bottone
+            // AVANTI / AVVIA PARTITA bottom — tap su weapon → _next() (pet
+            // page); tap su pet → widget.onConfirm() (summary).
           ],
         ),
       ),

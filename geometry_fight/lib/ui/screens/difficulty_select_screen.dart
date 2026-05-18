@@ -106,7 +106,13 @@ class _DifficultySelectScreenState extends State<DifficultySelectScreen> {
                         final color = _diffColor(d);
                         final diffLabel = _diffName(l10n, d);
                         return GestureDetector(
-                          onTap: () => setState(() => _sel = d),
+                          // Iter 19 (utente: "tap auto-advance pre-game"):
+                          // setState + onConfirm. Re-tap same → still advance
+                          // (no toggle-off).
+                          onTap: () {
+                            setState(() => _sel = d);
+                            widget.onConfirm(d);
+                          },
                           child: SizedBox(
                             // Iter 18: dimensioni esplicite per card 70%.
                             width: 280,
@@ -173,33 +179,8 @@ class _DifficultySelectScreenState extends State<DifficultySelectScreen> {
                 ),
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
-              child: GestureDetector(
-                onTap: () => widget.onConfirm(_sel),
-                child: Container(
-                  height: 48,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(10),
-                    color: NeonColors.green.withValues(alpha: 0.12),
-                    border: Border.all(
-                        color: NeonColors.green.withValues(alpha: 0.7),
-                        width: 2),
-                  ),
-                  alignment: Alignment.center,
-                  child: Text(
-                    l10n.diffNext,
-                    style: const TextStyle(
-                      color: NeonColors.green,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w900,
-                      fontFamily: 'monospace',
-                      letterSpacing: 4,
-                    ),
-                  ),
-                ),
-              ),
-            ),
+            // Iter 19 (utente: "auto-advance on tap"): rimosso bottone
+            // AVANTI bottom — tap su card chiama widget.onConfirm direttamente.
           ],
         ),
       ),

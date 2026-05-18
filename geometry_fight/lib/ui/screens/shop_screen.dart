@@ -28,6 +28,10 @@ class _ShopScreenState extends State<ShopScreen>
     with TickerProviderStateMixin {
   late TabController _tabController;
   late AnimationController _previewController;
+  // Iter 19 (utente: "animated wave flow on talent connector lines"):
+  // controller dedicato 2s per pulse traveling sui connettori talent-tree.
+  // Repaint trigger via CustomPaint(repaint: ...).
+  late AnimationController _talentWaveController;
   late SaveData _saveData;
   int? _selectedPreviewIndex;
 
@@ -59,6 +63,10 @@ class _ShopScreenState extends State<ShopScreen>
       vsync: this,
       duration: const Duration(seconds: 10),
     )..repeat();
+    _talentWaveController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 2),
+    )..repeat();
     _saveData = SaveManager.load();
   }
 
@@ -66,6 +74,7 @@ class _ShopScreenState extends State<ShopScreen>
   void dispose() {
     _tabController.dispose();
     _previewController.dispose();
+    _talentWaveController.dispose();
     _petsScrollCtrl.dispose();
     _upgradesScrollCtrl.dispose();
     _modesScrollCtrl.dispose();
@@ -768,15 +777,16 @@ class _ShopScreenState extends State<ShopScreen>
                 clipBehavior: Clip.none,
                 children: [
                   Positioned.fill(
-                    child: AnimatedBuilder(
-                      animation: _previewController,
-                      builder: (_, child) => CustomPaint(
-                        painter: _UpgradeMapPainter(
-                          nodes: upgrades,
-                          connections: _upgradeConnections,
-                          saveData: _saveData,
-                          time: _previewController.value * 6.283,
-                        ),
+                    // Iter 19 (utente: "animated wave flow on talent
+                    // connector lines"): repaint listenable = talent
+                    // wave controller (2s period). Painter calcola
+                    // pulse traveling per ogni linea attiva.
+                    child: CustomPaint(
+                      painter: _UpgradeMapPainter(
+                        nodes: upgrades,
+                        connections: _upgradeConnections,
+                        saveData: _saveData,
+                        waveT: _talentWaveController,
                       ),
                     ),
                   ),
@@ -1712,45 +1722,68 @@ class _UpgradeNode {
   const _UpgradeNode({required this.x, required this.y, required this.item});
 }
 
-/// Iter 13: painter linee connessione skill-tree. Pulsate con `time`.
+/// Iter 19 (utente: "animated wave flow on talent connector lines").
+/// Tre stati per linea:
+///  • INACTIVE (prereq di b non soddisfatto)  → grigio dim, no pulse.
+///  • AVAILABLE (b unlocked, b level 0)       → cyan light statica, no pulse.
+///  • ACTIVE (b unlocked, sia a che b lvl≥1) → base dim + pulse traveling.
+/// Pulse: 20% segmento lungo la linea, hue shift cyan→green→cyan via
+/// `waveT.value`. Repaint trigger via `CustomPaint(repaint: waveT)`.
 class _UpgradeMapPainter extends CustomPainter {
   final List<_UpgradeNode> nodes;
   final List<(String, String)> connections;
   final SaveData saveData;
-  final double time;
+  // Listenable per repaint + valore animazione 0..1.
+  final Animation<double> waveT;
 
   _UpgradeMapPainter({
     required this.nodes,
     required this.connections,
     required this.saveData,
-    required this.time,
-  });
+    required this.waveT,
+  }) : super(repaint: waveT);
+
+  /// Prereq di `bId` soddisfatti (replicato da `_ShopScreenState._prereqs`).
+  /// Tenuto privato perché painter è in module scope.
+  bool _prereqSatisfied(String bId) {
+    final reqs = _prereqsLookup[bId];
+    if (reqs == null || reqs.isEmpty) return true;
+    for (final (prereqId, minLevel) in reqs) {
+      if (saveData.getUpgradeLevel(prereqId) < minLevel) return false;
+    }
+    return true;
+  }
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()
+    // Endpoint shortening: icon node has radius 26 (vedi _UpgradeMapNode).
+    const double nodeRadius = 26;
+    final basePaint = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.8
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2);
-    // Shorten endpoints by icon radius per non sovrapporre i nodi.
-    const double nodeRadius = 26;
+    final pulsePaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 3.0
+      ..strokeCap = StrokeCap.round
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
+
+    final t = waveT.value.clamp(0.0, 1.0);
+
     for (final (aId, bId) in connections) {
       final a = nodes.firstWhere((n) => n.item.id == aId,
           orElse: () => nodes.first);
       final b = nodes.firstWhere((n) => n.item.id == bId,
           orElse: () => nodes.first);
       final lvlA = saveData.getUpgradeLevel(aId);
-      // Linea attiva quando il prereq (a) ha almeno 1 livello.
-      final active = lvlA > 0;
-      final color = active
-          ? Color.lerp(a.item.color, b.item.color, 0.5)!
-          : Colors.white.withValues(alpha: 0.12);
-      final pulse = active
-          ? (0.6 + 0.4 * (0.5 + 0.5 * math.sin(time + a.x * 5)))
-          : 1.0;
-      paint.color = active
-          ? color.withValues(alpha: 0.8 * pulse)
-          : color;
+      final lvlB = saveData.getUpgradeLevel(bId);
+      final bUnlocked = _prereqSatisfied(bId);
+      // Stati: ACTIVE = b unlocked + sia a che b ≥1 livello.
+      // AVAILABLE = b unlocked + b ancora a 0 (cyan light statica).
+      // INACTIVE = b NON unlocked (prereq mancante) → grigio dim.
+      final isActive = bUnlocked && lvlA > 0 && lvlB > 0;
+      final isAvailable = bUnlocked && !isActive;
+
       // Compute endpoint shortened by nodeRadius along direction.
       final ax = a.x * size.width;
       final ay = a.y * size.height;
@@ -1762,22 +1795,72 @@ class _UpgradeMapPainter extends CustomPainter {
       if (len <= nodeRadius * 2) continue;
       final nx = dx / len;
       final ny = dy / len;
-      canvas.drawLine(
-        Offset(ax + nx * nodeRadius, ay + ny * nodeRadius),
-        Offset(bx - nx * nodeRadius, by - ny * nodeRadius),
-        paint,
+      final p0 = Offset(ax + nx * nodeRadius, ay + ny * nodeRadius);
+      final p1 = Offset(bx - nx * nodeRadius, by - ny * nodeRadius);
+
+      // Base line color/alpha per stato.
+      if (isActive) {
+        basePaint.color = const Color(0xFF00FFFF).withValues(alpha: 0.3);
+      } else if (isAvailable) {
+        basePaint.color = const Color(0xFF66E6FF).withValues(alpha: 0.5);
+      } else {
+        // INACTIVE: dim grey (mantenuto come iter 13).
+        basePaint.color = Colors.white.withValues(alpha: 0.12);
+      }
+      canvas.drawLine(p0, p1, basePaint);
+
+      // Pulse traveling solo per ACTIVE.
+      if (!isActive) continue;
+
+      // Hue shift cyan(180°) → green(120°) → cyan via sine sul valore t.
+      // Mantiene pulse "vivo" senza saltare di colpo. Saturazione/Value alti.
+      final hue = 150.0 + math.sin(t * math.pi * 2) * 30.0; // 120..180
+      final pulseColor = HSVColor.fromAHSV(1.0, hue, 0.95, 1.0).toColor();
+
+      // Path completo + computeMetrics per extract segmento.
+      final fullPath = Path()
+        ..moveTo(p0.dx, p0.dy)
+        ..lineTo(p1.dx, p1.dy);
+      final metrics = fullPath.computeMetrics().toList();
+      if (metrics.isEmpty) continue;
+      final metric = metrics.first;
+      // Pulse band larga 20% della line length, centrata su t.
+      const halfBand = 0.10;
+      final s = (t - halfBand).clamp(0.0, 1.0);
+      final e = (t + halfBand).clamp(0.0, 1.0);
+      if (e <= s) continue;
+      final extracted = metric.extractPath(
+        s * metric.length,
+        e * metric.length,
       );
+      pulsePaint.color = pulseColor.withValues(alpha: 0.9);
+      canvas.drawPath(extracted, pulsePaint);
     }
   }
 
   @override
   bool shouldRepaint(_UpgradeMapPainter old) {
-    // Iter 13 (caveman): time check copre animation. SaveData mutato
-    // in-place → reference compare inutile. setState dopo purchase
-    // ricrea painter (new instance) → repaint comunque triggerato.
-    return old.time != time;
+    // Repaint triggera via Listenable (super.repaint=waveT). saveData
+    // mutato in-place + setState dopo purchase ricrea painter, quindi
+    // basta confrontare reference per coprire purchase updates.
+    return old.saveData != saveData ||
+        old.connections != connections ||
+        old.nodes != nodes;
   }
 }
+
+/// Lookup statico replica di `_ShopScreenState._prereqs` per uso nel
+/// painter (module-scope). Aggiorna assieme.
+const Map<String, List<(String, int)>> _prereqsLookup = {
+  'speed': [],
+  'firepower': [('speed', 5)],
+  'fire_rate': [('speed', 5)],
+  'shield_capacity': [('firepower', 5), ('fire_rate', 5)],
+  'bomb_capacity': [('shield_capacity', 5)],
+  'starting_lives': [('shield_capacity', 5)],
+  'magnet_range': [('bomb_capacity', 5), ('starting_lives', 5)],
+  'xp_boost': [('magnet_range', 5)],
+};
 
 /// Nodo skill-tree con nome + livello sotto. Stato lock = greyed/no-tap.
 class _UpgradeMapNode extends StatelessWidget {

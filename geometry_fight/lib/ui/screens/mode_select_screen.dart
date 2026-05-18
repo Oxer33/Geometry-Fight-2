@@ -36,7 +36,6 @@ class _ModeSelectScreenState extends State<ModeSelectScreen>
 
   late AnimationController _entranceController;
   late AnimationController _glowController;
-  late AnimationController _startBtnController;
 
   @override
   void initState() {
@@ -56,17 +55,13 @@ class _ModeSelectScreenState extends State<ModeSelectScreen>
       vsync: this,
     )..repeat(reverse: true);
 
-    _startBtnController = AnimationController(
-      duration: const Duration(milliseconds: 1500),
-      vsync: this,
-    )..repeat(reverse: true);
+    // Iter 19: rimosso _startBtnController — non più bottone AVANTI (tap-to-advance).
   }
 
   @override
   void dispose() {
     _entranceController.dispose();
     _glowController.dispose();
-    _startBtnController.dispose();
     super.dispose();
   }
 
@@ -78,13 +73,13 @@ class _ModeSelectScreenState extends State<ModeSelectScreen>
       backgroundColor: Colors.black,
       body: SafeArea(
         child: AnimatedBuilder(
-          animation:
-              Listenable.merge([_entranceController, _glowController, _startBtnController]),
+          animation: Listenable.merge([_entranceController, _glowController]),
           builder: (context, _) {
             final entrance = _entranceController.value;
             final glow = _glowController.value;
-            final startPulse = _startBtnController.value;
 
+            // Iter 19 (utente: "auto-advance on tap"): rimosso bottone
+            // AVANTI bottom — tap su card unlocked = setState + onConfirm.
             return Column(
               children: [
                 // Header (con step indicator 1/5 a destra integrato — iter 8).
@@ -108,9 +103,6 @@ class _ModeSelectScreenState extends State<ModeSelectScreen>
                     ),
                   ),
                 ),
-
-                // Pulsante AVANTI (era START)
-                _buildStartButton(l10n, entrance, startPulse),
               ],
             );
           },
@@ -202,15 +194,42 @@ class _ModeSelectScreenState extends State<ModeSelectScreen>
                 isSelected: isSelected,
                 isUnlocked: isUnlocked,
                 glow: glow,
-                onTap: isUnlocked
-                    ? () => setState(() => _selectedMode = mode)
-                    : null,
+                onTap: () {
+                  // Iter 19 (utente: "tap auto-advance"). Locked → snackbar
+                  // "Sblocca nello SHOP"; unlocked → seleziona + onConfirm.
+                  if (!isUnlocked) {
+                    _showLockedSnack(l10n);
+                    return;
+                  }
+                  setState(() => _selectedMode = mode);
+                  widget.onConfirm(mode);
+                },
               );
             }).toList(),
           ),
         ),
       ),
     );
+  }
+
+  // Iter 19: snackbar quando tap su modalità locked (tap-to-advance flow).
+  void _showLockedSnack(AppLocalizations l10n) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(const SnackBar(
+        duration: Duration(milliseconds: 1100),
+        backgroundColor: Color(0xFF0A0A1A),
+        behavior: SnackBarBehavior.floating,
+        content: Text(
+          'Sblocca nello SHOP',
+          style: TextStyle(
+            color: Colors.amber,
+            fontFamily: 'monospace',
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+      ));
   }
 
   String _modeName(AppLocalizations l10n, GameMode mode) {
@@ -413,67 +432,8 @@ class _ModeSelectScreenState extends State<ModeSelectScreen>
     );
   }
 
-  Widget _buildStartButton(AppLocalizations l10n, double entrance, double pulse) {
-    final e = ((entrance - 0.5) / 0.5).clamp(0.0, 1.0);
-    return Opacity(
-      opacity: e,
-      child: Transform.translate(
-        offset: Offset(0, 20 * (1 - e)),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: GestureDetector(
-            onTap: () {
-              // Solo MODE selection — diff/mods/loadout/summary in screens
-              // dedicate (vedi main.dart routing).
-              widget.onConfirm(_selectedMode);
-            },
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(
-                  color: Colors.cyanAccent.withValues(alpha: 0.7 + pulse * 0.3),
-                  width: 2,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.cyanAccent
-                        .withValues(alpha: 0.15 + pulse * 0.1),
-                    blurRadius: 16 + pulse * 8,
-                    spreadRadius: -2,
-                  ),
-                ],
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    Colors.cyanAccent.withValues(alpha: 0.12 + pulse * 0.04),
-                    Colors.cyanAccent.withValues(alpha: 0.04),
-                  ],
-                ),
-              ),
-              child: Center(
-                child: Text(
-                  l10n.next,
-                  style: const TextStyle(
-                    color: Colors.cyanAccent,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    fontFamily: 'monospace',
-                    letterSpacing: 4,
-                    shadows: [
-                      Shadow(color: Colors.cyanAccent, blurRadius: 10),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
+  // Iter 19: rimosso _buildStartButton — tap-to-advance sostituisce il
+  // bottone AVANTI bottom (vedi onTap di _NeonModeCard in _buildModeList).
 
   Color _diffColor(Difficulty d) {
     switch (d) {
@@ -610,39 +570,40 @@ class _NeonModeCard extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Text(
-                            modeName,
-                            style: TextStyle(
-                              // Iter 13 contrast (utente: "scritta selected
-                              // stesso colore della card"): selected → white
-                              // bold con glow themeColor; unselected →
-                              // themeColor stesso (highlight non-selezionato).
-                              color: !isUnlocked
-                                  ? Colors.white30
-                                  : isSelected
-                                      ? Colors.white
-                                      : themeColor,
-                              // Iter 18 (utente: "+50% fontSize"):
-                              // 26/23 → 39/35 con w800. Padding orizzontale
-                              // ridotto per evitare line break.
-                              fontSize: isSelected ? 39 : 35,
-                              fontWeight: FontWeight.w800,
-                              fontFamily: 'monospace',
-                              letterSpacing: -0.5,
-                              shadows: isUnlocked
-                                  ? [
-                                      Shadow(
-                                          color: isSelected
-                                              ? themeColor
-                                                  .withValues(alpha: 0.95)
-                                              : themeColor
-                                                  .withValues(alpha: 0.45),
-                                          blurRadius: isSelected ? 10 : 5)
-                                    ]
-                                  : null,
+                          // Iter 19 (utente: "CLASSIC truncated → CLASS..."):
+                          // 39/35 era troppo per griglia 4-col. Riportato a
+                          // 18/16 con FittedBox per auto-shrink su nomi lunghi
+                          // ("BOSS RUSH", "TIME ATTACK", "GRAVITY INFERNO").
+                          FittedBox(
+                            fit: BoxFit.scaleDown,
+                            alignment: Alignment.centerLeft,
+                            child: Text(
+                              modeName,
+                              style: TextStyle(
+                                color: !isUnlocked
+                                    ? Colors.white30
+                                    : isSelected
+                                        ? Colors.white
+                                        : themeColor,
+                                fontSize: isSelected ? 18 : 16,
+                                fontWeight: FontWeight.w700,
+                                fontFamily: 'monospace',
+                                letterSpacing: -0.5,
+                                shadows: isUnlocked
+                                    ? [
+                                        Shadow(
+                                            color: isSelected
+                                                ? themeColor
+                                                    .withValues(alpha: 0.95)
+                                                : themeColor
+                                                    .withValues(alpha: 0.45),
+                                            blurRadius: isSelected ? 10 : 5)
+                                      ]
+                                    : null,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 1,
                             ),
-                            overflow: TextOverflow.ellipsis,
-                            maxLines: 1,
                           ),
                           if (!isUnlocked)
                             Row(

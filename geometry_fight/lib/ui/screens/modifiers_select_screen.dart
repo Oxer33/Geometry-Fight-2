@@ -91,26 +91,28 @@ class _ModifiersSelectScreenState extends State<ModifiersSelectScreen> {
         .toList();
   }
 
-  void _toggle(String id) {
-    bool showCapSnack = false;
+  // Iter 19 (utente: "tap auto-advance pre-game", "re-tap same → still
+  // advance, don't toggle off"). Tap su mod:
+  //  • già attivo → advance (no toggle-off)
+  //  • non attivo, sotto cap → aggiungi + advance
+  //  • non attivo, cap raggiunto → snackbar cap + advance comunque
+  // Multi-select rimane possibile usando il back+forward del wizard;
+  // semantica primaria è "tap = scegli e prosegui".
+  void _tapMod(String id) {
+    final wasActive = _active.contains(id);
+    final atCap = !wasActive && _active.length >= _maxActive;
     setState(() {
-      // Iter 9 fix: pattern immutable — replace list instead of in-place
-      // mutation (rispetta global rule "ALWAYS create new objects").
-      if (_active.contains(id)) {
-        _active = [..._active]..remove(id);
-      } else if (_active.length < _maxActive) {
+      if (!wasActive && !atCap) {
         _active = [..._active, id];
-      } else {
-        showCapSnack = true;
       }
     });
-    if (showCapSnack) {
+    if (atCap) {
       if (!mounted) return;
       final l10n = AppLocalizations.of(context)!;
       ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
         ..showSnackBar(SnackBar(
-          duration: const Duration(milliseconds: 1200),
+          duration: const Duration(milliseconds: 1100),
           backgroundColor: const Color(0xFF0A0A1A),
           behavior: SnackBarBehavior.floating,
           content: Text(l10n.modifiersMaxActive(_maxActive),
@@ -120,6 +122,7 @@ class _ModifiersSelectScreenState extends State<ModifiersSelectScreen> {
                   fontWeight: FontWeight.w900)),
         ));
     }
+    widget.onConfirm(_active);
   }
 
   @override
@@ -219,7 +222,7 @@ class _ModifiersSelectScreenState extends State<ModifiersSelectScreen> {
                       ? const Color(0xFFFF4466)
                       : const Color(0xFF44CCFF);
                   return GestureDetector(
-                    onTap: () => _toggle(m.id),
+                    onTap: () => _tapMod(m.id),
                     child: Container(
                       margin: const EdgeInsets.only(bottom: 8),
                       padding: const EdgeInsets.all(10),
@@ -285,33 +288,8 @@ class _ModifiersSelectScreenState extends State<ModifiersSelectScreen> {
               ),
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
-              child: GestureDetector(
-                onTap: () => widget.onConfirm(_active),
-                child: Container(
-                  height: 48,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(10),
-                    color: NeonColors.green.withValues(alpha: 0.12),
-                    border: Border.all(
-                        color: NeonColors.green.withValues(alpha: 0.7),
-                        width: 2),
-                  ),
-                  alignment: Alignment.center,
-                  child: Text(
-                    l10n.next,
-                    style: const TextStyle(
-                      color: NeonColors.green,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w900,
-                      fontFamily: 'monospace',
-                      letterSpacing: 4,
-                    ),
-                  ),
-                ),
-              ),
-            ),
+            // Iter 19 (utente: "auto-advance on tap"): rimosso bottone
+            // AVANTI bottom — tap su card mod chiama _tapMod → onConfirm.
           ],
         ),
       ),
