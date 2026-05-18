@@ -30,8 +30,6 @@ class _ShopScreenState extends State<ShopScreen>
   late AnimationController _previewController;
   late SaveData _saveData;
   int? _selectedPreviewIndex;
-  /// Iter 13: nodo upgrade selezionato nella mappa 2D (mostra dettagli).
-  String? _selectedUpgradeId;
 
   // Scroll controllers for cyan Scrollbar on every scrollable view.
   // Separate controllers per-tab so multiple ListViews can stay alive
@@ -272,19 +270,6 @@ class _ShopScreenState extends State<ShopScreen>
         'bomb_capacity' => l10n.upgradeBombs,
         'magnet_range' => l10n.upgradeMagnet,
         'xp_boost' => l10n.upgradeXpBoost,
-        _ => fallback,
-      };
-
-  String _upgradeDesc(AppLocalizations l10n, String id, String fallback) =>
-      switch (id) {
-        'firepower' => l10n.upgradeFirepowerDesc,
-        'fire_rate' => l10n.upgradeFireRateDesc,
-        'speed' => l10n.upgradeSpeedDesc,
-        'shield_capacity' => l10n.upgradeShieldDesc,
-        'starting_lives' => l10n.upgradeLivesDesc,
-        'bomb_capacity' => l10n.upgradeBombsDesc,
-        'magnet_range' => l10n.upgradeMagnetDesc,
-        'xp_boost' => l10n.upgradeXpBoostDesc,
         _ => fallback,
       };
 
@@ -761,338 +746,202 @@ class _ShopScreenState extends State<ShopScreen>
 
   // ==================== UPGRADES TAB ====================
 
-  /// Iter 13 (utente: "mappa 2D fighissima invece che una lista"): redesign
-  /// upgrades come skill-tree neon. Nodi posizionati su griglia normalizzata
-  /// (0-1 x/y), connessi da linee luminose. Tap nodo → pannello dettagli +
-  /// pulsante acquisto. Linee disegnate via CustomPaint sotto i nodi.
-  ///
-  /// Iter 13c (utente: "talent tree tutto schiacciato"): map = SingleChild
-  /// Scroll. Map height fissa via aspect ratio 1.35× width (porta sempre
-  /// 4 row leggibili anche su schermi corti). Detail panel sotto, scroll
-  /// permette di vedere panel + map senza overlap.
+  /// Diagonal talent tree: 3 tiers, tiered prereqs. Tap nodo → buy +1 livello
+  /// se affordable + sbloccato. Niente bottom info card: nome + level/maxLevel
+  /// renderizzati sotto ogni nodo.
   Widget _buildUpgradesTab() {
     final upgrades = _upgradeNodes();
     return _cyanScrollbar(
       controller: _upgradesScrollCtrl,
       child: SingleChildScrollView(
-      controller: _upgradesScrollCtrl,
-      padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
-      child: Column(
-        children: [
-          LayoutBuilder(
-            builder: (context, constraints) {
-              final mapW = constraints.maxWidth;
-              // Aspect 1.35× → su 380px wide = 513px tall → 4 row larghe.
-              final mapH = mapW * 1.35;
-              return SizedBox(
-                width: mapW,
-                height: mapH,
-                child: Stack(
-                  clipBehavior: Clip.none,
-                  children: [
-                    Positioned.fill(
-                      child: AnimatedBuilder(
-                        animation: _previewController,
-                        builder: (_, child) => CustomPaint(
-                          painter: _UpgradeMapPainter(
-                            nodes: upgrades,
-                            connections: _upgradeConnections,
-                            saveData: _saveData,
-                            time: _previewController.value * 6.283,
-                          ),
+        controller: _upgradesScrollCtrl,
+        padding: const EdgeInsets.fromLTRB(12, 8, 12, 16),
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final mapW = constraints.maxWidth;
+            // Aspect 1.25× → 4 righe leggibili anche su schermi corti.
+            final mapH = mapW * 1.25;
+            return SizedBox(
+              width: mapW,
+              height: mapH,
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Positioned.fill(
+                    child: AnimatedBuilder(
+                      animation: _previewController,
+                      builder: (_, child) => CustomPaint(
+                        painter: _UpgradeMapPainter(
+                          nodes: upgrades,
+                          connections: _upgradeConnections,
+                          saveData: _saveData,
+                          time: _previewController.value * 6.283,
                         ),
                       ),
                     ),
-                    for (final node in upgrades)
-                      Positioned(
-                        left: node.x * mapW - 32,
-                        top: node.y * mapH - 32,
-                        child: _UpgradeMapNode(
-                          item: node.item,
-                          currentLevel: _saveData.getUpgradeLevel(node.item.id),
-                          isSelected: _selectedUpgradeId == node.item.id,
-                          onTap: () {
-                            setState(() =>
-                                _selectedUpgradeId = node.item.id);
-                            _tryBuyUpgrade(node.item);
-                          },
-                        ),
-                      ),
-                  ],
-                ),
-              );
-            },
-          ),
-          const SizedBox(height: 12),
-          _buildUpgradeDetailPanel(upgrades),
-        ],
-      ),
-    ),
-    );
-  }
-
-  Widget _buildUpgradeDetailPanel(List<_UpgradeNode> nodes) {
-    final l10n = AppLocalizations.of(context)!;
-    final selected = _selectedUpgradeId == null
-        ? null
-        : nodes.firstWhere(
-            (n) => n.item.id == _selectedUpgradeId,
-            orElse: () => nodes.first,
-          );
-    if (selected == null) {
-      // Iter 13c: no margin (parent scroll handles padding) + compact 80px
-      // placeholder — il map ha già spazio sufficiente sopra.
-      return Container(
-        padding: const EdgeInsets.all(16),
-        height: 80,
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.15)),
-        ),
-        child: Text(
-          l10n.shopTapNodeForDetails,
-          style: TextStyle(
-            color: Colors.white.withValues(alpha: 0.5),
-            fontFamily: 'monospace',
-            fontSize: 11,
-            letterSpacing: 2,
-          ),
-          textAlign: TextAlign.center,
-        ),
-      );
-    }
-    final item = selected.item;
-    final currentLevel = _saveData.getUpgradeLevel(item.id);
-    final isMaxed = currentLevel >= item.maxLevel;
-    final safeLvl = currentLevel.clamp(0, item.costs.length - 1);
-    final cost = isMaxed ? 0 : item.costs[safeLvl];
-
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: item.color.withValues(alpha: 0.6), width: 2),
-        gradient: LinearGradient(
-          colors: [
-            item.color.withValues(alpha: 0.18),
-            item.color.withValues(alpha: 0.04),
-          ],
-        ),
-        boxShadow: [
-          BoxShadow(
-              color: item.color.withValues(alpha: 0.3), blurRadius: 14)
-        ],
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Icon big
-          Container(
-            width: 52,
-            height: 52,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              border: Border.all(
-                  color: item.color.withValues(alpha: 0.7), width: 2),
-              color: item.color.withValues(alpha: 0.1),
-              boxShadow: [
-                BoxShadow(
-                    color: item.color.withValues(alpha: 0.4),
-                    blurRadius: 10),
-              ],
-            ),
-            child: Icon(item.icon, color: item.color, size: 28),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(_upgradeName(l10n, item.id, item.name),
-                    style: TextStyle(
-                      color: item.color,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w900,
-                      fontFamily: 'monospace',
-                      letterSpacing: 2,
-                    )),
-                const SizedBox(height: 4),
-                Text(_upgradeDesc(l10n, item.id, item.description),
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.7),
-                      fontSize: 11,
-                      fontFamily: 'monospace',
-                    )),
-                const SizedBox(height: 10),
-                Row(
-                  children: List.generate(item.maxLevel, (i) {
-                    return AnimatedContainer(
-                      duration: const Duration(milliseconds: 300),
-                      width: 28,
-                      height: 6,
-                      margin: const EdgeInsets.only(right: 4),
-                      decoration: BoxDecoration(
-                        color: i < currentLevel
-                            ? item.color
-                            : item.color.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(2),
-                        boxShadow: i < currentLevel
-                            ? [
-                                BoxShadow(
-                                    color: item.color.withValues(alpha: 0.5),
-                                    blurRadius: 4)
-                              ]
-                            : null,
-                      ),
-                    );
-                  }),
-                ),
-                const SizedBox(height: 8),
-                Text(l10n.shopLevelOf(currentLevel, item.maxLevel),
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.7),
-                      fontSize: 11,
-                      fontFamily: 'monospace',
-                      letterSpacing: 1.5,
-                    )),
-                const SizedBox(height: 8),
-                if (!isMaxed)
-                  _PurchaseButton(
-                    cost: cost,
-                    canAfford: _saveData.goldGeoms >= cost,
-                    color: item.color,
-                    onTap: () {
-                      _purchase(item.id, cost, () {
-                        _saveData.upgrades[item.id] = currentLevel + 1;
-                      });
-                    },
-                  )
-                else
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 14, vertical: 6),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(6),
-                      border: Border.all(
-                          color:
-                              Colors.greenAccent.withValues(alpha: 0.6)),
-                      color: Colors.greenAccent.withValues(alpha: 0.1),
-                    ),
-                    child: Text(l10n.shopMaxLevel,
-                        style: const TextStyle(
-                          color: Colors.greenAccent,
-                          fontFamily: 'monospace',
-                          fontWeight: FontWeight.w900,
-                          fontSize: 14,
-                          letterSpacing: 2,
-                        )),
                   ),
-              ],
-            ),
-          ),
-        ],
+                  for (final node in upgrades)
+                    Positioned(
+                      // Width 72 → center horizontally; vertical offset 28
+                      // allinea (node.y * mapH) al centro del cerchio icona
+                      // (icon spans 0-56 px nel widget, centro a 28 px).
+                      left: node.x * mapW - 36,
+                      top: node.y * mapH - 28,
+                      child: _UpgradeMapNode(
+                        item: node.item,
+                        currentLevel:
+                            _saveData.getUpgradeLevel(node.item.id),
+                        l10n: AppLocalizations.of(context)!,
+                        upgradeName: _upgradeName(
+                            AppLocalizations.of(context)!,
+                            node.item.id,
+                            node.item.name),
+                        unlocked: _isUpgradeUnlocked(node.item.id),
+                        onTap: () {
+                          if (!_isUpgradeUnlocked(node.item.id)) return;
+                          _tryBuyUpgrade(node.item);
+                        },
+                      ),
+                    ),
+                ],
+              ),
+            );
+          },
+        ),
       ),
     );
   }
 
-  /// Iter 13: nodi della mappa 2D upgrades. Coordinate normalizzate
-  /// (x,y in [0,1] = % della grid area).
+  /// Prereq map: id → list of (prereqId, requiredLevel) pairs.
+  /// Nodo unlocked solo quando TUTTI i prereq raggiungono il loro livello.
+  static const Map<String, List<(String, int)>> _prereqs = {
+    // Tier 1 (root): nessun prereq
+    'firepower': [],
+    'fire_rate': [],
+    'speed': [],
+    // Tier 2: richiede tier 1 a L3
+    'shield_capacity': [('firepower', 3)],
+    'starting_lives': [('speed', 3)],
+    'bomb_capacity': [('fire_rate', 3)],
+    // Tier 3: richiede tier 2 a L5
+    'magnet_range': [('starting_lives', 5)],
+    'xp_boost': [('shield_capacity', 5)],
+  };
+
+  bool _isUpgradeUnlocked(String id) {
+    final reqs = _prereqs[id];
+    if (reqs == null || reqs.isEmpty) return true;
+    for (final (prereqId, minLevel) in reqs) {
+      if (_saveData.getUpgradeLevel(prereqId) < minLevel) return false;
+    }
+    return true;
+  }
+
+  /// Talent-tree node layout: 3 tier diagonali (zig-zag).
+  /// Coordinate normalizzate (x,y in [0,1] = % della grid area).
   List<_UpgradeNode> _upgradeNodes() => const [
-        // Top row: stat combat
+        // Tier 1 (y=0.10): combat core
         _UpgradeNode(
             x: 0.18,
-            y: 0.12,
+            y: 0.10,
             item: _UpgradeItem(
                 'firepower',
                 'FIREPOWER',
-                [100, 200, 300, 400, 500],
-                5,
-                '+5% danno per livello (max +25%)',
+                [50, 100, 150, 200, 250, 300, 350, 400, 450, 500],
+                10,
+                '+2.5% danno per livello (max +25% al L10)',
                 Icons.local_fire_department,
                 Color(0xFFFF4400))),
         _UpgradeNode(
-            x: 0.5,
-            y: 0.12,
+            x: 0.50,
+            y: 0.10,
             item: _UpgradeItem(
                 'fire_rate',
                 'FIRE RATE',
-                [100, 200, 300, 400, 500],
-                5,
-                '+5% cadenza per livello (max +25%)',
+                [50, 100, 150, 200, 250, 300, 350, 400, 450, 500],
+                10,
+                '+2.5% cadenza per livello (max +25% al L10)',
                 Icons.bolt,
                 NeonColors.bulletYellow)),
         _UpgradeNode(
             x: 0.82,
-            y: 0.12,
+            y: 0.10,
             item: _UpgradeItem(
                 'speed',
                 'SPEED',
-                [100, 200, 300, 400, 500],
-                5,
-                '+5% velocità per livello (max +25%)',
+                [50, 100, 150, 200, 250, 300, 350, 400, 450, 500],
+                10,
+                '+2.5% velocità per livello (max +25% al L10)',
                 Icons.speed,
                 NeonColors.cyan)),
-        // Mid row: defense
+        // Tier 2 (y=0.45): defense + resources, sfalsati diagonalmente
         _UpgradeNode(
-            x: 0.5,
-            y: 0.4,
+            x: 0.30,
+            y: 0.45,
             item: _UpgradeItem(
                 'shield_capacity',
                 'SHIELD',
-                [300, 600, 900, 1200, 1500],
-                5,
-                'Scudo post-morte: 5s → 10s → 15s → 20s → 25s',
+                [120, 240, 360, 480, 600, 720, 840, 960, 1080, 1200],
+                10,
+                'Scudo post-morte: +2.5s per livello (max 25s al L10)',
                 Icons.shield_outlined,
                 Color(0xFF00AAFF))),
-        // Bottom row: resources + utility
         _UpgradeNode(
-            x: 0.18,
-            y: 0.68,
-            item: _UpgradeItem('starting_lives', 'LIVES', [500, 1200], 2,
-                'Vite iniziali: 3 → 4 → 5', Icons.favorite,
-                Color(0xFFFF4466))),
-        _UpgradeNode(
-            x: 0.5,
-            y: 0.68,
-            item: _UpgradeItem('bomb_capacity', 'BOMBS', [400, 900], 2,
-                'Bombe disponibili: 3 → 4 → 5', Icons.blur_circular,
+            x: 0.62,
+            y: 0.45,
+            item: _UpgradeItem(
+                'bomb_capacity',
+                'BOMBS',
+                [60, 120, 180, 240, 300, 360, 420, 480, 540, 600],
+                10,
+                'Bombe disponibili: +1 ogni 2 livelli (max +5 al L10)',
+                Icons.blur_circular,
                 NeonColors.orange)),
         _UpgradeNode(
-            x: 0.82,
-            y: 0.68,
+            x: 0.88,
+            y: 0.45,
             item: _UpgradeItem(
-                'magnet_range',
-                'MAGNET',
-                [200, 400, 600, 800, 1000],
-                5,
-                '+10px raggio magnete per livello (max +50px)',
-                Icons.radar,
-                NeonColors.purple)),
+                'starting_lives',
+                'LIVES',
+                [80, 160, 240, 320, 400, 480, 560, 640, 720, 800],
+                10,
+                'Vite iniziali: +1 ogni 2 livelli (max +5 al L10)',
+                Icons.favorite,
+                Color(0xFFFF4466))),
+        // Tier 3 (y=0.80): utility avanzata
         _UpgradeNode(
-            x: 0.5,
-            y: 0.92,
+            x: 0.32,
+            y: 0.82,
             item: _UpgradeItem(
                 'xp_boost',
                 'XP BOOST',
-                [200, 400, 600, 800, 1000],
-                5,
-                '+10% GoldGeom per livello (max +50%)',
+                [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000],
+                10,
+                '+5% GoldGeom per livello (max +50% al L10)',
                 Icons.auto_awesome,
                 Color(0xFFFFD700))),
+        _UpgradeNode(
+            x: 0.75,
+            y: 0.82,
+            item: _UpgradeItem(
+                'magnet_range',
+                'MAGNET',
+                [100, 200, 300, 400, 500, 600, 700, 800, 900, 1000],
+                10,
+                '+5px raggio magnete per livello (max +50px al L10)',
+                Icons.radar,
+                NeonColors.purple)),
       ];
 
-  /// Connessioni skill-tree (id_a, id_b) — linee tra nodi.
+  /// Connessioni skill-tree (id_a, id_b) — linee tra prereq e dipendenti.
   static const _upgradeConnections = [
-    ('firepower', 'fire_rate'),
-    ('fire_rate', 'speed'),
-    ('fire_rate', 'shield_capacity'),
-    ('shield_capacity', 'starting_lives'),
-    ('shield_capacity', 'bomb_capacity'),
-    ('shield_capacity', 'magnet_range'),
-    ('starting_lives', 'xp_boost'),
-    ('bomb_capacity', 'xp_boost'),
-    ('magnet_range', 'xp_boost'),
+    // Tier 1 → Tier 2
+    ('firepower', 'shield_capacity'),
+    ('fire_rate', 'bomb_capacity'),
+    ('speed', 'starting_lives'),
+    // Tier 2 → Tier 3
+    ('shield_capacity', 'xp_boost'),
+    ('starting_lives', 'magnet_range'),
   ];
 
   // ==================== MODES TAB ====================
@@ -1245,18 +1094,6 @@ class _ShopScreenState extends State<ShopScreen>
                               ],
                             ],
                           ),
-                          const SizedBox(height: 4),
-                          Text(
-                            _modeDesc(l10n, item.id, item.description),
-                            style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.5),
-                              fontSize: 10,
-                              fontFamily: 'monospace',
-                              height: 1.3,
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
                         ],
                       ),
                     ),
@@ -1380,21 +1217,15 @@ class _ShopScreenState extends State<ShopScreen>
                       child: Row(
                         children: [
                           Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(_itemName(l10n, item), style: TextStyle(
-                                  color: isActive ? Colors.greenAccent : Colors.white,
-                                  fontSize: 12, fontWeight: FontWeight.bold,
+                            child: Text(_itemName(l10n, item),
+                                style: TextStyle(
+                                  color: isActive
+                                      ? Colors.greenAccent
+                                      : Colors.white,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
                                   fontFamily: 'monospace',
                                 )),
-                                const SizedBox(height: 2),
-                                Text(_itemDesc(l10n, item), style: TextStyle(
-                                  color: Colors.white.withValues(alpha: 0.3),
-                                  fontSize: 8, fontFamily: 'monospace',
-                                )),
-                              ],
-                            ),
                           ),
                           const SizedBox(width: 6),
                           _ShopActionButton(
@@ -1459,9 +1290,10 @@ class _ShopScreenState extends State<ShopScreen>
                       // Preview dinamica: riduci molto su schermi corti per lasciar posto al bottone.
                       final previewSize = (previewConstraints.maxHeight - 140).clamp(60.0, 200.0);
                       final isActive = item.id == activeId;
-                      return _cyanScrollbar(
-                        controller: previewController,
-                        child: SingleChildScrollView(
+                      // Preview content non scrolla davvero — niente scrollbar.
+                      // SingleChildScrollView mantenuto come safety per overflow
+                      // su schermi cortissimi, ma senza barre laterali visibili.
+                      return SingleChildScrollView(
                         controller: previewController,
                         padding: const EdgeInsets.symmetric(vertical: 12),
                         child: Column(
@@ -1521,7 +1353,6 @@ class _ShopScreenState extends State<ShopScreen>
                             ),
                           ],
                         ),
-                      ),
                       );
                     },
                   );
@@ -1920,24 +1751,23 @@ class _UpgradeMapPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.8
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2);
-    // Caveman fix: shorten line endpoints by `nodeRadius` per non pierce
-    // i cerchi dei nodi (le linee andavano fino al centro).
-    const double nodeRadius = 32;
+    // Shorten endpoints by icon radius (28) per non sovrapporre i nodi.
+    const double nodeRadius = 30;
     for (final (aId, bId) in connections) {
       final a = nodes.firstWhere((n) => n.item.id == aId,
           orElse: () => nodes.first);
       final b = nodes.firstWhere((n) => n.item.id == bId,
           orElse: () => nodes.first);
       final lvlA = saveData.getUpgradeLevel(aId);
-      final lvlB = saveData.getUpgradeLevel(bId);
-      final unlocked = lvlA > 0 && lvlB > 0;
-      final color = unlocked
+      // Linea attiva quando il prereq (a) ha almeno 1 livello.
+      final active = lvlA > 0;
+      final color = active
           ? Color.lerp(a.item.color, b.item.color, 0.5)!
-          : Colors.white.withValues(alpha: 0.18);
-      final pulse = unlocked
+          : Colors.white.withValues(alpha: 0.12);
+      final pulse = active
           ? (0.6 + 0.4 * (0.5 + 0.5 * math.sin(time + a.x * 5)))
           : 1.0;
-      paint.color = unlocked
+      paint.color = active
           ? color.withValues(alpha: 0.8 * pulse)
           : color;
       // Compute endpoint shortened by nodeRadius along direction.
@@ -1968,58 +1798,104 @@ class _UpgradeMapPainter extends CustomPainter {
   }
 }
 
-/// Iter 13: nodo nella mappa skill-tree.
+/// Nodo skill-tree con nome + livello sotto. Stato lock = greyed/no-tap.
 class _UpgradeMapNode extends StatelessWidget {
   final _UpgradeItem item;
   final int currentLevel;
-  final bool isSelected;
+  final bool unlocked;
+  final String upgradeName;
+  final AppLocalizations l10n;
   final VoidCallback onTap;
 
   const _UpgradeMapNode({
     required this.item,
     required this.currentLevel,
-    required this.isSelected,
+    required this.unlocked,
+    required this.upgradeName,
+    required this.l10n,
     required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
     final isMaxed = currentLevel >= item.maxLevel;
-    final glow = isMaxed ? 0.9 : (0.3 + 0.12 * currentLevel);
+    final activeColor =
+        unlocked ? item.color : Colors.white.withValues(alpha: 0.25);
+    final glow = !unlocked
+        ? 0.15
+        : isMaxed
+            ? 0.9
+            : (0.3 + 0.06 * currentLevel);
     return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 64,
-        height: 64,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: item.color.withValues(alpha: 0.12 + 0.06 * currentLevel),
-          border: Border.all(
-            color: item.color.withValues(alpha: glow),
-            width: isSelected ? 3 : 2,
-          ),
-          boxShadow: [
-            BoxShadow(
-                color: item.color.withValues(
-                    alpha: glow * (isSelected ? 0.7 : 0.4)),
-                blurRadius: isSelected ? 18 : 10),
-          ],
-        ),
-        alignment: Alignment.center,
+      onTap: unlocked ? onTap : null,
+      child: SizedBox(
+        width: 72,
+        // Icon node 56px + label area ~26px (nome + level).
+        height: 96,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(item.icon, color: item.color, size: 26),
-            const SizedBox(height: 2),
-            Text('$currentLevel/${item.maxLevel}',
+            // Cerchio icona
+            Container(
+              width: 56,
+              height: 56,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: activeColor.withValues(
+                    alpha: unlocked ? (0.12 + 0.04 * currentLevel) : 0.05),
+                border: Border.all(
+                  color: activeColor.withValues(alpha: glow),
+                  width: 2,
+                ),
+                boxShadow: unlocked
+                    ? [
+                        BoxShadow(
+                          color: activeColor.withValues(alpha: glow * 0.5),
+                          blurRadius: 10,
+                        ),
+                      ]
+                    : null,
+              ),
+              alignment: Alignment.center,
+              child: Icon(
+                unlocked ? item.icon : Icons.lock,
+                color: activeColor,
+                size: unlocked ? 24 : 18,
+              ),
+            ),
+            const SizedBox(height: 3),
+            // Nome upgrade (compatto)
+            SizedBox(
+              width: 72,
+              child: Text(
+                upgradeName,
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: TextStyle(
-                  color: isMaxed
-                      ? Colors.greenAccent
-                      : item.color.withValues(alpha: 0.9),
+                  color: activeColor.withValues(alpha: unlocked ? 0.95 : 0.4),
                   fontSize: 9,
                   fontWeight: FontWeight.w900,
                   fontFamily: 'monospace',
-                )),
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ),
+            const SizedBox(height: 1),
+            // Livello current/max
+            Text(
+              '$currentLevel/${item.maxLevel}',
+              style: TextStyle(
+                color: !unlocked
+                    ? Colors.white.withValues(alpha: 0.3)
+                    : isMaxed
+                        ? Colors.greenAccent
+                        : activeColor.withValues(alpha: 0.85),
+                fontSize: 10,
+                fontWeight: FontWeight.w900,
+                fontFamily: 'monospace',
+              ),
+            ),
           ],
         ),
       ),

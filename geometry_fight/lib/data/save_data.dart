@@ -73,44 +73,46 @@ class SaveData {
 
   double get damageMultiplier {
     final level = getUpgradeLevel('firepower');
-    return 1.0 + level * 0.05; // +5% per livello (max +25% al livello 5)
+    return 1.0 + level * 0.025; // +2.5% per livello (max +25% al L10)
   }
 
   double get speedMultiplier {
     final level = getUpgradeLevel('speed');
-    return 1.0 + level * 0.05; // +5% per livello (max +25% al livello 5)
+    return 1.0 + level * 0.025; // +2.5% per livello (max +25% al L10)
   }
 
   double get fireRateMultiplier {
     final level = getUpgradeLevel('fire_rate');
-    return 1.0 + level * 0.05; // +5% per livello (max +25% al livello 5)
+    return 1.0 + level * 0.025; // +2.5% per livello (max +25% al L10)
   }
 
   /// Durata dello scudo post-morte in secondi (0 = nessuno scudo).
-  /// Livello 1 = 5s, livello 2 = 10s, … livello 5 = 25s.
+  /// +2.5s per livello (max 25s al L10).
   double get postDeathShieldDuration {
     final level = getUpgradeLevel('shield_capacity');
-    return level * 5.0;
+    return level * 2.5;
   }
 
   int get startingLives {
     final level = getUpgradeLevel('starting_lives');
-    return 3 + level;
+    // Integer step: live granted every 2 levels (max +5 a L10).
+    return 3 + (level * 5) ~/ 10;
   }
 
   int get bombCapacity {
     final level = getUpgradeLevel('bomb_capacity');
-    return 3 + level;
+    // Integer step: bomb granted every 2 levels (max +5 a L10).
+    return 3 + (level * 5) ~/ 10;
   }
 
   double get magnetRange {
     final level = getUpgradeLevel('magnet_range');
-    return level * 10.0; // +10px per livello (max +50px al livello 5)
+    return level * 5.0; // +5px per livello (max +50px al L10)
   }
 
   double get xpBoostMultiplier {
     final level = getUpgradeLevel('xp_boost');
-    return 1.0 + level * 0.10; // +10% per livello (max +50% al livello 5)
+    return 1.0 + level * 0.05; // +5% per livello (max +50% al L10)
   }
 
   // ─── DAILY REWARD ─────────────────────────────────────────────────────
