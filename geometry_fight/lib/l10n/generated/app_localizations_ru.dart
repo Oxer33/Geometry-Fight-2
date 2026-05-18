@@ -1025,4 +1025,556 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get upgradeXpBoostDesc => '+10% GoldGeom за уровень (макс +50%)';
+
+  @override
+  String get petNameAttack => 'АТАКА';
+
+  @override
+  String get petDescAttack =>
+      'Следует за игроком и стреляет дополнительными очередями. Удваивает огневую мощь.';
+
+  @override
+  String get petNameCollect => 'СБОР';
+
+  @override
+  String get petDescCollect =>
+      'Летает свободно, собирает геомы на расстоянии. Бустит экономику.';
+
+  @override
+  String get petNameSweep => 'СВИП';
+
+  @override
+  String get petDescSweep =>
+      'Вращается вокруг игрока, мгновенно убивает врагов при касании.';
+
+  @override
+  String get petNameDefend => 'ЗАЩИТА';
+
+  @override
+  String get petDescDefend =>
+      'Следует за игроком сзади, стреляет в противоположном направлении.';
+
+  @override
+  String get petNameSnipe => 'СНАЙПЕР';
+
+  @override
+  String get petDescSnipe =>
+      'Медленная орбита + лазер по ближайшему врагу каждые 1.5с.';
+
+  @override
+  String get petNameRam => 'ТАРАН';
+
+  @override
+  String get petDescRam =>
+      'Преследует и врезается в ближайшего врага. Перезарядка 1с.';
+
+  @override
+  String get petNamePhoenix => 'ФЕНИКС';
+
+  @override
+  String get petDescPhoenix =>
+      'Авто-возрождение раз за забег + 2с неуязвимости.';
+
+  @override
+  String get petNameBlackHole => 'ЧЁРНАЯ ДЫРА';
+
+  @override
+  String get petDescBlackHole =>
+      'Гравитационный колодец: затягивает врагов в радиусе 150px.';
+
+  @override
+  String get petNameEmpDrone => 'EMP ДРОН';
+
+  @override
+  String get petDescEmpDrone =>
+      'Импульс оглушает врагов в радиусе 250px каждые 8с (оглушение 0.5с).';
+
+  @override
+  String get petNameTacticalSpotter => 'ТАКТ. НАВОДЧИК';
+
+  @override
+  String get petDescTacticalSpotter =>
+      'Слоу-мо 0.5с при критическом здоровье игрока. CD 6с.';
+
+  @override
+  String get weaponStatDmg => 'УРОН';
+
+  @override
+  String get weaponStatRate => 'СКОР';
+
+  @override
+  String get weaponStatRange => 'ДАЛЬН';
+
+  @override
+  String get weaponStatBullets => 'ПУЛИ';
+
+  @override
+  String get weaponStatSpread => 'РАЗБР';
+
+  @override
+  String get weaponStatBounce => 'ОТСК';
+
+  @override
+  String get weaponStatTrack => 'СЛЕЖ';
+
+  @override
+  String get weaponStatBlast => 'ВЗРЫВ';
+
+  @override
+  String get weaponStatAoe => 'AOE';
+
+  @override
+  String get weaponStatPierce => 'ПРОБ';
+
+  @override
+  String get weaponStatLen => 'ДЛИНА';
+
+  @override
+  String get weaponStatPull => 'ТЯГА';
+
+  @override
+  String get weaponStatJumps => 'ПРЫЖКИ';
+
+  @override
+  String get weaponStatTick => 'тик';
+
+  @override
+  String get weaponRateMed => 'СРЕД';
+
+  @override
+  String get weaponRateFast => 'БЫСТР';
+
+  @override
+  String get weaponRateSlow => 'МЕДЛ';
+
+  @override
+  String get weaponRateCont => 'ПОСТ';
+
+  @override
+  String get modNoneCard => 'БЕЗ МОДИФИКАТОРОВ';
+
+  @override
+  String get modNoneCardDesc => 'Играть без активных модификаторов.';
+
+  @override
+  String get modeLockedSnack => 'Разблокируйте в МАГАЗИНЕ';
+
+  @override
+  String get modNameGlassCannon => 'СТЕКЛЯННАЯ ПУШКА';
+
+  @override
+  String get modDescGlassCannon =>
+      '3x урон, но только 1 жизнь. Без неуязвимости.';
+
+  @override
+  String get modNameBulletHell => 'АД ПУЛЬ';
+
+  @override
+  String get modDescBulletHell => 'Враги стреляют вдвое быстрее.';
+
+  @override
+  String get modNameSpeedDemon => 'ДЕМОН СКОРОСТИ';
+
+  @override
+  String get modDescSpeedDemon =>
+      'Всё движется в 1.5 раза быстрее (игрок и враги).';
+
+  @override
+  String get modNameNoPowerups => 'ПУРИСТ';
+
+  @override
+  String get modDescNoPowerups => 'Без бонусов во время матча.';
+
+  @override
+  String get modNameFogOfWar => 'ТУМАН ВОЙНЫ';
+
+  @override
+  String get modDescFogOfWar =>
+      'Сниженная видимость. Видна только ближайшая зона.';
+
+  @override
+  String get modNameTinyArena => 'МАЛЕНЬКАЯ АРЕНА';
+
+  @override
+  String get modDescTinyArena =>
+      'Арена уменьшена на 50%. Меньше места для уклонения.';
+
+  @override
+  String get modNameOneShot => 'ОДИН ВЫСТРЕЛ';
+
+  @override
+  String get modDescOneShot => 'Все враги умирают с 1 удара. Как и вы.';
+
+  @override
+  String get modNameChaos => 'ПОЛНЫЙ ХАОС';
+
+  @override
+  String get modDescChaos => 'Случайный бонус каждые 10 секунд автоматически.';
+
+  @override
+  String get modNameGiantMode => 'ГИГАНТ';
+
+  @override
+  String get modDescGiantMode => 'Всё в 2 раза больше. Враги, пули, всё.';
+
+  @override
+  String get modNameRicochetWorld => 'ТОТАЛЬНЫЙ РИКОШЕТ';
+
+  @override
+  String get modDescRicochetWorld => 'Все пули рикошетят 5 раз.';
+
+  @override
+  String get modNameInfiniteBombs => 'БОМБАРДИР';
+
+  @override
+  String get modDescInfiniteBombs => 'Бесконечные бомбы! Но без оружия.';
+
+  @override
+  String get modNameMagnetKing => 'КОРОЛЬ МАГНИТОВ';
+
+  @override
+  String get modDescMagnetKing => 'Огромный радиус магнита. Геомы летят к вам.';
+
+  @override
+  String get gameOverBossLabel => 'БОСС';
+
+  @override
+  String get gameOverGoldGeoms => 'ЗОЛОТЫЕ ГЕОМЫ';
+
+  @override
+  String get achKills100Name => 'Первая Кровь';
+
+  @override
+  String get achKills100Desc => 'Убейте 100 врагов всего';
+
+  @override
+  String get achKills1000Name => 'Истребитель';
+
+  @override
+  String get achKills1000Desc => 'Убейте 1 000 врагов всего';
+
+  @override
+  String get achKills10000Name => 'Геометрический Геноцид';
+
+  @override
+  String get achKills10000Desc => 'Убейте 10 000 врагов всего';
+
+  @override
+  String get achKills100000Name => 'Легенда';
+
+  @override
+  String get achKills100000Desc => 'Убейте 100 000 врагов всего';
+
+  @override
+  String get achKillsSession200Name => 'Слепая Ярость';
+
+  @override
+  String get achKillsSession200Desc => 'Убейте 200 врагов за одну игру';
+
+  @override
+  String get achKillsSession500Name => 'Резня';
+
+  @override
+  String get achKillsSession500Desc => 'Убейте 500 врагов за одну игру';
+
+  @override
+  String get achKillsSession1000Name => 'Апокалипсис';
+
+  @override
+  String get achKillsSession1000Desc => 'Убейте 1000 врагов за одну игру';
+
+  @override
+  String get achBosses10Name => 'Убийца Боссов';
+
+  @override
+  String get achBosses10Desc => 'Победите 10 боссов всего';
+
+  @override
+  String get achBosses50Name => 'Цареубийца';
+
+  @override
+  String get achBosses50Desc => 'Победите 50 боссов всего';
+
+  @override
+  String get achBosses100Name => 'Королевский Истребитель';
+
+  @override
+  String get achBosses100Desc => 'Победите 100 боссов всего';
+
+  @override
+  String get achBossSession5Name => 'Королевская Охота';
+
+  @override
+  String get achBossSession5Desc => 'Победите 5 боссов за одну игру';
+
+  @override
+  String get achBombs50Name => 'Подрывник';
+
+  @override
+  String get achBombs50Desc => 'Используйте 50 бомб всего';
+
+  @override
+  String get achBombs500Name => 'Разрушитель';
+
+  @override
+  String get achBombs500Desc => 'Используйте 500 бомб всего';
+
+  @override
+  String get achScore100kName => 'Шесть Цифр';
+
+  @override
+  String get achScore100kDesc => 'Достигните 100 000 очков';
+
+  @override
+  String get achScore1mName => 'Миллионер';
+
+  @override
+  String get achScore1mDesc => 'Достигните 1 000 000 очков';
+
+  @override
+  String get achScore10mName => 'Король Очков';
+
+  @override
+  String get achScore10mDesc => 'Достигните 10 000 000 очков';
+
+  @override
+  String get achScore100mName => 'Центурион';
+
+  @override
+  String get achScore100mDesc => 'Достигните 100 000 000 очков';
+
+  @override
+  String get achScore1bName => 'Миллиардер';
+
+  @override
+  String get achScore1bDesc => 'Достигните 1 000 000 000 очков';
+
+  @override
+  String get achMultiplier100Name => 'Комбо x100';
+
+  @override
+  String get achMultiplier100Desc => 'Достигните множителя 100x';
+
+  @override
+  String get achMultiplier500Name => 'Комбо x500';
+
+  @override
+  String get achMultiplier500Desc => 'Достигните множителя 500x';
+
+  @override
+  String get achMultiplier1000Name => 'Комбо x1000';
+
+  @override
+  String get achMultiplier1000Desc => 'Достигните множителя 1000x';
+
+  @override
+  String get achMultiplier5000Name => 'Божественное Комбо';
+
+  @override
+  String get achMultiplier5000Desc => 'Достигните множителя 5000x';
+
+  @override
+  String get achGeoms10000Name => 'Коллекционер';
+
+  @override
+  String get achGeoms10000Desc => 'Соберите 10 000 геомов всего';
+
+  @override
+  String get achGeoms100000Name => 'Геометрический Скряга';
+
+  @override
+  String get achGeoms100000Desc => 'Соберите 100 000 геомов всего';
+
+  @override
+  String get achWave20Name => 'Настойчивый';
+
+  @override
+  String get achWave20Desc => 'Достигните волны 20';
+
+  @override
+  String get achWave50Name => 'Ветеран';
+
+  @override
+  String get achWave50Desc => 'Достигните волны 50';
+
+  @override
+  String get achWave100Name => 'Столетний';
+
+  @override
+  String get achWave100Desc => 'Достигните волны 100';
+
+  @override
+  String get achWave200Name => 'Неудержимый';
+
+  @override
+  String get achWave200Desc => 'Достигните волны 200 (Survival/Tunnel)';
+
+  @override
+  String get achPerfectWaves5Name => 'Неприкасаемый';
+
+  @override
+  String get achPerfectWaves5Desc => 'Завершите 5 идеальных волн подряд';
+
+  @override
+  String get achPerfectWaves10Name => 'Призрак';
+
+  @override
+  String get achPerfectWaves10Desc => 'Завершите 10 идеальных волн подряд';
+
+  @override
+  String get achPerfectWaves20Name => 'Божество';
+
+  @override
+  String get achPerfectWaves20Desc => 'Завершите 20 идеальных волн подряд';
+
+  @override
+  String get achClassicNormalName => 'Классик';
+
+  @override
+  String get achClassicNormalDesc => 'Пройдите Классику на Нормале';
+
+  @override
+  String get achClassicHardName => 'Крепкий Орешек';
+
+  @override
+  String get achClassicHardDesc => 'Пройдите Классику на Сложном';
+
+  @override
+  String get achClassicNightmareName => 'Живой Кошмар';
+
+  @override
+  String get achClassicNightmareDesc => 'Пройдите Классику на Кошмаре';
+
+  @override
+  String get achAllModesName => 'Мастер На Все Руки';
+
+  @override
+  String get achAllModesDesc => 'Сыграйте все 6 режимов';
+
+  @override
+  String get achBossRush10Name => 'Охотник за Боссами';
+
+  @override
+  String get achBossRush10Desc => 'Достигните босса 10 в Boss Rush';
+
+  @override
+  String get achGames10Name => 'Игрок';
+
+  @override
+  String get achGames10Desc => 'Сыграйте 10 партий';
+
+  @override
+  String get achGames100Name => 'Энтузиаст';
+
+  @override
+  String get achGames100Desc => 'Сыграйте 100 партий';
+
+  @override
+  String get achGames500Name => 'Зависимый';
+
+  @override
+  String get achGames500Desc => 'Сыграйте 500 партий';
+
+  @override
+  String get achGold10000Name => 'Скрудж';
+
+  @override
+  String get achGold10000Desc => 'Накопите 10 000 Gold Geoms';
+
+  @override
+  String get achGold50000Name => 'Магнат';
+
+  @override
+  String get achGold50000Desc => 'Накопите 50 000 Gold Geoms';
+
+  @override
+  String get achAllUpgradesName => 'На Максимум';
+
+  @override
+  String get achAllUpgradesDesc => 'Купите все улучшения';
+
+  @override
+  String get achPowerups100Name => 'Зависимый от Power-Up';
+
+  @override
+  String get achPowerups100Desc => 'Соберите 100 power-up';
+
+  @override
+  String get achWavesWave20Name => 'Уклонист';
+
+  @override
+  String get achWavesWave20Desc => 'Режим Waves: достигните волны 20';
+
+  @override
+  String get achWavesWave50Name => 'Мастер Уклонения';
+
+  @override
+  String get achWavesWave50Desc => 'Режим Waves: достигните волны 50';
+
+  @override
+  String get achGravityWave15Name => 'Астрофизик';
+
+  @override
+  String get achGravityWave15Desc => 'Gravity Inferno: достигните волны 15';
+
+  @override
+  String get achPacifistCombo15Name => 'Пацифист Про';
+
+  @override
+  String get achPacifistCombo15Desc => 'Pacifist: комбо ворот 15+';
+
+  @override
+  String get achTimeAttack500kName => 'Хронометрист';
+
+  @override
+  String get achTimeAttack500kDesc => 'Time Attack: 500k очков';
+
+  @override
+  String get achDailyStreak7Name => 'Ежедневный Преданный';
+
+  @override
+  String get achDailyStreak7Desc => 'Получите ежедневную награду 7 дней подряд';
+
+  @override
+  String get achDailyStreak30Name => 'Ежемесячный Верный';
+
+  @override
+  String get achDailyStreak30Desc =>
+      'Получите ежедневную награду 30 дней подряд';
+
+  @override
+  String get achGaussKills500Name => 'Мастер Гаусса';
+
+  @override
+  String get achGaussKills500Desc => 'Убейте 500 врагов из Gauss Cannon';
+
+  @override
+  String get achChainKills500Name => 'Буря';
+
+  @override
+  String get achChainKills500Desc => 'Убейте 500 врагов из Chain Lightning';
+
+  @override
+  String get achAllWeaponsName => 'Оружейник';
+
+  @override
+  String get achAllWeaponsDesc => 'Откройте всё оружие';
+
+  @override
+  String get achAllSkinsName => 'Модник';
+
+  @override
+  String get achAllSkinsDesc => 'Откройте все скины';
+
+  @override
+  String get achAllTrailsName => 'Космическая Коллекция';
+
+  @override
+  String get achAllTrailsDesc => 'Откройте все следы';
+
+  @override
+  String get achAllPetsName => 'Укротитель';
+
+  @override
+  String get achAllPetsDesc => 'Откройте всех питомцев';
 }

@@ -1018,4 +1018,561 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get upgradeXpBoostDesc => '+10% GoldGeom por nivel (máx +50%)';
+
+  @override
+  String get petNameAttack => 'ATAQUE';
+
+  @override
+  String get petDescAttack =>
+      'Sigue al jugador + dispara ráfagas extra. Duplica la potencia.';
+
+  @override
+  String get petNameCollect => 'RECOLECTOR';
+
+  @override
+  String get petDescCollect =>
+      'Vuela libre y recoge geoms a distancia. Bonus de economía.';
+
+  @override
+  String get petNameSweep => 'BARRIDO';
+
+  @override
+  String get petDescSweep =>
+      'Orbita al jugador, mata enemigos al instante al tocarlos.';
+
+  @override
+  String get petNameDefend => 'DEFENSA';
+
+  @override
+  String get petDescDefend =>
+      'Sigue detrás del jugador, dispara en la dirección opuesta.';
+
+  @override
+  String get petNameSnipe => 'FRANCOTIRADOR';
+
+  @override
+  String get petDescSnipe =>
+      'Órbita lenta + láser al enemigo más cercano cada 1.5s.';
+
+  @override
+  String get petNameRam => 'EMBESTIDA';
+
+  @override
+  String get petDescRam =>
+      'Persigue + choca contra el enemigo más cercano. Enfriamiento 1s.';
+
+  @override
+  String get petNamePhoenix => 'FÉNIX';
+
+  @override
+  String get petDescPhoenix =>
+      'Auto-revivir una vez por partida + 2s de invulnerabilidad.';
+
+  @override
+  String get petNameBlackHole => 'AGUJERO NEGRO';
+
+  @override
+  String get petDescBlackHole =>
+      'Pozo gravitacional: arrastra enemigos en 150px.';
+
+  @override
+  String get petNameEmpDrone => 'DRON EMP';
+
+  @override
+  String get petDescEmpDrone =>
+      'Pulso aturde enemigos en 250px cada 8s (0.5s aturdidos).';
+
+  @override
+  String get petNameTacticalSpotter => 'OBSERVADOR TÁCTICO';
+
+  @override
+  String get petDescTacticalSpotter =>
+      'Cámara lenta 0.5s si el jugador está en salud crítica. CD 6s.';
+
+  @override
+  String get weaponStatDmg => 'DMG';
+
+  @override
+  String get weaponStatRate => 'CAD';
+
+  @override
+  String get weaponStatRange => 'ALC';
+
+  @override
+  String get weaponStatBullets => 'BALAS';
+
+  @override
+  String get weaponStatSpread => 'DISP';
+
+  @override
+  String get weaponStatBounce => 'REB';
+
+  @override
+  String get weaponStatTrack => 'RAST';
+
+  @override
+  String get weaponStatBlast => 'EXPL';
+
+  @override
+  String get weaponStatAoe => 'AOE';
+
+  @override
+  String get weaponStatPierce => 'PERF';
+
+  @override
+  String get weaponStatLen => 'LONG';
+
+  @override
+  String get weaponStatPull => 'ATR';
+
+  @override
+  String get weaponStatJumps => 'SALT';
+
+  @override
+  String get weaponStatTick => 'tick';
+
+  @override
+  String get weaponRateMed => 'MED';
+
+  @override
+  String get weaponRateFast => 'RÁP';
+
+  @override
+  String get weaponRateSlow => 'LENT';
+
+  @override
+  String get weaponRateCont => 'CONT';
+
+  @override
+  String get modNoneCard => 'SIN MODIFICADORES';
+
+  @override
+  String get modNoneCardDesc => 'Juega sin modificadores activos.';
+
+  @override
+  String get modeLockedSnack => 'Desbloquea en la TIENDA';
+
+  @override
+  String get modNameGlassCannon => 'CAÑÓN DE CRISTAL';
+
+  @override
+  String get modDescGlassCannon =>
+      '3x daño, pero solo 1 vida. Sin invencibilidad.';
+
+  @override
+  String get modNameBulletHell => 'INFIERNO DE BALAS';
+
+  @override
+  String get modDescBulletHell => 'Los enemigos disparan el doble de rápido.';
+
+  @override
+  String get modNameSpeedDemon => 'DEMONIO DE VELOCIDAD';
+
+  @override
+  String get modDescSpeedDemon =>
+      'Todo se mueve 1.5x más rápido (jugador y enemigos).';
+
+  @override
+  String get modNameNoPowerups => 'PURISTA';
+
+  @override
+  String get modDescNoPowerups => 'Sin potenciadores durante la partida.';
+
+  @override
+  String get modNameFogOfWar => 'NIEBLA DE GUERRA';
+
+  @override
+  String get modDescFogOfWar =>
+      'Visibilidad reducida. Solo el área cercana es visible.';
+
+  @override
+  String get modNameTinyArena => 'ARENA PEQUEÑA';
+
+  @override
+  String get modDescTinyArena =>
+      'Arena reducida un 50%. Menos espacio para esquivar.';
+
+  @override
+  String get modNameOneShot => 'UN DISPARO';
+
+  @override
+  String get modDescOneShot =>
+      'Todos los enemigos mueren de 1 golpe. Tú también.';
+
+  @override
+  String get modNameChaos => 'CAOS TOTAL';
+
+  @override
+  String get modDescChaos =>
+      'Potenciador aleatorio cada 10 segundos automáticamente.';
+
+  @override
+  String get modNameGiantMode => 'GIGANTE';
+
+  @override
+  String get modDescGiantMode =>
+      'Todo es 2x más grande. Enemigos, balas, todo.';
+
+  @override
+  String get modNameRicochetWorld => 'REBOTE TOTAL';
+
+  @override
+  String get modDescRicochetWorld => 'Todas las balas rebotan 5 veces.';
+
+  @override
+  String get modNameInfiniteBombs => 'BOMBARDERO';
+
+  @override
+  String get modDescInfiniteBombs => '¡Bombas infinitas! Pero sin armas.';
+
+  @override
+  String get modNameMagnetKing => 'REY IMÁN';
+
+  @override
+  String get modDescMagnetKing =>
+      'Rango de imán enorme. Los geoms vuelan hacia ti.';
+
+  @override
+  String get gameOverBossLabel => 'JEFE';
+
+  @override
+  String get gameOverGoldGeoms => 'GEOMS DE ORO';
+
+  @override
+  String get achKills100Name => 'Primera Sangre';
+
+  @override
+  String get achKills100Desc => 'Mata 100 enemigos en total';
+
+  @override
+  String get achKills1000Name => 'Exterminador';
+
+  @override
+  String get achKills1000Desc => 'Mata 1.000 enemigos en total';
+
+  @override
+  String get achKills10000Name => 'Genocida Geométrico';
+
+  @override
+  String get achKills10000Desc => 'Mata 10.000 enemigos en total';
+
+  @override
+  String get achKills100000Name => 'Leyenda';
+
+  @override
+  String get achKills100000Desc => 'Mata 100.000 enemigos en total';
+
+  @override
+  String get achKillsSession200Name => 'Furia Ciega';
+
+  @override
+  String get achKillsSession200Desc => 'Mata 200 enemigos en una partida';
+
+  @override
+  String get achKillsSession500Name => 'Masacre';
+
+  @override
+  String get achKillsSession500Desc => 'Mata 500 enemigos en una partida';
+
+  @override
+  String get achKillsSession1000Name => 'Apocalipsis';
+
+  @override
+  String get achKillsSession1000Desc => 'Mata 1000 enemigos en una partida';
+
+  @override
+  String get achBosses10Name => 'Asesino de Jefes';
+
+  @override
+  String get achBosses10Desc => 'Derrota 10 jefes en total';
+
+  @override
+  String get achBosses50Name => 'Regicida';
+
+  @override
+  String get achBosses50Desc => 'Derrota 50 jefes en total';
+
+  @override
+  String get achBosses100Name => 'Exterminador Real';
+
+  @override
+  String get achBosses100Desc => 'Derrota 100 jefes en total';
+
+  @override
+  String get achBossSession5Name => 'Caza Real';
+
+  @override
+  String get achBossSession5Desc => 'Derrota 5 jefes en una partida';
+
+  @override
+  String get achBombs50Name => 'Artificiero';
+
+  @override
+  String get achBombs50Desc => 'Usa 50 bombas en total';
+
+  @override
+  String get achBombs500Name => 'Demoledor';
+
+  @override
+  String get achBombs500Desc => 'Usa 500 bombas en total';
+
+  @override
+  String get achScore100kName => 'Seis Cifras';
+
+  @override
+  String get achScore100kDesc => 'Alcanza 100.000 puntos';
+
+  @override
+  String get achScore1mName => 'Millonario';
+
+  @override
+  String get achScore1mDesc => 'Alcanza 1.000.000 puntos';
+
+  @override
+  String get achScore10mName => 'Rey de los Puntos';
+
+  @override
+  String get achScore10mDesc => 'Alcanza 10.000.000 puntos';
+
+  @override
+  String get achScore100mName => 'Centurión';
+
+  @override
+  String get achScore100mDesc => 'Alcanza 100.000.000 puntos';
+
+  @override
+  String get achScore1bName => 'Multimillonario';
+
+  @override
+  String get achScore1bDesc => 'Alcanza 1.000.000.000 puntos';
+
+  @override
+  String get achMultiplier100Name => 'Combo x100';
+
+  @override
+  String get achMultiplier100Desc => 'Alcanza un multiplicador de 100x';
+
+  @override
+  String get achMultiplier500Name => 'Combo x500';
+
+  @override
+  String get achMultiplier500Desc => 'Alcanza un multiplicador de 500x';
+
+  @override
+  String get achMultiplier1000Name => 'Combo x1000';
+
+  @override
+  String get achMultiplier1000Desc => 'Alcanza un multiplicador de 1000x';
+
+  @override
+  String get achMultiplier5000Name => 'Combo Divino';
+
+  @override
+  String get achMultiplier5000Desc => 'Alcanza un multiplicador de 5000x';
+
+  @override
+  String get achGeoms10000Name => 'Coleccionista';
+
+  @override
+  String get achGeoms10000Desc => 'Recoge 10.000 geoms en total';
+
+  @override
+  String get achGeoms100000Name => 'Avaro Geométrico';
+
+  @override
+  String get achGeoms100000Desc => 'Recoge 100.000 geoms en total';
+
+  @override
+  String get achWave20Name => 'Persistente';
+
+  @override
+  String get achWave20Desc => 'Alcanza la oleada 20';
+
+  @override
+  String get achWave50Name => 'Veterano';
+
+  @override
+  String get achWave50Desc => 'Alcanza la oleada 50';
+
+  @override
+  String get achWave100Name => 'Centenario';
+
+  @override
+  String get achWave100Desc => 'Alcanza la oleada 100';
+
+  @override
+  String get achWave200Name => 'Imparable';
+
+  @override
+  String get achWave200Desc => 'Alcanza la oleada 200 (Survival/Tunnel)';
+
+  @override
+  String get achPerfectWaves5Name => 'Intocable';
+
+  @override
+  String get achPerfectWaves5Desc => 'Completa 5 oleadas perfectas seguidas';
+
+  @override
+  String get achPerfectWaves10Name => 'Fantasma';
+
+  @override
+  String get achPerfectWaves10Desc => 'Completa 10 oleadas perfectas seguidas';
+
+  @override
+  String get achPerfectWaves20Name => 'Deidad';
+
+  @override
+  String get achPerfectWaves20Desc => 'Completa 20 oleadas perfectas seguidas';
+
+  @override
+  String get achClassicNormalName => 'Clasicista';
+
+  @override
+  String get achClassicNormalDesc => 'Completa Clásico en Normal';
+
+  @override
+  String get achClassicHardName => 'Duro de Matar';
+
+  @override
+  String get achClassicHardDesc => 'Completa Clásico en Difícil';
+
+  @override
+  String get achClassicNightmareName => 'Pesadilla Viviente';
+
+  @override
+  String get achClassicNightmareDesc => 'Completa Clásico en Pesadilla';
+
+  @override
+  String get achAllModesName => 'Todoterreno';
+
+  @override
+  String get achAllModesDesc => 'Juega en los 6 modos';
+
+  @override
+  String get achBossRush10Name => 'Cazador de Jefes';
+
+  @override
+  String get achBossRush10Desc => 'Alcanza el jefe 10 en Boss Rush';
+
+  @override
+  String get achGames10Name => 'Jugador';
+
+  @override
+  String get achGames10Desc => 'Juega 10 partidas';
+
+  @override
+  String get achGames100Name => 'Aficionado';
+
+  @override
+  String get achGames100Desc => 'Juega 100 partidas';
+
+  @override
+  String get achGames500Name => 'Adicto';
+
+  @override
+  String get achGames500Desc => 'Juega 500 partidas';
+
+  @override
+  String get achGold10000Name => 'Tío Gilito';
+
+  @override
+  String get achGold10000Desc => 'Acumula 10.000 Gold Geoms';
+
+  @override
+  String get achGold50000Name => 'Magnate';
+
+  @override
+  String get achGold50000Desc => 'Acumula 50.000 Gold Geoms';
+
+  @override
+  String get achAllUpgradesName => 'Al Máximo';
+
+  @override
+  String get achAllUpgradesDesc => 'Compra todas las mejoras';
+
+  @override
+  String get achPowerups100Name => 'Adicto a los Power-Ups';
+
+  @override
+  String get achPowerups100Desc => 'Recoge 100 power-ups';
+
+  @override
+  String get achWavesWave20Name => 'Esquivador';
+
+  @override
+  String get achWavesWave20Desc => 'Modo Waves: alcanza la oleada 20';
+
+  @override
+  String get achWavesWave50Name => 'Maestro del Esquive';
+
+  @override
+  String get achWavesWave50Desc => 'Modo Waves: alcanza la oleada 50';
+
+  @override
+  String get achGravityWave15Name => 'Astrofísico';
+
+  @override
+  String get achGravityWave15Desc => 'Gravity Inferno: alcanza la oleada 15';
+
+  @override
+  String get achPacifistCombo15Name => 'Pacifista Pro';
+
+  @override
+  String get achPacifistCombo15Desc => 'Pacifist: combo gate 15+';
+
+  @override
+  String get achTimeAttack500kName => 'Cronometrista';
+
+  @override
+  String get achTimeAttack500kDesc => 'Time Attack: 500k puntos';
+
+  @override
+  String get achDailyStreak7Name => 'Devoto Diario';
+
+  @override
+  String get achDailyStreak7Desc =>
+      'Reclama la recompensa diaria 7 días seguidos';
+
+  @override
+  String get achDailyStreak30Name => 'Leal Mensual';
+
+  @override
+  String get achDailyStreak30Desc =>
+      'Reclama la recompensa diaria 30 días seguidos';
+
+  @override
+  String get achGaussKills500Name => 'Maestro Gauss';
+
+  @override
+  String get achGaussKills500Desc => 'Mata 500 enemigos con Gauss Cannon';
+
+  @override
+  String get achChainKills500Name => 'Tormenta';
+
+  @override
+  String get achChainKills500Desc => 'Mata 500 enemigos con Chain Lightning';
+
+  @override
+  String get achAllWeaponsName => 'Armero';
+
+  @override
+  String get achAllWeaponsDesc => 'Desbloquea todas las armas';
+
+  @override
+  String get achAllSkinsName => 'Fashionista';
+
+  @override
+  String get achAllSkinsDesc => 'Desbloquea todas las skins';
+
+  @override
+  String get achAllTrailsName => 'Colección Cósmica';
+
+  @override
+  String get achAllTrailsDesc => 'Desbloquea todas las estelas';
+
+  @override
+  String get achAllPetsName => 'Domador';
+
+  @override
+  String get achAllPetsDesc => 'Desbloquea todas las mascotas';
 }

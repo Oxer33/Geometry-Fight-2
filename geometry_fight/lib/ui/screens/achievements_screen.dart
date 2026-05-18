@@ -4,6 +4,269 @@ import '../../data/achievements.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../widgets/neon_back_button.dart';
 
+/// Localized name for an achievement id. Falls back to catalog Italian if id
+/// is unknown (defensive — keeps render path safe when new achievements
+/// are added without ARB updates).
+String achievementName(String id, AppLocalizations l10n) {
+  switch (id) {
+    case 'kills_100':
+      return l10n.achKills100Name;
+    case 'kills_1000':
+      return l10n.achKills1000Name;
+    case 'kills_10000':
+      return l10n.achKills10000Name;
+    case 'kills_100000':
+      return l10n.achKills100000Name;
+    case 'kills_session_200':
+      return l10n.achKillsSession200Name;
+    case 'kills_session_500':
+      return l10n.achKillsSession500Name;
+    case 'kills_session_1000':
+      return l10n.achKillsSession1000Name;
+    case 'bosses_10':
+      return l10n.achBosses10Name;
+    case 'bosses_50':
+      return l10n.achBosses50Name;
+    case 'bosses_100':
+      return l10n.achBosses100Name;
+    case 'boss_session_5':
+      return l10n.achBossSession5Name;
+    case 'bombs_50':
+      return l10n.achBombs50Name;
+    case 'bombs_500':
+      return l10n.achBombs500Name;
+    case 'score_100k':
+      return l10n.achScore100kName;
+    case 'score_1m':
+      return l10n.achScore1mName;
+    case 'score_10m':
+      return l10n.achScore10mName;
+    case 'score_100m':
+      return l10n.achScore100mName;
+    case 'score_1b':
+      return l10n.achScore1bName;
+    case 'multiplier_100':
+      return l10n.achMultiplier100Name;
+    case 'multiplier_500':
+      return l10n.achMultiplier500Name;
+    case 'multiplier_1000':
+      return l10n.achMultiplier1000Name;
+    case 'multiplier_5000':
+      return l10n.achMultiplier5000Name;
+    case 'geoms_10000':
+      return l10n.achGeoms10000Name;
+    case 'geoms_100000':
+      return l10n.achGeoms100000Name;
+    case 'wave_20':
+      return l10n.achWave20Name;
+    case 'wave_50':
+      return l10n.achWave50Name;
+    case 'wave_100':
+      return l10n.achWave100Name;
+    case 'wave_200':
+      return l10n.achWave200Name;
+    case 'perfect_waves_5':
+      return l10n.achPerfectWaves5Name;
+    case 'perfect_waves_10':
+      return l10n.achPerfectWaves10Name;
+    case 'perfect_waves_20':
+      return l10n.achPerfectWaves20Name;
+    case 'classic_normal':
+      return l10n.achClassicNormalName;
+    case 'classic_hard':
+      return l10n.achClassicHardName;
+    case 'classic_nightmare':
+      return l10n.achClassicNightmareName;
+    case 'all_modes':
+      return l10n.achAllModesName;
+    case 'boss_rush_10':
+      return l10n.achBossRush10Name;
+    case 'games_10':
+      return l10n.achGames10Name;
+    case 'games_100':
+      return l10n.achGames100Name;
+    case 'games_500':
+      return l10n.achGames500Name;
+    case 'gold_10000':
+      return l10n.achGold10000Name;
+    case 'gold_50000':
+      return l10n.achGold50000Name;
+    case 'all_upgrades':
+      return l10n.achAllUpgradesName;
+    case 'powerups_100':
+      return l10n.achPowerups100Name;
+    case 'waves_wave_20':
+      return l10n.achWavesWave20Name;
+    case 'waves_wave_50':
+      return l10n.achWavesWave50Name;
+    case 'gravity_wave_15':
+      return l10n.achGravityWave15Name;
+    case 'pacifist_combo_15':
+      return l10n.achPacifistCombo15Name;
+    case 'time_attack_500k':
+      return l10n.achTimeAttack500kName;
+    case 'daily_streak_7':
+      return l10n.achDailyStreak7Name;
+    case 'daily_streak_30':
+      return l10n.achDailyStreak30Name;
+    case 'gauss_kills_500':
+      return l10n.achGaussKills500Name;
+    case 'chain_kills_500':
+      return l10n.achChainKills500Name;
+    case 'all_weapons':
+      return l10n.achAllWeaponsName;
+    case 'all_skins':
+      return l10n.achAllSkinsName;
+    case 'all_trails':
+      return l10n.achAllTrailsName;
+    case 'all_pets':
+      return l10n.achAllPetsName;
+    default:
+      final a = allAchievements.firstWhere(
+        (x) => x.id == id,
+        orElse: () => const AchievementDef(
+            id: '',
+            name: '',
+            description: '',
+            icon: '',
+            category: '',
+            target: 0),
+      );
+      return a.name;
+  }
+}
+
+/// Localized description for an achievement id. Falls back to catalog Italian
+/// if id is unknown.
+String achievementDesc(String id, AppLocalizations l10n) {
+  switch (id) {
+    case 'kills_100':
+      return l10n.achKills100Desc;
+    case 'kills_1000':
+      return l10n.achKills1000Desc;
+    case 'kills_10000':
+      return l10n.achKills10000Desc;
+    case 'kills_100000':
+      return l10n.achKills100000Desc;
+    case 'kills_session_200':
+      return l10n.achKillsSession200Desc;
+    case 'kills_session_500':
+      return l10n.achKillsSession500Desc;
+    case 'kills_session_1000':
+      return l10n.achKillsSession1000Desc;
+    case 'bosses_10':
+      return l10n.achBosses10Desc;
+    case 'bosses_50':
+      return l10n.achBosses50Desc;
+    case 'bosses_100':
+      return l10n.achBosses100Desc;
+    case 'boss_session_5':
+      return l10n.achBossSession5Desc;
+    case 'bombs_50':
+      return l10n.achBombs50Desc;
+    case 'bombs_500':
+      return l10n.achBombs500Desc;
+    case 'score_100k':
+      return l10n.achScore100kDesc;
+    case 'score_1m':
+      return l10n.achScore1mDesc;
+    case 'score_10m':
+      return l10n.achScore10mDesc;
+    case 'score_100m':
+      return l10n.achScore100mDesc;
+    case 'score_1b':
+      return l10n.achScore1bDesc;
+    case 'multiplier_100':
+      return l10n.achMultiplier100Desc;
+    case 'multiplier_500':
+      return l10n.achMultiplier500Desc;
+    case 'multiplier_1000':
+      return l10n.achMultiplier1000Desc;
+    case 'multiplier_5000':
+      return l10n.achMultiplier5000Desc;
+    case 'geoms_10000':
+      return l10n.achGeoms10000Desc;
+    case 'geoms_100000':
+      return l10n.achGeoms100000Desc;
+    case 'wave_20':
+      return l10n.achWave20Desc;
+    case 'wave_50':
+      return l10n.achWave50Desc;
+    case 'wave_100':
+      return l10n.achWave100Desc;
+    case 'wave_200':
+      return l10n.achWave200Desc;
+    case 'perfect_waves_5':
+      return l10n.achPerfectWaves5Desc;
+    case 'perfect_waves_10':
+      return l10n.achPerfectWaves10Desc;
+    case 'perfect_waves_20':
+      return l10n.achPerfectWaves20Desc;
+    case 'classic_normal':
+      return l10n.achClassicNormalDesc;
+    case 'classic_hard':
+      return l10n.achClassicHardDesc;
+    case 'classic_nightmare':
+      return l10n.achClassicNightmareDesc;
+    case 'all_modes':
+      return l10n.achAllModesDesc;
+    case 'boss_rush_10':
+      return l10n.achBossRush10Desc;
+    case 'games_10':
+      return l10n.achGames10Desc;
+    case 'games_100':
+      return l10n.achGames100Desc;
+    case 'games_500':
+      return l10n.achGames500Desc;
+    case 'gold_10000':
+      return l10n.achGold10000Desc;
+    case 'gold_50000':
+      return l10n.achGold50000Desc;
+    case 'all_upgrades':
+      return l10n.achAllUpgradesDesc;
+    case 'powerups_100':
+      return l10n.achPowerups100Desc;
+    case 'waves_wave_20':
+      return l10n.achWavesWave20Desc;
+    case 'waves_wave_50':
+      return l10n.achWavesWave50Desc;
+    case 'gravity_wave_15':
+      return l10n.achGravityWave15Desc;
+    case 'pacifist_combo_15':
+      return l10n.achPacifistCombo15Desc;
+    case 'time_attack_500k':
+      return l10n.achTimeAttack500kDesc;
+    case 'daily_streak_7':
+      return l10n.achDailyStreak7Desc;
+    case 'daily_streak_30':
+      return l10n.achDailyStreak30Desc;
+    case 'gauss_kills_500':
+      return l10n.achGaussKills500Desc;
+    case 'chain_kills_500':
+      return l10n.achChainKills500Desc;
+    case 'all_weapons':
+      return l10n.achAllWeaponsDesc;
+    case 'all_skins':
+      return l10n.achAllSkinsDesc;
+    case 'all_trails':
+      return l10n.achAllTrailsDesc;
+    case 'all_pets':
+      return l10n.achAllPetsDesc;
+    default:
+      final a = allAchievements.firstWhere(
+        (x) => x.id == id,
+        orElse: () => const AchievementDef(
+            id: '',
+            name: '',
+            description: '',
+            icon: '',
+            category: '',
+            target: 0),
+      );
+      return a.description;
+  }
+}
+
 class AchievementsScreen extends StatefulWidget {
   final VoidCallback onBack;
 
@@ -347,6 +610,7 @@ class _AchievementsScreenState extends State<AchievementsScreen>
   Widget _buildAchievementTile(
       AchievementDef achievement, Color categoryColor, double entrance,
       double delay, double glow) {
+    final l10n = AppLocalizations.of(context)!;
     final tileEntrance = (delay >= 1.0 ? 1.0 : ((entrance - delay) / (1.0 - delay)).clamp(0.0, 1.0));
     final unlocked = _unlockedCache[achievement.id] ?? false;
     final progress = _progressCache[achievement.id] ?? 0;
@@ -445,7 +709,7 @@ class _AchievementsScreenState extends State<AchievementsScreen>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      achievement.name,
+                      achievementName(achievement.id, l10n),
                       style: TextStyle(
                         color: unlocked ? Colors.greenAccent : Colors.white,
                         fontSize: 13,
@@ -463,7 +727,7 @@ class _AchievementsScreenState extends State<AchievementsScreen>
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      achievement.description,
+                      achievementDesc(achievement.id, l10n),
                       style: TextStyle(
                         color: Colors.white.withValues(alpha: 0.5),
                         fontSize: 10,

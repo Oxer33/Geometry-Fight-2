@@ -2,6 +2,71 @@ import 'package:flutter/material.dart';
 import '../../data/modifiers.dart';
 import '../../l10n/generated/app_localizations.dart';
 
+/// Localized name for a modifier id. Falls back to catalog Italian if id is
+/// unknown (defensive — keeps render path safe when new mods are added).
+String _modifierName(String id, AppLocalizations l10n) {
+  switch (id) {
+    case 'glass_cannon':
+      return l10n.modNameGlassCannon;
+    case 'bullet_hell':
+      return l10n.modNameBulletHell;
+    case 'speed_demon':
+      return l10n.modNameSpeedDemon;
+    case 'no_powerups':
+      return l10n.modNameNoPowerups;
+    case 'fog_of_war':
+      return l10n.modNameFogOfWar;
+    case 'tiny_arena':
+      return l10n.modNameTinyArena;
+    case 'one_shot':
+      return l10n.modNameOneShot;
+    case 'chaos':
+      return l10n.modNameChaos;
+    case 'giant_mode':
+      return l10n.modNameGiantMode;
+    case 'ricochet_world':
+      return l10n.modNameRicochetWorld;
+    case 'infinite_bombs':
+      return l10n.modNameInfiniteBombs;
+    case 'magnet_king':
+      return l10n.modNameMagnetKing;
+    default:
+      return getModifier(id)?.name ?? id;
+  }
+}
+
+/// Localized description for a modifier id. Falls back to catalog Italian.
+String _modifierDesc(String id, AppLocalizations l10n) {
+  switch (id) {
+    case 'glass_cannon':
+      return l10n.modDescGlassCannon;
+    case 'bullet_hell':
+      return l10n.modDescBulletHell;
+    case 'speed_demon':
+      return l10n.modDescSpeedDemon;
+    case 'no_powerups':
+      return l10n.modDescNoPowerups;
+    case 'fog_of_war':
+      return l10n.modDescFogOfWar;
+    case 'tiny_arena':
+      return l10n.modDescTinyArena;
+    case 'one_shot':
+      return l10n.modDescOneShot;
+    case 'chaos':
+      return l10n.modDescChaos;
+    case 'giant_mode':
+      return l10n.modDescGiantMode;
+    case 'ricochet_world':
+      return l10n.modDescRicochetWorld;
+    case 'infinite_bombs':
+      return l10n.modDescInfiniteBombs;
+    case 'magnet_king':
+      return l10n.modDescMagnetKing;
+    default:
+      return getModifier(id)?.description ?? '';
+  }
+}
+
 class ModifiersSheet extends StatefulWidget {
   final List<String> activeModifiers;
   final ValueChanged<List<String>> onChanged;
@@ -191,7 +256,7 @@ class _ModifiersSheetState extends State<ModifiersSheet> {
                               Row(
                                 children: [
                                   Text(
-                                    mod.name,
+                                    _modifierName(mod.id, l10n),
                                     style: TextStyle(
                                       color: isActive
                                           ? (mod.isChallenge ? Colors.redAccent : Colors.cyanAccent)
@@ -223,7 +288,7 @@ class _ModifiersSheetState extends State<ModifiersSheet> {
                               ),
                               const SizedBox(height: 2),
                               Text(
-                                mod.description,
+                                _modifierDesc(mod.id, l10n),
                                 style: TextStyle(
                                   color: Colors.white.withValues(alpha: 0.5),
                                   fontSize: 10,

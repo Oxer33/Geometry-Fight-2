@@ -258,6 +258,7 @@ class _ScorePanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return _GlassContainer(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -292,9 +293,9 @@ class _ScorePanel extends StatelessWidget {
               _MultiplierBadge(multiplier: multiplier),
               if (hasDoubleMultiplier) ...[
                 const SizedBox(width: 6),
-                const _GlowBadge(
-                  text: '2x BOOST',
-                  color: Color(0xFFFFD700),
+                _GlowBadge(
+                  text: l10n.hudBoost2x,
+                  color: const Color(0xFFFFD700),
                 ),
               ],
             ],

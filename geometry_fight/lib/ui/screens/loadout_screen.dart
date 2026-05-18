@@ -7,6 +7,40 @@ import '../../data/save_data.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../widgets/neon_back_button.dart';
 
+/// Localized weapon label by id (mirrors shop_screen `_weaponName`). Falls
+/// back to the catalog English when an id is unknown (defensive).
+String _weaponName(AppLocalizations l10n, String id, String fallback) {
+  switch (id) {
+    case 'basic': return l10n.weaponNameBasic;
+    case 'triple': return l10n.weaponNameTriple;
+    case 'spread': return l10n.weaponNameSpread;
+    case 'ricochet': return l10n.weaponNameRicochet;
+    case 'homing': return l10n.weaponNameHoming;
+    case 'plasma': return l10n.weaponNamePlasma;
+    case 'laser': return l10n.weaponNameLaser;
+    case 'gauss': return l10n.weaponNameGauss;
+    case 'chain': return l10n.weaponNameChain;
+    default: return fallback;
+  }
+}
+
+/// Localized pet label by id (mirrors shop_screen `_petName`).
+String _petName(AppLocalizations l10n, String id, String fallback) {
+  switch (id) {
+    case 'attack': return l10n.petNameAttack;
+    case 'collect': return l10n.petNameCollect;
+    case 'sweep': return l10n.petNameSweep;
+    case 'defend': return l10n.petNameDefend;
+    case 'snipe': return l10n.petNameSnipe;
+    case 'ram': return l10n.petNameRam;
+    case 'phoenix': return l10n.petNamePhoenix;
+    case 'black_hole_pet': return l10n.petNameBlackHole;
+    case 'emp_drone': return l10n.petNameEmpDrone;
+    case 'tactical_spotter': return l10n.petNameTacticalSpotter;
+    default: return fallback;
+  }
+}
+
 /// Schermata Loadout — pre-game weapon + pet selection in DUE STEP
 /// (richiesta utente: "due schermate, una per le armi e una per i pet,
 /// senza scroll, bottoni più piccoli").
@@ -201,21 +235,25 @@ class _LoadoutScreenState extends State<LoadoutScreen> {
     // childAspectRatio (cards ~200px tall × 2 rows = 400px > available 358px
     // → row 2 tagliata da footer button). Fixed 145×80 + Wrap = altezza
     // garantita ~170px sempre dentro available. Stile match _NeonModeCard.
+    final l10n = AppLocalizations.of(context)!;
     return Center(
       child: Wrap(
         spacing: 10,
         runSpacing: 10,
         alignment: WrapAlignment.center,
-        children: _weaponCatalog
-            .map((w) => _NeonLoadoutCard(
-                  title: w.displayName,
-                  isSelected: _saveData.startingWeapon == w.id,
-                  isUnlocked: _saveData.unlockedWeapons.contains(w.id),
-                  color: NeonColors.cyan,
-                  iconLetter: w.displayName.substring(0, 1),
-                  onTap: () => _selectWeapon(w.id),
-                ))
-            .toList(),
+        children: _weaponCatalog.map((w) {
+          final localizedTitle = _weaponName(l10n, w.id, w.displayName);
+          return _NeonLoadoutCard(
+            title: localizedTitle,
+            isSelected: _saveData.startingWeapon == w.id,
+            isUnlocked: _saveData.unlockedWeapons.contains(w.id),
+            color: NeonColors.cyan,
+            iconLetter: localizedTitle.isNotEmpty
+                ? localizedTitle.substring(0, 1)
+                : w.displayName.substring(0, 1),
+            onTap: () => _selectWeapon(w.id),
+          );
+        }).toList(),
       ),
     );
   }
@@ -237,7 +275,7 @@ class _LoadoutScreenState extends State<LoadoutScreen> {
             onTap: () => _selectPet('none'),
           ),
           ...kPetCatalog.map((p) => _NeonLoadoutCard(
-                title: p.displayName,
+                title: _petName(l10n, p.id, p.displayName),
                 isSelected: _saveData.activePet == p.id,
                 isUnlocked: _saveData.unlockedPets.contains(p.id),
                 color: p.color,

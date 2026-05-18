@@ -2007,6 +2007,1080 @@ abstract class AppLocalizations {
   /// In it, this message translates to:
   /// **'+10% GoldGeom per livello (max +50%)'**
   String get upgradeXpBoostDesc;
+
+  /// No description provided for @petNameAttack.
+  ///
+  /// In it, this message translates to:
+  /// **'ATTACCO'**
+  String get petNameAttack;
+
+  /// No description provided for @petDescAttack.
+  ///
+  /// In it, this message translates to:
+  /// **'Segue il player + spara raffiche extra. Doppia la firepower.'**
+  String get petDescAttack;
+
+  /// No description provided for @petNameCollect.
+  ///
+  /// In it, this message translates to:
+  /// **'RACCOLTA'**
+  String get petNameCollect;
+
+  /// No description provided for @petDescCollect.
+  ///
+  /// In it, this message translates to:
+  /// **'Vola libero raccoglie geoms a distanza. Boost economy.'**
+  String get petDescCollect;
+
+  /// No description provided for @petNameSweep.
+  ///
+  /// In it, this message translates to:
+  /// **'SWEEP'**
+  String get petNameSweep;
+
+  /// No description provided for @petDescSweep.
+  ///
+  /// In it, this message translates to:
+  /// **'Orbita il player, instakill nemico al tocco.'**
+  String get petDescSweep;
+
+  /// No description provided for @petNameDefend.
+  ///
+  /// In it, this message translates to:
+  /// **'DIFESA'**
+  String get petNameDefend;
+
+  /// No description provided for @petDescDefend.
+  ///
+  /// In it, this message translates to:
+  /// **'Segue retro player, spara nella direzione opposta.'**
+  String get petDescDefend;
+
+  /// No description provided for @petNameSnipe.
+  ///
+  /// In it, this message translates to:
+  /// **'SNIPE'**
+  String get petNameSnipe;
+
+  /// No description provided for @petDescSnipe.
+  ///
+  /// In it, this message translates to:
+  /// **'Orbita lento + laser al nemico più vicino ogni 1.5s.'**
+  String get petDescSnipe;
+
+  /// No description provided for @petNameRam.
+  ///
+  /// In it, this message translates to:
+  /// **'RAM'**
+  String get petNameRam;
+
+  /// No description provided for @petDescRam.
+  ///
+  /// In it, this message translates to:
+  /// **'Insegue + si schianta sul nemico più vicino. Cooldown 1s.'**
+  String get petDescRam;
+
+  /// No description provided for @petNamePhoenix.
+  ///
+  /// In it, this message translates to:
+  /// **'PHOENIX'**
+  String get petNamePhoenix;
+
+  /// No description provided for @petDescPhoenix.
+  ///
+  /// In it, this message translates to:
+  /// **'Auto-revive una volta per run + 2s di invincibilità.'**
+  String get petDescPhoenix;
+
+  /// No description provided for @petNameBlackHole.
+  ///
+  /// In it, this message translates to:
+  /// **'BUCO NERO'**
+  String get petNameBlackHole;
+
+  /// No description provided for @petDescBlackHole.
+  ///
+  /// In it, this message translates to:
+  /// **'Pozzo gravitazionale: trascina i nemici entro 150px.'**
+  String get petDescBlackHole;
+
+  /// No description provided for @petNameEmpDrone.
+  ///
+  /// In it, this message translates to:
+  /// **'EMP DRONE'**
+  String get petNameEmpDrone;
+
+  /// No description provided for @petDescEmpDrone.
+  ///
+  /// In it, this message translates to:
+  /// **'Pulse stun nemici entro 250px ogni 8s (0.5s di stordimento).'**
+  String get petDescEmpDrone;
+
+  /// No description provided for @petNameTacticalSpotter.
+  ///
+  /// In it, this message translates to:
+  /// **'OSSERVATORE TATTICO'**
+  String get petNameTacticalSpotter;
+
+  /// No description provided for @petDescTacticalSpotter.
+  ///
+  /// In it, this message translates to:
+  /// **'Slow-mo 0.5s quando il player è in salute critica. CD 6s.'**
+  String get petDescTacticalSpotter;
+
+  /// No description provided for @weaponStatDmg.
+  ///
+  /// In it, this message translates to:
+  /// **'DMG'**
+  String get weaponStatDmg;
+
+  /// No description provided for @weaponStatRate.
+  ///
+  /// In it, this message translates to:
+  /// **'CAD'**
+  String get weaponStatRate;
+
+  /// No description provided for @weaponStatRange.
+  ///
+  /// In it, this message translates to:
+  /// **'PORT'**
+  String get weaponStatRange;
+
+  /// No description provided for @weaponStatBullets.
+  ///
+  /// In it, this message translates to:
+  /// **'PROIETT'**
+  String get weaponStatBullets;
+
+  /// No description provided for @weaponStatSpread.
+  ///
+  /// In it, this message translates to:
+  /// **'DISPER'**
+  String get weaponStatSpread;
+
+  /// No description provided for @weaponStatBounce.
+  ///
+  /// In it, this message translates to:
+  /// **'RIMB'**
+  String get weaponStatBounce;
+
+  /// No description provided for @weaponStatTrack.
+  ///
+  /// In it, this message translates to:
+  /// **'AGG'**
+  String get weaponStatTrack;
+
+  /// No description provided for @weaponStatBlast.
+  ///
+  /// In it, this message translates to:
+  /// **'ESPL'**
+  String get weaponStatBlast;
+
+  /// No description provided for @weaponStatAoe.
+  ///
+  /// In it, this message translates to:
+  /// **'AOE'**
+  String get weaponStatAoe;
+
+  /// No description provided for @weaponStatPierce.
+  ///
+  /// In it, this message translates to:
+  /// **'PERF'**
+  String get weaponStatPierce;
+
+  /// No description provided for @weaponStatLen.
+  ///
+  /// In it, this message translates to:
+  /// **'LUNG'**
+  String get weaponStatLen;
+
+  /// No description provided for @weaponStatPull.
+  ///
+  /// In it, this message translates to:
+  /// **'ASP'**
+  String get weaponStatPull;
+
+  /// No description provided for @weaponStatJumps.
+  ///
+  /// In it, this message translates to:
+  /// **'SALTI'**
+  String get weaponStatJumps;
+
+  /// No description provided for @weaponStatTick.
+  ///
+  /// In it, this message translates to:
+  /// **'tick'**
+  String get weaponStatTick;
+
+  /// No description provided for @weaponRateMed.
+  ///
+  /// In it, this message translates to:
+  /// **'MED'**
+  String get weaponRateMed;
+
+  /// No description provided for @weaponRateFast.
+  ///
+  /// In it, this message translates to:
+  /// **'VELOCE'**
+  String get weaponRateFast;
+
+  /// No description provided for @weaponRateSlow.
+  ///
+  /// In it, this message translates to:
+  /// **'LENTO'**
+  String get weaponRateSlow;
+
+  /// No description provided for @weaponRateCont.
+  ///
+  /// In it, this message translates to:
+  /// **'CONT'**
+  String get weaponRateCont;
+
+  /// No description provided for @modNoneCard.
+  ///
+  /// In it, this message translates to:
+  /// **'NESSUN MODIFICATORE'**
+  String get modNoneCard;
+
+  /// No description provided for @modNoneCardDesc.
+  ///
+  /// In it, this message translates to:
+  /// **'Gioca senza modificatori attivi.'**
+  String get modNoneCardDesc;
+
+  /// No description provided for @modeLockedSnack.
+  ///
+  /// In it, this message translates to:
+  /// **'Sblocca nello SHOP'**
+  String get modeLockedSnack;
+
+  /// No description provided for @modNameGlassCannon.
+  ///
+  /// In it, this message translates to:
+  /// **'CANNONE DI VETRO'**
+  String get modNameGlassCannon;
+
+  /// No description provided for @modDescGlassCannon.
+  ///
+  /// In it, this message translates to:
+  /// **'3x danno, ma 1 sola vita. Nessuna invincibilità.'**
+  String get modDescGlassCannon;
+
+  /// No description provided for @modNameBulletHell.
+  ///
+  /// In it, this message translates to:
+  /// **'BULLET HELL'**
+  String get modNameBulletHell;
+
+  /// No description provided for @modDescBulletHell.
+  ///
+  /// In it, this message translates to:
+  /// **'I nemici sparano il doppio più velocemente.'**
+  String get modDescBulletHell;
+
+  /// No description provided for @modNameSpeedDemon.
+  ///
+  /// In it, this message translates to:
+  /// **'SPEED DEMON'**
+  String get modNameSpeedDemon;
+
+  /// No description provided for @modDescSpeedDemon.
+  ///
+  /// In it, this message translates to:
+  /// **'Tutto si muove 1.5x più veloce (player e nemici).'**
+  String get modDescSpeedDemon;
+
+  /// No description provided for @modNameNoPowerups.
+  ///
+  /// In it, this message translates to:
+  /// **'PURISTA'**
+  String get modNameNoPowerups;
+
+  /// No description provided for @modDescNoPowerups.
+  ///
+  /// In it, this message translates to:
+  /// **'Nessun power-up durante la partita.'**
+  String get modDescNoPowerups;
+
+  /// No description provided for @modNameFogOfWar.
+  ///
+  /// In it, this message translates to:
+  /// **'NEBBIA DI GUERRA'**
+  String get modNameFogOfWar;
+
+  /// No description provided for @modDescFogOfWar.
+  ///
+  /// In it, this message translates to:
+  /// **'Visibilità ridotta. Solo l\'area vicina è visibile.'**
+  String get modDescFogOfWar;
+
+  /// No description provided for @modNameTinyArena.
+  ///
+  /// In it, this message translates to:
+  /// **'ARENA PICCOLA'**
+  String get modNameTinyArena;
+
+  /// No description provided for @modDescTinyArena.
+  ///
+  /// In it, this message translates to:
+  /// **'Arena ridotta del 50%. Meno spazio per schivare.'**
+  String get modDescTinyArena;
+
+  /// No description provided for @modNameOneShot.
+  ///
+  /// In it, this message translates to:
+  /// **'ONE SHOT'**
+  String get modNameOneShot;
+
+  /// No description provided for @modDescOneShot.
+  ///
+  /// In it, this message translates to:
+  /// **'Tutti i nemici muoiono con 1 colpo. Ma anche tu.'**
+  String get modDescOneShot;
+
+  /// No description provided for @modNameChaos.
+  ///
+  /// In it, this message translates to:
+  /// **'CAOS TOTALE'**
+  String get modNameChaos;
+
+  /// No description provided for @modDescChaos.
+  ///
+  /// In it, this message translates to:
+  /// **'Power-up random ogni 10 secondi automaticamente.'**
+  String get modDescChaos;
+
+  /// No description provided for @modNameGiantMode.
+  ///
+  /// In it, this message translates to:
+  /// **'GIGANTE'**
+  String get modNameGiantMode;
+
+  /// No description provided for @modDescGiantMode.
+  ///
+  /// In it, this message translates to:
+  /// **'Tutto è 2x più grande. Nemici, proiettili, tutto.'**
+  String get modDescGiantMode;
+
+  /// No description provided for @modNameRicochetWorld.
+  ///
+  /// In it, this message translates to:
+  /// **'RIMBALZO TOTALE'**
+  String get modNameRicochetWorld;
+
+  /// No description provided for @modDescRicochetWorld.
+  ///
+  /// In it, this message translates to:
+  /// **'Tutti i proiettili rimbalzano 5 volte.'**
+  String get modDescRicochetWorld;
+
+  /// No description provided for @modNameInfiniteBombs.
+  ///
+  /// In it, this message translates to:
+  /// **'BOMBER'**
+  String get modNameInfiniteBombs;
+
+  /// No description provided for @modDescInfiniteBombs.
+  ///
+  /// In it, this message translates to:
+  /// **'Bombe infinite! Ma niente armi.'**
+  String get modDescInfiniteBombs;
+
+  /// No description provided for @modNameMagnetKing.
+  ///
+  /// In it, this message translates to:
+  /// **'RE MAGNETE'**
+  String get modNameMagnetKing;
+
+  /// No description provided for @modDescMagnetKing.
+  ///
+  /// In it, this message translates to:
+  /// **'Raggio magnete enorme. I geom volano verso di te.'**
+  String get modDescMagnetKing;
+
+  /// No description provided for @gameOverBossLabel.
+  ///
+  /// In it, this message translates to:
+  /// **'BOSS'**
+  String get gameOverBossLabel;
+
+  /// No description provided for @gameOverGoldGeoms.
+  ///
+  /// In it, this message translates to:
+  /// **'GOLD GEOMS'**
+  String get gameOverGoldGeoms;
+
+  /// No description provided for @achKills100Name.
+  ///
+  /// In it, this message translates to:
+  /// **'Primo Sangue'**
+  String get achKills100Name;
+
+  /// No description provided for @achKills100Desc.
+  ///
+  /// In it, this message translates to:
+  /// **'Uccidi 100 nemici in totale'**
+  String get achKills100Desc;
+
+  /// No description provided for @achKills1000Name.
+  ///
+  /// In it, this message translates to:
+  /// **'Sterminatore'**
+  String get achKills1000Name;
+
+  /// No description provided for @achKills1000Desc.
+  ///
+  /// In it, this message translates to:
+  /// **'Uccidi 1.000 nemici in totale'**
+  String get achKills1000Desc;
+
+  /// No description provided for @achKills10000Name.
+  ///
+  /// In it, this message translates to:
+  /// **'Genocida Geometrico'**
+  String get achKills10000Name;
+
+  /// No description provided for @achKills10000Desc.
+  ///
+  /// In it, this message translates to:
+  /// **'Uccidi 10.000 nemici in totale'**
+  String get achKills10000Desc;
+
+  /// No description provided for @achKills100000Name.
+  ///
+  /// In it, this message translates to:
+  /// **'Leggenda'**
+  String get achKills100000Name;
+
+  /// No description provided for @achKills100000Desc.
+  ///
+  /// In it, this message translates to:
+  /// **'Uccidi 100.000 nemici in totale'**
+  String get achKills100000Desc;
+
+  /// No description provided for @achKillsSession200Name.
+  ///
+  /// In it, this message translates to:
+  /// **'Furia Cieca'**
+  String get achKillsSession200Name;
+
+  /// No description provided for @achKillsSession200Desc.
+  ///
+  /// In it, this message translates to:
+  /// **'Uccidi 200 nemici in una partita'**
+  String get achKillsSession200Desc;
+
+  /// No description provided for @achKillsSession500Name.
+  ///
+  /// In it, this message translates to:
+  /// **'Massacro'**
+  String get achKillsSession500Name;
+
+  /// No description provided for @achKillsSession500Desc.
+  ///
+  /// In it, this message translates to:
+  /// **'Uccidi 500 nemici in una partita'**
+  String get achKillsSession500Desc;
+
+  /// No description provided for @achKillsSession1000Name.
+  ///
+  /// In it, this message translates to:
+  /// **'Apocalisse'**
+  String get achKillsSession1000Name;
+
+  /// No description provided for @achKillsSession1000Desc.
+  ///
+  /// In it, this message translates to:
+  /// **'Uccidi 1000 nemici in una partita'**
+  String get achKillsSession1000Desc;
+
+  /// No description provided for @achBosses10Name.
+  ///
+  /// In it, this message translates to:
+  /// **'Ammazza Boss'**
+  String get achBosses10Name;
+
+  /// No description provided for @achBosses10Desc.
+  ///
+  /// In it, this message translates to:
+  /// **'Sconfiggi 10 boss in totale'**
+  String get achBosses10Desc;
+
+  /// No description provided for @achBosses50Name.
+  ///
+  /// In it, this message translates to:
+  /// **'Regicida'**
+  String get achBosses50Name;
+
+  /// No description provided for @achBosses50Desc.
+  ///
+  /// In it, this message translates to:
+  /// **'Sconfiggi 50 boss in totale'**
+  String get achBosses50Desc;
+
+  /// No description provided for @achBosses100Name.
+  ///
+  /// In it, this message translates to:
+  /// **'Sterminatore Reale'**
+  String get achBosses100Name;
+
+  /// No description provided for @achBosses100Desc.
+  ///
+  /// In it, this message translates to:
+  /// **'Sconfiggi 100 boss in totale'**
+  String get achBosses100Desc;
+
+  /// No description provided for @achBossSession5Name.
+  ///
+  /// In it, this message translates to:
+  /// **'Caccia Reale'**
+  String get achBossSession5Name;
+
+  /// No description provided for @achBossSession5Desc.
+  ///
+  /// In it, this message translates to:
+  /// **'Sconfiggi 5 boss in una partita'**
+  String get achBossSession5Desc;
+
+  /// No description provided for @achBombs50Name.
+  ///
+  /// In it, this message translates to:
+  /// **'Artificiere'**
+  String get achBombs50Name;
+
+  /// No description provided for @achBombs50Desc.
+  ///
+  /// In it, this message translates to:
+  /// **'Usa 50 bombe in totale'**
+  String get achBombs50Desc;
+
+  /// No description provided for @achBombs500Name.
+  ///
+  /// In it, this message translates to:
+  /// **'Demolitore'**
+  String get achBombs500Name;
+
+  /// No description provided for @achBombs500Desc.
+  ///
+  /// In it, this message translates to:
+  /// **'Usa 500 bombe in totale'**
+  String get achBombs500Desc;
+
+  /// No description provided for @achScore100kName.
+  ///
+  /// In it, this message translates to:
+  /// **'Sei Cifre'**
+  String get achScore100kName;
+
+  /// No description provided for @achScore100kDesc.
+  ///
+  /// In it, this message translates to:
+  /// **'Raggiungi 100.000 punti'**
+  String get achScore100kDesc;
+
+  /// No description provided for @achScore1mName.
+  ///
+  /// In it, this message translates to:
+  /// **'Milionario'**
+  String get achScore1mName;
+
+  /// No description provided for @achScore1mDesc.
+  ///
+  /// In it, this message translates to:
+  /// **'Raggiungi 1.000.000 punti'**
+  String get achScore1mDesc;
+
+  /// No description provided for @achScore10mName.
+  ///
+  /// In it, this message translates to:
+  /// **'Re dei Punti'**
+  String get achScore10mName;
+
+  /// No description provided for @achScore10mDesc.
+  ///
+  /// In it, this message translates to:
+  /// **'Raggiungi 10.000.000 punti'**
+  String get achScore10mDesc;
+
+  /// No description provided for @achScore100mName.
+  ///
+  /// In it, this message translates to:
+  /// **'Centurione'**
+  String get achScore100mName;
+
+  /// No description provided for @achScore100mDesc.
+  ///
+  /// In it, this message translates to:
+  /// **'Raggiungi 100.000.000 punti'**
+  String get achScore100mDesc;
+
+  /// No description provided for @achScore1bName.
+  ///
+  /// In it, this message translates to:
+  /// **'Miliardario'**
+  String get achScore1bName;
+
+  /// No description provided for @achScore1bDesc.
+  ///
+  /// In it, this message translates to:
+  /// **'Raggiungi 1.000.000.000 punti'**
+  String get achScore1bDesc;
+
+  /// No description provided for @achMultiplier100Name.
+  ///
+  /// In it, this message translates to:
+  /// **'Combo x100'**
+  String get achMultiplier100Name;
+
+  /// No description provided for @achMultiplier100Desc.
+  ///
+  /// In it, this message translates to:
+  /// **'Raggiungi un moltiplicatore di 100x'**
+  String get achMultiplier100Desc;
+
+  /// No description provided for @achMultiplier500Name.
+  ///
+  /// In it, this message translates to:
+  /// **'Combo x500'**
+  String get achMultiplier500Name;
+
+  /// No description provided for @achMultiplier500Desc.
+  ///
+  /// In it, this message translates to:
+  /// **'Raggiungi un moltiplicatore di 500x'**
+  String get achMultiplier500Desc;
+
+  /// No description provided for @achMultiplier1000Name.
+  ///
+  /// In it, this message translates to:
+  /// **'Combo x1000'**
+  String get achMultiplier1000Name;
+
+  /// No description provided for @achMultiplier1000Desc.
+  ///
+  /// In it, this message translates to:
+  /// **'Raggiungi un moltiplicatore di 1000x'**
+  String get achMultiplier1000Desc;
+
+  /// No description provided for @achMultiplier5000Name.
+  ///
+  /// In it, this message translates to:
+  /// **'Combo Divina'**
+  String get achMultiplier5000Name;
+
+  /// No description provided for @achMultiplier5000Desc.
+  ///
+  /// In it, this message translates to:
+  /// **'Raggiungi un moltiplicatore di 5000x'**
+  String get achMultiplier5000Desc;
+
+  /// No description provided for @achGeoms10000Name.
+  ///
+  /// In it, this message translates to:
+  /// **'Collezionista'**
+  String get achGeoms10000Name;
+
+  /// No description provided for @achGeoms10000Desc.
+  ///
+  /// In it, this message translates to:
+  /// **'Raccogli 10.000 geom in totale'**
+  String get achGeoms10000Desc;
+
+  /// No description provided for @achGeoms100000Name.
+  ///
+  /// In it, this message translates to:
+  /// **'Avaro Geometrico'**
+  String get achGeoms100000Name;
+
+  /// No description provided for @achGeoms100000Desc.
+  ///
+  /// In it, this message translates to:
+  /// **'Raccogli 100.000 geom in totale'**
+  String get achGeoms100000Desc;
+
+  /// No description provided for @achWave20Name.
+  ///
+  /// In it, this message translates to:
+  /// **'Persistente'**
+  String get achWave20Name;
+
+  /// No description provided for @achWave20Desc.
+  ///
+  /// In it, this message translates to:
+  /// **'Raggiungi wave 20'**
+  String get achWave20Desc;
+
+  /// No description provided for @achWave50Name.
+  ///
+  /// In it, this message translates to:
+  /// **'Veterano'**
+  String get achWave50Name;
+
+  /// No description provided for @achWave50Desc.
+  ///
+  /// In it, this message translates to:
+  /// **'Raggiungi wave 50'**
+  String get achWave50Desc;
+
+  /// No description provided for @achWave100Name.
+  ///
+  /// In it, this message translates to:
+  /// **'Centenario'**
+  String get achWave100Name;
+
+  /// No description provided for @achWave100Desc.
+  ///
+  /// In it, this message translates to:
+  /// **'Raggiungi wave 100'**
+  String get achWave100Desc;
+
+  /// No description provided for @achWave200Name.
+  ///
+  /// In it, this message translates to:
+  /// **'Inarrestabile'**
+  String get achWave200Name;
+
+  /// No description provided for @achWave200Desc.
+  ///
+  /// In it, this message translates to:
+  /// **'Raggiungi wave 200 (Survival/Tunnel)'**
+  String get achWave200Desc;
+
+  /// No description provided for @achPerfectWaves5Name.
+  ///
+  /// In it, this message translates to:
+  /// **'Intoccabile'**
+  String get achPerfectWaves5Name;
+
+  /// No description provided for @achPerfectWaves5Desc.
+  ///
+  /// In it, this message translates to:
+  /// **'Completa 5 wave perfette consecutive'**
+  String get achPerfectWaves5Desc;
+
+  /// No description provided for @achPerfectWaves10Name.
+  ///
+  /// In it, this message translates to:
+  /// **'Fantasma'**
+  String get achPerfectWaves10Name;
+
+  /// No description provided for @achPerfectWaves10Desc.
+  ///
+  /// In it, this message translates to:
+  /// **'Completa 10 wave perfette consecutive'**
+  String get achPerfectWaves10Desc;
+
+  /// No description provided for @achPerfectWaves20Name.
+  ///
+  /// In it, this message translates to:
+  /// **'Divinità'**
+  String get achPerfectWaves20Name;
+
+  /// No description provided for @achPerfectWaves20Desc.
+  ///
+  /// In it, this message translates to:
+  /// **'Completa 20 wave perfette consecutive'**
+  String get achPerfectWaves20Desc;
+
+  /// No description provided for @achClassicNormalName.
+  ///
+  /// In it, this message translates to:
+  /// **'Classicista'**
+  String get achClassicNormalName;
+
+  /// No description provided for @achClassicNormalDesc.
+  ///
+  /// In it, this message translates to:
+  /// **'Completa Classica in Normale'**
+  String get achClassicNormalDesc;
+
+  /// No description provided for @achClassicHardName.
+  ///
+  /// In it, this message translates to:
+  /// **'Duro a Morire'**
+  String get achClassicHardName;
+
+  /// No description provided for @achClassicHardDesc.
+  ///
+  /// In it, this message translates to:
+  /// **'Completa Classica in Difficile'**
+  String get achClassicHardDesc;
+
+  /// No description provided for @achClassicNightmareName.
+  ///
+  /// In it, this message translates to:
+  /// **'Incubo Vivente'**
+  String get achClassicNightmareName;
+
+  /// No description provided for @achClassicNightmareDesc.
+  ///
+  /// In it, this message translates to:
+  /// **'Completa Classica in Incubo'**
+  String get achClassicNightmareDesc;
+
+  /// No description provided for @achAllModesName.
+  ///
+  /// In it, this message translates to:
+  /// **'Tuttofare'**
+  String get achAllModesName;
+
+  /// No description provided for @achAllModesDesc.
+  ///
+  /// In it, this message translates to:
+  /// **'Gioca in tutte le 6 modalità'**
+  String get achAllModesDesc;
+
+  /// No description provided for @achBossRush10Name.
+  ///
+  /// In it, this message translates to:
+  /// **'Cacciatore di Boss'**
+  String get achBossRush10Name;
+
+  /// No description provided for @achBossRush10Desc.
+  ///
+  /// In it, this message translates to:
+  /// **'Raggiungi boss 10 in Boss Rush'**
+  String get achBossRush10Desc;
+
+  /// No description provided for @achGames10Name.
+  ///
+  /// In it, this message translates to:
+  /// **'Giocatore'**
+  String get achGames10Name;
+
+  /// No description provided for @achGames10Desc.
+  ///
+  /// In it, this message translates to:
+  /// **'Gioca 10 partite'**
+  String get achGames10Desc;
+
+  /// No description provided for @achGames100Name.
+  ///
+  /// In it, this message translates to:
+  /// **'Appassionato'**
+  String get achGames100Name;
+
+  /// No description provided for @achGames100Desc.
+  ///
+  /// In it, this message translates to:
+  /// **'Gioca 100 partite'**
+  String get achGames100Desc;
+
+  /// No description provided for @achGames500Name.
+  ///
+  /// In it, this message translates to:
+  /// **'Dipendente'**
+  String get achGames500Name;
+
+  /// No description provided for @achGames500Desc.
+  ///
+  /// In it, this message translates to:
+  /// **'Gioca 500 partite'**
+  String get achGames500Desc;
+
+  /// No description provided for @achGold10000Name.
+  ///
+  /// In it, this message translates to:
+  /// **'Paperone'**
+  String get achGold10000Name;
+
+  /// No description provided for @achGold10000Desc.
+  ///
+  /// In it, this message translates to:
+  /// **'Accumula 10.000 Gold Geom'**
+  String get achGold10000Desc;
+
+  /// No description provided for @achGold50000Name.
+  ///
+  /// In it, this message translates to:
+  /// **'Magnate'**
+  String get achGold50000Name;
+
+  /// No description provided for @achGold50000Desc.
+  ///
+  /// In it, this message translates to:
+  /// **'Accumula 50.000 Gold Geom'**
+  String get achGold50000Desc;
+
+  /// No description provided for @achAllUpgradesName.
+  ///
+  /// In it, this message translates to:
+  /// **'Potenziato al Massimo'**
+  String get achAllUpgradesName;
+
+  /// No description provided for @achAllUpgradesDesc.
+  ///
+  /// In it, this message translates to:
+  /// **'Compra tutti gli upgrade'**
+  String get achAllUpgradesDesc;
+
+  /// No description provided for @achPowerups100Name.
+  ///
+  /// In it, this message translates to:
+  /// **'Drogato di Power-Up'**
+  String get achPowerups100Name;
+
+  /// No description provided for @achPowerups100Desc.
+  ///
+  /// In it, this message translates to:
+  /// **'Raccogli 100 power-up'**
+  String get achPowerups100Desc;
+
+  /// No description provided for @achWavesWave20Name.
+  ///
+  /// In it, this message translates to:
+  /// **'Schivatore'**
+  String get achWavesWave20Name;
+
+  /// No description provided for @achWavesWave20Desc.
+  ///
+  /// In it, this message translates to:
+  /// **'Waves mode: raggiungi wave 20'**
+  String get achWavesWave20Desc;
+
+  /// No description provided for @achWavesWave50Name.
+  ///
+  /// In it, this message translates to:
+  /// **'Maestro del Dodge'**
+  String get achWavesWave50Name;
+
+  /// No description provided for @achWavesWave50Desc.
+  ///
+  /// In it, this message translates to:
+  /// **'Waves mode: raggiungi wave 50'**
+  String get achWavesWave50Desc;
+
+  /// No description provided for @achGravityWave15Name.
+  ///
+  /// In it, this message translates to:
+  /// **'Astrofisico'**
+  String get achGravityWave15Name;
+
+  /// No description provided for @achGravityWave15Desc.
+  ///
+  /// In it, this message translates to:
+  /// **'Gravity Inferno: raggiungi wave 15'**
+  String get achGravityWave15Desc;
+
+  /// No description provided for @achPacifistCombo15Name.
+  ///
+  /// In it, this message translates to:
+  /// **'Pacifista Pro'**
+  String get achPacifistCombo15Name;
+
+  /// No description provided for @achPacifistCombo15Desc.
+  ///
+  /// In it, this message translates to:
+  /// **'Pacifist: combo gate 15+'**
+  String get achPacifistCombo15Desc;
+
+  /// No description provided for @achTimeAttack500kName.
+  ///
+  /// In it, this message translates to:
+  /// **'Cronometrista'**
+  String get achTimeAttack500kName;
+
+  /// No description provided for @achTimeAttack500kDesc.
+  ///
+  /// In it, this message translates to:
+  /// **'Time Attack: 500k score'**
+  String get achTimeAttack500kDesc;
+
+  /// No description provided for @achDailyStreak7Name.
+  ///
+  /// In it, this message translates to:
+  /// **'Devoto Giornaliero'**
+  String get achDailyStreak7Name;
+
+  /// No description provided for @achDailyStreak7Desc.
+  ///
+  /// In it, this message translates to:
+  /// **'Riscatta il daily reward 7 giorni di fila'**
+  String get achDailyStreak7Desc;
+
+  /// No description provided for @achDailyStreak30Name.
+  ///
+  /// In it, this message translates to:
+  /// **'Fedele Mensile'**
+  String get achDailyStreak30Name;
+
+  /// No description provided for @achDailyStreak30Desc.
+  ///
+  /// In it, this message translates to:
+  /// **'Riscatta il daily reward 30 giorni di fila'**
+  String get achDailyStreak30Desc;
+
+  /// No description provided for @achGaussKills500Name.
+  ///
+  /// In it, this message translates to:
+  /// **'Maestro Gauss'**
+  String get achGaussKills500Name;
+
+  /// No description provided for @achGaussKills500Desc.
+  ///
+  /// In it, this message translates to:
+  /// **'Uccidi 500 nemici con Gauss Cannon'**
+  String get achGaussKills500Desc;
+
+  /// No description provided for @achChainKills500Name.
+  ///
+  /// In it, this message translates to:
+  /// **'Tempesta'**
+  String get achChainKills500Name;
+
+  /// No description provided for @achChainKills500Desc.
+  ///
+  /// In it, this message translates to:
+  /// **'Uccidi 500 nemici con Chain Lightning'**
+  String get achChainKills500Desc;
+
+  /// No description provided for @achAllWeaponsName.
+  ///
+  /// In it, this message translates to:
+  /// **'Armaiolo'**
+  String get achAllWeaponsName;
+
+  /// No description provided for @achAllWeaponsDesc.
+  ///
+  /// In it, this message translates to:
+  /// **'Sblocca tutte le armi'**
+  String get achAllWeaponsDesc;
+
+  /// No description provided for @achAllSkinsName.
+  ///
+  /// In it, this message translates to:
+  /// **'Fashionista'**
+  String get achAllSkinsName;
+
+  /// No description provided for @achAllSkinsDesc.
+  ///
+  /// In it, this message translates to:
+  /// **'Sblocca tutte le skin'**
+  String get achAllSkinsDesc;
+
+  /// No description provided for @achAllTrailsName.
+  ///
+  /// In it, this message translates to:
+  /// **'Collezione Cosmica'**
+  String get achAllTrailsName;
+
+  /// No description provided for @achAllTrailsDesc.
+  ///
+  /// In it, this message translates to:
+  /// **'Sblocca tutti i trail'**
+  String get achAllTrailsDesc;
+
+  /// No description provided for @achAllPetsName.
+  ///
+  /// In it, this message translates to:
+  /// **'Domatore'**
+  String get achAllPetsName;
+
+  /// No description provided for @achAllPetsDesc.
+  ///
+  /// In it, this message translates to:
+  /// **'Sblocca tutti i pet'**
+  String get achAllPetsDesc;
 }
 
 class _AppLocalizationsDelegate

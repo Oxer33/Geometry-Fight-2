@@ -5,6 +5,36 @@ import '../../data/achievements.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../widgets/neon_back_button.dart';
 
+/// Localized label for a game-mode key. Falls back to upper-cased raw key if
+/// id is unknown (defensive — preserves render path when new modes ship
+/// without ARB updates).
+String _statsModeLabel(String key, AppLocalizations l10n) {
+  switch (key) {
+    case 'classic':
+      return l10n.modeClassic;
+    case 'bossRush':
+      return l10n.modeBossRush;
+    case 'survival':
+      return l10n.modeSurvival;
+    case 'timeAttack':
+      return l10n.modeTimeAttack;
+    case 'zenMode':
+      return l10n.modeZen;
+    case 'tunnel':
+      return l10n.modeTunnel;
+    case 'dailyChallenge':
+      return l10n.modeDailyChallenge;
+    case 'pacifist':
+      return l10n.modePacifist;
+    case 'waves':
+      return l10n.modeWaves;
+    case 'gravityInferno':
+      return l10n.modeGravityInferno;
+    default:
+      return key.toUpperCase();
+  }
+}
+
 class StatsScreen extends StatefulWidget {
   final VoidCallback onBack;
 
@@ -150,7 +180,7 @@ class _StatsScreenState extends State<StatsScreen>
                           const SizedBox(height: 16),
                           _buildSection(l10n.statsSectionScoresByMode, Colors.purpleAccent, entrance, 0.4,
                             saveData.highscores.entries.map((e) =>
-                              _StatData(e.key.toUpperCase(), _animFormatNumber(e.value, counter), Icons.leaderboard_rounded, Colors.purpleAccent),
+                              _StatData(_statsModeLabel(e.key, l10n), _animFormatNumber(e.value, counter), Icons.leaderboard_rounded, Colors.purpleAccent),
                             ).toList(),
                           glow),
                         ],

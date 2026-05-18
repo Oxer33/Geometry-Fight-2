@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../../data/achievements.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../widgets/shared_painters.dart';
+import 'achievements_screen.dart' show achievementName;
 
 class GameOverScreen extends StatefulWidget {
   final int score;
@@ -466,7 +467,7 @@ class _GameOverScreenState extends State<GameOverScreen>
           ),
           _statDivider(),
           _AnimatedStat(
-            label: 'BOSS',
+            label: l10n.gameOverBossLabel,
             value: (widget.bossKills * counterVal).round(),
             color: const Color(0xFFCC00FF),
             icon: Icons.shield_rounded,
@@ -531,16 +532,19 @@ class _GameOverScreenState extends State<GameOverScreen>
                 ),
               ),
               const SizedBox(width: 6),
-              const Text(
-                'GOLD GEOMS',
-                style: TextStyle(
-                  color: Color(0xFFFFD700),
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                  fontFamily: 'monospace',
-                  letterSpacing: 2,
-                ),
-              ),
+              Builder(builder: (context) {
+                final l10n = AppLocalizations.of(context)!;
+                return Text(
+                  l10n.gameOverGoldGeoms,
+                  style: const TextStyle(
+                    color: Color(0xFFFFD700),
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    fontFamily: 'monospace',
+                    letterSpacing: 2,
+                  ),
+                );
+              }),
             ],
           ),
           if (perfBonus > 0 || achievementGold > 0) ...[
@@ -626,7 +630,7 @@ class _GameOverScreenState extends State<GameOverScreen>
                     Text(a.icon, style: const TextStyle(fontSize: 16)),
                     const SizedBox(width: 8),
                     Text(
-                      a.name,
+                      achievementName(a.id, l10n),
                       style: const TextStyle(
                         color: Colors.greenAccent,
                         fontSize: 12,

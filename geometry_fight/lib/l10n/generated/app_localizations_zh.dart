@@ -989,4 +989,541 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get upgradeXpBoostDesc => '每级+10% GoldGeom(最大+50%)';
+
+  @override
+  String get petNameAttack => '攻击';
+
+  @override
+  String get petDescAttack => '跟随玩家+发射额外弹幕。双倍火力。';
+
+  @override
+  String get petNameCollect => '收集';
+
+  @override
+  String get petDescCollect => '自由飞行,远程收集几何体。经济加成。';
+
+  @override
+  String get petNameSweep => '扫荡';
+
+  @override
+  String get petDescSweep => '环绕玩家,接触即秒杀敌人。';
+
+  @override
+  String get petNameDefend => '防御';
+
+  @override
+  String get petDescDefend => '跟随玩家身后,向反方向射击。';
+
+  @override
+  String get petNameSnipe => '狙击';
+
+  @override
+  String get petDescSnipe => '缓慢环绕+每1.5秒激光击中最近敌人。';
+
+  @override
+  String get petNameRam => '撞击';
+
+  @override
+  String get petDescRam => '追击+撞向最近敌人。冷却1秒。';
+
+  @override
+  String get petNamePhoenix => '凤凰';
+
+  @override
+  String get petDescPhoenix => '每局自动复活一次+2秒无敌。';
+
+  @override
+  String get petNameBlackHole => '黑洞';
+
+  @override
+  String get petDescBlackHole => '引力井:拖拽150px范围内的敌人。';
+
+  @override
+  String get petNameEmpDrone => 'EMP无人机';
+
+  @override
+  String get petDescEmpDrone => '每8秒脉冲眩晕250px内敌人(0.5秒眩晕)。';
+
+  @override
+  String get petNameTacticalSpotter => '战术观察员';
+
+  @override
+  String get petDescTacticalSpotter => '玩家生命危急时0.5秒慢动作。CD 6秒。';
+
+  @override
+  String get weaponStatDmg => '伤害';
+
+  @override
+  String get weaponStatRate => '射速';
+
+  @override
+  String get weaponStatRange => '射程';
+
+  @override
+  String get weaponStatBullets => '弹数';
+
+  @override
+  String get weaponStatSpread => '散布';
+
+  @override
+  String get weaponStatBounce => '反弹';
+
+  @override
+  String get weaponStatTrack => '追踪';
+
+  @override
+  String get weaponStatBlast => '爆炸';
+
+  @override
+  String get weaponStatAoe => '范围';
+
+  @override
+  String get weaponStatPierce => '穿透';
+
+  @override
+  String get weaponStatLen => '长度';
+
+  @override
+  String get weaponStatPull => '牵引';
+
+  @override
+  String get weaponStatJumps => '跳跃';
+
+  @override
+  String get weaponStatTick => '刻';
+
+  @override
+  String get weaponRateMed => '中';
+
+  @override
+  String get weaponRateFast => '快';
+
+  @override
+  String get weaponRateSlow => '慢';
+
+  @override
+  String get weaponRateCont => '持续';
+
+  @override
+  String get modNoneCard => '无修饰符';
+
+  @override
+  String get modNoneCardDesc => '无修饰符进行游戏。';
+
+  @override
+  String get modeLockedSnack => '在商店中解锁';
+
+  @override
+  String get modNameGlassCannon => '玻璃大炮';
+
+  @override
+  String get modDescGlassCannon => '3倍伤害，但只有1条命。无无敌。';
+
+  @override
+  String get modNameBulletHell => '弹幕地狱';
+
+  @override
+  String get modDescBulletHell => '敌人射击速度提高一倍。';
+
+  @override
+  String get modNameSpeedDemon => '速度恶魔';
+
+  @override
+  String get modDescSpeedDemon => '一切速度提升1.5倍（玩家和敌人）。';
+
+  @override
+  String get modNameNoPowerups => '纯粹者';
+
+  @override
+  String get modDescNoPowerups => '比赛中没有道具。';
+
+  @override
+  String get modNameFogOfWar => '战争迷雾';
+
+  @override
+  String get modDescFogOfWar => '能见度降低。仅可见附近区域。';
+
+  @override
+  String get modNameTinyArena => '微型竞技场';
+
+  @override
+  String get modDescTinyArena => '竞技场缩小50%。躲避空间更少。';
+
+  @override
+  String get modNameOneShot => '一击必杀';
+
+  @override
+  String get modDescOneShot => '所有敌人一击毙命。你也是。';
+
+  @override
+  String get modNameChaos => '全面混乱';
+
+  @override
+  String get modDescChaos => '每10秒自动获得随机道具。';
+
+  @override
+  String get modNameGiantMode => '巨人模式';
+
+  @override
+  String get modDescGiantMode => '一切都变大2倍。敌人、子弹，一切。';
+
+  @override
+  String get modNameRicochetWorld => '全面反弹';
+
+  @override
+  String get modDescRicochetWorld => '所有子弹反弹5次。';
+
+  @override
+  String get modNameInfiniteBombs => '轰炸机';
+
+  @override
+  String get modDescInfiniteBombs => '无限炸弹！但没有武器。';
+
+  @override
+  String get modNameMagnetKing => '磁铁之王';
+
+  @override
+  String get modDescMagnetKing => '巨大的磁铁范围。几何体飞向你。';
+
+  @override
+  String get gameOverBossLabel => 'BOSS';
+
+  @override
+  String get gameOverGoldGeoms => '金色几何体';
+
+  @override
+  String get achKills100Name => '首杀';
+
+  @override
+  String get achKills100Desc => '总共击杀100个敌人';
+
+  @override
+  String get achKills1000Name => '灭绝者';
+
+  @override
+  String get achKills1000Desc => '总共击杀1,000个敌人';
+
+  @override
+  String get achKills10000Name => '几何屠夫';
+
+  @override
+  String get achKills10000Desc => '总共击杀10,000个敌人';
+
+  @override
+  String get achKills100000Name => '传奇';
+
+  @override
+  String get achKills100000Desc => '总共击杀100,000个敌人';
+
+  @override
+  String get achKillsSession200Name => '盲目之怒';
+
+  @override
+  String get achKillsSession200Desc => '一局击杀200个敌人';
+
+  @override
+  String get achKillsSession500Name => '大屠杀';
+
+  @override
+  String get achKillsSession500Desc => '一局击杀500个敌人';
+
+  @override
+  String get achKillsSession1000Name => '天启';
+
+  @override
+  String get achKillsSession1000Desc => '一局击杀1000个敌人';
+
+  @override
+  String get achBosses10Name => 'BOSS杀手';
+
+  @override
+  String get achBosses10Desc => '总共击败10个BOSS';
+
+  @override
+  String get achBosses50Name => '弑君者';
+
+  @override
+  String get achBosses50Desc => '总共击败50个BOSS';
+
+  @override
+  String get achBosses100Name => '王者灭绝者';
+
+  @override
+  String get achBosses100Desc => '总共击败100个BOSS';
+
+  @override
+  String get achBossSession5Name => '王者狩猎';
+
+  @override
+  String get achBossSession5Desc => '一局击败5个BOSS';
+
+  @override
+  String get achBombs50Name => '爆破手';
+
+  @override
+  String get achBombs50Desc => '总共使用50枚炸弹';
+
+  @override
+  String get achBombs500Name => '拆迁者';
+
+  @override
+  String get achBombs500Desc => '总共使用500枚炸弹';
+
+  @override
+  String get achScore100kName => '六位数';
+
+  @override
+  String get achScore100kDesc => '达到100,000分';
+
+  @override
+  String get achScore1mName => '百万富翁';
+
+  @override
+  String get achScore1mDesc => '达到1,000,000分';
+
+  @override
+  String get achScore10mName => '积分之王';
+
+  @override
+  String get achScore10mDesc => '达到10,000,000分';
+
+  @override
+  String get achScore100mName => '百夫长';
+
+  @override
+  String get achScore100mDesc => '达到100,000,000分';
+
+  @override
+  String get achScore1bName => '亿万富翁';
+
+  @override
+  String get achScore1bDesc => '达到1,000,000,000分';
+
+  @override
+  String get achMultiplier100Name => '连击 x100';
+
+  @override
+  String get achMultiplier100Desc => '达到100倍数';
+
+  @override
+  String get achMultiplier500Name => '连击 x500';
+
+  @override
+  String get achMultiplier500Desc => '达到500倍数';
+
+  @override
+  String get achMultiplier1000Name => '连击 x1000';
+
+  @override
+  String get achMultiplier1000Desc => '达到1000倍数';
+
+  @override
+  String get achMultiplier5000Name => '神圣连击';
+
+  @override
+  String get achMultiplier5000Desc => '达到5000倍数';
+
+  @override
+  String get achGeoms10000Name => '收藏家';
+
+  @override
+  String get achGeoms10000Desc => '总共收集10,000个几何体';
+
+  @override
+  String get achGeoms100000Name => '几何吝啬鬼';
+
+  @override
+  String get achGeoms100000Desc => '总共收集100,000个几何体';
+
+  @override
+  String get achWave20Name => '坚持者';
+
+  @override
+  String get achWave20Desc => '达到第20波';
+
+  @override
+  String get achWave50Name => '老兵';
+
+  @override
+  String get achWave50Desc => '达到第50波';
+
+  @override
+  String get achWave100Name => '百年';
+
+  @override
+  String get achWave100Desc => '达到第100波';
+
+  @override
+  String get achWave200Name => '不可阻挡';
+
+  @override
+  String get achWave200Desc => '达到第200波(Survival/Tunnel)';
+
+  @override
+  String get achPerfectWaves5Name => '不可触及';
+
+  @override
+  String get achPerfectWaves5Desc => '连续完成5个完美波';
+
+  @override
+  String get achPerfectWaves10Name => '幽灵';
+
+  @override
+  String get achPerfectWaves10Desc => '连续完成10个完美波';
+
+  @override
+  String get achPerfectWaves20Name => '神性';
+
+  @override
+  String get achPerfectWaves20Desc => '连续完成20个完美波';
+
+  @override
+  String get achClassicNormalName => '古典主义者';
+
+  @override
+  String get achClassicNormalDesc => '在普通难度完成经典模式';
+
+  @override
+  String get achClassicHardName => '硬汉';
+
+  @override
+  String get achClassicHardDesc => '在困难难度完成经典模式';
+
+  @override
+  String get achClassicNightmareName => '活体噩梦';
+
+  @override
+  String get achClassicNightmareDesc => '在噩梦难度完成经典模式';
+
+  @override
+  String get achAllModesName => '全能选手';
+
+  @override
+  String get achAllModesDesc => '游玩所有6种模式';
+
+  @override
+  String get achBossRush10Name => 'BOSS猎人';
+
+  @override
+  String get achBossRush10Desc => '在Boss Rush中达到第10个BOSS';
+
+  @override
+  String get achGames10Name => '玩家';
+
+  @override
+  String get achGames10Desc => '游玩10局';
+
+  @override
+  String get achGames100Name => '爱好者';
+
+  @override
+  String get achGames100Desc => '游玩100局';
+
+  @override
+  String get achGames500Name => '瘾君子';
+
+  @override
+  String get achGames500Desc => '游玩500局';
+
+  @override
+  String get achGold10000Name => '守财奴';
+
+  @override
+  String get achGold10000Desc => '积累10,000个金色几何体';
+
+  @override
+  String get achGold50000Name => '巨富';
+
+  @override
+  String get achGold50000Desc => '积累50,000个金色几何体';
+
+  @override
+  String get achAllUpgradesName => '满级强化';
+
+  @override
+  String get achAllUpgradesDesc => '购买所有升级';
+
+  @override
+  String get achPowerups100Name => '强化品上瘾';
+
+  @override
+  String get achPowerups100Desc => '收集100个强化品';
+
+  @override
+  String get achWavesWave20Name => '闪避者';
+
+  @override
+  String get achWavesWave20Desc => 'Waves模式：达到第20波';
+
+  @override
+  String get achWavesWave50Name => '闪避大师';
+
+  @override
+  String get achWavesWave50Desc => 'Waves模式：达到第50波';
+
+  @override
+  String get achGravityWave15Name => '天体物理学家';
+
+  @override
+  String get achGravityWave15Desc => 'Gravity Inferno：达到第15波';
+
+  @override
+  String get achPacifistCombo15Name => '和平主义者大师';
+
+  @override
+  String get achPacifistCombo15Desc => 'Pacifist：连击大门15+';
+
+  @override
+  String get achTimeAttack500kName => '计时员';
+
+  @override
+  String get achTimeAttack500kDesc => 'Time Attack：50万分';
+
+  @override
+  String get achDailyStreak7Name => '每日信徒';
+
+  @override
+  String get achDailyStreak7Desc => '连续7天领取每日奖励';
+
+  @override
+  String get achDailyStreak30Name => '月度忠诚';
+
+  @override
+  String get achDailyStreak30Desc => '连续30天领取每日奖励';
+
+  @override
+  String get achGaussKills500Name => '高斯大师';
+
+  @override
+  String get achGaussKills500Desc => '用高斯炮击杀500个敌人';
+
+  @override
+  String get achChainKills500Name => '风暴';
+
+  @override
+  String get achChainKills500Desc => '用闪电链击杀500个敌人';
+
+  @override
+  String get achAllWeaponsName => '军械师';
+
+  @override
+  String get achAllWeaponsDesc => '解锁所有武器';
+
+  @override
+  String get achAllSkinsName => '时尚达人';
+
+  @override
+  String get achAllSkinsDesc => '解锁所有皮肤';
+
+  @override
+  String get achAllTrailsName => '宇宙收藏';
+
+  @override
+  String get achAllTrailsDesc => '解锁所有尾迹';
+
+  @override
+  String get achAllPetsName => '驯兽师';
+
+  @override
+  String get achAllPetsDesc => '解锁所有宠物';
 }

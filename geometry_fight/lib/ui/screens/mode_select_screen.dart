@@ -4,7 +4,6 @@ import '../../data/difficulty.dart';
 import '../../data/save_data.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../widgets/neon_back_button.dart';
-import 'modifiers_screen.dart';
 
 /// Schermata di selezione modalità di gioco (richiesta utente: split del
 /// flow pre-game in screens dedicate). Solo MODE selection — difficoltà
@@ -29,9 +28,6 @@ class ModeSelectScreen extends StatefulWidget {
 class _ModeSelectScreenState extends State<ModeSelectScreen>
     with TickerProviderStateMixin {
   GameMode _selectedMode = GameMode.classic;
-  // ignore: unused_field
-  final Difficulty _selectedDifficulty = Difficulty.normal;
-  List<String> _activeModifiers = [];
   late final SaveData _saveData;
 
   // Caveman-review: guard against rapid double-tap firing onConfirm twice
@@ -45,9 +41,6 @@ class _ModeSelectScreenState extends State<ModeSelectScreen>
   void initState() {
     super.initState();
     _saveData = SaveManager.load();
-    // Seed modifiers attivi dal save — prima `_activeModifiers` partiva
-    // vuoto, ignorando i modificatori selezionati in sessione precedente.
-    _activeModifiers = List<String>.from(_saveData.activeModifiers);
 
     _entranceController = AnimationController(
       duration: const Duration(milliseconds: 900),
@@ -225,13 +218,13 @@ class _ModeSelectScreenState extends State<ModeSelectScreen>
     if (!mounted) return;
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
-      ..showSnackBar(const SnackBar(
-        duration: Duration(milliseconds: 1100),
-        backgroundColor: Color(0xFF0A0A1A),
+      ..showSnackBar(SnackBar(
+        duration: const Duration(milliseconds: 1100),
+        backgroundColor: const Color(0xFF0A0A1A),
         behavior: SnackBarBehavior.floating,
         content: Text(
-          'Sblocca nello SHOP',
-          style: TextStyle(
+          l10n.modeLockedSnack,
+          style: const TextStyle(
             color: Colors.amber,
             fontFamily: 'monospace',
             fontWeight: FontWeight.w900,
@@ -257,204 +250,14 @@ class _ModeSelectScreenState extends State<ModeSelectScreen>
 
   // Removed _buildDifficultyList: difficoltà ora in DifficultySelectScreen.
 
-  // ignore: unused_element
-  Widget _buildModifiersButton(double entrance, double glow) {
-    final e = ((entrance - 0.35) / 0.65).clamp(0.0, 1.0);
-    final hasModifiers = _activeModifiers.isNotEmpty;
-
-    return Opacity(
-      opacity: e,
-      child: Transform.translate(
-        offset: Offset(0, 10 * (1 - e)),
-        child: GestureDetector(
-          onTap: () {
-            showModalBottomSheet(
-              context: context,
-              backgroundColor: Colors.transparent,
-              isScrollControlled: true,
-              builder: (_) => ModifiersSheet(
-                activeModifiers: _activeModifiers,
-                onChanged: (mods) =>
-                    setState(() => _activeModifiers = mods),
-              ),
-            );
-          },
-          child: Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(
-                color: hasModifiers
-                    ? Colors.cyanAccent.withValues(alpha: 0.4 + glow * 0.1)
-                    : Colors.white.withValues(alpha: 0.08),
-              ),
-              gradient: hasModifiers
-                  ? LinearGradient(
-                      colors: [
-                        Colors.cyanAccent.withValues(alpha: 0.06),
-                        Colors.cyanAccent.withValues(alpha: 0.02),
-                      ],
-                    )
-                  : null,
-              color: hasModifiers ? null : Colors.white.withValues(alpha: 0.02),
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  Icons.tune_rounded,
-                  color: hasModifiers ? Colors.cyanAccent : Colors.white38,
-                  size: 18,
-                ),
-                const SizedBox(width: 10),
-                Text(
-                  hasModifiers
-                      ? 'MODIFICATORI (${_activeModifiers.length})'
-                      : 'MODIFICATORI (opzionale)',
-                  style: TextStyle(
-                    color: hasModifiers ? Colors.cyanAccent : Colors.white38,
-                    fontSize: 12,
-                    fontFamily: 'monospace',
-                    fontWeight: FontWeight.bold,
-                    shadows: hasModifiers
-                        ? [
-                            Shadow(
-                                color:
-                                    Colors.cyanAccent.withValues(alpha: 0.3),
-                                blurRadius: 4)
-                          ]
-                        : null,
-                  ),
-                ),
-                const Spacer(),
-                Icon(
-                  Icons.chevron_right_rounded,
-                  color: hasModifiers
-                      ? Colors.cyanAccent.withValues(alpha: 0.5)
-                      : Colors.white.withValues(alpha: 0.2),
-                  size: 18,
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  // ignore: unused_element
-  Widget _buildSummary(double entrance, double glow) {
-    final e = ((entrance - 0.4) / 0.6).clamp(0.0, 1.0);
-    final modeConfig = gameModeConfigs[_selectedMode]!;
-    final diffConfig = difficultyConfigs[_selectedDifficulty]!;
-    final diffColor = _diffColor(_selectedDifficulty);
-
-    return Opacity(
-      opacity: e,
-      child: Transform.translate(
-        offset: Offset(0, 10 * (1 - e)),
-        child: Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
-            gradient: LinearGradient(
-              begin: Alignment.centerLeft,
-              end: Alignment.centerRight,
-              colors: [
-                diffColor.withValues(alpha: 0.04),
-                Colors.transparent,
-              ],
-            ),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Text(modeConfig.icon, style: const TextStyle(fontSize: 16)),
-                  const SizedBox(width: 8),
-                  Text(
-                    '${modeConfig.name} — ${diffConfig.name}',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 13,
-                      fontWeight: FontWeight.bold,
-                      fontFamily: 'monospace',
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 6),
-              Text(
-                modeConfig.description,
-                style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.5),
-                  fontSize: 10,
-                  fontFamily: 'monospace',
-                ),
-              ),
-              const SizedBox(height: 4),
-              Row(
-                children: [
-                  // Pacifist: 1 vita fissa, 0 bombe → nascondi chips inutili.
-                  if (_selectedMode != GameMode.pacifist) ...[
-                    _summaryChip(Icons.favorite_rounded, 'Vite: ${diffConfig.startingLives}', diffColor),
-                    const SizedBox(width: 8),
-                    _summaryChip(Icons.flash_on_rounded, 'Bombe: ${diffConfig.startingBombs}', diffColor),
-                    const SizedBox(width: 8),
-                  ],
-                  _summaryChip(Icons.close_fullscreen_rounded, 'x${diffConfig.scoreMultiplier.toStringAsFixed(0)}', diffColor),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _summaryChip(IconData icon, String text, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(6),
-        color: color.withValues(alpha: 0.08),
-        border: Border.all(color: color.withValues(alpha: 0.2)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, color: color.withValues(alpha: 0.6), size: 10),
-          const SizedBox(width: 4),
-          Text(
-            text,
-            style: TextStyle(
-              color: color.withValues(alpha: 0.7),
-              fontSize: 9,
-              fontFamily: 'monospace',
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  // Removed unused _buildModifiersButton + _buildSummary + _summaryChip +
+  // _diffColor (legacy iter 19 bottom-of-screen blocks). The wizard now uses
+  // dedicated steps for modifiers/difficulty/summary — those legacy widgets
+  // contained hardcoded Italian strings that would have to be migrated to
+  // l10n if kept. Dead code removed.
 
   // Iter 19: rimosso _buildStartButton — tap-to-advance sostituisce il
   // bottone AVANTI bottom (vedi onTap di _NeonModeCard in _buildModeList).
-
-  Color _diffColor(Difficulty d) {
-    switch (d) {
-      case Difficulty.easy:
-        return Colors.greenAccent;
-      case Difficulty.normal:
-        return Colors.cyanAccent;
-      case Difficulty.hard:
-        return Colors.orangeAccent;
-      case Difficulty.nightmare:
-        return Colors.redAccent;
-    }
-  }
 }
 
 // ==================== NEON MODE CARD ====================
@@ -737,112 +540,6 @@ class _CosmicCardPainter extends CustomPainter {
       old.isSelected != isSelected;
 }
 
-// ==================== NEON DIFFICULTY CARD ====================
-// ignore: unused_element
-class _NeonDifficultyCard extends StatelessWidget {
-  final DifficultyConfig config;
-  final Difficulty difficulty;
-  final bool isSelected;
-  final double glow;
-  final VoidCallback onTap;
-
-  const _NeonDifficultyCard({
-    required this.config,
-    required this.difficulty,
-    required this.isSelected,
-    required this.glow,
-    required this.onTap,
-  });
-
-  Color get _color {
-    switch (difficulty) {
-      case Difficulty.easy:
-        return Colors.greenAccent;
-      case Difficulty.normal:
-        return Colors.cyanAccent;
-      case Difficulty.hard:
-        return Colors.orangeAccent;
-      case Difficulty.nightmare:
-        return Colors.redAccent;
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 250),
-        width: 125,
-        margin: const EdgeInsets.only(right: 10),
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(
-            color: isSelected
-                ? _color.withValues(alpha: 0.5 + glow * 0.15)
-                : Colors.white.withValues(alpha: 0.06),
-            width: isSelected ? 1.5 : 0.5,
-          ),
-          gradient: isSelected
-              ? LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    _color.withValues(alpha: 0.1),
-                    _color.withValues(alpha: 0.03),
-                  ],
-                )
-              : null,
-          color: isSelected ? null : Colors.white.withValues(alpha: 0.02),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: _color.withValues(alpha: 0.1 + glow * 0.05),
-                    blurRadius: 8,
-                  ),
-                ]
-              : null,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              config.name,
-              style: TextStyle(
-                color: isSelected ? _color : Colors.white38,
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-                fontFamily: 'monospace',
-                shadows: isSelected
-                    ? [
-                        Shadow(
-                            color: _color.withValues(alpha: 0.4),
-                            blurRadius: 4)
-                      ]
-                    : null,
-              ),
-            ),
-            const SizedBox(height: 6),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(4),
-                color: _color.withValues(alpha: isSelected ? 0.12 : 0.04),
-              ),
-              child: Text(
-                'Score x${config.scoreMultiplier.toStringAsFixed(0)}',
-                style: TextStyle(
-                  color: _color.withValues(alpha: isSelected ? 0.8 : 0.4),
-                  fontSize: 9,
-                  fontFamily: 'monospace',
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
+// Removed unused _NeonDifficultyCard (legacy iter 19 — difficulty now lives
+// in DifficultySelectScreen). Held config.name (catalog Italian) and a
+// hardcoded "Score x" prefix that would need l10n if revived.

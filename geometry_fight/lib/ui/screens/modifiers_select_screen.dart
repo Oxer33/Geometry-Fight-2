@@ -5,6 +5,71 @@ import '../../data/modifiers.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../widgets/neon_back_button.dart';
 
+/// Localized name for a modifier id. Falls back to catalog Italian if id is
+/// unknown (defensive — keeps render path safe when new mods are added).
+String _modifierName(String id, AppLocalizations l10n) {
+  switch (id) {
+    case 'glass_cannon':
+      return l10n.modNameGlassCannon;
+    case 'bullet_hell':
+      return l10n.modNameBulletHell;
+    case 'speed_demon':
+      return l10n.modNameSpeedDemon;
+    case 'no_powerups':
+      return l10n.modNameNoPowerups;
+    case 'fog_of_war':
+      return l10n.modNameFogOfWar;
+    case 'tiny_arena':
+      return l10n.modNameTinyArena;
+    case 'one_shot':
+      return l10n.modNameOneShot;
+    case 'chaos':
+      return l10n.modNameChaos;
+    case 'giant_mode':
+      return l10n.modNameGiantMode;
+    case 'ricochet_world':
+      return l10n.modNameRicochetWorld;
+    case 'infinite_bombs':
+      return l10n.modNameInfiniteBombs;
+    case 'magnet_king':
+      return l10n.modNameMagnetKing;
+    default:
+      return getModifier(id)?.name ?? id;
+  }
+}
+
+/// Localized description for a modifier id. Falls back to catalog Italian.
+String _modifierDesc(String id, AppLocalizations l10n) {
+  switch (id) {
+    case 'glass_cannon':
+      return l10n.modDescGlassCannon;
+    case 'bullet_hell':
+      return l10n.modDescBulletHell;
+    case 'speed_demon':
+      return l10n.modDescSpeedDemon;
+    case 'no_powerups':
+      return l10n.modDescNoPowerups;
+    case 'fog_of_war':
+      return l10n.modDescFogOfWar;
+    case 'tiny_arena':
+      return l10n.modDescTinyArena;
+    case 'one_shot':
+      return l10n.modDescOneShot;
+    case 'chaos':
+      return l10n.modDescChaos;
+    case 'giant_mode':
+      return l10n.modDescGiantMode;
+    case 'ricochet_world':
+      return l10n.modDescRicochetWorld;
+    case 'infinite_bombs':
+      return l10n.modDescInfiniteBombs;
+    case 'magnet_king':
+      return l10n.modDescMagnetKing;
+    default:
+      return getModifier(id)?.description ?? '';
+  }
+}
+
 /// Iter 9: filtra modifier incompatibili con mode rules.
 /// Es: pacifist no shoot → glass_cannon/bullet_hell/one_shot/ricochet_world/
 /// infinite_bombs sono no-op o senza senso.
@@ -134,9 +199,19 @@ class _ModifiersSelectScreenState extends State<ModifiersSelectScreen> {
     widget.onConfirm(_active);
   }
 
+  // "NO MODIFIERS" card tap: clear active mods and advance.
+  void _tapNoMods() {
+    if (_isAdvancing) return;
+    _isAdvancing = true;
+    setState(() => _active = []);
+    widget.onConfirm(const []);
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    // Total items = 1 (NO MODIFIERS card) + N filtered modifiers.
+    final itemCount = _availableModifiers.length + 1;
     return Scaffold(
       backgroundColor: Colors.black,
       body: SafeArea(
@@ -223,9 +298,11 @@ class _ModifiersSelectScreenState extends State<ModifiersSelectScreen> {
                 child: ListView.builder(
                 controller: _scrollCtrl,
                 padding: const EdgeInsets.symmetric(horizontal: 16),
-                itemCount: _availableModifiers.length,
+                itemCount: itemCount,
                 itemBuilder: (_, i) {
-                  final m = _availableModifiers[i];
+                  // First slot: special "NO MODIFIERS" card.
+                  if (i == 0) return _buildNoModsCard(l10n);
+                  final m = _availableModifiers[i - 1];
                   final on = _active.contains(m.id);
                   final color = m.isChallenge
                       ? const Color(0xFFFF4466)
@@ -255,7 +332,7 @@ class _ModifiersSelectScreenState extends State<ModifiersSelectScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  m.name,
+                                  _modifierName(m.id, l10n),
                                   style: TextStyle(
                                     color: color,
                                     fontSize: 13,
@@ -266,7 +343,7 @@ class _ModifiersSelectScreenState extends State<ModifiersSelectScreen> {
                                 ),
                                 const SizedBox(height: 2),
                                 Text(
-                                  m.description,
+                                  _modifierDesc(m.id, l10n),
                                   style: TextStyle(
                                     color:
                                         Colors.white.withValues(alpha: 0.7),
@@ -299,6 +376,87 @@ class _ModifiersSelectScreenState extends State<ModifiersSelectScreen> {
             ),
             // Iter 19 (utente: "auto-advance on tap"): rimosso bottone
             // AVANTI bottom — tap su card mod chiama _tapMod → onConfirm.
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Special "NO MODIFIERS" card pinned at the top. Distinctive style: cyan
+  /// outline with a block icon. Tap clears mods and advances.
+  Widget _buildNoModsCard(AppLocalizations l10n) {
+    final color = NeonColors.cyan.withValues(alpha: 0.85);
+    final greyBorder = Colors.white.withValues(alpha: 0.55);
+    final hasNone = _active.isEmpty;
+    return GestureDetector(
+      onTap: _tapNoMods,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 10),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(8),
+          color: hasNone
+              ? color.withValues(alpha: 0.10)
+              : Colors.white.withValues(alpha: 0.03),
+          border: Border.all(
+            color: hasNone ? color : greyBorder,
+            width: hasNone ? 2 : 1.4,
+          ),
+        ),
+        child: Row(
+          children: [
+            // Distinctive slash/block icon inside an outlined circle.
+            Container(
+              width: 28,
+              height: 28,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(color: color, width: 1.6),
+              ),
+              alignment: Alignment.center,
+              child: Icon(
+                Icons.block_rounded,
+                color: color,
+                size: 18,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    l10n.modNoneCard,
+                    style: TextStyle(
+                      color: color,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w900,
+                      fontFamily: 'monospace',
+                      letterSpacing: 2,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    l10n.modNoneCardDesc,
+                    style: TextStyle(
+                      color: Colors.white.withValues(alpha: 0.7),
+                      fontSize: 10,
+                      fontFamily: 'monospace',
+                      height: 1.2,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Text(
+              '×1.0',
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: 0.7),
+                fontSize: 11,
+                fontFamily: 'monospace',
+                fontWeight: FontWeight.w900,
+              ),
+            ),
           ],
         ),
       ),

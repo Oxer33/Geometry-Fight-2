@@ -276,12 +276,89 @@ class _ShopScreenState extends State<ShopScreen>
         _ => fallback,
       };
 
+  /// Pet name lookup keyed on `PetDef.id` (cf. `kPetCatalog`). Note `BLACK HOLE`
+  /// uses snake_case id `black_hole_pet`. Fallback to catalog `displayName`.
+  String _petName(AppLocalizations l10n, String id, String fallback) =>
+      switch (id) {
+        'attack' => l10n.petNameAttack,
+        'collect' => l10n.petNameCollect,
+        'sweep' => l10n.petNameSweep,
+        'defend' => l10n.petNameDefend,
+        'snipe' => l10n.petNameSnipe,
+        'ram' => l10n.petNameRam,
+        'phoenix' => l10n.petNamePhoenix,
+        'black_hole_pet' => l10n.petNameBlackHole,
+        'emp_drone' => l10n.petNameEmpDrone,
+        'tactical_spotter' => l10n.petNameTacticalSpotter,
+        _ => fallback,
+      };
+
+  String _petDesc(AppLocalizations l10n, String id, String fallback) =>
+      switch (id) {
+        'attack' => l10n.petDescAttack,
+        'collect' => l10n.petDescCollect,
+        'sweep' => l10n.petDescSweep,
+        'defend' => l10n.petDescDefend,
+        'snipe' => l10n.petDescSnipe,
+        'ram' => l10n.petDescRam,
+        'phoenix' => l10n.petDescPhoenix,
+        'black_hole_pet' => l10n.petDescBlackHole,
+        'emp_drone' => l10n.petDescEmpDrone,
+        'tactical_spotter' => l10n.petDescTacticalSpotter,
+        _ => fallback,
+      };
+
+  /// Localize a weapon-preview stat pill (e.g. `"DMG: 1"`, `"RATE: MED"`).
+  /// Stats are stored as `"LABEL: VALUE"` in `_WeaponDef.stats` so the label
+  /// is migrated to l10n while the value (numbers, units like `px`, `°`)
+  /// stays as-is. The `MED/FAST/SLOW/CONT` rate keywords are also translated.
+  String _localizeWeaponStat(AppLocalizations l10n, String raw) {
+    final colonIdx = raw.indexOf(':');
+    if (colonIdx <= 0) {
+      // Bare label (no colon) — e.g. "PIERCE" pill on the Gauss weapon.
+      return switch (raw.trim()) {
+        'PIERCE' => l10n.weaponStatPierce,
+        _ => raw,
+      };
+    }
+    final label = raw.substring(0, colonIdx).trim();
+    final value = raw.substring(colonIdx + 1).trim();
+    final localizedLabel = switch (label) {
+      'DMG' => l10n.weaponStatDmg,
+      'RATE' => l10n.weaponStatRate,
+      'RANGE' => l10n.weaponStatRange,
+      'BULLETS' => l10n.weaponStatBullets,
+      'SPREAD' => l10n.weaponStatSpread,
+      'BOUNCE' => l10n.weaponStatBounce,
+      'TRACK' => l10n.weaponStatTrack,
+      'BLAST' => l10n.weaponStatBlast,
+      'AOE' => l10n.weaponStatAoe,
+      'PIERCE' => l10n.weaponStatPierce,
+      'LEN' => l10n.weaponStatLen,
+      'PULL' => l10n.weaponStatPull,
+      'JUMPS' => l10n.weaponStatJumps,
+      _ => label,
+    };
+    if (value.isEmpty) return localizedLabel;
+    // Localize rate-keyword values; for numeric/mixed values keep them as-is
+    // but swap any "tick" unit so e.g. "0.5/tick" -> localized variant.
+    final localizedValue = switch (value) {
+      'MED' => l10n.weaponRateMed,
+      'FAST' => l10n.weaponRateFast,
+      'SLOW' => l10n.weaponRateSlow,
+      'CONT' => l10n.weaponRateCont,
+      _ => value.replaceAll('/tick', '/${l10n.weaponStatTick}'),
+    };
+    return '$localizedLabel: $localizedValue';
+  }
+
   /// Catalog item name dispatch by runtime type — used in shared render code.
   String _itemName(AppLocalizations l10n, _ShopItem item) {
     if (item is _SkinDef) return _skinName(l10n, item.id, item.name);
     if (item is _TrailDef) return _trailName(l10n, item.id, item.name);
     if (item is _WeaponDef) return _weaponName(l10n, item.id, item.name);
     if (item is _ModeDef) return _modeName(l10n, item.id, item.name);
+    if (item is _PetDef) return _petName(l10n, item.id, item.name);
     return item.name;
   }
 
@@ -290,6 +367,7 @@ class _ShopScreenState extends State<ShopScreen>
     if (item is _TrailDef) return _trailDesc(l10n, item.id, item.description);
     if (item is _WeaponDef) return _weaponDesc(l10n, item.id, item.description);
     if (item is _ModeDef) return _modeDesc(l10n, item.id, item.description);
+    if (item is _PetDef) return _petDesc(l10n, item.id, item.description);
     return item.description;
   }
 
@@ -1146,7 +1224,10 @@ class _ShopScreenState extends State<ShopScreen>
                                     ? (item).color
                                     : Colors.cyanAccent,
                                 stats: item is _WeaponDef
-                                    ? (item).stats
+                                    ? item.stats
+                                        .map((s) =>
+                                            _localizeWeaponStat(l10n, s))
+                                        .toList(growable: false)
                                     : const [],
                                 showDescription: !hideDescription,
                               ),

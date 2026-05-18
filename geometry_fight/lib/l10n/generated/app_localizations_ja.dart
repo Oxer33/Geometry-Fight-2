@@ -989,4 +989,541 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get upgradeXpBoostDesc => 'レベルごとに+10% GoldGeom(最大+50%)';
+
+  @override
+  String get petNameAttack => 'アタック';
+
+  @override
+  String get petDescAttack => 'プレイヤーに追従+追加射撃。火力を倍増。';
+
+  @override
+  String get petNameCollect => 'コレクト';
+
+  @override
+  String get petDescCollect => '自由飛行で遠距離からジオムを収集。経済ブースト。';
+
+  @override
+  String get petNameSweep => 'スイープ';
+
+  @override
+  String get petDescSweep => 'プレイヤーを周回し、接触で敵を即死。';
+
+  @override
+  String get petNameDefend => 'ディフェンド';
+
+  @override
+  String get petDescDefend => 'プレイヤーの後ろに追従し、反対方向へ射撃。';
+
+  @override
+  String get petNameSnipe => 'スナイプ';
+
+  @override
+  String get petDescSnipe => '緩やかに周回+1.5秒ごとに最寄りの敵へレーザー。';
+
+  @override
+  String get petNameRam => 'ラム';
+
+  @override
+  String get petDescRam => '最寄りの敵を追跡し体当たり。クールダウン1秒。';
+
+  @override
+  String get petNamePhoenix => 'フェニックス';
+
+  @override
+  String get petDescPhoenix => '1ラン1回の自動復活+2秒無敵。';
+
+  @override
+  String get petNameBlackHole => 'ブラックホール';
+
+  @override
+  String get petDescBlackHole => '重力井戸:150px以内の敵を引き込む。';
+
+  @override
+  String get petNameEmpDrone => 'EMPドローン';
+
+  @override
+  String get petDescEmpDrone => '8秒ごとに250px以内の敵をパルススタン(スタン0.5秒)。';
+
+  @override
+  String get petNameTacticalSpotter => 'タクティカルスポッター';
+
+  @override
+  String get petDescTacticalSpotter => 'プレイヤーが瀕死状態のとき0.5秒スローモー。CD6秒。';
+
+  @override
+  String get weaponStatDmg => 'ダメージ';
+
+  @override
+  String get weaponStatRate => '連射';
+
+  @override
+  String get weaponStatRange => '射程';
+
+  @override
+  String get weaponStatBullets => '弾数';
+
+  @override
+  String get weaponStatSpread => '拡散';
+
+  @override
+  String get weaponStatBounce => '跳弾';
+
+  @override
+  String get weaponStatTrack => '追尾';
+
+  @override
+  String get weaponStatBlast => '爆発';
+
+  @override
+  String get weaponStatAoe => '範囲';
+
+  @override
+  String get weaponStatPierce => '貫通';
+
+  @override
+  String get weaponStatLen => '長さ';
+
+  @override
+  String get weaponStatPull => '牽引';
+
+  @override
+  String get weaponStatJumps => 'ジャンプ';
+
+  @override
+  String get weaponStatTick => 'tick';
+
+  @override
+  String get weaponRateMed => '中';
+
+  @override
+  String get weaponRateFast => '速';
+
+  @override
+  String get weaponRateSlow => '遅';
+
+  @override
+  String get weaponRateCont => '連続';
+
+  @override
+  String get modNoneCard => 'モディファイアなし';
+
+  @override
+  String get modNoneCardDesc => 'モディファイアなしでプレイします。';
+
+  @override
+  String get modeLockedSnack => 'ショップでアンロック';
+
+  @override
+  String get modNameGlassCannon => 'ガラスの大砲';
+
+  @override
+  String get modDescGlassCannon => '3倍ダメージ、ただし1ライフのみ。無敵なし。';
+
+  @override
+  String get modNameBulletHell => '弾幕地獄';
+
+  @override
+  String get modDescBulletHell => '敵の射撃速度が2倍に。';
+
+  @override
+  String get modNameSpeedDemon => 'スピードデーモン';
+
+  @override
+  String get modDescSpeedDemon => 'すべてが1.5倍速く動く（プレイヤーと敵）。';
+
+  @override
+  String get modNameNoPowerups => 'ピュリスト';
+
+  @override
+  String get modDescNoPowerups => '試合中にパワーアップなし。';
+
+  @override
+  String get modNameFogOfWar => '戦場の霧';
+
+  @override
+  String get modDescFogOfWar => '視界が制限される。近くのエリアのみ見える。';
+
+  @override
+  String get modNameTinyArena => '小さなアリーナ';
+
+  @override
+  String get modDescTinyArena => 'アリーナが50%縮小。避けるスペースが少ない。';
+
+  @override
+  String get modNameOneShot => 'ワンショット';
+
+  @override
+  String get modDescOneShot => 'すべての敵が1発で死ぬ。あなたも。';
+
+  @override
+  String get modNameChaos => '完全カオス';
+
+  @override
+  String get modDescChaos => '10秒ごとに自動でランダムパワーアップ。';
+
+  @override
+  String get modNameGiantMode => 'ジャイアント';
+
+  @override
+  String get modDescGiantMode => 'すべてが2倍大きい。敵、弾、全部。';
+
+  @override
+  String get modNameRicochetWorld => '完全リコシェ';
+
+  @override
+  String get modDescRicochetWorld => 'すべての弾が5回跳ね返る。';
+
+  @override
+  String get modNameInfiniteBombs => 'ボマー';
+
+  @override
+  String get modDescInfiniteBombs => '無限の爆弾！ただし武器なし。';
+
+  @override
+  String get modNameMagnetKing => 'マグネットキング';
+
+  @override
+  String get modDescMagnetKing => '巨大なマグネット範囲。ジオムが飛んでくる。';
+
+  @override
+  String get gameOverBossLabel => 'ボス';
+
+  @override
+  String get gameOverGoldGeoms => 'ゴールドジオム';
+
+  @override
+  String get achKills100Name => 'ファーストブラッド';
+
+  @override
+  String get achKills100Desc => '合計100体の敵を倒す';
+
+  @override
+  String get achKills1000Name => '殲滅者';
+
+  @override
+  String get achKills1000Desc => '合計1,000体の敵を倒す';
+
+  @override
+  String get achKills10000Name => '幾何学的虐殺者';
+
+  @override
+  String get achKills10000Desc => '合計10,000体の敵を倒す';
+
+  @override
+  String get achKills100000Name => 'レジェンド';
+
+  @override
+  String get achKills100000Desc => '合計100,000体の敵を倒す';
+
+  @override
+  String get achKillsSession200Name => '盲目の怒り';
+
+  @override
+  String get achKillsSession200Desc => '1試合で200体の敵を倒す';
+
+  @override
+  String get achKillsSession500Name => '大虐殺';
+
+  @override
+  String get achKillsSession500Desc => '1試合で500体の敵を倒す';
+
+  @override
+  String get achKillsSession1000Name => 'アポカリプス';
+
+  @override
+  String get achKillsSession1000Desc => '1試合で1000体の敵を倒す';
+
+  @override
+  String get achBosses10Name => 'ボスキラー';
+
+  @override
+  String get achBosses10Desc => '合計10体のボスを倒す';
+
+  @override
+  String get achBosses50Name => '弑逆者';
+
+  @override
+  String get achBosses50Desc => '合計50体のボスを倒す';
+
+  @override
+  String get achBosses100Name => 'ロイヤルエクスターミネーター';
+
+  @override
+  String get achBosses100Desc => '合計100体のボスを倒す';
+
+  @override
+  String get achBossSession5Name => 'ロイヤルハント';
+
+  @override
+  String get achBossSession5Desc => '1試合で5体のボスを倒す';
+
+  @override
+  String get achBombs50Name => '爆破工';
+
+  @override
+  String get achBombs50Desc => '合計50発の爆弾を使う';
+
+  @override
+  String get achBombs500Name => '解体者';
+
+  @override
+  String get achBombs500Desc => '合計500発の爆弾を使う';
+
+  @override
+  String get achScore100kName => '六桁';
+
+  @override
+  String get achScore100kDesc => '100,000ポイントに到達';
+
+  @override
+  String get achScore1mName => 'ミリオネア';
+
+  @override
+  String get achScore1mDesc => '1,000,000ポイントに到達';
+
+  @override
+  String get achScore10mName => 'ポイントの王';
+
+  @override
+  String get achScore10mDesc => '10,000,000ポイントに到達';
+
+  @override
+  String get achScore100mName => 'センチュリオン';
+
+  @override
+  String get achScore100mDesc => '100,000,000ポイントに到達';
+
+  @override
+  String get achScore1bName => 'ビリオネア';
+
+  @override
+  String get achScore1bDesc => '1,000,000,000ポイントに到達';
+
+  @override
+  String get achMultiplier100Name => 'コンボ x100';
+
+  @override
+  String get achMultiplier100Desc => '100倍の倍率に到達';
+
+  @override
+  String get achMultiplier500Name => 'コンボ x500';
+
+  @override
+  String get achMultiplier500Desc => '500倍の倍率に到達';
+
+  @override
+  String get achMultiplier1000Name => 'コンボ x1000';
+
+  @override
+  String get achMultiplier1000Desc => '1000倍の倍率に到達';
+
+  @override
+  String get achMultiplier5000Name => '神聖コンボ';
+
+  @override
+  String get achMultiplier5000Desc => '5000倍の倍率に到達';
+
+  @override
+  String get achGeoms10000Name => 'コレクター';
+
+  @override
+  String get achGeoms10000Desc => '合計10,000個のジオムを集める';
+
+  @override
+  String get achGeoms100000Name => '幾何学的守銭奴';
+
+  @override
+  String get achGeoms100000Desc => '合計100,000個のジオムを集める';
+
+  @override
+  String get achWave20Name => '粘り強い';
+
+  @override
+  String get achWave20Desc => 'ウェーブ20に到達';
+
+  @override
+  String get achWave50Name => 'ベテラン';
+
+  @override
+  String get achWave50Desc => 'ウェーブ50に到達';
+
+  @override
+  String get achWave100Name => '百年';
+
+  @override
+  String get achWave100Desc => 'ウェーブ100に到達';
+
+  @override
+  String get achWave200Name => '止められない';
+
+  @override
+  String get achWave200Desc => 'ウェーブ200に到達（Survival/Tunnel）';
+
+  @override
+  String get achPerfectWaves5Name => 'アンタッチャブル';
+
+  @override
+  String get achPerfectWaves5Desc => '5回連続のパーフェクトウェーブを達成';
+
+  @override
+  String get achPerfectWaves10Name => 'ゴースト';
+
+  @override
+  String get achPerfectWaves10Desc => '10回連続のパーフェクトウェーブを達成';
+
+  @override
+  String get achPerfectWaves20Name => '神性';
+
+  @override
+  String get achPerfectWaves20Desc => '20回連続のパーフェクトウェーブを達成';
+
+  @override
+  String get achClassicNormalName => 'クラシック愛好家';
+
+  @override
+  String get achClassicNormalDesc => 'ノーマルでクラシックをクリア';
+
+  @override
+  String get achClassicHardName => 'タフガイ';
+
+  @override
+  String get achClassicHardDesc => 'ハードでクラシックをクリア';
+
+  @override
+  String get achClassicNightmareName => '生ける悪夢';
+
+  @override
+  String get achClassicNightmareDesc => 'ナイトメアでクラシックをクリア';
+
+  @override
+  String get achAllModesName => 'なんでも屋';
+
+  @override
+  String get achAllModesDesc => '全6モードをプレイ';
+
+  @override
+  String get achBossRush10Name => 'ボスハンター';
+
+  @override
+  String get achBossRush10Desc => 'Boss Rushでボス10に到達';
+
+  @override
+  String get achGames10Name => 'プレイヤー';
+
+  @override
+  String get achGames10Desc => '10試合プレイ';
+
+  @override
+  String get achGames100Name => '愛好家';
+
+  @override
+  String get achGames100Desc => '100試合プレイ';
+
+  @override
+  String get achGames500Name => '中毒者';
+
+  @override
+  String get achGames500Desc => '500試合プレイ';
+
+  @override
+  String get achGold10000Name => 'スクルージ';
+
+  @override
+  String get achGold10000Desc => 'ゴールドジオムを10,000個貯める';
+
+  @override
+  String get achGold50000Name => '巨富';
+
+  @override
+  String get achGold50000Desc => 'ゴールドジオムを50,000個貯める';
+
+  @override
+  String get achAllUpgradesName => 'マックス強化';
+
+  @override
+  String get achAllUpgradesDesc => '全アップグレードを購入';
+
+  @override
+  String get achPowerups100Name => 'パワーアップ中毒';
+
+  @override
+  String get achPowerups100Desc => '100個のパワーアップを集める';
+
+  @override
+  String get achWavesWave20Name => 'ドジャー';
+
+  @override
+  String get achWavesWave20Desc => 'Wavesモード：ウェーブ20に到達';
+
+  @override
+  String get achWavesWave50Name => 'ドッジマスター';
+
+  @override
+  String get achWavesWave50Desc => 'Wavesモード：ウェーブ50に到達';
+
+  @override
+  String get achGravityWave15Name => '天体物理学者';
+
+  @override
+  String get achGravityWave15Desc => 'Gravity Inferno：ウェーブ15に到達';
+
+  @override
+  String get achPacifistCombo15Name => 'パシフィストプロ';
+
+  @override
+  String get achPacifistCombo15Desc => 'Pacifist：ゲートコンボ15+';
+
+  @override
+  String get achTimeAttack500kName => 'タイムキーパー';
+
+  @override
+  String get achTimeAttack500kDesc => 'Time Attack：50万スコア';
+
+  @override
+  String get achDailyStreak7Name => 'デイリー信奉者';
+
+  @override
+  String get achDailyStreak7Desc => 'デイリーリワードを7日連続で受け取る';
+
+  @override
+  String get achDailyStreak30Name => 'マンスリーロイヤル';
+
+  @override
+  String get achDailyStreak30Desc => 'デイリーリワードを30日連続で受け取る';
+
+  @override
+  String get achGaussKills500Name => 'ガウスマスター';
+
+  @override
+  String get achGaussKills500Desc => 'Gauss Cannonで500体倒す';
+
+  @override
+  String get achChainKills500Name => 'ストーム';
+
+  @override
+  String get achChainKills500Desc => 'Chain Lightningで500体倒す';
+
+  @override
+  String get achAllWeaponsName => 'ガンスミス';
+
+  @override
+  String get achAllWeaponsDesc => '全武器をアンロック';
+
+  @override
+  String get achAllSkinsName => 'ファッショニスタ';
+
+  @override
+  String get achAllSkinsDesc => '全スキンをアンロック';
+
+  @override
+  String get achAllTrailsName => 'コズミックコレクション';
+
+  @override
+  String get achAllTrailsDesc => '全トレイルをアンロック';
+
+  @override
+  String get achAllPetsName => 'テイマー';
+
+  @override
+  String get achAllPetsDesc => '全ペットをアンロック';
 }
