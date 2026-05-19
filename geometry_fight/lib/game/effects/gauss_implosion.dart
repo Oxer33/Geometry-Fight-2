@@ -18,15 +18,34 @@ class GaussImplosion extends PositionComponent
   // Iter 15 (utente: "esplosione 1/4 size"): scaled da 250/60 → 62.5/15.
   // Stessa intensità DoT (5/tick × 0.1s × 2s = 100 max) ma in area
   // più concentrata (706px² vs 11310px²) → premia mira precisa.
-  static const double pullRadius = 62.5;
+  // FirePower-aware: `aoeScale` (default 1.0, 2.0 con FirePower attivo)
+  // moltiplica TUTTI i raggi spaziali (pull + damage + visual core)
+  // mantenendo la durata e il damage-per-tick invariati → l'AOE cresce
+  // proporzionalmente, non l'intensità per tick.
+  // Nome `aoeScale` invece di `scale` per evitare collisione con la
+  // proprietà ereditata `PositionComponent.scale` (NotifyingVector2).
+  static const double basePullRadius = 62.5;
   static const double pullSpeed = 400.0;
-  static const double damageRadius = 15.0;
+  static const double baseDamageRadius = 15.0;
   static const double damageTickInterval = 0.1;
   static const double damagePerTick = 5.0;
+  // Core visual base (raggio nucleo + ampiezza pulse), scalati con `aoeScale`.
+  static const double baseCoreRadius = 7.0;
+  static const double baseCoreAmplitude = 1.5;
 
   final Vector2 epicenter;
+  /// Moltiplicatore radius (1.0 default, 2.0 con FirePower attivo).
+  /// `aoeScale` invece di `scale` per evitare collisione con la proprietà
+  /// `scale` (NotifyingVector2) di PositionComponent.
+  final double aoeScale;
   double _age = 0;
   double _tickTimer = 0;
+
+  // Raggi scalati (read-only dopo construction).
+  double get pullRadius => basePullRadius * aoeScale;
+  double get damageRadius => baseDamageRadius * aoeScale;
+  double get _coreR => baseCoreRadius * aoeScale;
+  double get _coreAmp => baseCoreAmplitude * aoeScale;
 
   final Paint _ringGlowPaint = Paint()
     ..style = PaintingStyle.stroke
@@ -36,7 +55,7 @@ class GaussImplosion extends PositionComponent
     ..strokeWidth = 2.5;
   final Paint _corePaint = Paint();
 
-  GaussImplosion({required this.epicenter})
+  GaussImplosion({required this.epicenter, this.aoeScale = 1.0})
       : super(position: epicenter.clone(), anchor: Anchor.center);
 
   @override
@@ -89,8 +108,10 @@ class GaussImplosion extends PositionComponent
     // Core "nucleo" pulsante al centro: gradient cyan→viola luminoso.
     final pulse = 0.7 + math.sin(_age * 18) * 0.3;
     // Iter 15: base 28→7, ampiezza oscillazione 6→1.5 (scale 0.25).
+    // FirePower aoeScale: `_coreR` e `_coreAmp` includono già il moltiplicatore.
     // Moltiplicatori `* 1.8` e `* 0.4` (sotto) restano invariati.
-    final coreR = (7 + math.sin(_age * 10) * 1.5) * (0.6 + 0.4 * (1 - t));
+    final coreR = (_coreR + math.sin(_age * 10) * _coreAmp) *
+        (0.6 + 0.4 * (1 - t));
     _corePaint.color =
         const Color(0xFF66DDFF).withValues(alpha: 0.45 * alpha * pulse);
     canvas.drawCircle(Offset.zero, coreR * 1.8, _corePaint);

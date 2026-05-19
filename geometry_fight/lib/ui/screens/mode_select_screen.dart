@@ -164,20 +164,25 @@ class _ModeSelectScreenState extends State<ModeSelectScreen>
   Widget _buildModeList(
       AppLocalizations l10n, SaveData saveData, double entrance, double glow) {
     final e = ((entrance - 0.15) / 0.85).clamp(0.0, 1.0);
-    // Iter 12 (utente: "card alte la metà + 2 file"). GridView 2 row.
+    // Iter 20 (richiesta utente: "card height -50%, width -30%, 3 file,
+    // testo centrato H+V, ~5-6 card per riga visibili"):
+    //   - crossAxisCount 2 → 3 (più file visibili contemporaneamente).
+    //   - card 145×56 → 101×28 (width -30%, height -50%).
+    //   - container 128 → 110 (3 × 28 + 2 × 6 spacing + 10 padding).
+    //   - childAspectRatio 56/145 → 28/101 ≈ 0.277 (crossExtent/mainExtent
+    //     per horizontal GridView).
     return Opacity(
       opacity: e,
       child: Transform.translate(
         offset: Offset(0, 15 * (1 - e)),
         child: SizedBox(
-          // Iter 15: glow halved again → padding/spacing ulteriormente ridotti.
-          height: 128,
+          height: 110,
           child: GridView.count(
             scrollDirection: Axis.horizontal,
-            crossAxisCount: 2, // 2 rows
+            crossAxisCount: 3, // 3 rows visibili
             mainAxisSpacing: 6,
             crossAxisSpacing: 6,
-            childAspectRatio: 56 / 145, // height/width = card 145×56
+            childAspectRatio: 28 / 101, // crossExtent/mainExtent = card 101×28
             padding: const EdgeInsets.all(5),
             children: GameMode.values.map((mode) {
               final config = gameModeConfigs[mode]!;
@@ -367,89 +372,74 @@ class _NeonModeCard extends StatelessWidget {
                   ),
                 ),
               ),
-              // Contenuto compact (iter 12: fit 56h).
+              // Contenuto compact (iter 20: 28h card, testo centrato H+V).
+              // Row centrato sia orizzontalmente sia verticalmente, con icona
+              // + nome modalità. Per i mode locked l'icona del lucchetto e
+              // il costo restano in linea (no Column nested per minimizzare
+              // altezza). FittedBox per auto-shrink su nomi lunghi (GRAVITY
+              // INFERNO, BOSS RUSH).
               Padding(
-                // Iter 18 (utente: "nome modalità più grande +50%"):
-                // padding orizzontale 8 → 4 per dare più spazio al testo.
-                padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 6),
-                child: Row(
-                  children: [
-                    Text(config.icon, style: const TextStyle(fontSize: 21)),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          // Iter 19 (utente: "CLASSIC truncated → CLASS..."):
-                          // 39/35 era troppo per griglia 4-col. Riportato a
-                          // 18/16 con FittedBox per auto-shrink su nomi lunghi
-                          // ("BOSS RUSH", "TIME ATTACK", "GRAVITY INFERNO").
-                          // Caveman-review: FittedBox(scaleDown) already
-                          // shrinks to fit — TextOverflow.ellipsis + maxLines
-                          // on inner Text cause "CLASS..." weird shrinkage
-                          // when FittedBox starts scaling. Remove ellipsis,
-                          // keep maxLines:1 (FittedBox needs single line).
-                          FittedBox(
-                            fit: BoxFit.scaleDown,
-                            alignment: Alignment.centerLeft,
-                            child: Text(
-                              modeName,
-                              maxLines: 1,
-                              softWrap: false,
-                              style: TextStyle(
-                                color: !isUnlocked
-                                    ? Colors.white30
-                                    : isSelected
-                                        ? Colors.white
-                                        : themeColor,
-                                fontSize: isSelected ? 18 : 16,
-                                fontWeight: FontWeight.w700,
-                                fontFamily: 'monospace',
-                                letterSpacing: -0.5,
-                                shadows: isUnlocked
-                                    ? [
-                                        Shadow(
-                                            color: isSelected
-                                                ? themeColor
-                                                    .withValues(alpha: 0.95)
-                                                : themeColor
-                                                    .withValues(alpha: 0.45),
-                                            blurRadius: isSelected ? 10 : 5)
-                                      ]
-                                    : null,
-                              ),
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                child: Center(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisSize: MainAxisSize.max,
+                    children: [
+                      Text(config.icon, style: const TextStyle(fontSize: 14)),
+                      const SizedBox(width: 4),
+                      Flexible(
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: Alignment.center,
+                          child: Text(
+                            modeName,
+                            maxLines: 1,
+                            softWrap: false,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: !isUnlocked
+                                  ? Colors.white30
+                                  : isSelected
+                                      ? Colors.white
+                                      : themeColor,
+                              fontSize: isSelected ? 13 : 12,
+                              fontWeight: FontWeight.w700,
+                              fontFamily: 'monospace',
+                              letterSpacing: -0.5,
+                              shadows: isUnlocked
+                                  ? [
+                                      Shadow(
+                                          color: isSelected
+                                              ? themeColor
+                                                  .withValues(alpha: 0.95)
+                                              : themeColor
+                                                  .withValues(alpha: 0.45),
+                                          blurRadius: isSelected ? 8 : 4)
+                                    ]
+                                  : null,
                             ),
                           ),
-                          if (!isUnlocked)
-                            Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(Icons.lock_rounded,
-                                    color: Colors.orange
-                                        .withValues(alpha: 0.65),
-                                    size: 12),
-                                const SizedBox(width: 3),
-                                Flexible(
-                                  child: Text(
-                                    '${config.unlockCost}',
-                                    style: TextStyle(
-                                      color: Colors.orange
-                                          .withValues(alpha: 0.7),
-                                      // Iter 16: 9 → 12 (+30%).
-                                      fontSize: 12,
-                                      fontFamily: 'monospace',
-                                    ),
-                                    overflow: TextOverflow.ellipsis,
-                                    maxLines: 1,
-                                  ),
-                                ),
-                              ],
-                            ),
-                        ],
+                        ),
                       ),
-                    ),
-                  ],
+                      if (!isUnlocked) ...[
+                        const SizedBox(width: 4),
+                        Icon(Icons.lock_rounded,
+                            color: Colors.orange.withValues(alpha: 0.65),
+                            size: 10),
+                        const SizedBox(width: 2),
+                        Text(
+                          '${config.unlockCost}',
+                          style: TextStyle(
+                            color: Colors.orange.withValues(alpha: 0.7),
+                            fontSize: 9,
+                            fontFamily: 'monospace',
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                          maxLines: 1,
+                        ),
+                      ],
+                    ],
+                  ),
                 ),
               ),
             ],

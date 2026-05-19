@@ -223,22 +223,18 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
 
   Widget _buildModeFilter(AppLocalizations l10n, double entrance) {
     final e = ((entrance - 0.1) / 0.9).clamp(0.0, 1.0);
+    // Iter 21 (richiesta utente: "horizontal scrollbar overlap il border
+    // ciano del tab selezionato"). Rimosso il `RawScrollbar` wrapper sui
+    // mode tab — il visual track ciano si sovrapponeva al border ciano
+    // del chip selezionato e veniva letto come "underline duplicato".
+    // I tab restano scrollabili via swipe / drag orizzontale.
     return Opacity(
       opacity: e,
       child: Transform.translate(
         offset: Offset(-20 * (1 - e), 0),
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 12),
-          child: RawScrollbar(
-            controller: _modeCtrl,
-            thumbVisibility: true,
-            trackVisibility: true,
-            thickness: 10,
-            radius: const Radius.circular(5),
-            thumbColor: const Color(0xFF00FFFF),
-            trackColor: const Color(0x3300FFFF),
-            trackBorderColor: const Color(0x8800FFFF),
-            child: SingleChildScrollView(
+          child: SingleChildScrollView(
             controller: _modeCtrl,
             scrollDirection: Axis.horizontal,
             child: Row(
@@ -256,7 +252,6 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
                 );
               }).toList(),
             ),
-          ),
           ),
         ),
       ),

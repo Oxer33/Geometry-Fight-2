@@ -1148,7 +1148,15 @@ class GaussBullet extends PositionComponent
       directHit.takeDamage(damage);
     }
     // Spawn implosion (pull + tick damage gestiti dal component).
-    game.world.add(GaussImplosion(epicenter: position.clone()));
+    // FirePower → bullet spawnato con sizeMultiplier=2.0 → implosion
+    // `scale=2.0` → AOE pull/damage radius raddoppiato. Uso `sizeMultiplier`
+    // come fonte di verità invece di leggere `player.hasFirePower` al
+    // momento dell'impatto: così il power-up può scadere tra spawn-bullet
+    // e impatto senza desync visivo/meccanico.
+    game.world.add(GaussImplosion(
+      epicenter: position.clone(),
+      aoeScale: sizeMultiplier,
+    ));
     removeFromParent();
   }
 

@@ -186,12 +186,20 @@ class WaveSystem {
         _currentConfig = _generateTunnelWave(wave);
       case GameMode.dailyChallenge:
         _currentConfig = _generateDailyChallengeWave(wave);
+        // Spawn mob diretto: 50-80 mob singolo tipo, arena-wide random.
+        // `_generateDailyChallengeWave` ritorna `spawns: []` → startWave
+        // imposta `_allSpawned = true` sotto, e la wave completa quando
+        // tutti questi mob muoiono.
+        _spawnDailyChallengeMobs(wave);
       case GameMode.pacifist:
         _currentConfig = _generatePacifistWave(wave);
       case GameMode.waves:
         _currentConfig = _generateWavesMode(wave);
       case GameMode.gravityInferno:
         _currentConfig = _generateGravityInfernoWave(wave);
+        // Black hole spawn diretto (arena-wide Poisson-disc), fuori dalla
+        // `spawns` list così non passa per la formation scatter clustered.
+        _spawnGravityInfernoBlackHoles(wave);
       case GameMode.classic:
         _currentConfig = _configs.firstWhere(
           (c) => c.waveNumber == wave,
@@ -501,8 +509,17 @@ class WaveSystem {
   /// Gravity Inferno (utente: "tanti buchi neri + pochi mob di tutti i tipi
   /// e senza boss"). Caos gravitazionale: 3-8 blackhole per wave + 6-12 mob
   /// random tra il pool standard. No boss.
+  ///
+  /// Fix recenti (richiesta utente):
+  /// - Mob "appaiono molto più tardi" → tutte le ondate mob compresse nel
+  ///   primo 25% della wave (delay 0 / 0.5 / 1.0 invece di 0/2.5/5.0/7.5).
+  /// - Black hole apparivano clustered → ora vengono spawnati direttamente
+  ///   in `_spawnGravityInfernoBlackHoles` (chiamato da `startWave`) con
+  ///   distribuzione Poisson-disc arena-wide (min 250px tra BH, max 20
+  ///   tentativi di rejection per BH). Restano fuori dalla `spawns` list
+  ///   per evitare di passare per la `_fScatter` formation che li avrebbe
+  ///   raggruppati attorno ad un singolo centro.
   WaveConfig _generateGravityInfernoWave(int wave) {
-    final bhCount = (3 + wave ~/ 3).clamp(3, 8);
     final mobCount = (6 + wave ~/ 2).clamp(6, 12);
     // Pool mob misti — variety, no spam stesso tipo.
     final mobTypes = [
@@ -516,19 +533,74 @@ class WaveSystem {
       EnemyType.swarmDrone,
     ];
     final rng = math.Random(wave * 7919);
-    final spawns = <WaveSpawn>[
-      // Black hole cluster all'inizio — formation scatter per coprire arena.
-      WaveSpawn(EnemyType.blackHole, bhCount,
-          formation: SpawnFormation.scatter, delay: 0),
-    ];
-    // Aggiungi 3 gruppi mob piccoli sparsi nel tempo per wave.
+    final spawns = <WaveSpawn>[];
+    // 3 ondate mob compresse nel primo 25% della wave: delays 0 / 0.5 / 1.0.
+    // Prima erano 2.0/4.5/7.0 → ondate tarde lette dall'utente come "mob
+    // appaiono molto più tardi". Ora arrivano tutte presto.
+    const earlyDelays = [0.0, 0.5, 1.0];
     for (int i = 0; i < 3; i++) {
       final type = mobTypes[rng.nextInt(mobTypes.length)];
       final cnt = (mobCount ~/ 3).clamp(2, 5);
       spawns.add(WaveSpawn(type, cnt,
-          formation: SpawnFormation.scatter, delay: 2.0 + i * 2.5));
+          formation: SpawnFormation.scatter, delay: earlyDelays[i]));
     }
+    // I blackhole NON sono in `spawns`: vengono spawnati direttamente in
+    // `_spawnGravityInfernoBlackHoles` (chiamato da `startWave`) con
+    // distribuzione Poisson-disc per evitare il clustering di `_fScatter`.
     return WaveConfig(waveNumber: wave, spawns: spawns);
+  }
+
+  /// Spawna `count` blackhole con distribuzione arena-wide (Poisson-disc
+  /// rejection sampling). Garantisce minDist tra BH così non si sovrappongono
+  /// in un singolo punto come faceva la formation scatter.
+  ///
+  /// - count: 3-8 in base alla wave (3 + wave/3, clamp 3..8).
+  /// - minDist: 250px (richiesta utente).
+  /// - maxAttempts: 20 per BH (richiesta utente). Se non trova posizione
+  ///   valida entro 20 tentativi, prende l'ultima candidata generata
+  ///   (degrado graceful, mai dead-lock).
+  /// - Margine bordi: 80px così i blackhole non spawnano contro il muro.
+  void _spawnGravityInfernoBlackHoles(int wave) {
+    final bhCount = (3 + wave ~/ 3).clamp(3, 8);
+    final eW = game.effectiveArenaWidth;
+    final eH = game.effectiveArenaHeight;
+    const margin = 80.0;
+    const minDist = 250.0;
+    const minDist2 = minDist * minDist;
+    const maxAttempts = 20;
+    // Seed deterministico per wave: stessa partita stessa disposizione.
+    final rng = math.Random(_dailySeed ^ (wave * 31337));
+    final placed = <Vector2>[];
+    for (int i = 0; i < bhCount; i++) {
+      Vector2? lastCandidate;
+      for (int attempt = 0; attempt < maxAttempts; attempt++) {
+        final c = Vector2(
+          margin + rng.nextDouble() * (eW - margin * 2),
+          margin + rng.nextDouble() * (eH - margin * 2),
+        );
+        lastCandidate = c;
+        bool ok = true;
+        for (final p in placed) {
+          if (p.distanceToSquared(c) < minDist2) {
+            ok = false;
+            break;
+          }
+        }
+        if (ok) {
+          placed.add(c);
+          break;
+        }
+      }
+      // Fallback: se nessun tentativo è passato il vincolo di distanza
+      // usa l'ultima candidata (arena densa di BH → meglio averne uno in
+      // più ravvicinato che nessuno).
+      if (placed.length <= i && lastCandidate != null) {
+        placed.add(lastCandidate);
+      }
+    }
+    for (final pos in placed) {
+      game.spawnEnemy(EnemyType.blackHole, pos);
+    }
   }
 
   WaveConfig _generatePacifistWave(int wave) {
@@ -661,41 +733,92 @@ class WaveSystem {
   }
 
 
-  /// Daily Challenge: 30 wave fisse con seed giornaliero.
-  /// Stesse wave per tutti i giocatori dello stesso giorno.
+  /// Daily Challenge — redesign (richiesta utente):
+  /// - NO boss (anche le wave "boss" precedenti diventano mob waves).
+  /// - Grande numero di mob per wave (50-80 invece di 6-50).
+  /// - UN SOLO tipo per wave, scelto col seed giornaliero (procedurale,
+  ///   stesso per tutti i player nello stesso giorno).
+  /// - Mob distribuiti arena-wide random (no cluster ai bordi/centro).
+  /// - Wave count invariato (10 wave nominali). Lo score continua a contare.
+  ///
+  /// Implementation note: il `WaveConfig` ritorna `spawns: []` perché lo
+  /// spawn vero avviene in `_spawnDailyChallengeMobs` (chiamato direttamente
+  /// da `startWave`). Stesso pattern di Gravity Inferno black holes — evita
+  /// di passare per la formation scatter clustered, e ci permette di
+  /// distribuire i mob arena-wide con il nostro RNG dedicato.
   WaveConfig _generateDailyChallengeWave(int wave) {
-    // Seed basato sulla data: tutti i player hanno le stesse wave
-    final rng = math.Random(_dailySeed + wave * 7);
+    // Nessun spawn dichiarato: lo spawn diretto è in `_spawnDailyChallengeMobs`.
+    // Lo `startWave` rileva `spawns.isEmpty` e attiva direttamente
+    // `_allSpawned = true; _postSpawnDelay = 0.8;` → la wave completa quando
+    // tutti i nemici muoiono.
+    return WaveConfig(waveNumber: wave, spawns: const [], boss: null);
+  }
 
-    // Tipi nemico filtrati per wave: early waves = solo nemici base
-    final List<EnemyType> availableTypes;
-    if (wave <= 3) {
-      availableTypes = [EnemyType.drone, EnemyType.swarmDrone, EnemyType.weaver, EnemyType.kamikaze];
-    } else if (wave <= 7) {
-      availableTypes = [EnemyType.drone, EnemyType.swarmDrone, EnemyType.weaver, EnemyType.kamikaze, EnemyType.mine, EnemyType.splitter];
-    } else if (wave <= 15) {
-      availableTypes = [EnemyType.drone, EnemyType.swarmDrone, EnemyType.weaver, EnemyType.kamikaze, EnemyType.mine, EnemyType.splitter, EnemyType.shieldEnemy, EnemyType.glitch, EnemyType.tesla];
-    } else {
-      availableTypes = EnemyType.values;
+  /// Pool di tipi mob validi per Daily Challenge — esclude:
+  /// - boss-only (non c'è EnemyType per boss, ma escludiamo comunque).
+  /// - weaver e glitch (utente: "skip ... weaver/glitch if those are special").
+  /// - tipi "support / hazard" che non sono mob standalone:
+  ///   blackHole (hazard non killabile mainstream), spawner (spawna altri),
+  ///   gate (mechanic specifico modalità pacifist), proton (spawn-only da
+  ///   blackhole), mutator (modifica altri), gravityWell (hazard), decoy
+  ///   (mira diversion), healer (richiede altri da curare), necro (revive
+  ///   altri), siren (control), leech (latch su player).
+  /// Quel che resta è un pool di mob "puri" attaccanti/inseguitori, varietà
+  /// sufficiente per 10+ wave senza ripetizioni necessarie.
+  static const List<EnemyType> _dailyChallengeMobPool = [
+    EnemyType.drone,
+    EnemyType.swarmDrone,
+    EnemyType.kamikaze,
+    EnemyType.snake,
+    EnemyType.mine,
+    EnemyType.splitter,
+    EnemyType.shieldEnemy,
+    EnemyType.pulsar,
+    EnemyType.mirror,
+    EnemyType.phantom,
+    EnemyType.vortex,
+    EnemyType.titan,
+    EnemyType.orbiter,
+    EnemyType.tesla,
+    EnemyType.laserTurret,
+    EnemyType.timeBomb,
+  ];
+
+  /// Spawna i mob della Daily Challenge: 50-80 mob di un singolo tipo,
+  /// distribuiti arena-wide random (no clustering). Tipo deterministico
+  /// dal seed giornaliero + wave (chiamate RNG sequenziali → tipo diverso
+  /// per wave dallo stesso seed).
+  ///
+  /// Distribuzione: random uniforme su arena con margine bordi 60px. Niente
+  /// Poisson-disc (con 50-80 mob sarebbe troppo restrittivo e degraderebbe
+  /// in fallback ammassato) — il caos è desiderato qui.
+  void _spawnDailyChallengeMobs(int wave) {
+    // RNG per type: sequenziale dal seed daily. Le wave consumano N "tipi"
+    // dalla stessa sequenza per garantire indipendenza wave-by-wave.
+    final typeRng = math.Random(_dailySeed);
+    EnemyType chosenType = _dailyChallengeMobPool.first;
+    for (int w = 0; w <= wave; w++) {
+      chosenType =
+          _dailyChallengeMobPool[typeRng.nextInt(_dailyChallengeMobPool.length)];
     }
-    final spawns = <WaveSpawn>[];
+    // RNG per posizioni: seed include wave per varietà posizionale ma
+    // resta deterministico per la stessa data + wave.
+    final posRng = math.Random(_dailySeed * 13 + wave * 17);
+    // 50-80 mob per wave. Scaling leggero con wave per intensità crescente,
+    // ma cap a 80 per non sfondare il count limit dell'arena.
+    final baseCount = 50 + posRng.nextInt(31); // 50..80
+    final mobCount = _scaledSpawnCount(baseCount).clamp(50, 80);
 
-    // 2-4 gruppi di nemici per wave
-    final groupCount = 2 + rng.nextInt(3);
-    for (int g = 0; g < groupCount; g++) {
-      final type = availableTypes[rng.nextInt(availableTypes.length)];
-      final count = (6 + wave + rng.nextInt(10)).clamp(6, 50);
-      spawns.add(WaveSpawn(type, count, delay: g * 1.5));
+    final eW = game.effectiveArenaWidth;
+    final eH = game.effectiveArenaHeight;
+    const margin = 60.0;
+    for (int i = 0; i < mobCount; i++) {
+      final pos = Vector2(
+        margin + posRng.nextDouble() * (eW - margin * 2),
+        margin + posRng.nextDouble() * (eH - margin * 2),
+      );
+      game.spawnEnemy(chosenType, pos);
     }
-
-    // Boss ogni 10 wave
-    BossType? boss;
-    if (wave % 10 == 0 && wave > 0) {
-      final bossTypes = BossType.values;
-      boss = bossTypes[rng.nextInt(bossTypes.length)];
-    }
-
-    return WaveConfig(waveNumber: wave, spawns: spawns, boss: boss);
   }
 
   // ══════════════════════════════════════════════════════════════
