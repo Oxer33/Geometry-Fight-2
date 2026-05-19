@@ -97,7 +97,12 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
   // vecchio viene rimosso (recycle FIFO).
   double _snakeTrailTick = 0;
   static const double _snakeTrailInterval = 0.03;
-  static const int _snakeTrailMaxSegments = 150;
+  // Cap a 50 = 1/3 del precedente 150. A `_snakeTrailInterval` = 0.03s, il
+  // FIFO recycle evicta segmenti più vecchi di ~1.5s (50 * 0.03), molto prima
+  // del lifetime naturale di 4s definito in snake_trail.dart. Effetto: scia
+  // visualmente più corta (~1.5s di movimento player) e leggermente più
+  // economica da renderizzare.
+  static const int _snakeTrailMaxSegments = 50;
   final List<SnakeTrailSegment> _snakeTrailSegments = <SnakeTrailSegment>[];
   // Phase counter (incrementato ad ogni spawn) per dare un pulse cromatico
   // visualmente coerente lungo la scia.

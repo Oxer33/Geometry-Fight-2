@@ -1,14 +1,18 @@
+import 'dart:math' as math;
 import 'dart:ui';
 import 'package:flame/components.dart';
-import 'package:flutter/painting.dart' show TextPainter, TextSpan, TextStyle, FontWeight, TextDirection;
 import '../../../data/constants.dart';
 import 'enemy_base.dart';
 
-/// TIME BOMB - Nemico con countdown visibile che esplode in area enorme.
-/// Forma: cerchio con countdown numerico e anelli di pericolo
-/// Colore: rosso/arancio (#FF6600)
-/// Meccanica: ha un timer di 8 secondi visibile. Quando esplode, danno area 200px.
-/// Se il player lo uccide prima, il timer si resetta e dropa power-up.
+/// TIME BOMB - Nemico con countdown silenzioso (no numeri) che esplode in
+/// area enorme.
+/// Forma: cerchio con anelli di pericolo. Il countdown è comunicato solo da:
+///   - Colore: arancio (#FF6600) → rosso (#FF0000) da 8s a 2s.
+///   - <2s: alterna rosso vivo / giallo vivo + ampia oscillazione radiale.
+///   - <1s: pulsazione radiale ±25%.
+///   - <2s: outer ring più numerosi e luminosi.
+/// Meccanica: ha un timer di 8 secondi. Quando esplode, danno area 200px.
+/// Se il player lo uccide prima, dropa power-up.
 /// Immune ai proiettili per i primi 2 secondi (scudo di attivazione).
 class TimeBombEnemy extends EnemyBase {
   double _countdown = 8.0;
@@ -24,10 +28,6 @@ class TimeBombEnemy extends EnemyBase {
     ..strokeWidth = 1;
   static final Paint _lockPaint = Paint()
     ..color = const Color(0xFF4488FF).withValues(alpha: 0.6);
-  // TextPainter cache: rebuild solo se countdown.ceil() cambia
-  // (~ 1 rebuild/sec invece di 60).
-  int _cachedCountdownInt = -1;
-  TextPainter? _cachedTp;
 
   TimeBombEnemy()
       : super(
@@ -103,20 +103,35 @@ class TimeBombEnemy extends EnemyBase {
   void renderShape(Canvas canvas, Paint paint, double scale) {
     final cx = size.x / 2;
     final cy = size.y / 2;
-    final r = size.x / 2 * scale;
+    final baseR = size.x / 2 * scale;
 
-    // Colore cambia col countdown (arancio → rosso → rosso lampeggiante)
+    // urgency 0→1 mentre il countdown va da 8 → 0.
     final urgency = 1.0 - (_countdown / 8.0).clamp(0.0, 1.0);
+
+    // === Color logic ===
+    // [8..2]s: lerp arancio → rosso (mappato su 0..1 sul range 8-2 = 6s).
+    // [2..0]s: alterna rosso vivo + giallo vivo a frequenza alta.
     Color bodyColor;
-    if (_countdown > 4) {
-      bodyColor = paint.color;
-    } else if (_countdown > 2) {
-      bodyColor = Color.lerp(paint.color, const Color(0xFFFF0000), urgency)!;
+    if (_countdown > 2) {
+      // Mappa 8→0 e 2→1 nel sotto-intervallo lerp (6s di range).
+      final t = ((8.0 - _countdown) / 6.0).clamp(0.0, 1.0);
+      bodyColor = Color.lerp(
+        const Color(0xFFFF6600),
+        const Color(0xFFFF0000),
+        t,
+      )!;
     } else {
-      // Lampeggia
-      bodyColor = ((idlePhase * 8).toInt() % 2 == 0)
-          ? const Color(0xFFFF0000)
-          : const Color(0xFFFF6600);
+      // Pulsing brillante: rosso vivo ↔ giallo vivo. Frequenza alta (~8Hz).
+      final flash = (idlePhase * 8).toInt() % 2 == 0;
+      bodyColor = flash ? const Color(0xFFFF0000) : const Color(0xFFFFEE00);
+    }
+
+    // === Radius pulse ===
+    // Sotto 1s: ±25% body radius pulse (sin a ~10Hz tramite idlePhase).
+    double r = baseR;
+    if (_countdown < 1.0 && _activated) {
+      final pulse = math.sin(idlePhase * 10 * math.pi);
+      r = baseR * (1.0 + 0.25 * pulse);
     }
 
     // Cerchio principale
@@ -124,49 +139,34 @@ class TimeBombEnemy extends EnemyBase {
     canvas.drawCircle(Offset(cx, cy), r, _bodyPaint);
 
     if (scale <= 1.01) {
-      // Scudo attivazione (se non ancora attivato)
+      // Scudo attivazione (se non ancora attivato) — INVARIATO.
       if (!_activated) {
         final shieldAlpha = (_activationTimer / 2.0).clamp(0.0, 1.0);
         EnemyBase.detailPaint.color = const Color(0xFF4488FF).withValues(alpha: shieldAlpha * 0.4);
         EnemyBase.detailPaint.style = PaintingStyle.stroke;
         EnemyBase.detailPaint.strokeWidth = 2;
-        canvas.drawCircle(Offset(cx, cy), r * 1.3, EnemyBase.detailPaint);
+        canvas.drawCircle(Offset(cx, cy), baseR * 1.3, EnemyBase.detailPaint);
+
+        // Icona scudo durante attivazione (piccolo disco ciano centrale).
+        canvas.drawCircle(Offset(cx, cy), baseR * 0.3, _lockPaint);
       }
 
-      // Anelli di pericolo (appaiono quando countdown < 4s)
+      // Anelli di pericolo (appaiono quando countdown < 4s).
+      // <2s: ring count raddoppia (4 invece di 2), ampiezza oscillazione
+      // raddoppia (0.6 vs 0.3) e alpha aumenta (0.7 vs 0.3 base brightness).
       if (_activated && _countdown < 4) {
-        for (int i = 0; i < 2; i++) {
-          final ringProgress = ((idlePhase * 2 + i * 0.5) % 1.0);
-          final ringR = r * 1.5 + ringProgress * _explosionRadius * 0.3;
-          final ringAlpha = (1 - ringProgress) * urgency * 0.3;
+        final lateStage = _countdown < 2.0;
+        final ringCount = lateStage ? 4 : 2;
+        final ampMul = lateStage ? 0.6 : 0.3;
+        final brightnessBoost = lateStage ? 0.7 : 0.3;
+        for (int i = 0; i < ringCount; i++) {
+          final ringProgress = ((idlePhase * 2 + i / ringCount) % 1.0);
+          final ringR = r * 1.5 + ringProgress * _explosionRadius * ampMul;
+          final ringAlpha =
+              ((1 - ringProgress) * urgency * brightnessBoost).clamp(0.0, 1.0);
           _ringPaint.color = const Color(0xFFFF0000).withValues(alpha: ringAlpha);
           canvas.drawCircle(Offset(cx, cy), ringR, _ringPaint);
         }
-      }
-
-      // Countdown numerico al centro (text cache)
-      if (_activated) {
-        final countInt = _countdown.ceil();
-        if (countInt != _cachedCountdownInt || _cachedTp == null) {
-          _cachedCountdownInt = countInt;
-          _cachedTp = TextPainter(
-            text: TextSpan(
-              text: countInt.toString(),
-              style: TextStyle(
-                color: _countdown < 3 ? const Color(0xFFFF0000) : const Color(0xFFFFFFFF),
-                fontSize: r * 1.0,
-                fontWeight: FontWeight.w900,
-                fontFamily: 'monospace',
-              ),
-            ),
-            textDirection: TextDirection.ltr,
-          )..layout();
-        }
-        final tp = _cachedTp!;
-        tp.paint(canvas, Offset(cx - tp.width / 2, cy - tp.height / 2));
-      } else {
-        // Icona scudo durante attivazione
-        canvas.drawCircle(Offset(cx, cy), r * 0.3, _lockPaint);
       }
     }
   }

@@ -459,24 +459,45 @@ class WaveSystem {
   double _snakeElapsed = 0;
   static final _snakeRng = math.Random();
 
-  static const List<EnemyType> _snakeEnemyPool = [
+  // Tier-based snake pool. Spawn pescato dall'unione dei tier sbloccati.
+  // `_snakeElapsed` guida lo sblocco. Nemici stazionari o non-pursuing
+  // (mine, laserTurret, pulsar, tesla, splitter) sono esclusi: in Snake mode
+  // il player deve essere costantemente inseguito.
+  static const List<EnemyType> _snakeTier1 = <EnemyType>[
     EnemyType.drone,
     EnemyType.swarmDrone,
+  ];
+  static const List<EnemyType> _snakeTier2 = <EnemyType>[
     EnemyType.kamikaze,
     EnemyType.snake,
-    EnemyType.mine,
-    EnemyType.splitter,
-    EnemyType.shieldEnemy,
-    EnemyType.pulsar,
-    EnemyType.mirror,
+  ];
+  static const List<EnemyType> _snakeTier3 = <EnemyType>[
+    EnemyType.orbiter,
     EnemyType.phantom,
+  ];
+  static const List<EnemyType> _snakeTier4 = <EnemyType>[
+    EnemyType.mirror,
     EnemyType.vortex,
     EnemyType.titan,
-    EnemyType.orbiter,
-    EnemyType.tesla,
-    EnemyType.laserTurret,
-    EnemyType.timeBomb,
   ];
+  // Tier 5: nemici tardivi più pericolosi. shieldEnemy è incluso perché il
+  // suo updateBehavior implementa una state machine approach→lockOn→charge
+  // (movimento attivo verso il player), non un blocco stazionario.
+  static const List<EnemyType> _snakeTier5 = <EnemyType>[
+    EnemyType.timeBomb,
+    EnemyType.shieldEnemy,
+  ];
+
+  // Soglie di sblocco (secondi): tier1 da 0, tier2 >30s, tier3 >90s,
+  // tier4 >180s, tier5 >300s.
+  List<EnemyType> _currentSnakePool() {
+    final pool = <EnemyType>[..._snakeTier1];
+    if (_snakeElapsed > 30) pool.addAll(_snakeTier2);
+    if (_snakeElapsed > 90) pool.addAll(_snakeTier3);
+    if (_snakeElapsed > 180) pool.addAll(_snakeTier4);
+    if (_snakeElapsed > 300) pool.addAll(_snakeTier5);
+    return pool;
+  }
 
   void _resetSnake() {
     _snakeSpawnTimer = 0.8;
@@ -496,14 +517,16 @@ class WaveSystem {
       return;
     }
 
-    // Intervallo accelerante: 0.8s start → 0.3s a 5min (caps clamped).
-    final t = (_snakeElapsed / 300).clamp(0.0, 1.0);
-    final base = 0.8 + (0.3 - 0.8) * t;
+    // Intervallo accelerante "infinito": 0.8s @ t=0 → 0.15s @ t≥600s (10min).
+    // Lineare decrescente, clampato sotto a 0.15s per evitare collasso totale.
+    // Formula: 0.8 - t/600 → a 5min = 0.3s, a 10min = -0.2s clampato a 0.15s.
+    final t = _snakeElapsed;
+    final base = (0.8 - t / 600.0).clamp(0.15, 0.8);
     final jitter = 0.85 + _snakeRng.nextDouble() * 0.3;
-    _snakeSpawnTimer = (base * jitter).clamp(0.2, 1.5);
+    _snakeSpawnTimer = (base * jitter).clamp(0.12, 1.5);
 
-    final type =
-        _snakeEnemyPool[_snakeRng.nextInt(_snakeEnemyPool.length)];
+    final pool = _currentSnakePool();
+    final type = pool[_snakeRng.nextInt(pool.length)];
     game.spawnEnemy(type);
 
     // Wave progression: 1 wave ogni 30s (HUD/achievement readability).
