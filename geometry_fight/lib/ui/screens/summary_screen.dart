@@ -162,9 +162,15 @@ class _SummaryScreenState extends State<SummaryScreen> {
                       border: Border.all(
                           color: NeonColors.cyan.withValues(alpha: 0.5)),
                     ),
-                    child: const Text(
-                      '5/5',
-                      style: TextStyle(
+                    // Step indicator dinamico: pacifist/snake skippano
+                    // difficulty + loadout → summary è step 3 di 3 (wizard
+                    // corto). Altre modalità è 5 di 5 (wizard completo).
+                    child: Text(
+                      (mode == GameMode.pacifist ||
+                              mode == GameMode.snake)
+                          ? '3/3'
+                          : '5/5',
+                      style: const TextStyle(
                         color: NeonColors.cyan,
                         fontSize: 12,
                         fontWeight: FontWeight.w900,

@@ -336,24 +336,37 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
     // segmenti già rimossi (auto-removed dopo 4s) dalla nostra list di
     // tracking così il cap non conta zombie.
     if (game.gameMode == GameMode.snake) {
-      _snakeTrailTick += realDt;
-      if (_snakeTrailTick >= _snakeTrailInterval) {
-        _snakeTrailTick = 0;
-        // Cleanup: scarta entries rimosse (lifetime scaduto auto-remove).
+      // Hard stop su pause / gameOver: il game_world.update() ritorna early
+      // con super.update(0) → realDt=0 e tick non avanza, ma teniamo un guard
+      // esplicito così se in futuro cambia il flow il trail non spawna mai
+      // più durante pause/death (richiesta utente: must stop on gameOver/pause).
+      final gs = game.gameState;
+      if (gs == GameState.playing) {
+        // Prune stale refs OGNI frame (non solo allo spawn): i segmenti
+        // self-remove a 4s, se prune solo allo spawn potremmo trattenere
+        // refs morti fino al prossimo tick → memoria + cap conta zombie.
         _snakeTrailSegments
             .removeWhere((s) => s.isRemoved || !s.isMounted);
-        // Cap recycle: rimuovi il più vecchio finché non rientriamo.
-        while (_snakeTrailSegments.length >= _snakeTrailMaxSegments) {
-          final old = _snakeTrailSegments.removeAt(0);
-          if (!old.isRemoved) old.removeFromParent();
+
+        _snakeTrailTick += realDt;
+        if (_snakeTrailTick >= _snakeTrailInterval) {
+          // Modulo invece di reset a 0: preserva l'eccesso di tempo accumulato
+          // sopra l'intervallo → evita drift con frame variabili (es. 32ms
+          // frame tick avanza solo di 30ms → 2ms persi ogni spawn).
+          _snakeTrailTick %= _snakeTrailInterval;
+          // Cap recycle: rimuovi il più vecchio finché non rientriamo.
+          while (_snakeTrailSegments.length >= _snakeTrailMaxSegments) {
+            final old = _snakeTrailSegments.removeAt(0);
+            if (!old.isRemoved && old.isMounted) old.removeFromParent();
+          }
+          _snakeTrailPhase += 0.35;
+          final seg = SnakeTrailSegment(
+            spawnAt: position,
+            phase: _snakeTrailPhase,
+          );
+          _snakeTrailSegments.add(seg);
+          game.world.add(seg);
         }
-        _snakeTrailPhase += 0.35;
-        final seg = SnakeTrailSegment(
-          spawnAt: position,
-          phase: _snakeTrailPhase,
-        );
-        _snakeTrailSegments.add(seg);
-        game.world.add(seg);
       }
     }
   }

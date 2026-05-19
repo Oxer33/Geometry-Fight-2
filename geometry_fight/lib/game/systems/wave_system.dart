@@ -67,13 +67,16 @@ class WaveSystem {
   final int _dailySeed;
 
   WaveSystem(this.game)
-      : _dailySeed = _computeDailySeed(DateTime.now()) {
+      : _dailySeed = _computeDailySeed(DateTime.now().toUtc()) {
     _configs = generateWaveConfigs();
   }
 
   /// Ritorna la modalità di gioco attuale dal game
   GameMode get _mode => game.gameMode;
 
+  /// Daily seed deterministico via UTC: tutti i player nel mondo che giocano
+  /// nello stesso giorno UTC hanno la stessa Daily Challenge, indipendentemente
+  /// dal fuso orario o cambio DST locale durante la sessione.
   static int _computeDailySeed(DateTime date) =>
       date.year * 10000 + date.month * 100 + date.day;
 

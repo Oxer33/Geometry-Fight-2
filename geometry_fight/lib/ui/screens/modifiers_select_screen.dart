@@ -150,6 +150,11 @@ class _ModifiersSelectScreenState extends State<ModifiersSelectScreen> {
   // navigates to next screen). Widget unmounts on advance — no reset needed.
   bool _isAdvancing = false;
 
+  /// Pacifist/Snake skippano difficulty + loadout → wizard 3 step invece di
+  /// 5. Usato per scegliere l'etichetta dello step indicator ("2/3" vs "3/5").
+  bool get _isShortWizard =>
+      widget.mode == GameMode.pacifist || widget.mode == GameMode.snake;
+
   final ScrollController _scrollCtrl = ScrollController();
 
   @override
@@ -257,9 +262,14 @@ class _ModifiersSelectScreenState extends State<ModifiersSelectScreen> {
                       border: Border.all(
                           color: NeonColors.cyan.withValues(alpha: 0.5)),
                     ),
-                    child: const Text(
-                      '3/5',
-                      style: TextStyle(
+                    // Step indicator dinamico: pacifist/snake skippano
+                    // difficulty + loadout → questo screen è step 2 di 3.
+                    // Altre modalità è 3 di 5 (full wizard).
+                    child: Text(
+                      _isShortWizard
+                          ? '2/3'
+                          : '3/5',
+                      style: const TextStyle(
                         color: NeonColors.cyan,
                         fontSize: 12,
                         fontWeight: FontWeight.w900,

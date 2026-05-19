@@ -7,9 +7,14 @@ import 'enemies/enemy_base.dart';
 
 /// Snake mode trail segment: emitted behind the player roughly every ~0.03s.
 /// Each segment is a [PositionComponent] with a [CircleHitbox] that collides
-/// with [EnemyBase]; on contact applies a massive damage value (999999) so the
+/// with [EnemyBase]; on contact applies `enemy.maxHp + 1` damage so the
 /// enemy is one-shotted through the standard kill path and spawns a small
 /// green pop on the impact location.
+///
+/// Damage scales to `maxHp + 1` (instead of a hard 999999): some subclasses
+/// could in theory divide `amount` by `maxHp` (e.g. for damage telemetry) →
+/// infinity if maxHp=1. `maxHp + 1` guarantees a kill while keeping the value
+/// finite and proportional to the target.
 ///
 /// Lifetime: 4s. Color: cyan→green gradient pulse with outer glow + bright
 /// white nucleus. Visual radius: ~6px (with halo ~13px). Collision radius: 8px.
@@ -31,7 +36,9 @@ class SnakeTrailSegment extends PositionComponent
   // Hue phase per segment so the trail visually pulses along its length.
   final double _phase;
 
-  // Reused paints — avoid per-frame allocations.
+  // Reused paints — avoid per-frame allocations. Static across all segments:
+  // mutated per-render but never concurrently (single render thread per
+  // canvas), so sharing is safe and saves ~3 alloc per segment per frame.
   static final Paint _glowPaint = Paint();
   static final Paint _corePaint = Paint();
   static final Paint _innerPaint = Paint();
@@ -104,16 +111,31 @@ class SnakeTrailSegment extends PositionComponent
   @override
   void onCollisionStart(
       Set<Vector2> intersectionPoints, PositionComponent other) {
+    // Guard: segment già rimosso (auto-cleanup a fine vita oppure recycle FIFO).
+    // Flame può emettere un onCollisionStart per il frame finale → senza guard
+    // potremmo applicare damage da un fantasma.
+    if (isRemoved || !isMounted) {
+      super.onCollisionStart(intersectionPoints, other);
+      return;
+    }
     if (other is EnemyBase) {
+      // Skip nemici già morti / in fase di rimozione.
+      if (other.isRemoved || !other.isMounted) {
+        super.onCollisionStart(intersectionPoints, other);
+        return;
+      }
       // Spawn-invuln enemies must not be insta-killed during materialization
       // (preserves the GW2:RE materializzazione window — fair design).
       if (other.isSpawnInvulnerable) {
         super.onCollisionStart(intersectionPoints, other);
         return;
       }
-      // Instant kill via massive damage so achievements / kill-count fire
-      // through the standard `onDeath` path (vs. `killSilently`).
-      other.takeDamage(999999);
+      // Instant kill via `maxHp + 1`: garantisce one-shot ma resta finito e
+      // proporzionale al target (evita potenziali divisioni per maxHp che
+      // collasserebbero a infinity con un valore hard 999999).
+      // NOT isArea: trail-kill è un colpo "diretto" (single segment vs single
+      // enemy), così splitter/altri immuni-area ricevono normalmente.
+      other.takeDamage(other.maxHp + 1);
       // Small green pop on the kill spot for visual feedback.
       game.spawnExplosion(
         other.position,

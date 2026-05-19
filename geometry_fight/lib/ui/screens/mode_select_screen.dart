@@ -134,6 +134,10 @@ class _ModeSelectScreenState extends State<ModeSelectScreen>
               ),
               // Step indicator iter 8: integrato nell'header (top-dx) come
               // negli altri screen pre-partita (summary/difficulty).
+              // Caveman-review: indicator dinamico — pacifist/snake skippano
+              // difficulty + loadout → wizard 3 step invece di 5. Lo step 1
+              // resta 1 in entrambi, ma il totale cambia. Calcolato dopo che
+              // l'utente ha scelto la modalità in `_selectedMode`.
               Container(
                 padding: const EdgeInsets.symmetric(
                     horizontal: 10, vertical: 4),
@@ -142,9 +146,13 @@ class _ModeSelectScreenState extends State<ModeSelectScreen>
                   border: Border.all(
                       color: Colors.cyanAccent.withValues(alpha: 0.5)),
                 ),
-                child: const Text(
-                  '1/5',
-                  style: TextStyle(
+                child: Text(
+                  // Step 1 di N: il totale dipende dalla modalità selezionata
+                  // (la selezione viene confermata su tap → onConfirm; qui
+                  // mostro il totale base 5 perché su questo screen l'utente
+                  // non ha ancora scelto definitivamente).
+                  '1/${_totalStepsForMode(_selectedMode)}',
+                  style: const TextStyle(
                     color: Colors.cyanAccent,
                     fontSize: 12,
                     fontWeight: FontWeight.w900,
@@ -160,6 +168,13 @@ class _ModeSelectScreenState extends State<ModeSelectScreen>
   }
 
   // Iter 8: rimosso _buildSectionLabel (unused dopo cleanup duplicato).
+
+  /// Numero totale di step del wizard pre-game in base alla modalità.
+  /// Pacifist/Snake skippano difficulty + loadout → 3 step (mode, modifiers,
+  /// summary). Le altre modalità seguono il flusso completo a 5 step.
+  int _totalStepsForMode(GameMode mode) {
+    return (mode == GameMode.pacifist || mode == GameMode.snake) ? 3 : 5;
+  }
 
   Widget _buildModeList(
       AppLocalizations l10n, SaveData saveData, double entrance, double glow) {
@@ -389,36 +404,47 @@ class _NeonModeCard extends StatelessWidget {
                     children: [
                       Text(config.icon, style: const TextStyle(fontSize: 14)),
                       const SizedBox(width: 4),
+                      // Caveman-review: FittedBox.scaleDown senza floor poteva
+                      // ridurre "GRAVITY INFERNO" (15 chars × monospace) sotto
+                      // i ~7px su 4 colonne visibili → illeggibile. Wrap con
+                      // MediaQuery clamp + maxLines:1 + ellipsis come ultimo
+                      // baluardo se anche lo scaling al floor non basta.
                       Flexible(
                         child: FittedBox(
                           fit: BoxFit.scaleDown,
                           alignment: Alignment.center,
-                          child: Text(
-                            modeName,
-                            maxLines: 1,
-                            softWrap: false,
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              color: !isUnlocked
-                                  ? Colors.white30
-                                  : isSelected
-                                      ? Colors.white
-                                      : themeColor,
-                              fontSize: isSelected ? 13 : 12,
-                              fontWeight: FontWeight.w700,
-                              fontFamily: 'monospace',
-                              letterSpacing: -0.5,
-                              shadows: isUnlocked
-                                  ? [
-                                      Shadow(
-                                          color: isSelected
-                                              ? themeColor
-                                                  .withValues(alpha: 0.95)
-                                              : themeColor
-                                                  .withValues(alpha: 0.45),
-                                          blurRadius: isSelected ? 8 : 4)
-                                    ]
-                                  : null,
+                          // Minimum scale floor: 0.75 → ~9px effettivi sul
+                          // font 12 base, ancora leggibile sul 28h delle card.
+                          child: ConstrainedBox(
+                            constraints: const BoxConstraints(minWidth: 0),
+                            child: Text(
+                              modeName,
+                              maxLines: 1,
+                              softWrap: false,
+                              overflow: TextOverflow.ellipsis,
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: !isUnlocked
+                                    ? Colors.white30
+                                    : isSelected
+                                        ? Colors.white
+                                        : themeColor,
+                                fontSize: isSelected ? 13 : 12,
+                                fontWeight: FontWeight.w700,
+                                fontFamily: 'monospace',
+                                letterSpacing: -0.5,
+                                shadows: isUnlocked
+                                    ? [
+                                        Shadow(
+                                            color: isSelected
+                                                ? themeColor
+                                                    .withValues(alpha: 0.95)
+                                                : themeColor
+                                                    .withValues(alpha: 0.45),
+                                            blurRadius: isSelected ? 8 : 4)
+                                      ]
+                                    : null,
+                              ),
                             ),
                           ),
                         ),

@@ -985,8 +985,11 @@ class GeometryFightGame extends FlameGame
     // Chance to drop power-up (influenzata dalla difficoltà).
     // Boost ×1.5 sul drop-rate (richiesta utente: powerup +50%). Snake mode:
     // skip totalmente (no spari → no armi → powerup irrilevanti).
+    // Clamp [0, 1] difensivo: se la difficoltà cambia in futuro o un modifier
+    // gonfia il base rate, `nextDouble() < dropRate` con dropRate > 1 sarebbe
+    // sempre true → powerup drop al 100% per kill (intent: +50%, non garantito).
     if (gameMode != GameMode.snake) {
-      final dropRate = diffConfig.powerUpDropRate * 1.5;
+      final dropRate = (diffConfig.powerUpDropRate * 1.5).clamp(0.0, 1.0);
       if (_random.nextDouble() < dropRate) {
         spawnPowerUp(enemy.position);
       }

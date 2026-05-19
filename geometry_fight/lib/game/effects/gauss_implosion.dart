@@ -37,6 +37,9 @@ class GaussImplosion extends PositionComponent
   /// Moltiplicatore radius (1.0 default, 2.0 con FirePower attivo).
   /// `aoeScale` invece di `scale` per evitare collisione con la proprietà
   /// `scale` (NotifyingVector2) di PositionComponent.
+  /// Clamp a [0.1, 4.0] nel constructor: difensivo contro valori 0/negativi
+  /// (radius 0 → no pull/damage applicato, formalmente non crasha drawCircle
+  /// ma è un no-op silenzioso), NaN, o esplosioni esagerate da bug futuri.
   final double aoeScale;
   double _age = 0;
   double _tickTimer = 0;
@@ -55,8 +58,9 @@ class GaussImplosion extends PositionComponent
     ..strokeWidth = 2.5;
   final Paint _corePaint = Paint();
 
-  GaussImplosion({required this.epicenter, this.aoeScale = 1.0})
-      : super(position: epicenter.clone(), anchor: Anchor.center);
+  GaussImplosion({required this.epicenter, double aoeScale = 1.0})
+      : aoeScale = (aoeScale.isFinite ? aoeScale : 1.0).clamp(0.1, 4.0).toDouble(),
+        super(position: epicenter.clone(), anchor: Anchor.center);
 
   @override
   void update(double dt) {
