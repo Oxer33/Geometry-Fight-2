@@ -998,7 +998,9 @@ class _ShopScreenState extends State<ShopScreen>
           final item = modes[index];
           final owned = _saveData.unlockedModes.contains(item.id);
           final canAfford = _saveData.goldGeoms >= item.cost;
-          final isNew = item.id == 'pacifist';
+          // Caveman-review: stale `pacifist` flag. Snake is the latest mode
+          // added → bump "NEW" badge to snake. Reduces noise on settled modes.
+          final isNew = item.id == 'snake';
           return _ModeCard(
             item: item,
             owned: owned,

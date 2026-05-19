@@ -14,6 +14,15 @@ import 'enemy_base.dart';
 /// Meccanica: ha un timer di 8 secondi. Quando esplode, danno area 200px.
 /// Se il player lo uccide prima, dropa power-up.
 /// Immune ai proiettili per i primi 2 secondi (scudo di attivazione).
+///
+/// Snake mode interaction (INTENT preservato): la fase immune blocca anche
+/// il trail-kill (`SnakeTrailSegment.onCollisionStart` chiama `takeDamage`
+/// che fa early-return finché `_activated == false`). Il giocatore deve
+/// quindi aspettare ~2s prima che la propria scia possa demolire un
+/// TimeBomb. Trade-off voluto: TimeBomb è il principale "filler" del pool
+/// daily-challenge/snake e senza la finestra di immunità verrebbe annullato
+/// dalla scia ancor prima di mostrare i suoi anelli di pericolo, perdendo
+/// la sua identità visiva. Mantenuto come da design, NON un bug.
 class TimeBombEnemy extends EnemyBase {
   double _countdown = 8.0;
   static const double _explosionRadius = 200.0;

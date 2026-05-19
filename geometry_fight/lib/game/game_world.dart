@@ -988,6 +988,13 @@ class GeometryFightGame extends FlameGame
     // Clamp [0, 1] difensivo: se la difficoltà cambia in futuro o un modifier
     // gonfia il base rate, `nextDouble() < dropRate` con dropRate > 1 sarebbe
     // sempre true → powerup drop al 100% per kill (intent: +50%, non garantito).
+    //
+    // TimeBomb interaction: `TimeBombEnemy.onDeath` chiama `spawnPowerUp`
+    // DIRETTAMENTE (drop garantito quando ucciso dal player prima del boom).
+    // Quel path bypassa il clamp/roll qui — è intenzionale, il drop garantito
+    // del TimeBomb è la sua reward per il rischio dell'esplosione area.
+    // Modifier `no_powerups` (PURISTA) blocca comunque tutto via early-return
+    // in `PowerUpSystem.spawnRandomPowerUp` → niente compound qui.
     if (gameMode != GameMode.snake) {
       final dropRate = (diffConfig.powerUpDropRate * 1.5).clamp(0.0, 1.0);
       if (_random.nextDouble() < dropRate) {

@@ -670,6 +670,14 @@ class WaveSystem {
     // 3 ondate mob compresse nel primo 25% della wave: delays 0 / 0.5 / 1.0.
     // Prima erano 2.0/4.5/7.0 → ondate tarde lette dall'utente come "mob
     // appaiono molto più tardi". Ora arrivano tutte presto.
+    //
+    // Spawn batch ceiling: 3 batch × (mobCount/3).clamp(2,5) = max 15 mob per
+    // wave dichiarati qui + 3-8 black hole spawnati direttamente in
+    // `_spawnGravityInfernoBlackHoles`. Anche con BLITZ modifier (×1.5 in
+    // `_scaledSpawnCount`) si raggiungono ~22 mob/sec, ben sotto il cap
+    // globale `_maxActiveEnemies = 150` in game_world.dart. Nessun rischio
+    // di overload della spawn queue: `spawnEnemy` ritorna `null` quando il
+    // cap è raggiunto, fallback graceful.
     const earlyDelays = [0.0, 0.5, 1.0];
     for (int i = 0; i < 3; i++) {
       final type = mobTypes[rng.nextInt(mobTypes.length)];
@@ -872,7 +880,12 @@ class WaveSystem {
   /// - UN SOLO tipo per wave, scelto col seed giornaliero (procedurale,
   ///   stesso per tutti i player nello stesso giorno).
   /// - Mob distribuiti arena-wide random (no cluster ai bordi/centro).
-  /// - Wave count invariato (10 wave nominali). Lo score continua a contare.
+  /// - Wave count: ENDLESS (nessun cap esplicito, come tutti gli altri mode
+  ///   non-bossRush). `_completeWave` schedula sempre `currentWave + 1`. La
+  ///   nota storica "10 wave nominali" si riferiva al numero di
+  ///   `WaveConfig` originariamente hand-tuned; col redesign ogni wave è
+  ///   procedurale via `_dailyChallengeMobPool[typeRng]` quindi continua
+  ///   indefinitamente. Lo score continua a contare wave dopo wave.
   ///
   /// Implementation note: il `WaveConfig` ritorna `spawns: []` perché lo
   /// spawn vero avviene in `_spawnDailyChallengeMobs` (chiamato direttamente

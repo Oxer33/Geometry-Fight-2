@@ -1059,6 +1059,19 @@ class HomingMissile extends PositionComponent
 /// Sostituisce il vecchio `PlayerBullet` con `weaponType == gauss`. Non
 /// pierce (un solo trigger), non bounce. Damage diretto = `damage` (forte,
 /// stessa scala di Homing per-missile: tipicamente 1.0 × 4.0 × game mults).
+///
+/// Modifier `ricochet_world` interaction: NON applicato a GaussBullet. Il
+/// modifier vive in `Player._spawnBullet` ed è override di `maxBounces` per
+/// `PlayerBullet`. GaussBullet ha la sua classe dedicata con un unico
+/// trigger (`_imploded`) che blocca implosioni multiple per design. Anche
+/// se in futuro qualcuno aggiungesse il bounce qui, il guard `_imploded`
+/// garantisce comunque UNA sola `GaussImplosion` per bullet.
+///
+/// FirePower expiry mid-flight: `sizeMultiplier` è snapshottato al
+/// constructor (vedi `_spawnGaussBullet` in player.dart) e passato come
+/// `aoeScale` a `GaussImplosion`. Il power-up può scadere tra spawn e
+/// impatto senza desync: il bullet conserva la dimensione visiva e l'AOE
+/// si applica al valore catturato al momento del fire.
 class GaussBullet extends PositionComponent
     with HasGameReference<GeometryFightGame>, CollisionCallbacks {
   final Vector2 direction;
