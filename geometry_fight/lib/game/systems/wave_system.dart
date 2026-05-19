@@ -490,14 +490,41 @@ class WaveSystem {
 
   // Soglie di sblocco (secondi): tier1 da 0, tier2 >30s, tier3 >90s,
   // tier4 >180s, tier5 >300s.
-  List<EnemyType> _currentSnakePool() {
-    final pool = <EnemyType>[..._snakeTier1];
-    if (_snakeElapsed > 30) pool.addAll(_snakeTier2);
-    if (_snakeElapsed > 90) pool.addAll(_snakeTier3);
-    if (_snakeElapsed > 180) pool.addAll(_snakeTier4);
-    if (_snakeElapsed > 300) pool.addAll(_snakeTier5);
-    return pool;
+  //
+  // Pool pre-costruiti per tier-mask: evita allocazione list ad ogni spawn
+  // (a 10min siamo a ~8 spawn/s → ~480 alloc/min senza cache). La maschera
+  // [0..4] tiene gli unlock cumulativi: 0=t1, 1=t1+t2, 2=+t3, 3=+t4, 4=+t5.
+  // Le liste sono `unmodifiable` per garantire che callers non possano
+  // mutare lo stato cache.
+  static final List<List<EnemyType>> _snakePools = <List<EnemyType>>[
+    List<EnemyType>.unmodifiable(_snakeTier1),
+    List<EnemyType>.unmodifiable(<EnemyType>[..._snakeTier1, ..._snakeTier2]),
+    List<EnemyType>.unmodifiable(
+        <EnemyType>[..._snakeTier1, ..._snakeTier2, ..._snakeTier3]),
+    List<EnemyType>.unmodifiable(<EnemyType>[
+      ..._snakeTier1,
+      ..._snakeTier2,
+      ..._snakeTier3,
+      ..._snakeTier4,
+    ]),
+    List<EnemyType>.unmodifiable(<EnemyType>[
+      ..._snakeTier1,
+      ..._snakeTier2,
+      ..._snakeTier3,
+      ..._snakeTier4,
+      ..._snakeTier5,
+    ]),
+  ];
+
+  int _snakeTierIndex() {
+    if (_snakeElapsed > 300) return 4;
+    if (_snakeElapsed > 180) return 3;
+    if (_snakeElapsed > 90) return 2;
+    if (_snakeElapsed > 30) return 1;
+    return 0;
   }
+
+  List<EnemyType> _currentSnakePool() => _snakePools[_snakeTierIndex()];
 
   void _resetSnake() {
     _snakeSpawnTimer = 0.8;
@@ -526,6 +553,9 @@ class WaveSystem {
     _snakeSpawnTimer = (base * jitter).clamp(0.12, 1.5);
 
     final pool = _currentSnakePool();
+    // Defensive: tier1 ha 2 elementi quindi unreachable, ma se in futuro
+    // un tier viene svuotato (refactor) evitiamo `nextInt(0)` → RangeError.
+    if (pool.isEmpty) return;
     final type = pool[_snakeRng.nextInt(pool.length)];
     game.spawnEnemy(type);
 

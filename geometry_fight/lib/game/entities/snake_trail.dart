@@ -19,7 +19,7 @@ import 'enemies/enemy_base.dart';
 /// Lifetime: 4s. Color: cyan→green gradient pulse with outer glow + bright
 /// white nucleus. Visual radius: ~6px (with halo ~13px). Collision radius: 8px.
 ///
-/// Player owns the active segment list and enforces a cap of ~150 active
+/// Player owns the active segment list and enforces a cap of ~50 active
 /// segments by removing the oldest entry when exceeded (see `player.dart`).
 class SnakeTrailSegment extends PositionComponent
     with HasGameReference<GeometryFightGame>, CollisionCallbacks {

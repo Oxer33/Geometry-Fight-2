@@ -41,6 +41,11 @@ class TimeBombEnemy extends EnemyBase {
 
   @override
   void updateBehavior(double dt) {
+    // Re-entry guard: removeFromParent() è deferred a end-of-frame, quindi
+    // se Flame interna schedula un update prima del flush (raro ma possibile
+    // su frame con removal queue grande), evitiamo doppio explode/movimento.
+    if (_dead) return;
+
     // Fase attivazione (immune per 2s)
     if (!_activated) {
       _activationTimer -= dt;
@@ -53,9 +58,12 @@ class TimeBombEnemy extends EnemyBase {
     // Si avvicina al player
     position += seekPlayer(speed) * dt;
 
-    // Countdown
+    // Countdown — clamp inferiore a 0 per evitare valori negativi visibili
+    // in render (urgency lerp e ring math sono già clamped ma teniamo la
+    // variabile stessa pulita per debug/log).
     _countdown -= dt;
     if (_countdown <= 0) {
+      _countdown = 0;
       _explode();
     }
   }
