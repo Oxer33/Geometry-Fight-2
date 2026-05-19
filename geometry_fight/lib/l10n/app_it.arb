@@ -116,6 +116,7 @@
   "modeDailyChallenge": "SFIDA GIORNALIERA",
   "modeWaves": "WAVES",
   "modeGravityInferno": "GRAVITY INFERNO",
+  "modeSnake": "SNAKE",
 
   "splashSkip": "SKIP",
   "splashTapToStart": "TOCCA PER INIZIARE",
@@ -393,6 +394,7 @@
   "modeDescPacifist": "Niente colpi! Sopravvivi con i Gate (GW Pacifism)",
   "modeDescWaves": "Solo triangoli rossi cardinali. Rari buchi neri. Dodge puro.",
   "modeDescGravityInferno": "Tanti buchi neri + pochi mob misti. Niente boss. Caos gravitazionale.",
+  "modeDescSnake": "Lascia una scia letale. Nessun'arma, niente boss, niente powerup.",
 
   "upgradeFirepower": "FIREPOWER",
   "upgradeFirepowerDesc": "+5% danno per livello (max +25%)",

@@ -83,6 +83,19 @@ bool _modIncompatibleWithMode(String modId, GameMode mode) {
         'ricochet_world',
         'infinite_bombs',
       }.contains(modId);
+    case GameMode.snake:
+      // Snake: no spari, no powerup. Filter tutto ciò che tocca weapons /
+      // bullets / damage / powerup. Mantiene: speed_demon (player speed),
+      // tiny_arena, giant_mode, chaos (mixed random), fog_of_war, magnet_king
+      // (geom magnet — geom droppano ancora dalle kill via trail).
+      return const {
+        'glass_cannon',     // no damage da moltiplicare (no spari)
+        'one_shot',         // no proiettili (no spari) + 1 vita brutale
+        'ricochet_world',   // no proiettili (no spari)
+        'infinite_bombs',   // bombe inutili (no targets a distanza)
+        'bullet_hell',      // no spari player, nemici sparano N/A snake-flow
+        'no_powerups',      // powerup già OFF in snake mode → ridondante
+      }.contains(modId);
     case GameMode.waves:
       // Kamikaze non sparano → bullet_hell N/A.
       return modId == 'bullet_hell';

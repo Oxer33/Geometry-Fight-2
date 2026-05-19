@@ -44,6 +44,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
         ('pacifist', l10n.modePacifist, Icons.spa_outlined, const Color(0xFF77FFD4)),
         ('waves', l10n.modeWaves, Icons.change_history, const Color(0xFFFF3344)),
         ('gravityInferno', l10n.modeGravityInferno, Icons.blur_circular, const Color(0xFF9933FF)),
+        ('snake', l10n.modeSnake, Icons.timeline_rounded, const Color(0xFF66FF66)),
       ];
 
   List<(String, String, Color)> _difficulties(AppLocalizations l10n) => [

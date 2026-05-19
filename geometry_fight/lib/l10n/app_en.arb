@@ -115,6 +115,7 @@
   "modeDailyChallenge": "DAILY CHALLENGE",
   "modeWaves": "WAVES",
   "modeGravityInferno": "GRAVITY INFERNO",
+  "modeSnake": "SNAKE",
 
   "splashSkip": "SKIP",
   "splashTapToStart": "TAP TO START",
@@ -392,6 +393,7 @@
   "modeDescPacifist": "No shooting! Survive using Gates (GW Pacifism)",
   "modeDescWaves": "Only cardinal red triangles. Rare black holes. Pure dodge.",
   "modeDescGravityInferno": "Many black holes + few mixed mobs. No bosses. Gravitational chaos.",
+  "modeDescSnake": "Trail kills on touch. No weapons, no boss, no powerups.",
 
   "upgradeFirepower": "FIREPOWER",
   "upgradeFirepowerDesc": "+5% damage per level (max +25%)",

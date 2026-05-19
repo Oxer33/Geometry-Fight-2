@@ -273,6 +273,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get modeGravityInferno => '重力インフェルノ';
 
   @override
+  String get modeSnake => 'スネーク';
+
+  @override
   String get splashSkip => 'スキップ';
 
   @override
@@ -941,6 +944,9 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get modeDescGravityInferno => '多数のブラックホール+混合雑魚少数。ボスなし。重力カオス。';
+
+  @override
+  String get modeDescSnake => '尾を引き、触れた敵を即死させる。武器・ボス・パワーアップなし。';
 
   @override
   String get upgradeFirepower => '火力';

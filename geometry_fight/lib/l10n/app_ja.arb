@@ -115,6 +115,7 @@
   "modeDailyChallenge": "デイリーチャレンジ",
   "modeWaves": "ウェーブ",
   "modeGravityInferno": "重力インフェルノ",
+  "modeSnake": "スネーク",
 
   "splashSkip": "スキップ",
   "splashTapToStart": "タップしてスタート",
@@ -392,6 +393,7 @@
   "modeDescPacifist": "射撃禁止!ゲートで生き残れ(GW Pacifism)",
   "modeDescWaves": "基本の赤い三角形のみ。稀にブラックホール。純粋な回避。",
   "modeDescGravityInferno": "多数のブラックホール+混合雑魚少数。ボスなし。重力カオス。",
+  "modeDescSnake": "尾を引き、触れた敵を即死させる。武器・ボス・パワーアップなし。",
 
   "upgradeFirepower": "火力",
   "upgradeFirepowerDesc": "レベルごとに+5%ダメージ(最大+25%)",

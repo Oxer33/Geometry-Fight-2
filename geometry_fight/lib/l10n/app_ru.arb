@@ -115,6 +115,7 @@
   "modeDailyChallenge": "ЕЖЕДНЕВНЫЙ ВЫЗОВ",
   "modeWaves": "ВОЛНЫ",
   "modeGravityInferno": "ГРАВИТАЦИОННЫЙ АД",
+  "modeSnake": "ЗМЕЙКА",
 
   "splashSkip": "ПРОПУСТИТЬ",
   "splashTapToStart": "НАЖМИТЕ, ЧТОБЫ НАЧАТЬ",
@@ -392,6 +393,7 @@
   "modeDescPacifist": "Без выстрелов! Выживай с помощью Gates (GW Pacifism)",
   "modeDescWaves": "Только кардинальные красные треугольники. Редкие чёрные дыры. Чистое уклонение.",
   "modeDescGravityInferno": "Много чёрных дыр + мало смешанных мобов. Без боссов. Гравитационный хаос.",
+  "modeDescSnake": "Смертельный след при касании. Без оружия, без боссов, без бонусов.",
 
   "upgradeFirepower": "УРОН",
   "upgradeFirepowerDesc": "+5% урона за уровень (макс +25%)",

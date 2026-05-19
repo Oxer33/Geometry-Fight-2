@@ -274,6 +274,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get modeGravityInferno => 'INFIERNO GRAVITATORIO';
 
   @override
+  String get modeSnake => 'SERPIENTE';
+
+  @override
   String get splashSkip => 'SALTAR';
 
   @override
@@ -968,6 +971,10 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get modeDescGravityInferno =>
       'Muchos agujeros negros + pocos mobs mixtos. Sin jefes. Caos gravitacional.';
+
+  @override
+  String get modeDescSnake =>
+      'Estela mortal al contacto. Sin armas, sin jefes, sin potenciadores.';
 
   @override
   String get upgradeFirepower => 'POTENCIA';

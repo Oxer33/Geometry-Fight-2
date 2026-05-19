@@ -274,6 +274,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get modeGravityInferno => 'ГРАВИТАЦИОННЫЙ АД';
 
   @override
+  String get modeSnake => 'ЗМЕЙКА';
+
+  @override
   String get splashSkip => 'ПРОПУСТИТЬ';
 
   @override
@@ -973,6 +976,10 @@ class AppLocalizationsRu extends AppLocalizations {
   @override
   String get modeDescGravityInferno =>
       'Много чёрных дыр + мало смешанных мобов. Без боссов. Гравитационный хаос.';
+
+  @override
+  String get modeDescSnake =>
+      'Смертельный след при касании. Без оружия, без боссов, без бонусов.';
 
   @override
   String get upgradeFirepower => 'УРОН';

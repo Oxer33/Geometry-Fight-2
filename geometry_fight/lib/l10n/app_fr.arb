@@ -115,6 +115,7 @@
   "modeDailyChallenge": "DÉFI QUOTIDIEN",
   "modeWaves": "VAGUES",
   "modeGravityInferno": "ENFER GRAVITATIONNEL",
+  "modeSnake": "SERPENT",
 
   "splashSkip": "PASSER",
   "splashTapToStart": "APPUYEZ POUR COMMENCER",
@@ -392,6 +393,7 @@
   "modeDescPacifist": "Pas de tirs ! Survis avec les Portes (GW Pacifism)",
   "modeDescWaves": "Que des triangles rouges cardinaux. Rares trous noirs. Esquive pure.",
   "modeDescGravityInferno": "Beaucoup de trous noirs + peu de mobs mixtes. Pas de boss. Chaos gravitationnel.",
+  "modeDescSnake": "Traînée mortelle au contact. Pas d'armes, pas de boss, pas de bonus.",
 
   "upgradeFirepower": "PUISSANCE",
   "upgradeFirepowerDesc": "+5% dégâts par niveau (max +25%)",

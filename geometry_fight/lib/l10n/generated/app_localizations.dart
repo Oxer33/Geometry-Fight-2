@@ -616,6 +616,12 @@ abstract class AppLocalizations {
   /// **'GRAVITY INFERNO'**
   String get modeGravityInferno;
 
+  /// No description provided for @modeSnake.
+  ///
+  /// In it, this message translates to:
+  /// **'SNAKE'**
+  String get modeSnake;
+
   /// No description provided for @splashSkip.
   ///
   /// In it, this message translates to:
@@ -1911,6 +1917,12 @@ abstract class AppLocalizations {
   /// In it, this message translates to:
   /// **'Tanti buchi neri + pochi mob misti. Niente boss. Caos gravitazionale.'**
   String get modeDescGravityInferno;
+
+  /// No description provided for @modeDescSnake.
+  ///
+  /// In it, this message translates to:
+  /// **'Lascia una scia letale. Nessun\'arma, niente boss, niente powerup.'**
+  String get modeDescSnake;
 
   /// No description provided for @upgradeFirepower.
   ///

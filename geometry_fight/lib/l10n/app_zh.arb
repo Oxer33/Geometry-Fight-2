@@ -115,6 +115,7 @@
   "modeDailyChallenge": "每日挑战",
   "modeWaves": "波次",
   "modeGravityInferno": "引力炼狱",
+  "modeSnake": "贪吃蛇",
 
   "splashSkip": "跳过",
   "splashTapToStart": "点击开始",
@@ -392,6 +393,7 @@
   "modeDescPacifist": "禁止射击!用Gate生存(GW Pacifism)",
   "modeDescWaves": "仅基本红色三角形。罕见黑洞。纯闪避。",
   "modeDescGravityInferno": "众多黑洞+少量混合小怪。无Boss。引力混乱。",
+  "modeDescSnake": "尾迹触碰即死。无武器，无Boss，无道具。",
 
   "upgradeFirepower": "火力",
   "upgradeFirepowerDesc": "每级+5%伤害(最大+25%)",

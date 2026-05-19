@@ -4,12 +4,14 @@ import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
 import 'package:flutter/painting.dart' show HSVColor;
 import '../../data/constants.dart';
+import '../../data/difficulty.dart';
 import '../effects/chain_lightning_effect.dart';
 import '../game_world.dart';
 import 'bosses/boss_base.dart';
 import 'enemies/enemy_base.dart';
 import 'pets/pet_base.dart';
 import 'projectiles.dart';
+import 'snake_trail.dart';
 
 enum WeaponType {
   basic,
@@ -88,6 +90,18 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
   final List<Vector2> _trail = [];
   static const int _maxTrailLength = 18;
   double _trailTimer = 0;
+
+  // Snake mode: tick accumulator + tracked active segments per il cap recycle.
+  // Ogni `_snakeTrailInterval` secondi spawna un `SnakeTrailSegment` come
+  // child del world. Cap a `_snakeTrailMaxSegments`: oltre, il segment più
+  // vecchio viene rimosso (recycle FIFO).
+  double _snakeTrailTick = 0;
+  static const double _snakeTrailInterval = 0.03;
+  static const int _snakeTrailMaxSegments = 150;
+  final List<SnakeTrailSegment> _snakeTrailSegments = <SnakeTrailSegment>[];
+  // Phase counter (incrementato ad ogni spawn) per dare un pulse cromatico
+  // visualmente coerente lungo la scia.
+  double _snakeTrailPhase = 0;
 
   // Knockback time-based (richiesta utente "pushback duri 1-1.5s, no
   // istantaneo"). Velocità decade linearmente da v0→0 sull'intera durata,
@@ -221,8 +235,10 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
     //  - Altrimenti → la nave si gira verso la direzione di movimento (riusa
     //    `moveDir` calcolato sopra, che considera già `controlsInverted`).
     //  - In idle (no input) → mantiene rotazione corrente.
+    // Snake mode: non si spara mai → rotazione sempre verso il movimento.
     final aimDir = game.aimInput;
     final wantsToShoot = !game.isPacifistMode &&
+        game.gameMode != GameMode.snake &&
         (game.isShooting || aimDir.length > 0.3);
     if (wantsToShoot && aimDir.length > 0) {
       _rotation = math.atan2(aimDir.y, aimDir.x) + math.pi / 2;
@@ -232,8 +248,10 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
 
     // Shooting (usa realDt per non essere rallentato dallo slow-mo)
     _fireTimer -= realDt;
+    // Snake mode: no spari (regola design — trail-kill puro).
     // Pacifism mode: shooting completamente bloccato (regola GW2 Pacifism).
-    if (!game.isPacifistMode &&
+    final canShoot = !game.isPacifistMode && game.gameMode != GameMode.snake;
+    if (canShoot &&
         (game.isShooting || aimDir.length > 0.3) && _fireTimer <= 0) {
       // Direction default: se il giocatore preme fire senza mirare, usa
       // l'orientamento della nave (_rotation) invece di hardcoded "su".
@@ -310,6 +328,32 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
       if (_trailTimer >= 0.05) {
         _trailTimer = 0;
         if (_trail.isNotEmpty) _trail.removeLast();
+      }
+    }
+
+    // Snake mode: emit segmenti scia letale alle spalle della navicella.
+    // Cap FIFO a `_snakeTrailMaxSegments` per perf + leggibilità. Cleanup
+    // segmenti già rimossi (auto-removed dopo 4s) dalla nostra list di
+    // tracking così il cap non conta zombie.
+    if (game.gameMode == GameMode.snake) {
+      _snakeTrailTick += realDt;
+      if (_snakeTrailTick >= _snakeTrailInterval) {
+        _snakeTrailTick = 0;
+        // Cleanup: scarta entries rimosse (lifetime scaduto auto-remove).
+        _snakeTrailSegments
+            .removeWhere((s) => s.isRemoved || !s.isMounted);
+        // Cap recycle: rimuovi il più vecchio finché non rientriamo.
+        while (_snakeTrailSegments.length >= _snakeTrailMaxSegments) {
+          final old = _snakeTrailSegments.removeAt(0);
+          if (!old.isRemoved) old.removeFromParent();
+        }
+        _snakeTrailPhase += 0.35;
+        final seg = SnakeTrailSegment(
+          spawnAt: position,
+          phase: _snakeTrailPhase,
+        );
+        _snakeTrailSegments.add(seg);
+        game.world.add(seg);
       }
     }
   }

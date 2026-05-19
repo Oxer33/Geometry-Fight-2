@@ -250,6 +250,7 @@ class _ModeSelectScreenState extends State<ModeSelectScreen>
       case GameMode.pacifist: return l10n.modePacifist;
       case GameMode.waves: return l10n.modeWaves;
       case GameMode.gravityInferno: return l10n.modeGravityInferno;
+      case GameMode.snake: return l10n.modeSnake;
     }
   }
 
@@ -280,6 +281,7 @@ Color _modeColor(GameMode m) {
     case GameMode.pacifist: return const Color(0xFF77FFD4);      // ciano pastel
     case GameMode.waves: return const Color(0xFFFF3344);         // rosso
     case GameMode.gravityInferno: return const Color(0xFF9933FF);// viola gravity
+    case GameMode.snake: return const Color(0xFF66FF66);         // verde lime
   }
 }
 

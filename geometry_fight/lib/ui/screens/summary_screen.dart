@@ -195,8 +195,9 @@ class _SummaryScreenState extends State<SummaryScreen> {
                       sub: '×${diffCfg.scoreMultiplier.toStringAsFixed(2)} ${l10n.diffScoreMultiplier} · '
                           'HP ×${diffCfg.enemyHpMultiplier} · '
                           'SPD ×${diffCfg.enemySpeedMultiplier}'),
-                  // Pacifist: skip ARMA + PET (non si spara, no pet).
-                  if (mode != GameMode.pacifist) ...[
+                  // Pacifist & Snake: skip ARMA + PET (non si spara, no pet).
+                  if (mode != GameMode.pacifist &&
+                      mode != GameMode.snake) ...[
                     _section(l10n.loadoutWeapon,
                         _weaponName(l10n, saveData.startingWeapon),
                         NeonColors.bulletYellow),
@@ -266,6 +267,7 @@ class _SummaryScreenState extends State<SummaryScreen> {
       case GameMode.pacifist: return l10n.modePacifist;
       case GameMode.waves: return l10n.modeWaves;
       case GameMode.gravityInferno: return l10n.modeGravityInferno;
+      case GameMode.snake: return l10n.modeSnake;
     }
   }
 

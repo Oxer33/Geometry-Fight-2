@@ -274,6 +274,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get modeGravityInferno => 'GRAVITY INFERNO';
 
   @override
+  String get modeSnake => 'SNAKE';
+
+  @override
   String get splashSkip => 'SKIP';
 
   @override
@@ -965,6 +968,10 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get modeDescGravityInferno =>
       'Many black holes + few mixed mobs. No bosses. Gravitational chaos.';
+
+  @override
+  String get modeDescSnake =>
+      'Trail kills on touch. No weapons, no boss, no powerups.';
 
   @override
   String get upgradeFirepower => 'FIREPOWER';

@@ -295,7 +295,8 @@ class GeometryFightGame extends FlameGame
 
     // Pet companion (Geometry Wars 3 style drone). Solo se loadout != 'none'.
     // Pacifist mode: nessun pet (pet attaccano nemici → rompe regola Pacifism).
-    if (!isPacifistMode) {
+    // Snake mode: nessun pet (no spari → pet automation irrilevante).
+    if (!isPacifistMode && gameMode != GameMode.snake) {
       final petType = petTypeById(saveData.activePet);
       activePet = createPet(petType);
       if (activePet != null) {
@@ -383,6 +384,9 @@ class GeometryFightGame extends FlameGame
     } else if (gameMode == GameMode.survival) {
       // Survival rework (richiesta utente): 1-a-1 accelerante, no wave.
       waveSystem.updateSurvival(scaledDt);
+    } else if (gameMode == GameMode.snake) {
+      // Snake: spawn continuo arena-wide, no wave formali, no boss.
+      waveSystem.updateSnake(scaledDt);
     } else {
       waveSystem.update(scaledDt);
     }
@@ -978,9 +982,14 @@ class GeometryFightGame extends FlameGame
       spawnGeom(enemy.position, geomUnitValue);
     }
 
-    // Chance to drop power-up (influenzata dalla difficoltà)
-    if (_random.nextDouble() < diffConfig.powerUpDropRate) {
-      spawnPowerUp(enemy.position);
+    // Chance to drop power-up (influenzata dalla difficoltà).
+    // Boost ×1.5 sul drop-rate (richiesta utente: powerup +50%). Snake mode:
+    // skip totalmente (no spari → no armi → powerup irrilevanti).
+    if (gameMode != GameMode.snake) {
+      final dropRate = diffConfig.powerUpDropRate * 1.5;
+      if (_random.nextDouble() < dropRate) {
+        spawnPowerUp(enemy.position);
+      }
     }
 
     // Notifica Necro nemici vicini della morte (per resurrezione).

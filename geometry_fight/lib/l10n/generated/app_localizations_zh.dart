@@ -273,6 +273,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get modeGravityInferno => '引力炼狱';
 
   @override
+  String get modeSnake => '贪吃蛇';
+
+  @override
   String get splashSkip => '跳过';
 
   @override
@@ -941,6 +944,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get modeDescGravityInferno => '众多黑洞+少量混合小怪。无Boss。引力混乱。';
+
+  @override
+  String get modeDescSnake => '尾迹触碰即死。无武器，无Boss，无道具。';
 
   @override
   String get upgradeFirepower => '火力';

@@ -246,6 +246,7 @@ class _ShopScreenState extends State<ShopScreen>
         'pacifist' => l10n.modePacifist,
         'waves' => l10n.modeWaves,
         'gravityInferno' => l10n.modeGravityInferno,
+        'snake' => l10n.modeSnake,
         _ => fallback,
       };
 
@@ -260,6 +261,7 @@ class _ShopScreenState extends State<ShopScreen>
         'pacifist' => l10n.modeDescPacifist,
         'waves' => l10n.modeDescWaves,
         'gravityInferno' => l10n.modeDescGravityInferno,
+        'snake' => l10n.modeDescSnake,
         _ => fallback,
       };
 
@@ -975,6 +977,7 @@ class _ShopScreenState extends State<ShopScreen>
       _ModeDef('pacifist', 'Pacifist', 1500, 'Niente colpi! Sopravvivi con i Gate (GW Pacifism)', Icons.spa_outlined, const Color(0xFF77FFD4)),
       _ModeDef('waves', 'Waves', 800, 'Solo triangoli rossi cardinali. Rari buchi neri. Dodge puro.', Icons.change_history, const Color(0xFFFF3344)),
       _ModeDef('gravityInferno', 'Gravity Inferno', 1800, 'Tanti buchi neri + pochi mob misti. Niente boss. Caos gravitazionale.', Icons.blur_circular, const Color(0xFF9933FF)),
+      _ModeDef('snake', 'Snake', 2500, 'Lascia una scia letale con la navicella. No armi, no boss, no powerup.', Icons.timeline_rounded, const Color(0xFF66FF66)),
     ];
 
     // Single-column list con card grosse: icona+nome+descrizione+stato.

@@ -283,6 +283,7 @@ class AchievementManager {
         case GameMode.zenMode:
         case GameMode.tunnel:
         case GameMode.dailyChallenge:
+        case GameMode.snake:
           break;
       }
     }

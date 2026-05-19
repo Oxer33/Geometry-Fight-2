@@ -144,6 +144,7 @@ class WaveSystem {
     _tunnelBossCooldown = 0;
     _tunnelBossBag.clear();
     _resetSurvival();
+    _resetSnake();
     currentWave = 0;
     _waveActive = false;
     _bossActive = false;
@@ -156,6 +157,13 @@ class WaveSystem {
     // wave path. Guard early-return → evita _waveActive/_completeWave
     // race con currentWave incrementato anche da updateSurvival.
     if (_mode == GameMode.survival) {
+      currentWave = wave;
+      _waveActive = false;
+      return;
+    }
+    // Snake mode: spawn continuo orchestrato da `updateSnake`, niente wave
+    // formali. Guard early-return analogo a survival.
+    if (_mode == GameMode.snake) {
       currentWave = wave;
       _waveActive = false;
       return;
@@ -200,6 +208,10 @@ class WaveSystem {
         // Black hole spawn diretto (arena-wide Poisson-disc), fuori dalla
         // `spawns` list così non passa per la formation scatter clustered.
         _spawnGravityInfernoBlackHoles(wave);
+      case GameMode.snake:
+        // Snake non passa mai per startWave (early-return sopra). Branch
+        // qui solo per exhaustiveness del switch.
+        _currentConfig = WaveConfig(waveNumber: wave, spawns: const []);
       case GameMode.classic:
         _currentConfig = _configs.firstWhere(
           (c) => c.waveNumber == wave,
@@ -429,6 +441,71 @@ class WaveSystem {
   void _resetSurvival() {
     _survivalSpawnTimer = 0.5;
     _survivalElapsed = 0;
+  }
+
+  // ───── SNAKE MODE ──────────────────────────────────────────────────
+  // Spawn continuo nemici random arena-wide, no boss, no wave formali.
+  // Rate 1 nemico ogni `_snakeSpawnTimer` secondi; cadenza accelera con
+  // tempo elapsed (1.0s start → 0.3s a 5min). Pool nemici esclude:
+  //  - boss (Snake mode ha `hasBosses: false`)
+  //  - weaver / glitch ("too special" — richiesta utente)
+  //  - blackHole / gravityWell / proton / mutator / gate / leech / siren /
+  //    necro / decoy / healer (special/support, non standalone-attackers).
+  // Tipo random uniforme per spawn. Scoring puro da kill via trail.
+  double _snakeSpawnTimer = 0.8;
+  double _snakeElapsed = 0;
+  static final _snakeRng = math.Random();
+
+  static const List<EnemyType> _snakeEnemyPool = [
+    EnemyType.drone,
+    EnemyType.swarmDrone,
+    EnemyType.kamikaze,
+    EnemyType.snake,
+    EnemyType.mine,
+    EnemyType.splitter,
+    EnemyType.shieldEnemy,
+    EnemyType.pulsar,
+    EnemyType.mirror,
+    EnemyType.phantom,
+    EnemyType.vortex,
+    EnemyType.titan,
+    EnemyType.orbiter,
+    EnemyType.tesla,
+    EnemyType.laserTurret,
+    EnemyType.timeBomb,
+  ];
+
+  void _resetSnake() {
+    _snakeSpawnTimer = 0.8;
+    _snakeElapsed = 0;
+  }
+
+  /// Aggiornamento continuo Snake mode: spawn 1 nemico random a cadenza
+  /// crescente. Wave counter avanza ogni 30s per HUD/achievement.
+  void updateSnake(double dt) {
+    _snakeElapsed += dt;
+    _snakeSpawnTimer -= dt;
+    if (_snakeSpawnTimer > 0) return;
+
+    // Cap nemici attivi: 150 — stesso cap del game_world per coerenza.
+    if (game.enemyCount >= 150) {
+      _snakeSpawnTimer = 0.1;
+      return;
+    }
+
+    // Intervallo accelerante: 0.8s start → 0.3s a 5min (caps clamped).
+    final t = (_snakeElapsed / 300).clamp(0.0, 1.0);
+    final base = 0.8 + (0.3 - 0.8) * t;
+    final jitter = 0.85 + _snakeRng.nextDouble() * 0.3;
+    _snakeSpawnTimer = (base * jitter).clamp(0.2, 1.5);
+
+    final type =
+        _snakeEnemyPool[_snakeRng.nextInt(_snakeEnemyPool.length)];
+    game.spawnEnemy(type);
+
+    // Wave progression: 1 wave ogni 30s (HUD/achievement readability).
+    final computedWave = (_snakeElapsed / 30).floor() + 1;
+    if (computedWave > currentWave) currentWave = computedWave;
   }
 
   /// Time Attack: TANTISSIMI mob per fare punti — massa di stupidi + pochi pericolosi

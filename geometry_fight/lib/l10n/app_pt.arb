@@ -115,6 +115,7 @@
   "modeDailyChallenge": "DESAFIO DIÁRIO",
   "modeWaves": "ONDAS",
   "modeGravityInferno": "INFERNO GRAVITACIONAL",
+  "modeSnake": "COBRA",
 
   "splashSkip": "PULAR",
   "splashTapToStart": "TOQUE PARA COMEÇAR",
@@ -392,6 +393,7 @@
   "modeDescPacifist": "Sem tiros! Sobreviva com os Gates (GW Pacifism)",
   "modeDescWaves": "Só triângulos vermelhos cardinais. Raros buracos negros. Esquiva pura.",
   "modeDescGravityInferno": "Muitos buracos negros + poucos mobs mistos. Sem chefes. Caos gravitacional.",
+  "modeDescSnake": "Rastro mortal ao toque. Sem armas, sem chefes, sem power-ups.",
 
   "upgradeFirepower": "PODER",
   "upgradeFirepowerDesc": "+5% dano por nível (máx +25%)",

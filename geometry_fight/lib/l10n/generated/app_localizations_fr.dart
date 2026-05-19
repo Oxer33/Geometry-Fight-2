@@ -274,6 +274,9 @@ class AppLocalizationsFr extends AppLocalizations {
   String get modeGravityInferno => 'ENFER GRAVITATIONNEL';
 
   @override
+  String get modeSnake => 'SERPENT';
+
+  @override
   String get splashSkip => 'PASSER';
 
   @override
@@ -973,6 +976,10 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get modeDescGravityInferno =>
       'Beaucoup de trous noirs + peu de mobs mixtes. Pas de boss. Chaos gravitationnel.';
+
+  @override
+  String get modeDescSnake =>
+      'Traînée mortelle au contact. Pas d\'armes, pas de boss, pas de bonus.';
 
   @override
   String get upgradeFirepower => 'PUISSANCE';

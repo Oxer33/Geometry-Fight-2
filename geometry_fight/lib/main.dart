@@ -262,14 +262,16 @@ class _NavigationWrapperState extends State<NavigationWrapper> {
             // Pacifist: skip difficulty (combo Pacifist+Nightmare = unwinnable
             // perché drone speed ×1.5, player no shoot, lives=1). Forziamo
             // Normal e saltiamo direttamente a modifiersSelect.
+            // Snake: stessa logica — no shoot, scia kill-only. Nightmare con
+            // spawn accelerati = unwinnable, forziamo Normal.
             setState(() {
               _selectedMode = mode;
-              if (mode == GameMode.pacifist) {
+              if (mode == GameMode.pacifist || mode == GameMode.snake) {
                 _selectedDifficulty = Difficulty.normal;
                 _selectedModifiers = <String>[];
               }
             });
-            if (mode == GameMode.pacifist) {
+            if (mode == GameMode.pacifist || mode == GameMode.snake) {
               _navigateTo(AppScreen.modifiersSelect);
             } else {
               _navigateTo(AppScreen.difficultySelect);
@@ -299,16 +301,19 @@ class _NavigationWrapperState extends State<NavigationWrapper> {
           key: const ValueKey('modifiersSelect'),
           initial: _selectedModifiers,
           mode: _selectedMode,
-          // Pacifist: difficulty step skipped → back va direttamente a mode.
-          onBack: () => _navigateTo(_selectedMode == GameMode.pacifist
-              ? AppScreen.modeSelect
-              : AppScreen.difficultySelect),
+          // Pacifist & Snake: difficulty step skipped → back va a mode.
+          onBack: () => _navigateTo(
+              (_selectedMode == GameMode.pacifist ||
+                      _selectedMode == GameMode.snake)
+                  ? AppScreen.modeSelect
+                  : AppScreen.difficultySelect),
           onConfirm: (mods) {
             // Step 3/5 → 4/5 loadout.
-            // Pacifist: skip loadout (no shooting → arma irrilevante; pet
-            // disabilitato in game_world). Vai diretto a summary.
+            // Pacifist & Snake: skip loadout (no shooting → arma irrilevante;
+            // pet disabilitato in game_world). Vai diretto a summary.
             setState(() => _selectedModifiers = mods);
-            if (_selectedMode == GameMode.pacifist) {
+            if (_selectedMode == GameMode.pacifist ||
+                _selectedMode == GameMode.snake) {
               _navigateTo(AppScreen.summary);
             } else {
               _navigateTo(AppScreen.loadout);
@@ -327,10 +332,12 @@ class _NavigationWrapperState extends State<NavigationWrapper> {
           mode: _selectedMode,
           difficulty: _selectedDifficulty,
           activeModifiers: _selectedModifiers,
-          // Pacifist: loadout skipped → back va a modifiersSelect.
-          onBack: () => _navigateTo(_selectedMode == GameMode.pacifist
-              ? AppScreen.modifiersSelect
-              : AppScreen.loadout),
+          // Pacifist & Snake: loadout skipped → back va a modifiersSelect.
+          onBack: () => _navigateTo(
+              (_selectedMode == GameMode.pacifist ||
+                      _selectedMode == GameMode.snake)
+                  ? AppScreen.modifiersSelect
+                  : AppScreen.loadout),
           onStart: () async {
             // Persist modifiers in saveData prima del game start: GameWorld
             // li legge da `saveData.activeModifiers` in onLoad.

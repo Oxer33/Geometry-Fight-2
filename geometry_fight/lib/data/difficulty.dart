@@ -115,6 +115,10 @@ enum GameMode {
   // Gravity Inferno — tanti blackhole + pochi mob mixed types, no boss.
   // Test caos gravitazionale (richiesta utente).
   gravityInferno,
+  // Snake — la navicella lascia una scia letale che uccide all'istante chi
+  // la tocca. No armi, no boss, no powerup. Spawn continuo nemici random,
+  // endless score-attack.
+  snake,
 }
 
 /// Configurazione per ogni modalità di gioco
@@ -240,6 +244,20 @@ const Map<GameMode, GameModeConfig> gameModeConfigs = {
     unlockCost: 800,
     hasBosses: false,
     hasWaves: true,
+    infiniteWaves: true,
+    pauseBetweenWaves: false,
+  ),
+  // Snake — la navicella lascia una scia letale che uccide istantaneamente
+  // chi la tocca. Il player non spara, niente boss, niente powerup. Spawn
+  // continuo nemici random (no weaver/glitch, troppo speciali). Endless
+  // score-attack: scoring puramente da kill via trail.
+  GameMode.snake: GameModeConfig(
+    name: 'SNAKE',
+    description: 'Lascia una scia con la navicella che uccide all\'istante chi la tocca. No armi, no boss, no powerup.',
+    icon: '🐍',
+    unlockCost: 2500,
+    hasBosses: false,
+    hasWaves: false,
     infiniteWaves: true,
     pauseBetweenWaves: false,
   ),

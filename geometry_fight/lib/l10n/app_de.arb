@@ -115,6 +115,7 @@
   "modeDailyChallenge": "TÄGLICHE HERAUSFORDERUNG",
   "modeWaves": "WELLEN",
   "modeGravityInferno": "GRAVITATIONS-INFERNO",
+  "modeSnake": "SCHLANGE",
 
   "splashSkip": "ÜBERSPRINGEN",
   "splashTapToStart": "TIPPE ZUM STARTEN",
@@ -392,6 +393,7 @@
   "modeDescPacifist": "Keine Schüsse! Überlebe mit den Gates (GW Pacifism)",
   "modeDescWaves": "Nur kardinale rote Dreiecke. Seltene schwarze Löcher. Reines Ausweichen.",
   "modeDescGravityInferno": "Viele schwarze Löcher + wenige gemischte Mobs. Keine Bosse. Gravitationschaos.",
+  "modeDescSnake": "Tödliche Spur bei Berührung. Keine Waffen, keine Bosse, keine Power-ups.",
 
   "upgradeFirepower": "FEUERKRAFT",
   "upgradeFirepowerDesc": "+5% Schaden pro Stufe (max +25%)",

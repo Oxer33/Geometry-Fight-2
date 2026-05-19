@@ -115,6 +115,7 @@
   "modeDailyChallenge": "RETO DIARIO",
   "modeWaves": "OLEADAS",
   "modeGravityInferno": "INFIERNO GRAVITATORIO",
+  "modeSnake": "SERPIENTE",
 
   "splashSkip": "SALTAR",
   "splashTapToStart": "TOCA PARA EMPEZAR",
@@ -392,6 +393,7 @@
   "modeDescPacifist": "¡Sin disparos! Sobrevive con las Puertas (GW Pacifism)",
   "modeDescWaves": "Solo triángulos rojos cardinales. Agujeros negros raros. Esquive puro.",
   "modeDescGravityInferno": "Muchos agujeros negros + pocos mobs mixtos. Sin jefes. Caos gravitacional.",
+  "modeDescSnake": "Estela mortal al contacto. Sin armas, sin jefes, sin potenciadores.",
 
   "upgradeFirepower": "POTENCIA",
   "upgradeFirepowerDesc": "+5% daño por nivel (máx +25%)",
