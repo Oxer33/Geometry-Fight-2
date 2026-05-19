@@ -279,25 +279,32 @@ class _SplashScreenState extends State<SplashScreen>
     // === BURST SNAPSHOT: quando t supera ogni burst-start, cattura
     // pos/aim correnti → usate da painter per origin/direction proiettili
     // (stessa logica dell'old: snapshot al burst-start, tutte le coppie
-    // del burst sparate dalla stessa origine in fila). ===
+    // del burst sparate dalla stessa origine in fila).
+    //
+    // Bullet direction = ship aim direction (velocity normalized), NON
+    // direzione-al-mob. Match comportamento in-game: in `Player.update`
+    // `_rotation = atan2(aimDir.y, aimDir.x) + π/2` e `shootDir = aimDir`
+    // (sparo allineato all'orientamento della nave). Snapshot mob-dir
+    // creava muzzle disallineato dalla punta visuale quando velocity ≠
+    // direzione-al-mob (strafe). ===
     const burstStarts = [0.10, 0.40, 0.70];
     for (int i = 0; i < burstStarts.length; i++) {
       if (!_burstCaptured[i] && t >= burstStarts[i]) {
         _burstCaptured[i] = true;
         _burstSnapX[i] = _shipX;
         _burstSnapY[i] = _shipY;
-        // Direzione bullet: verso il mob al momento del snapshot.
-        final aimDxB = droneX - _shipX;
-        final aimDyB = droneY - _shipY;
-        final aimLenB = math.sqrt(aimDxB * aimDxB + aimDyB * aimDyB);
-        if (aimLenB > 0.1) {
-          _burstSnapDx[i] = aimDxB / aimLenB;
-          _burstSnapDy[i] = aimDyB / aimLenB;
+        // Direzione = velocity direction (= ship aim direction).
+        if (speed > 0.1) {
+          _burstSnapDx[i] = _shipVx / speed;
+          _burstSnapDy[i] = _shipVy / speed;
         } else {
-          // Fallback: usa aim corrente (velocity dir).
-          if (speed > 0.1) {
-            _burstSnapDx[i] = _shipVx / speed;
-            _burstSnapDy[i] = _shipVy / speed;
+          // Fallback: verso il mob se la nave è ferma (raro).
+          final aimDxB = droneX - _shipX;
+          final aimDyB = droneY - _shipY;
+          final aimLenB = math.sqrt(aimDxB * aimDxB + aimDyB * aimDyB);
+          if (aimLenB > 0.1) {
+            _burstSnapDx[i] = aimDxB / aimLenB;
+            _burstSnapDy[i] = aimDyB / aimLenB;
           } else {
             _burstSnapDx[i] = 1;
             _burstSnapDy[i] = 0;
@@ -880,9 +887,12 @@ class _SplashPainter extends CustomPainter {
       const pairInterval = 0.0357; // 0.125s @ chase=3.5s = baseFireRate 8/s
       const bulletColor = Color(0xFFFFE500); // NeonColors.bulletYellow
       const pairOffset = 6.0;
-      // Velocità bullet: matchata ad in-game (700 px/s). 1.4 width/s →
-      // bullet attraversa schermo in ~0.7s = velocità realistica.
-      final bulletSpeedWorldPerSec = size.width * 1.4;
+      // Velocità bullet: match esatto in-game (`bulletSpeed = 700 px/s` da
+      // `data/constants.dart`). `dtSinceFire` è in chase-units (1 unit =
+      // _chaseDurationSec = 3.5s), quindi distanza per chase-unit =
+      // 700 px/s × 3.5s = 2450 px. Prima usava `size.width * 1.4` che su
+      // schermi 400-500px dava ~160-200 px/s reali (3.5-4× più lento).
+      const bulletSpeedPerChaseUnit = 2450.0;
 
       for (int b = 0; b < burstStarts.length; b++) {
         final burstStart = burstStarts[b];
@@ -902,7 +912,11 @@ class _SplashPainter extends CustomPainter {
         // Iter 14 (utente: "bullets dal centro non punta"): noseOffset
         // bumped 16.8 → 24 → bullet emerge OLTRE tip nave (era esattamente
         // sul tip → sembrava centro). Tip nave a -14*s=-18.9 local.
-        const noseOffset = 24.0;
+        // Iter 16 (utente: "bullets non dalla punta"): ora il `dirX/dirY`
+        // è la velocity-dir (= ship aim direction), quindi `dirN * noseOffset`
+        // punta esattamente sulla punta visuale. Match in-game `nose =
+        // position + dir.normalized() * 22` (Player.dart line 467).
+        const noseOffset = 22.0;
         // Iter 12 (utente: "bullets non in fila"): tutte le coppie del burst
         // emergono dalla STESSA ship pos (snapshot al burst-start) → bullet
         // perfettamente in fila lungo aimDir, distanziati solo da
@@ -916,8 +930,9 @@ class _SplashPainter extends CustomPainter {
           if (t <= fireTime) continue;
           final dtSinceFire = t - fireTime;
 
-          // Distanza percorsa dal bullet: velocity costante × dt.
-          final travel = bulletSpeedWorldPerSec * dtSinceFire;
+          // Distanza percorsa dal bullet: velocity costante × dt
+          // (dt in chase-units, speed in px/chase-unit).
+          final travel = bulletSpeedPerChaseUnit * dtSinceFire;
 
         // Disegna COPPIA di bullet paralleli (±perp offset come basic weapon)
         for (int side = -1; side <= 1; side += 2) {
