@@ -49,14 +49,22 @@ class _SplashScreenState extends State<SplashScreen>
   bool _shipInit = false;
   double _prevChaseT = 0.0;
   Size? _lastSize;
-  // Snapshot ship pos/aim quando ogni burst-start viene attraversato
+  // Snapshot ship pos/vel/aim quando ogni burst-start viene attraversato
   // (per bullet origins). 3 burst → fino a 3 snapshot. captured=false
   // finché il burst non è iniziato.
+  // Iter 17 (utente: "bullets sembrano partire da dietro la navicella"):
+  // salviamo anche velocity vector al snapshot (`_burstSnapVx/Vy` in px/s)
+  // per ricalcolare la pos della nave a `fireTime` di ogni pair (la nave
+  // si muove durante il burst di 0.5s, quindi pos fissa snapshot faceva
+  // sì che le pair successive parteggiavano da pos vecchia → bullets
+  // visivamente "dietro" la nave corrente).
   final List<bool> _burstCaptured = [false, false, false];
   final List<double> _burstSnapX = [0, 0, 0];
   final List<double> _burstSnapY = [0, 0, 0];
   final List<double> _burstSnapDx = [1, 0, 0]; // dir aim al snapshot
   final List<double> _burstSnapDy = [0, 0, 0];
+  final List<double> _burstSnapVx = [0, 0, 0]; // velocity vector px/s
+  final List<double> _burstSnapVy = [0, 0, 0];
   // Trail ring buffer: 18 past positions per la scia cyan (mantiene il
   // look del trail in-game `Player._renderTrail`). Push ad ogni frame.
   static const int _trailLen = 18;
@@ -155,19 +163,24 @@ class _SplashScreenState extends State<SplashScreen>
       final dx0 = droneX - _shipX;
       final dy0 = droneY - _shipY;
       final len0 = math.sqrt(dx0 * dx0 + dy0 * dy0);
+      // Iter 17: velocità iniziale 350 → 250 (coerente con nuovo
+      // maxSpeed=280, minSpeed=220 — la nave parte già nel range stabile).
       if (len0 > 0.01) {
-        _shipVx = (dx0 / len0) * 350;
-        _shipVy = (dy0 / len0) * 350;
+        _shipVx = (dx0 / len0) * 250;
+        _shipVy = (dy0 / len0) * 250;
       } else {
-        _shipVx = 350;
+        _shipVx = 250;
         _shipVy = 0;
       }
       _shipInit = true;
     }
 
     // === SEEK: desiredVel verso il mob a maxSpeed. ===
-    const maxSpeed = 400.0;
-    const minSpeed = 300.0;
+    // Iter 17 (utente: "nave un pò più lenta"): rallentata del ~30%
+    // (400→280, 300→220) → bullet a 2000 px/s la supera molto di più
+    // visivamente, no più sensazione di "bullets dietro alla nave".
+    const maxSpeed = 280.0;
+    const minSpeed = 220.0;
     final dxM = droneX - _shipX;
     final dyM = droneY - _shipY;
     final distM = math.sqrt(dxM * dxM + dyM * dyM);
@@ -293,6 +306,11 @@ class _SplashScreenState extends State<SplashScreen>
         _burstCaptured[i] = true;
         _burstSnapX[i] = _shipX;
         _burstSnapY[i] = _shipY;
+        // Velocity vector al snapshot — usata da painter per ricalcolare
+        // la pos della nave a `fireTime` di ogni pair durante il burst
+        // (assumendo movimento approx lineare nei 0.5s del burst).
+        _burstSnapVx[i] = _shipVx;
+        _burstSnapVy[i] = _shipVy;
         // Direzione = velocity direction (= ship aim direction).
         if (speed > 0.1) {
           _burstSnapDx[i] = _shipVx / speed;
@@ -363,6 +381,9 @@ class _SplashScreenState extends State<SplashScreen>
                     burstSnapY: _burstSnapY,
                     burstSnapDx: _burstSnapDx,
                     burstSnapDy: _burstSnapDy,
+                    burstSnapVx: _burstSnapVx,
+                    burstSnapVy: _burstSnapVy,
+                    chaseDurationSec: _chaseDurationSec,
                     trailX: _trailX,
                     trailY: _trailY,
                     trailHead: _trailHead,
@@ -478,12 +499,17 @@ class _SplashPainter extends CustomPainter {
   final double shipAim;
   final bool shipInit;
   // Snapshot per bullet origins (3 burst). `burstCaptured[i]` controlla
-  // se il burst è già stato avviato; coordinate fisse al momento del snapshot.
+  // se il burst è già stato avviato; coordinate + velocity al momento del
+  // snapshot. La velocity è usata per ricalcolare pos della nave al fireTime
+  // di ogni pair durante il burst (iter 17 fix "bullets dietro la nave").
   final List<bool> burstCaptured;
   final List<double> burstSnapX;
   final List<double> burstSnapY;
   final List<double> burstSnapDx;
   final List<double> burstSnapDy;
+  final List<double> burstSnapVx; // velocity vector al snapshot (px/s reali)
+  final List<double> burstSnapVy;
+  final double chaseDurationSec; // conversione chase-units ↔ secondi reali
   // Trail ring buffer (vedi `_SplashScreenState._trailX/Y`).
   final List<double> trailX;
   final List<double> trailY;
@@ -631,6 +657,9 @@ class _SplashPainter extends CustomPainter {
     required this.burstSnapY,
     required this.burstSnapDx,
     required this.burstSnapDy,
+    required this.burstSnapVx,
+    required this.burstSnapVy,
+    required this.chaseDurationSec,
     required this.trailX,
     required this.trailY,
     required this.trailHead,
@@ -887,12 +916,13 @@ class _SplashPainter extends CustomPainter {
       const pairInterval = 0.0357; // 0.125s @ chase=3.5s = baseFireRate 8/s
       const bulletColor = Color(0xFFFFE500); // NeonColors.bulletYellow
       const pairOffset = 6.0;
-      // Velocità bullet: match esatto in-game (`bulletSpeed = 700 px/s` da
-      // `data/constants.dart`). `dtSinceFire` è in chase-units (1 unit =
-      // _chaseDurationSec = 3.5s), quindi distanza per chase-unit =
-      // 700 px/s × 3.5s = 2450 px. Prima usava `size.width * 1.4` che su
-      // schermi 400-500px dava ~160-200 px/s reali (3.5-4× più lento).
-      const bulletSpeedPerChaseUnit = 2450.0;
+      // Velocità bullet: cinematica splash, ~2.85× in-game (700 px/s)
+      // per dare effetto "raffica fulmine" e impedire alla nave di
+      // sorpassare i proiettili visivamente. 2000 px/s × 3.5 = 7000.
+      // Iter 16 era 2450 (match in-game) → bullets troppo vicini alla
+      // nave durante il burst (nave a 400 px/s, gap solo 300 px/s).
+      // Ora gap 2000-280 = 1720 px/s, i bullet schizzano via davanti.
+      const bulletSpeedPerChaseUnit = 7000.0;
 
       for (int b = 0; b < burstStarts.length; b++) {
         final burstStart = burstStarts[b];
@@ -909,6 +939,10 @@ class _SplashPainter extends CustomPainter {
         if (dirX * dirX + dirY * dirY < 0.5) continue;
         final perpX = -dirY;
         final perpY = dirX;
+        // Velocity vector al snapshot — usata per ricalcolare pos della
+        // nave a fireTime di ogni pair (iter 17 fix "bullets dietro").
+        final snapVx = burstSnapVx[b];
+        final snapVy = burstSnapVy[b];
         // Iter 14 (utente: "bullets dal centro non punta"): noseOffset
         // bumped 16.8 → 24 → bullet emerge OLTRE tip nave (era esattamente
         // sul tip → sembrava centro). Tip nave a -14*s=-18.9 local.
@@ -917,18 +951,23 @@ class _SplashPainter extends CustomPainter {
         // punta esattamente sulla punta visuale. Match in-game `nose =
         // position + dir.normalized() * 22` (Player.dart line 467).
         const noseOffset = 22.0;
-        // Iter 12 (utente: "bullets non in fila"): tutte le coppie del burst
-        // emergono dalla STESSA ship pos (snapshot al burst-start) → bullet
-        // perfettamente in fila lungo aimDir, distanziati solo da
-        // velocità × pairInterval → linea retta come basic weapon in-game.
-        final shipCenterX = burstShipX;
-        final shipCenterY = burstShipY;
 
         // Itera coppie del burst.
         for (int p = 0; p < pairsPerBurst; p++) {
           final fireTime = burstStart + p * pairInterval;
           if (t <= fireTime) continue;
           final dtSinceFire = t - fireTime;
+
+          // Iter 17 (utente: "bullets sembrano partire da dietro la
+          // navicella"): pos della nave a `fireTime` ricalcolata da
+          // posSnap + velSnap × (fireTime - burstStart_in_seconds).
+          // Prima tutte le pair partivano da `posSnap` (pos vecchia
+          // 0-0.5s prima di now) → la nave si era già spostata avanti
+          // e i bullet apparivano "dietro" la nave corrente.
+          final dtFromBurstStartSec =
+              (fireTime - burstStart) * chaseDurationSec;
+          final shipCenterX = burstShipX + snapVx * dtFromBurstStartSec;
+          final shipCenterY = burstShipY + snapVy * dtFromBurstStartSec;
 
           // Distanza percorsa dal bullet: velocity costante × dt
           // (dt in chase-units, speed in px/chase-unit).

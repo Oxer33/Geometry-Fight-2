@@ -186,6 +186,9 @@ class _ModeSelectScreenState extends State<ModeSelectScreen>
     //   - container 128 → 110 (3 × 28 + 2 × 6 spacing + 10 padding).
     //   - childAspectRatio 56/145 → 28/101 ≈ 0.277 (crossExtent/mainExtent
     //     per horizontal GridView).
+    // Iter 21 (richiesta utente: "bottoni troppo larghi, -20%"):
+    //   - card 101 → 81 (width -20%). Height invariata (28).
+    //   - childAspectRatio 28/101 → 28/81 ≈ 0.346.
     return Opacity(
       opacity: e,
       child: Transform.translate(
@@ -197,7 +200,7 @@ class _ModeSelectScreenState extends State<ModeSelectScreen>
             crossAxisCount: 3, // 3 rows visibili
             mainAxisSpacing: 6,
             crossAxisSpacing: 6,
-            childAspectRatio: 28 / 101, // crossExtent/mainExtent = card 101×28
+            childAspectRatio: 28 / 81, // crossExtent/mainExtent = card 81×28
             padding: const EdgeInsets.all(5),
             children: GameMode.values.map((mode) {
               final config = gameModeConfigs[mode]!;
@@ -329,36 +332,21 @@ class _NeonModeCard extends StatelessWidget {
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 250),
-        // Iter 12: width fit GridView constraint, height target 56.
-        // Glow shimmer multi-layer pulsante quando selected.
+        // Iter 21 (utente: "tap auto-advance, no preselezione classic"):
+        // rimossa la distinzione visuale `isSelected` vs `unlocked-but-not-
+        // selected` — il flow è tap-to-advance, non c'è più una card
+        // "selezionata in attesa di Avanti". Tutte le card unlocked
+        // hanno lo stesso bordo + glow moderato per uniformità.
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(12),
-          boxShadow: isSelected
+          boxShadow: isUnlocked
               ? [
-                  // Iter 15 (utente: "glow ancora più piccolo, metà"):
-                  // halved again da iter14. Compatto, no overflow su altre.
                   BoxShadow(
-                    color: themeColor.withValues(alpha: 0.55 + glow * 0.35),
-                    blurRadius: 6 + glow * 2.5,
-                    spreadRadius: 0.5 + glow * 0.5,
-                  ),
-                  BoxShadow(
-                    color: themeColor.withValues(alpha: 0.4),
-                    blurRadius: 3,
-                  ),
-                  BoxShadow(
-                    color: Colors.white.withValues(alpha: 0.15 + glow * 0.15),
-                    blurRadius: 1,
+                    color: themeColor.withValues(alpha: 0.25 + glow * 0.15),
+                    blurRadius: 10,
                   ),
                 ]
-              : isUnlocked
-                  ? [
-                      BoxShadow(
-                        color: themeColor.withValues(alpha: 0.15 + glow * 0.1),
-                        blurRadius: 10,
-                      ),
-                    ]
-                  : null,
+              : null,
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(12),
@@ -371,20 +359,18 @@ class _NeonModeCard extends StatelessWidget {
                     color: tint,
                     seed: mode.hashCode,
                     pulse: glow,
-                    isSelected: isSelected,
+                    isSelected: false,
                   ),
                 ),
               ),
-              // Border neon
+              // Border neon — uniforme per tutte le card unlocked
               Positioned.fill(
                 child: Container(
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                      color: isSelected
-                          ? themeColor.withValues(alpha: 0.85 + glow * 0.15)
-                          : tint.withValues(alpha: isUnlocked ? 0.45 : 0.18),
-                      width: isSelected ? 2.0 : 1.0,
+                      color: tint.withValues(alpha: isUnlocked ? 0.55 : 0.18),
+                      width: 1.2,
                     ),
                   ),
                 ),
@@ -423,25 +409,27 @@ class _NeonModeCard extends StatelessWidget {
                               softWrap: false,
                               overflow: TextOverflow.ellipsis,
                               textAlign: TextAlign.center,
+                              // Iter 21 (utente: "scritte tutte bianche
+                              // evidenti come classic preselezionata"):
+                              // unlocked = sempre bianco fontSize 13
+                              // shadow forte themeColor blurRadius 8;
+                              // locked = white30 senza shadow. Rimossa
+                              // distinzione isSelected (tap auto-advance).
                               style: TextStyle(
-                                color: !isUnlocked
-                                    ? Colors.white30
-                                    : isSelected
-                                        ? Colors.white
-                                        : themeColor,
-                                fontSize: isSelected ? 13 : 12,
+                                color: isUnlocked
+                                    ? Colors.white
+                                    : Colors.white30,
+                                fontSize: 13,
                                 fontWeight: FontWeight.w700,
                                 fontFamily: 'monospace',
                                 letterSpacing: -0.5,
                                 shadows: isUnlocked
                                     ? [
                                         Shadow(
-                                            color: isSelected
-                                                ? themeColor
-                                                    .withValues(alpha: 0.95)
-                                                : themeColor
-                                                    .withValues(alpha: 0.45),
-                                            blurRadius: isSelected ? 8 : 4)
+                                          color: themeColor.withValues(
+                                              alpha: 0.95),
+                                          blurRadius: 8,
+                                        ),
                                       ]
                                     : null,
                               ),
