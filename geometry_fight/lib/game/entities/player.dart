@@ -104,6 +104,13 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
   // economica da renderizzare.
   static const int _snakeTrailMaxSegments = 50;
   final List<SnakeTrailSegment> _snakeTrailSegments = <SnakeTrailSegment>[];
+  // Posizione del frame precedente per interpolazione: se microlag fa
+  // saltare il player più in là di un singolo segmento, lerp da prev→pos
+  // e spawna segmenti lungo il path → no più gap visibili nella scia.
+  Vector2? _snakePrevPos;
+  // Offset back-along-velocity per spawnare il segmento subito DIETRO la
+  // navicella invece che al centro: 16px ≈ raggio player (player size 30).
+  static const double _snakeTrailBackOffset = 16.0;
   // Phase counter (incrementato ad ogni spawn) per dare un pulse cromatico
   // visualmente coerente lungo la scia.
   double _snakeTrailPhase = 0;
@@ -354,11 +361,42 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
             .removeWhere((s) => s.isRemoved || !s.isMounted);
 
         _snakeTrailTick += realDt;
-        if (_snakeTrailTick >= _snakeTrailInterval) {
-          // Modulo invece di reset a 0: preserva l'eccesso di tempo accumulato
-          // sopra l'intervallo → evita drift con frame variabili (es. 32ms
-          // frame tick avanza solo di 30ms → 2ms persi ogni spawn).
-          _snakeTrailTick %= _snakeTrailInterval;
+        // Interpolazione anti-microlag: se realDt è grande (frame drop),
+        // il player può essere "saltato" più di un intervallo. Lerp da
+        // _snakePrevPos → position e spawna multipli segmenti lungo il
+        // path. Loop while finché _snakeTrailTick rientra sotto la soglia.
+        final prev = _snakePrevPos ?? position;
+        // Direzione back-along-velocity per offset dietro la nave.
+        // Usa moveDir (locale a update()), fallback al vettore prev→position.
+        Vector2 backVec;
+        if (moveDir.length2 > 0.01) {
+          backVec = -moveDir.normalized() * _snakeTrailBackOffset;
+        } else {
+          final delta = position - prev;
+          if (delta.length2 > 0.01) {
+            backVec = -delta.normalized() * _snakeTrailBackOffset;
+          } else {
+            // Fermo: usa la rotazione corrente (la prua è -π/2 dal _rotation)
+            // → back = +cos/sin direction da _rotation - π/2 inverted.
+            final ang = _rotation - math.pi / 2;
+            backVec = Vector2(-math.cos(ang), -math.sin(ang)) *
+                _snakeTrailBackOffset;
+          }
+        }
+        while (_snakeTrailTick >= _snakeTrailInterval) {
+          _snakeTrailTick -= _snakeTrailInterval;
+          // t va da prev→position. Quando _snakeTrailTick scende sotto la
+          // soglia dopo i decrementi, t finale ≈ realDt/totale → spawn più
+          // vicino alla posizione corrente. Distribuzione uniforme nei
+          // frame normali, lerp lineare nei frame con dt grande.
+          final tRemain = realDt > 0
+              ? (_snakeTrailTick / realDt).clamp(0.0, 1.0)
+              : 0.0;
+          final t = (1.0 - tRemain).clamp(0.0, 1.0);
+          final spawnPos = Vector2(
+            prev.x + (position.x - prev.x) * t,
+            prev.y + (position.y - prev.y) * t,
+          )..add(backVec);
           // Cap recycle: rimuovi il più vecchio finché non rientriamo.
           while (_snakeTrailSegments.length >= _snakeTrailMaxSegments) {
             final old = _snakeTrailSegments.removeAt(0);
@@ -366,12 +404,15 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
           }
           _snakeTrailPhase += 0.35;
           final seg = SnakeTrailSegment(
-            spawnAt: position,
+            spawnAt: spawnPos,
             phase: _snakeTrailPhase,
           );
           _snakeTrailSegments.add(seg);
           game.world.add(seg);
         }
+        // Aggiorna prev per il prossimo frame DOPO i spawn (così la prossima
+        // interpolazione parte dalla posizione corrente).
+        _snakePrevPos = position.clone();
       }
     }
   }
