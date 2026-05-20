@@ -151,9 +151,8 @@ class _SplashScreenState extends State<SplashScreen>
     final cy = size.height / 2;
     final droneX = size.width * (-0.15 + t * 1.20);
     final droneJitter = math.sin(t * math.pi * 8) * 6;
-    final droneY = cy +
-        math.sin(t * math.pi * 2) * size.height * 0.32 +
-        droneJitter;
+    final droneY =
+        cy + math.sin(t * math.pi * 2) * size.height * 0.32 + droneJitter;
 
     // Init lazy: prima frame con size valido → ship parte un po' a sx del
     // mob, allineata verticalmente. Velocity iniziale verso il mob.
@@ -234,16 +233,20 @@ class _SplashScreenState extends State<SplashScreen>
       final k = ((edgeMargin - _shipX) / edgeMargin).clamp(0.0, 1.0);
       _shipVx += edgeAccel * k * dt;
     } else if (_shipX > size.width - edgeMargin) {
-      final k = ((_shipX - (size.width - edgeMargin)) / edgeMargin)
-          .clamp(0.0, 1.0);
+      final k = ((_shipX - (size.width - edgeMargin)) / edgeMargin).clamp(
+        0.0,
+        1.0,
+      );
       _shipVx -= edgeAccel * k * dt;
     }
     if (_shipY < edgeMargin) {
       final k = ((edgeMargin - _shipY) / edgeMargin).clamp(0.0, 1.0);
       _shipVy += edgeAccel * k * dt;
     } else if (_shipY > size.height - edgeMargin) {
-      final k = ((_shipY - (size.height - edgeMargin)) / edgeMargin)
-          .clamp(0.0, 1.0);
+      final k = ((_shipY - (size.height - edgeMargin)) / edgeMargin).clamp(
+        0.0,
+        1.0,
+      );
       _shipVy -= edgeAccel * k * dt;
     }
 
@@ -343,6 +346,10 @@ class _SplashScreenState extends State<SplashScreen>
     _chaseController.dispose();
     _logoController.dispose();
     _bgController.dispose();
+    // Iter 22 (flutter-review): rilascia le TextPainter cache statiche
+    // del painter — eviterebbe accumulazione di paragraph layouts oltre
+    // la durata della splash (l'unico screen che le popola).
+    _SplashPainter.disposeStaticCaches();
     super.dispose();
   }
 
@@ -357,9 +364,16 @@ class _SplashScreenState extends State<SplashScreen>
         child: Stack(
           children: [
             NeonAnimatedBuilder(
-              animation: Listenable.merge([_chaseController, _bgController, _logoController]),
+              animation: Listenable.merge([
+                _chaseController,
+                _bgController,
+                _logoController,
+              ]),
               builder: (context, _) {
-                final screenSize = MediaQuery.of(context).size;
+                // Iter 22 (flutter-review): `MediaQuery.sizeOf` narrows
+                // sottoscrizione a sole `size` changes (vs `.of` che si
+                // iscrive a tutto: orientation/textScale/padding/insets).
+                final screenSize = MediaQuery.sizeOf(context);
                 // Memorizza size per `_updateShipSteering` (chiamato dal
                 // listener del chaseController, che non ha accesso al context).
                 _lastSize = screenSize;
@@ -397,7 +411,7 @@ class _SplashScreenState extends State<SplashScreen>
 
             // SKIP button — neon fluo con HSV rainbow ciclante
             Positioned(
-              top: MediaQuery.of(context).padding.top + 12,
+              top: MediaQuery.paddingOf(context).top + 12,
               right: 16,
               child: GestureDetector(
                 onTap: _fireCompleteOnce,
@@ -407,14 +421,25 @@ class _SplashScreenState extends State<SplashScreen>
                     // Hue ciclante da `_bgController` (10s loop) + shift
                     // sinusoidale per pulse extra.
                     final hue = (_bgController.value * 360) % 360;
-                    final pulse = 0.6 + math.sin(_bgController.value * math.pi * 4) * 0.4;
-                    final neonColor =
-                        HSVColor.fromAHSV(1.0, hue, 0.85, 1.0).toColor();
-                    final neonColorShift =
-                        HSVColor.fromAHSV(1.0, (hue + 90) % 360, 0.85, 1.0).toColor();
+                    final pulse =
+                        0.6 + math.sin(_bgController.value * math.pi * 4) * 0.4;
+                    final neonColor = HSVColor.fromAHSV(
+                      1.0,
+                      hue,
+                      0.85,
+                      1.0,
+                    ).toColor();
+                    final neonColorShift = HSVColor.fromAHSV(
+                      1.0,
+                      (hue + 90) % 360,
+                      0.85,
+                      1.0,
+                    ).toColor();
                     return Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 18, vertical: 9),
+                        horizontal: 18,
+                        vertical: 9,
+                      ),
                       decoration: BoxDecoration(
                         border: Border.all(
                           color: neonColor.withValues(alpha: 0.85),
@@ -437,7 +462,9 @@ class _SplashScreenState extends State<SplashScreen>
                             spreadRadius: 1,
                           ),
                           BoxShadow(
-                            color: neonColorShift.withValues(alpha: 0.25 * pulse),
+                            color: neonColorShift.withValues(
+                              alpha: 0.25 * pulse,
+                            ),
                             blurRadius: 22,
                           ),
                         ],
@@ -467,9 +494,7 @@ class _SplashScreenState extends State<SplashScreen>
                             Icons.skip_next,
                             color: neonColor,
                             size: 18,
-                            shadows: [
-                              Shadow(color: neonColor, blurRadius: 8),
-                            ],
+                            shadows: [Shadow(color: neonColor, blurRadius: 8)],
                           ),
                         ],
                       ),
@@ -538,8 +563,7 @@ class _SplashPainter extends CustomPainter {
   static final Paint _shipGlowPaint = Paint()
     ..color = const Color(0xFF00FFFF).withValues(alpha: 0.25)
     ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 12);
-  static final Paint _shipBodyPaint = Paint()
-    ..color = const Color(0xFF00FFFF);
+  static final Paint _shipBodyPaint = Paint()..color = const Color(0xFF00FFFF);
   static final Paint _shipStrokePaint = Paint()
     ..color = const Color(0xFFFFFFFF).withValues(alpha: 0.35)
     ..style = PaintingStyle.stroke
@@ -605,24 +629,11 @@ class _SplashPainter extends CustomPainter {
   // Logo line paint cache (2 linee decorative → 1 Paint; strokeWidth=1 costante)
   static final Paint _logoLinePaint = Paint()..strokeWidth = 1;
 
-  // Iter 10 game-like upgrade: grid distortion + geom drops + HUD + kills.
-  static final Paint _gridPaint = Paint()
-    ..style = PaintingStyle.stroke
-    ..strokeWidth = 0.7;
-  static final Paint _gridGlowPaint = Paint()
-    ..style = PaintingStyle.stroke
-    ..strokeWidth = 2.0
-    ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
-  static final Paint _geomFillPaint = Paint();
-  static final Paint _geomStrokePaint = Paint()..style = PaintingStyle.stroke;
-  static final Paint _hudBgPaint = Paint();
-  static final Paint _killExpPaint = Paint();
-  static final Paint _killShockPaint = Paint()..style = PaintingStyle.stroke;
-  static final Paint _floatyTrailPaint = Paint();
-  static TextPainter? _cachedScorePainter;
-  static int _cachedScoreValue = -1;
-  static TextPainter? _cachedMultPainter;
-  static int _cachedMultValue = -1;
+  // Iter 22 (flutter-review): rimossi 8 Paint + 4 TextPainter cache associati
+  // a `_drawGameGrid`, `_drawFloatingGeoms`, `_drawSecondaryKills`,
+  // `_drawHUDOverlay` (tutti dead code rimossi nella stessa iter). Le iter
+  // 11-13 li avevano marcati come "Tenuto per ref" ma git history è la
+  // location corretta per il ref, non il file live.
 
   // Logo glow paint cache: MaskFilter blur(radius=40) cached all'init (nota
   // che `_drawLogo` disegna cerchio costante, blur costante → Paint totalmente
@@ -639,6 +650,22 @@ class _SplashPainter extends CustomPainter {
   static TextPainter? _cachedSubPainter;
   static int _cachedSubAlphaPulseQ = -1;
   static String? _cachedSubText;
+
+  /// Rilascia le TextPainter cache statiche e azzera i sentinel di
+  /// invalidation. Chiamato da `_SplashScreenState.dispose()`. Evita
+  /// che paragraph layouts (UI native object) sopravvivano oltre la
+  /// durata della splash e potenzialmente vengano riusati con stato
+  /// stale in caso di hot-restart o splash re-mount.
+  static void disposeStaticCaches() {
+    _cachedTitlePainter?.dispose();
+    _cachedTitlePainter = null;
+    _cachedTitleAlphaQ = -1;
+    _cachedTitleScaleQ = -1;
+    _cachedSubPainter?.dispose();
+    _cachedSubPainter = null;
+    _cachedSubAlphaPulseQ = -1;
+    _cachedSubText = null;
+  }
 
   _SplashPainter({
     required this.chaseProgress,
@@ -703,10 +730,7 @@ class _SplashPainter extends CustomPainter {
     final p1 = Offset(size.width * 0.2, size.height * 0.3);
     final pulse1 = 0.03 + math.sin(bgPhase * math.pi * 2) * 0.01;
     _nebulaPaint.shader = RadialGradient(
-      colors: [
-        Color.fromRGBO(30, 0, 100, pulse1),
-        Colors.transparent,
-      ],
+      colors: [Color.fromRGBO(30, 0, 100, pulse1), Colors.transparent],
     ).createShader(Rect.fromCircle(center: p1, radius: size.width * 0.5));
     canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), _nebulaPaint);
 
@@ -714,10 +738,7 @@ class _SplashPainter extends CustomPainter {
     final p2 = Offset(size.width * 0.8, size.height * 0.7);
     final pulse2 = 0.02 + math.sin(bgPhase * math.pi * 2 + 2) * 0.01;
     _nebulaPaint.shader = RadialGradient(
-      colors: [
-        Color.fromRGBO(0, 50, 80, pulse2),
-        Colors.transparent,
-      ],
+      colors: [Color.fromRGBO(0, 50, 80, pulse2), Colors.transparent],
     ).createShader(Rect.fromCircle(center: p2, radius: size.width * 0.4));
     canvas.drawRect(Rect.fromLTWH(0, 0, size.width, size.height), _nebulaPaint);
 
@@ -775,10 +796,18 @@ class _SplashPainter extends CustomPainter {
       final baseX = random.nextDouble() * size.width;
       final y = random.nextDouble() * size.height;
       final speedMul = 0.5 + random.nextDouble() * 1.5;
-      final parallax = bgPhase * 40 * speedMul + (chaseProgress * 400 * speedMul);
+      final parallax =
+          bgPhase * 40 * speedMul + (chaseProgress * 400 * speedMul);
       final x = (baseX - parallax) % size.width;
       final s = 0.3 + random.nextDouble() * 0.7;
-      final twinkle = 0.2 + 0.5 * ((math.sin(bgPhase * math.pi * 2 * (0.5 + random.nextDouble()) + i) + 1) / 2);
+      final twinkle =
+          0.2 +
+          0.5 *
+              ((math.sin(
+                        bgPhase * math.pi * 2 * (0.5 + random.nextDouble()) + i,
+                      ) +
+                      1) /
+                  2);
       _starsPaint.color = Color.fromRGBO(180, 200, 255, twinkle * 0.4);
       canvas.drawCircle(Offset(x, y), s, _starsPaint);
     }
@@ -788,10 +817,19 @@ class _SplashPainter extends CustomPainter {
       final baseX = random.nextDouble() * size.width;
       final y = random.nextDouble() * size.height;
       final speedMul = 0.6 + random.nextDouble() * 1.8;
-      final parallax = bgPhase * 80 * speedMul + (chaseProgress * 1000 * speedMul);
+      final parallax =
+          bgPhase * 80 * speedMul + (chaseProgress * 1000 * speedMul);
       final x = (baseX - parallax) % size.width;
       final s = 0.5 + random.nextDouble() * 1.2;
-      final twinkle = 0.3 + 0.7 * ((math.sin(bgPhase * math.pi * 2 * (1 + random.nextDouble()) + i * 3) + 1) / 2);
+      final twinkle =
+          0.3 +
+          0.7 *
+              ((math.sin(
+                        bgPhase * math.pi * 2 * (1 + random.nextDouble()) +
+                            i * 3,
+                      ) +
+                      1) /
+                  2);
       _starsPaint.color = Color.fromRGBO(200, 220, 255, twinkle * 0.6);
       canvas.drawCircle(Offset(x, y), s, _starsPaint);
     }
@@ -801,10 +839,19 @@ class _SplashPainter extends CustomPainter {
       final baseX = random.nextDouble() * size.width;
       final y = random.nextDouble() * size.height;
       final speedMul = 0.7 + random.nextDouble() * 2.3;
-      final parallax = bgPhase * 160 * speedMul + (chaseProgress * 2000 * speedMul);
+      final parallax =
+          bgPhase * 160 * speedMul + (chaseProgress * 2000 * speedMul);
       final x = (baseX - parallax) % size.width;
       final s = 1.0 + random.nextDouble() * 1.5;
-      final twinkle = 0.4 + 0.6 * ((math.sin(bgPhase * math.pi * 2 * (2 + random.nextDouble()) + i * 7) + 1) / 2);
+      final twinkle =
+          0.4 +
+          0.6 *
+              ((math.sin(
+                        bgPhase * math.pi * 2 * (2 + random.nextDouble()) +
+                            i * 7,
+                      ) +
+                      1) /
+                  2);
       _starsPaint.color = Color.fromRGBO(220, 240, 255, twinkle * 0.7);
       canvas.drawCircle(Offset(x, y), s, _starsPaint);
     }
@@ -819,7 +866,10 @@ class _SplashPainter extends CustomPainter {
       final y = random.nextDouble() * size.height;
       final baseLen = 20 + random.nextDouble() * 40;
       final len = baseLen * intensity;
-      final x = (random.nextDouble() * size.width * 1.5 - chaseProgress * size.width * 2) % (size.width + len);
+      final x =
+          (random.nextDouble() * size.width * 1.5 -
+              chaseProgress * size.width * 2) %
+          (size.width + len);
       final alpha = 0.08 + random.nextDouble() * 0.07;
       _speedLinesPaint.color = Color.fromRGBO(100, 180, 255, alpha * intensity);
       canvas.drawLine(Offset(x, y), Offset(x + len, y), _speedLinesPaint);
@@ -840,8 +890,8 @@ class _SplashPainter extends CustomPainter {
     // Sinusoide singola lenta: 1 onda completa nel chase, amp 0.32 size.h
     // → mob copre da alto a basso schermo. Jitter sottile aggiunge vita.
     final droneJitter = math.sin(t * math.pi * 8) * 6;
-    final droneY = cy + math.sin(t * math.pi * 2) * size.height * 0.32 +
-        droneJitter;
+    final droneY =
+        cy + math.sin(t * math.pi * 2) * size.height * 0.32 + droneJitter;
 
     // === Iter 15: ship pos da steering (NON più formula). ===
     // Lo state `_updateShipSteering` integra velocity + position frame-by-frame.
@@ -873,9 +923,8 @@ class _SplashPainter extends CustomPainter {
       final dt2 = raw.clamp(0.0, 1.0);
       final dtx = size.width * (-0.15 + dt2 * 1.20);
       final dJitterPast = math.sin(dt2 * math.pi * 8) * 6;
-      final dty = cy +
-          math.sin(dt2 * math.pi * 2) * size.height * 0.32 +
-          dJitterPast;
+      final dty =
+          cy + math.sin(dt2 * math.pi * 2) * size.height * 0.32 + dJitterPast;
       final a = (1 - i / 12.0) * 0.22;
       final s = (1 - i / 12.0) * 3.5;
       _droneTrailPaint.color = Color.fromRGBO(0, 255, 90, a);
@@ -893,11 +942,11 @@ class _SplashPainter extends CustomPainter {
       final ty = trailY[idx];
       final a = (1 - i / trailLen.toDouble()) * 0.4;
       final s = (1 - i / trailLen.toDouble()) * 3.5;
-      _shipTrailGlowPaint.color =
-          const Color(0xFF00FFFF).withValues(alpha: a * 0.4);
+      _shipTrailGlowPaint.color = const Color(
+        0xFF00FFFF,
+      ).withValues(alpha: a * 0.4);
       canvas.drawCircle(Offset(tx, ty), s * 1.8, _shipTrailGlowPaint);
-      _shipTrailCorePaint.color =
-          const Color(0xFF00FFFF).withValues(alpha: a);
+      _shipTrailCorePaint.color = const Color(0xFF00FFFF).withValues(alpha: a);
       canvas.drawCircle(Offset(tx, ty), s, _shipTrailCorePaint);
     }
 
@@ -973,63 +1022,65 @@ class _SplashPainter extends CustomPainter {
           // (dt in chase-units, speed in px/chase-unit).
           final travel = bulletSpeedPerChaseUnit * dtSinceFire;
 
-        // Disegna COPPIA di bullet paralleli (±perp offset come basic weapon)
-        for (int side = -1; side <= 1; side += 2) {
-          final offsetX = perpX * pairOffset * side;
-          final offsetY = perpY * pairOffset * side;
-          final fromX = shipCenterX + dirX * noseOffset + offsetX;
-          final fromY = shipCenterY + dirY * noseOffset + offsetY;
-          final bx = fromX + dirX * travel;
-          final by = fromY + dirY * travel;
+          // Disegna COPPIA di bullet paralleli (±perp offset come basic weapon)
+          for (int side = -1; side <= 1; side += 2) {
+            final offsetX = perpX * pairOffset * side;
+            final offsetY = perpY * pairOffset * side;
+            final fromX = shipCenterX + dirX * noseOffset + offsetX;
+            final fromY = shipCenterY + dirY * noseOffset + offsetY;
+            final bx = fromX + dirX * travel;
+            final by = fromY + dirY * travel;
 
-          // Culling: bullet fuori schermo (+margine) → skip render
-          const margin = 60.0;
-          if (bx < -margin ||
-              bx > size.width + margin ||
-              by < -margin ||
-              by > size.height + margin) {
-            continue;
-          }
+            // Culling: bullet fuori schermo (+margine) → skip render
+            const margin = 60.0;
+            if (bx < -margin ||
+                bx > size.width + margin ||
+                by < -margin ||
+                by > size.height + margin) {
+              continue;
+            }
 
-          // Trail (cerchietti dietro al bullet lungo -aimDir)
-          for (int ti = 1; ti <= 5; ti++) {
-            final tAlpha = (1 - ti / 5) * 0.35;
-            _bulletTrailPaint.color =
-                bulletColor.withValues(alpha: tAlpha);
-            canvas.drawCircle(
-              Offset(bx - dirX * ti * 4, by - dirY * ti * 4),
-              1.6 * (1 - ti / 5.5),
-              _bulletTrailPaint,
-            );
-          }
+            // Trail (cerchietti dietro al bullet lungo -aimDir)
+            for (int ti = 1; ti <= 5; ti++) {
+              final tAlpha = (1 - ti / 5) * 0.35;
+              _bulletTrailPaint.color = bulletColor.withValues(alpha: tAlpha);
+              canvas.drawCircle(
+                Offset(bx - dirX * ti * 4, by - dirY * ti * 4),
+                1.6 * (1 - ti / 5.5),
+                _bulletTrailPaint,
+              );
+            }
 
-          // Glow + corpo + core del bullet
-          _bulletGlowPaint.color = bulletColor.withValues(alpha: 0.4);
-          canvas.drawCircle(Offset(bx, by), 5, _bulletGlowPaint);
-          _bulletBodyPaint.color = bulletColor;
-          canvas.drawCircle(Offset(bx, by), 3.2, _bulletBodyPaint);
-          _bulletCorePaint.color =
-              const Color(0xFFFFFFFF).withValues(alpha: 0.85);
-          canvas.drawCircle(Offset(bx, by), 1.3, _bulletCorePaint);
+            // Glow + corpo + core del bullet
+            _bulletGlowPaint.color = bulletColor.withValues(alpha: 0.4);
+            canvas.drawCircle(Offset(bx, by), 5, _bulletGlowPaint);
+            _bulletBodyPaint.color = bulletColor;
+            canvas.drawCircle(Offset(bx, by), 3.2, _bulletBodyPaint);
+            _bulletCorePaint.color = const Color(
+              0xFFFFFFFF,
+            ).withValues(alpha: 0.85);
+            canvas.drawCircle(Offset(bx, by), 1.3, _bulletCorePaint);
 
-          // Muzzle flash al nose durante primi 0.05 chase-time del bullet
-          if (dtSinceFire < 0.05) {
-            final flashAlpha = (1 - dtSinceFire / 0.05) * 0.7;
-            _muzzleGlowPaint.color =
-                bulletColor.withValues(alpha: flashAlpha * 0.5);
-            canvas.drawCircle(Offset(fromX, fromY), 8, _muzzleGlowPaint);
-            _muzzleCorePaint.color =
-                const Color(0xFFFFFFFF).withValues(alpha: flashAlpha);
-            canvas.drawCircle(Offset(fromX, fromY), 4, _muzzleCorePaint);
-          }
-        } // for side
+            // Muzzle flash al nose durante primi 0.05 chase-time del bullet
+            if (dtSinceFire < 0.05) {
+              final flashAlpha = (1 - dtSinceFire / 0.05) * 0.7;
+              _muzzleGlowPaint.color = bulletColor.withValues(
+                alpha: flashAlpha * 0.5,
+              );
+              canvas.drawCircle(Offset(fromX, fromY), 8, _muzzleGlowPaint);
+              _muzzleCorePaint.color = const Color(
+                0xFFFFFFFF,
+              ).withValues(alpha: flashAlpha);
+              canvas.drawCircle(Offset(fromX, fromY), 4, _muzzleCorePaint);
+            }
+          } // for side
         } // for p (pair within burst)
       } // for b (burst)
     } // if (t > 0.1)
 
     // === WEAVER: schiva TUTTI i proiettili, non viene mai colpito.
     // Nessun fumo/damage — il mob sopravvive per tutto lo splash. ===
-    _drawDrone(canvas, droneX, droneY, t, false);
+    _drawDrone(canvas, droneX, droneY, t);
 
     // === NAVICELLA (in-game graphics, ruota verso velocity per Iter 15). ===
     _drawShip(canvas, effShipX, effShipY, shipT, aimAngle);
@@ -1038,7 +1089,7 @@ class _SplashPainter extends CustomPainter {
   /// Weaver verde (stile `WeaverEnemy` in gioco): rombo ALLUNGATO vertical
   /// con bordo neon, flusso energetico interno, nodi sulle 4 punte.
   /// Orientato orizzontale (punta verso sx = direzione di fuga).
-  void _drawDrone(Canvas canvas, double x, double y, double t, bool damaged) {
+  void _drawDrone(Canvas canvas, double x, double y, double t) {
     // Scala: `w=6, h=12` come WeaverEnemy in gioco × fattore per splash.
     const w = 8.5; // lato corto (perpendicolare alla fuga)
     const h = 17.0; // lato lungo (direzione di fuga)
@@ -1048,9 +1099,10 @@ class _SplashPainter extends CustomPainter {
     // per allungarlo orizzontale.
     canvas.rotate(math.pi / 2);
 
-    final bodyColor = damaged
-        ? const Color(0xFFFF6633) // arancio danno
-        : const Color(0xFF00FF44); // verde neon (NeonColors.green)
+    // Iter 22 (flutter-review): rimosso branch `damaged` — il weaver
+    // schiva tutti i bullets e non viene mai colpito, quindi il body
+    // resta sempre verde neon. Era dead code.
+    const bodyColor = Color(0xFF00FF44); // verde neon (NeonColors.green)
 
     // ─── GLOW ESTERNO (rombo più grande, no blur) ───
     final glowPath = Path()
@@ -1091,8 +1143,9 @@ class _SplashPainter extends CustomPainter {
     final flowY = -h * 0.8 + flowProgress * h * 1.6;
     final flowAlpha = 0.5 * (1 - (flowProgress - 0.5).abs() * 2);
     if (flowAlpha > 0) {
-      _droneCorePaint.color =
-          const Color(0xFFFFFFFF).withValues(alpha: flowAlpha);
+      _droneCorePaint.color = const Color(
+        0xFFFFFFFF,
+      ).withValues(alpha: flowAlpha);
       canvas.drawCircle(Offset(0, flowY), 1.3, _droneCorePaint);
     }
 
@@ -1111,11 +1164,13 @@ class _SplashPainter extends CustomPainter {
 
     // ─── NUCLEO pulsante centrale ───
     final corePulse = 0.5 + math.sin(t * 15) * 0.4;
-    _droneCoreHaloPaint.color =
-        const Color(0xFFFFFFFF).withValues(alpha: corePulse * 0.35);
+    _droneCoreHaloPaint.color = const Color(
+      0xFFFFFFFF,
+    ).withValues(alpha: corePulse * 0.35);
     canvas.drawCircle(Offset.zero, w * 0.45, _droneCoreHaloPaint);
-    _droneCorePaint.color =
-        const Color(0xFFFFFFFF).withValues(alpha: corePulse);
+    _droneCorePaint.color = const Color(
+      0xFFFFFFFF,
+    ).withValues(alpha: corePulse);
     canvas.drawCircle(Offset.zero, w * 0.22, _droneCorePaint);
 
     canvas.restore();
@@ -1141,16 +1196,16 @@ class _SplashPainter extends CustomPainter {
     // ─── CORPO NAVE (stesso Path di `Player._drawShipBody` standard) ───
     const s = 1.35; // Leggermente più grande per risaltare nel splash
     final shipPath = Path()
-      ..moveTo(0, -14 * s)           // Punta
-      ..lineTo(4 * s, -6 * s)        // Lato destro punta
-      ..lineTo(13 * s, 10 * s)       // Ala destra esterna
-      ..lineTo(8 * s, 8 * s)         // Rientro ala destra
-      ..lineTo(5 * s, 14 * s)        // Coda destra
-      ..lineTo(0, 10 * s)            // Centro coda
-      ..lineTo(-5 * s, 14 * s)       // Coda sinistra
-      ..lineTo(-8 * s, 8 * s)        // Rientro ala sinistra
-      ..lineTo(-13 * s, 10 * s)      // Ala sinistra esterna
-      ..lineTo(-4 * s, -6 * s)       // Lato sinistro punta
+      ..moveTo(0, -14 * s) // Punta
+      ..lineTo(4 * s, -6 * s) // Lato destro punta
+      ..lineTo(13 * s, 10 * s) // Ala destra esterna
+      ..lineTo(8 * s, 8 * s) // Rientro ala destra
+      ..lineTo(5 * s, 14 * s) // Coda destra
+      ..lineTo(0, 10 * s) // Centro coda
+      ..lineTo(-5 * s, 14 * s) // Coda sinistra
+      ..lineTo(-8 * s, 8 * s) // Rientro ala sinistra
+      ..lineTo(-13 * s, 10 * s) // Ala sinistra esterna
+      ..lineTo(-4 * s, -6 * s) // Lato sinistro punta
       ..close();
 
     // Glow esterno (come `Player.render` layer 3 — `_drawShipBody(1.7)`)
@@ -1164,37 +1219,43 @@ class _SplashPainter extends CustomPainter {
 
     // ─── COCKPIT (stesso stile di `Player._renderShipDetails`) ───
     final cockpitGlow = 0.6 + math.sin(t * 10) * 0.2;
-    _cockpitHaloPaint.color =
-        const Color(0xFFFFFFFF).withValues(alpha: cockpitGlow * 0.5);
+    _cockpitHaloPaint.color = const Color(
+      0xFFFFFFFF,
+    ).withValues(alpha: cockpitGlow * 0.5);
     canvas.drawCircle(const Offset(0, -4 * s), 5, _cockpitHaloPaint);
-    _cockpitWhitePaint.color =
-        const Color(0xFFFFFFFF).withValues(alpha: cockpitGlow);
+    _cockpitWhitePaint.color = const Color(
+      0xFFFFFFFF,
+    ).withValues(alpha: cockpitGlow);
     canvas.drawCircle(const Offset(0, -4 * s), 3, _cockpitWhitePaint);
-    _cockpitCyanPaint.color =
-        const Color(0xFF00FFFF).withValues(alpha: 0.9);
+    _cockpitCyanPaint.color = const Color(0xFF00FFFF).withValues(alpha: 0.9);
     canvas.drawCircle(const Offset(0, -4 * s), 2, _cockpitCyanPaint);
 
     // Linee strutturali (stesse di `Player._renderShipDetails`)
     canvas.drawLine(
-        const Offset(-2 * s, 0), const Offset(-10 * s, 10 * s), _shipLinePaint);
+      const Offset(-2 * s, 0),
+      const Offset(-10 * s, 10 * s),
+      _shipLinePaint,
+    );
     canvas.drawLine(
-        const Offset(2 * s, 0), const Offset(10 * s, 10 * s), _shipLinePaint);
+      const Offset(2 * s, 0),
+      const Offset(10 * s, 10 * s),
+      _shipLinePaint,
+    );
     canvas.drawLine(
-        const Offset(0, -8 * s), const Offset(0, 8 * s), _shipLinePaint);
+      const Offset(0, -8 * s),
+      const Offset(0, 8 * s),
+      _shipLinePaint,
+    );
 
     // ─── WING-TIP LIGHTS (rossa a sx, verde a dx — come in gioco) ───
     final wingPulse = 0.5 + math.sin(t * 15) * 0.5;
-    _wingRedGlowPaint.color =
-        Color.fromRGBO(255, 50, 50, wingPulse * 0.3);
+    _wingRedGlowPaint.color = Color.fromRGBO(255, 50, 50, wingPulse * 0.3);
     canvas.drawCircle(const Offset(-12 * s, 10 * s), 4, _wingRedGlowPaint);
-    _wingRedCorePaint.color =
-        Color.fromRGBO(255, 50, 50, wingPulse * 0.9);
+    _wingRedCorePaint.color = Color.fromRGBO(255, 50, 50, wingPulse * 0.9);
     canvas.drawCircle(const Offset(-12 * s, 10 * s), 2, _wingRedCorePaint);
-    _wingGreenGlowPaint.color =
-        Color.fromRGBO(50, 255, 100, wingPulse * 0.3);
+    _wingGreenGlowPaint.color = Color.fromRGBO(50, 255, 100, wingPulse * 0.3);
     canvas.drawCircle(const Offset(12 * s, 10 * s), 4, _wingGreenGlowPaint);
-    _wingGreenCorePaint.color =
-        Color.fromRGBO(50, 255, 100, wingPulse * 0.9);
+    _wingGreenCorePaint.color = Color.fromRGBO(50, 255, 100, wingPulse * 0.9);
     canvas.drawCircle(const Offset(12 * s, 10 * s), 2, _wingGreenCorePaint);
 
     canvas.restore();
@@ -1262,8 +1323,7 @@ class _SplashPainter extends CustomPainter {
       if (rp <= 0) continue;
       final r = rp * 120 + i * 20;
       final alpha = (1 - rp / 1.5).clamp(0, 1) * 0.35;
-      _explosionRingPaint.color =
-          Color.fromRGBO(0, 255, 255, alpha.toDouble());
+      _explosionRingPaint.color = Color.fromRGBO(0, 255, 255, alpha.toDouble());
       _explosionRingPaint.strokeWidth = (3 - i * 0.5).clamp(0.5, 3);
       canvas.drawCircle(Offset(cx, cy), r.toDouble(), _explosionRingPaint);
     }
@@ -1282,8 +1342,8 @@ class _SplashPainter extends CustomPainter {
       final color = colorChoice == 0
           ? Color.fromRGBO(0, 255, 255, alpha.toDouble())
           : colorChoice == 1
-              ? Color.fromRGBO(255, 255, 255, alpha.toDouble())
-              : Color.fromRGBO(255, 0, 170, alpha.toDouble() * 0.6);
+          ? Color.fromRGBO(255, 255, 255, alpha.toDouble())
+          : Color.fromRGBO(255, 0, 170, alpha.toDouble() * 0.6);
       _explosionParticlePaint.color = color;
       canvas.drawCircle(
         Offset(cx + math.cos(angle) * dist, cy + math.sin(angle) * dist),
@@ -1301,8 +1361,12 @@ class _SplashPainter extends CustomPainter {
       final dy = math.sin(angle);
       final sx = cx + dx * dist;
       final sy = cy + dy * dist;
-      _explosionDebrisPaint.color =
-          Color.fromRGBO(0, 255, 255, alpha.toDouble());
+      _explosionDebrisPaint.color = Color.fromRGBO(
+        0,
+        255,
+        255,
+        alpha.toDouble(),
+      );
       canvas.drawLine(
         Offset(sx, sy),
         Offset(sx + dx * 6, sy + dy * 6),
@@ -1420,303 +1484,6 @@ class _SplashPainter extends CustomPainter {
         Offset(cx - subPainter.width / 2, textY + textPainter.height + 30),
       );
     }
-  }
-
-  // ═══════════════════════════════════════════════════════════════════
-  // ITER 10 game-like helpers: grid distortion bg + geom drops + HUD +
-  // secondary kills chain. Trasforma splash in vera simulazione di gioco.
-  // ═══════════════════════════════════════════════════════════════════
-
-  /// Geometry Wars style grid: linee blu/ciano distorte da sin waves.
-  /// Iter 13: dead code (utente: "no griglia"). Tenuto per ref.
-  // ignore: unused_element
-  void _drawGameGrid(Canvas canvas, Size size) {
-    const cellSize = 70.0;
-    final scrollX = (bgPhase * 80) % cellSize;
-    final scrollY = (bgPhase * 30) % cellSize;
-    final intensity = (0.5 + chaseProgress * 0.5).clamp(0.5, 1.0);
-    final baseAlpha = 0.18 * intensity;
-    final glowAlpha = 0.28 * intensity;
-
-    // Glow layer (più spesso + blur, pulsing).
-    final pulse = 0.7 + math.sin(bgPhase * math.pi * 4) * 0.3;
-    _gridGlowPaint.color = const Color(0xFF0066FF).withValues(alpha: glowAlpha * pulse * 0.4);
-
-    // Linee orizzontali distorte da sin verticale.
-    for (double y = -scrollY; y < size.height + cellSize; y += cellSize) {
-      final path = Path();
-      bool started = false;
-      for (double x = 0; x <= size.width; x += 12) {
-        final dy = math.sin(x * 0.011 + bgPhase * math.pi * 2 + y * 0.004) * 6 +
-            math.cos(x * 0.005 + bgPhase * math.pi) * 3;
-        if (!started) {
-          path.moveTo(x, y + dy);
-          started = true;
-        } else {
-          path.lineTo(x, y + dy);
-        }
-      }
-      _gridPaint.color = const Color(0xFF44CCFF).withValues(alpha: baseAlpha);
-      canvas.drawPath(path, _gridPaint);
-    }
-
-    // Linee verticali distorte da cos orizzontale.
-    for (double x = -scrollX; x < size.width + cellSize; x += cellSize) {
-      final path = Path();
-      bool started = false;
-      for (double y = 0; y <= size.height; y += 12) {
-        final dx = math.cos(y * 0.011 + bgPhase * math.pi * 2 + x * 0.004) * 6 +
-            math.sin(y * 0.005 + bgPhase * math.pi) * 3;
-        if (!started) {
-          path.moveTo(x + dx, y);
-          started = true;
-        } else {
-          path.lineTo(x + dx, y);
-        }
-      }
-      _gridPaint.color = const Color(0xFF44CCFF).withValues(alpha: baseAlpha);
-      canvas.drawPath(path, _gridPaint);
-    }
-
-    // Highlight ondulato — onda di "energia" che attraversa il grid.
-    final waveX = (chaseProgress * size.width * 1.5) - size.width * 0.3;
-    for (double y = 0; y <= size.height; y += cellSize / 2) {
-      final dy = math.sin(waveX * 0.01 + y * 0.01 + bgPhase * math.pi * 4) * 12;
-      final dist = (waveX - size.width * 0.5).abs();
-      final waveAlpha = (1.0 - (dist / (size.width * 0.5)).clamp(0.0, 1.0)) * 0.35 * intensity;
-      if (waveAlpha > 0.05) {
-        _gridGlowPaint.color =
-            const Color(0xFF00CCFF).withValues(alpha: waveAlpha);
-        canvas.drawLine(
-          Offset(waveX - 50, y + dy),
-          Offset(waveX + 50, y + dy),
-          _gridGlowPaint,
-        );
-      }
-    }
-  }
-
-  /// Geom drops drifting in arena (cyan/pink/yellow shards, simula loot).
-  /// Iter 11: dead code (utente: solo chase, no extra). Tenuto per ref.
-  // ignore: unused_element
-  void _drawFloatingGeoms(Canvas canvas, Size size) {
-    if (chaseProgress < 0.08) return;
-    final intensity = ((chaseProgress - 0.08) * 3).clamp(0.0, 1.0);
-    final rng = math.Random(2024);
-    const geomCount = 14;
-    for (int i = 0; i < geomCount; i++) {
-      final baseX = rng.nextDouble() * size.width;
-      final baseY = rng.nextDouble() * size.height;
-      // Drift orbitale lento.
-      final angle = bgPhase * math.pi * 2 + i * 0.7;
-      final wobble = 18.0 + rng.nextDouble() * 12.0;
-      final x = baseX + math.cos(angle) * wobble;
-      final y = baseY + math.sin(angle * 1.3) * wobble;
-      // Color cycling tra 3 shade GW.
-      final colorChoice = i % 3;
-      final color = colorChoice == 0
-          ? const Color(0xFF00FFFF)  // ciano
-          : colorChoice == 1
-              ? const Color(0xFFFF00AA)  // pink
-              : const Color(0xFFFFE500); // yellow
-      final pulse = 0.55 + math.sin(bgPhase * math.pi * 4 + i * 1.3) * 0.45;
-      final r = (3.5 + rng.nextDouble() * 2.5) * intensity;
-      // Diamond shape rotato da bgPhase.
-      canvas.save();
-      canvas.translate(x, y);
-      canvas.rotate(bgPhase * math.pi * 2 + i);
-      final p = Path()
-        ..moveTo(0, -r)
-        ..lineTo(r * 0.65, 0)
-        ..lineTo(0, r)
-        ..lineTo(-r * 0.65, 0)
-        ..close();
-      _geomFillPaint.color = color.withValues(alpha: 0.45 * pulse * intensity);
-      canvas.drawPath(p, _geomFillPaint);
-      _geomStrokePaint
-        ..color = color.withValues(alpha: 0.85 * pulse * intensity)
-        ..strokeWidth = 1.2;
-      canvas.drawPath(p, _geomStrokePaint);
-      // Core bianco
-      _geomFillPaint.color =
-          const Color(0xFFFFFFFF).withValues(alpha: pulse * 0.6 * intensity);
-      canvas.drawCircle(Offset.zero, r * 0.35, _geomFillPaint);
-      canvas.restore();
-    }
-  }
-
-  /// Secondary kills chain: 3 mini esplosioni distribuiti nel tempo a
-  /// posizioni casuali → simula multi-kill mentre il player insegue weaver.
-  /// Iter 11: dead code (utente: solo chase, no extra). Tenuto per ref.
-  // ignore: unused_element
-  void _drawSecondaryKills(Canvas canvas, Size size) {
-    final rng = math.Random(7);
-    // 3 kill events con tempi crescenti.
-    const killTimes = [0.18, 0.42, 0.68];
-    const killColors = [
-      Color(0xFF00FFFF),
-      Color(0xFFFF00AA),
-      Color(0xFFFFAA00),
-    ];
-    for (int i = 0; i < 3; i++) {
-      final ft = killTimes[i];
-      if (chaseProgress <= ft) continue;
-      final dt = chaseProgress - ft;
-      if (dt > 0.20) continue;  // explosion lifetime ~0.2 chase units
-      final t = dt / 0.20;  // 0..1
-      // Posizione kill: random per i, but stable.
-      final kx = size.width * (0.25 + rng.nextDouble() * 0.55);
-      final ky = size.height * (0.25 + rng.nextDouble() * 0.5);
-      final color = killColors[i];
-      // Shockwave ring.
-      final ringR = 8 + t * 50;
-      final ringAlpha = (1 - t) * 0.7;
-      _killShockPaint
-        ..color = color.withValues(alpha: ringAlpha)
-        ..strokeWidth = 2.5 * (1 - t);
-      canvas.drawCircle(Offset(kx, ky), ringR, _killShockPaint);
-      // Inner flash.
-      final flashAlpha = (1 - t * 2).clamp(0.0, 1.0) * 0.85;
-      _killExpPaint.color =
-          const Color(0xFFFFFFFF).withValues(alpha: flashAlpha);
-      canvas.drawCircle(Offset(kx, ky), 8 + t * 20, _killExpPaint);
-      // Particelle radiali.
-      for (int j = 0; j < 8; j++) {
-        final ang = j * math.pi / 4 + i;
-        final dist = t * 40 + 10;
-        final pAlpha = (1 - t).clamp(0.0, 1.0) * 0.7;
-        _killExpPaint.color = color.withValues(alpha: pAlpha);
-        canvas.drawCircle(
-          Offset(kx + math.cos(ang) * dist, ky + math.sin(ang) * dist),
-          1.6 + (1 - t) * 1.4,
-          _killExpPaint,
-        );
-      }
-      // Geom drop volante che fluisce verso ship — disegnato come scia.
-      if (t < 0.85) {
-        final shipT = (chaseProgress - 0.1).clamp(0.0, 1.0);
-        final cy = size.height / 2;
-        final shipX = size.width * (-0.15 + shipT * 1.20);
-        final shipY = cy + math.sin(shipT * math.pi * 5) * size.height * 0.13
-            + math.cos(shipT * math.pi * 3) * size.height * 0.05;
-        // Posizione lerp dal kill verso ship con curva
-        final lerpT = (t / 0.85).clamp(0.0, 1.0);
-        final gx = kx + (shipX - kx) * lerpT;
-        final gy = ky + (shipY - ky) * lerpT;
-        _floatyTrailPaint.color = color.withValues(alpha: 0.7 * (1 - lerpT * 0.5));
-        canvas.drawCircle(Offset(gx, gy), 3.0, _floatyTrailPaint);
-        // Trail
-        for (int k = 1; k <= 4; k++) {
-          final tk = (lerpT - k * 0.05).clamp(0.0, 1.0);
-          if (tk <= 0) break;
-          final tx = kx + (shipX - kx) * tk;
-          final ty = ky + (shipY - ky) * tk;
-          _floatyTrailPaint.color = color.withValues(alpha: 0.4 * (1 - k / 4));
-          canvas.drawCircle(Offset(tx, ty), 1.8, _floatyTrailPaint);
-        }
-      }
-    }
-  }
-
-  /// HUD overlay: score counter top-left + multiplier badge top-right.
-  /// Iter 11: dead code (utente: "no HUD nel video iniziale"). Tenuto.
-  // ignore: unused_element
-  void _drawHUDOverlay(Canvas canvas, Size size) {
-    final intensity = ((chaseProgress - 0.05) * 5).clamp(0.0, 1.0);
-    if (intensity < 0.05) return;
-
-    // Score salendo: ramping basato su chaseProgress + secondary kills.
-    final baseScore = (chaseProgress * 32500).round();
-    final killBonus = chaseProgress > 0.18 ? 1500 : 0;
-    final killBonus2 = chaseProgress > 0.42 ? 3000 : 0;
-    final killBonus3 = chaseProgress > 0.68 ? 5500 : 0;
-    final score = baseScore + killBonus + killBonus2 + killBonus3;
-
-    // Multiplier ramping: x1 → x9 con kills.
-    final mult = chaseProgress < 0.18
-        ? 1
-        : chaseProgress < 0.42
-            ? 3
-            : chaseProgress < 0.68
-                ? 5
-                : 9;
-
-    // === SCORE top-left ===
-    if (_cachedScorePainter == null || _cachedScoreValue != score) {
-      _cachedScorePainter = TextPainter(
-        text: TextSpan(
-          text: _formatScore(score),
-          style: TextStyle(
-            color: const Color(0xFFFFFFFF).withValues(alpha: intensity),
-            fontSize: 24,
-            fontWeight: FontWeight.w900,
-            fontFamily: 'monospace',
-            letterSpacing: 2,
-            shadows: [
-              Shadow(
-                  color:
-                      const Color(0xFF00FFFF).withValues(alpha: intensity * 0.7),
-                  blurRadius: 10),
-            ],
-          ),
-        ),
-        textDirection: TextDirection.ltr,
-      )..layout();
-      _cachedScoreValue = score;
-    }
-    final sp = _cachedScorePainter!;
-    sp.paint(canvas, const Offset(20, 24));
-
-    // === MULTIPLIER top-right (badge cyan glow) ===
-    if (_cachedMultPainter == null || _cachedMultValue != mult) {
-      _cachedMultPainter = TextPainter(
-        text: TextSpan(
-          text: 'x$mult',
-          style: TextStyle(
-            color: mult >= 5
-                ? const Color(0xFFFFE500).withValues(alpha: intensity)
-                : const Color(0xFF00FFFF).withValues(alpha: intensity),
-            fontSize: 28,
-            fontWeight: FontWeight.w900,
-            fontFamily: 'monospace',
-            letterSpacing: 3,
-            shadows: [
-              Shadow(
-                  color: (mult >= 5
-                          ? const Color(0xFFFFE500)
-                          : const Color(0xFF00FFFF))
-                      .withValues(alpha: intensity * 0.8),
-                  blurRadius: 12),
-            ],
-          ),
-        ),
-        textDirection: TextDirection.ltr,
-      )..layout();
-      _cachedMultValue = mult;
-    }
-    final mp = _cachedMultPainter!;
-    final mx = size.width - mp.width - 20;
-    final my = 24.0;
-    // Badge bg
-    _hudBgPaint.color = Colors.black.withValues(alpha: 0.35 * intensity);
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(
-        Rect.fromLTWH(mx - 10, my - 4, mp.width + 20, mp.height + 8),
-        const Radius.circular(8),
-      ),
-      _hudBgPaint,
-    );
-    mp.paint(canvas, Offset(mx, my));
-  }
-
-  String _formatScore(int s) {
-    final str = s.toString();
-    final buf = StringBuffer();
-    for (int i = 0; i < str.length; i++) {
-      if (i > 0 && (str.length - i) % 3 == 0) buf.write(',');
-      buf.write(str[i]);
-    }
-    return buf.toString();
   }
 
   @override

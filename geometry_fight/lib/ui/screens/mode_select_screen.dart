@@ -27,7 +27,10 @@ class ModeSelectScreen extends StatefulWidget {
 
 class _ModeSelectScreenState extends State<ModeSelectScreen>
     with TickerProviderStateMixin {
-  GameMode _selectedMode = GameMode.classic;
+  // Iter 22 (flutter-review cleanup): rimosso `_selectedMode` — il flow è
+  // tap-to-advance, non c'è più stato "selezionato". Lo step indicator
+  // header hardcoded a `_totalStepsForMode(GameMode.classic)` (default
+  // mostrato al boot — dopo tap il widget unmounta).
   late final SaveData _saveData;
 
   // Caveman-review: guard against rapid double-tap firing onConfirm twice
@@ -140,18 +143,20 @@ class _ModeSelectScreenState extends State<ModeSelectScreen>
               // l'utente ha scelto la modalità in `_selectedMode`.
               Container(
                 padding: const EdgeInsets.symmetric(
-                    horizontal: 10, vertical: 4),
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
-                      color: Colors.cyanAccent.withValues(alpha: 0.5)),
+                    color: Colors.cyanAccent.withValues(alpha: 0.5),
+                  ),
                 ),
                 child: Text(
-                  // Step 1 di N: il totale dipende dalla modalità selezionata
-                  // (la selezione viene confermata su tap → onConfirm; qui
-                  // mostro il totale base 5 perché su questo screen l'utente
-                  // non ha ancora scelto definitivamente).
-                  '1/${_totalStepsForMode(_selectedMode)}',
+                  // Step 1 di N: hard-coded a classic (5 step) — il tap
+                  // su qualsiasi card avanza prima che l'indicator si
+                  // aggiorni, quindi mostriamo sempre il default.
+                  '1/${_totalStepsForMode(GameMode.classic)}',
                   style: const TextStyle(
                     color: Colors.cyanAccent,
                     fontSize: 12,
@@ -177,7 +182,11 @@ class _ModeSelectScreenState extends State<ModeSelectScreen>
   }
 
   Widget _buildModeList(
-      AppLocalizations l10n, SaveData saveData, double entrance, double glow) {
+    AppLocalizations l10n,
+    SaveData saveData,
+    double entrance,
+    double glow,
+  ) {
     final e = ((entrance - 0.15) / 0.85).clamp(0.0, 1.0);
     // Iter 20 (richiesta utente: "card height -50%, width -30%, 3 file,
     // testo centrato H+V, ~5-6 card per riga visibili"):
@@ -204,19 +213,18 @@ class _ModeSelectScreenState extends State<ModeSelectScreen>
             padding: const EdgeInsets.all(5),
             children: GameMode.values.map((mode) {
               final config = gameModeConfigs[mode]!;
-              final isUnlocked = config.unlockCost == 0 ||
+              final isUnlocked =
+                  config.unlockCost == 0 ||
                   saveData.unlockedModes.contains(mode.name);
-              final isSelected = _selectedMode == mode;
               return _NeonModeCard(
                 config: config,
                 modeName: _modeName(l10n, mode),
                 mode: mode,
-                isSelected: isSelected,
                 isUnlocked: isUnlocked,
                 glow: glow,
                 onTap: () {
                   // Iter 19 (utente: "tap auto-advance"). Locked → snackbar
-                  // "Sblocca nello SHOP"; unlocked → seleziona + onConfirm.
+                  // "Sblocca nello SHOP"; unlocked → onConfirm immediato.
                   // Caveman-review: _isAdvancing guard blocks double-tap race
                   // (PageRoute push not yet committed → second tap re-fires).
                   if (_isAdvancing) return;
@@ -225,7 +233,10 @@ class _ModeSelectScreenState extends State<ModeSelectScreen>
                     return;
                   }
                   _isAdvancing = true;
-                  setState(() => _selectedMode = mode);
+                  // Iter 22: rimosso `setState(_selectedMode = mode)` — il
+                  // visual `isSelected` non esiste più (cards uniformi), e
+                  // il widget unmount tramite onConfirm rende il rebuild
+                  // sprecato.
                   widget.onConfirm(mode);
                 },
               );
@@ -241,34 +252,47 @@ class _ModeSelectScreenState extends State<ModeSelectScreen>
     if (!mounted) return;
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(
-        duration: const Duration(milliseconds: 1100),
-        backgroundColor: const Color(0xFF0A0A1A),
-        behavior: SnackBarBehavior.floating,
-        content: Text(
-          l10n.modeLockedSnack,
-          style: const TextStyle(
-            color: Colors.amber,
-            fontFamily: 'monospace',
-            fontWeight: FontWeight.w900,
+      ..showSnackBar(
+        SnackBar(
+          duration: const Duration(milliseconds: 1100),
+          backgroundColor: const Color(0xFF0A0A1A),
+          behavior: SnackBarBehavior.floating,
+          content: Text(
+            l10n.modeLockedSnack,
+            style: const TextStyle(
+              color: Colors.amber,
+              fontFamily: 'monospace',
+              fontWeight: FontWeight.w900,
+            ),
           ),
         ),
-      ));
+      );
   }
 
   String _modeName(AppLocalizations l10n, GameMode mode) {
     switch (mode) {
-      case GameMode.classic: return l10n.modeClassic;
-      case GameMode.bossRush: return l10n.modeBossRush;
-      case GameMode.survival: return l10n.modeSurvival;
-      case GameMode.timeAttack: return l10n.modeTimeAttack;
-      case GameMode.zenMode: return l10n.modeZen;
-      case GameMode.tunnel: return l10n.modeTunnel;
-      case GameMode.dailyChallenge: return l10n.modeDailyChallenge;
-      case GameMode.pacifist: return l10n.modePacifist;
-      case GameMode.waves: return l10n.modeWaves;
-      case GameMode.gravityInferno: return l10n.modeGravityInferno;
-      case GameMode.snake: return l10n.modeSnake;
+      case GameMode.classic:
+        return l10n.modeClassic;
+      case GameMode.bossRush:
+        return l10n.modeBossRush;
+      case GameMode.survival:
+        return l10n.modeSurvival;
+      case GameMode.timeAttack:
+        return l10n.modeTimeAttack;
+      case GameMode.zenMode:
+        return l10n.modeZen;
+      case GameMode.tunnel:
+        return l10n.modeTunnel;
+      case GameMode.dailyChallenge:
+        return l10n.modeDailyChallenge;
+      case GameMode.pacifist:
+        return l10n.modePacifist;
+      case GameMode.waves:
+        return l10n.modeWaves;
+      case GameMode.gravityInferno:
+        return l10n.modeGravityInferno;
+      case GameMode.snake:
+        return l10n.modeSnake;
     }
   }
 
@@ -289,24 +313,34 @@ class _ModeSelectScreenState extends State<ModeSelectScreen>
 /// FX cosmici). Stessi colori dei tab leaderboard per coerenza visiva.
 Color _modeColor(GameMode m) {
   switch (m) {
-    case GameMode.classic: return const Color(0xFF00FFFF);       // ciano
-    case GameMode.bossRush: return const Color(0xFFCC00FF);      // viola
-    case GameMode.survival: return const Color(0xFFFF4466);      // rosa-rosso
-    case GameMode.timeAttack: return const Color(0xFFFF8800);    // arancio
-    case GameMode.zenMode: return const Color(0xFF44FF44);       // verde
-    case GameMode.tunnel: return const Color(0xFF4488FF);        // blu
-    case GameMode.dailyChallenge: return const Color(0xFFFFD700);// oro
-    case GameMode.pacifist: return const Color(0xFF77FFD4);      // ciano pastel
-    case GameMode.waves: return const Color(0xFFFF3344);         // rosso
-    case GameMode.gravityInferno: return const Color(0xFF9933FF);// viola gravity
-    case GameMode.snake: return const Color(0xFF66FF66);         // verde lime
+    case GameMode.classic:
+      return const Color(0xFF00FFFF); // ciano
+    case GameMode.bossRush:
+      return const Color(0xFFCC00FF); // viola
+    case GameMode.survival:
+      return const Color(0xFFFF4466); // rosa-rosso
+    case GameMode.timeAttack:
+      return const Color(0xFFFF8800); // arancio
+    case GameMode.zenMode:
+      return const Color(0xFF44FF44); // verde
+    case GameMode.tunnel:
+      return const Color(0xFF4488FF); // blu
+    case GameMode.dailyChallenge:
+      return const Color(0xFFFFD700); // oro
+    case GameMode.pacifist:
+      return const Color(0xFF77FFD4); // ciano pastel
+    case GameMode.waves:
+      return const Color(0xFFFF3344); // rosso
+    case GameMode.gravityInferno:
+      return const Color(0xFF9933FF); // viola gravity
+    case GameMode.snake:
+      return const Color(0xFF66FF66); // verde lime
   }
 }
 
 class _NeonModeCard extends StatelessWidget {
   final GameModeConfig config;
   final String modeName;
-  final bool isSelected;
   final bool isUnlocked;
   final double glow;
   final VoidCallback? onTap;
@@ -316,7 +350,6 @@ class _NeonModeCard extends StatelessWidget {
   const _NeonModeCard({
     required this.config,
     required this.modeName,
-    required this.isSelected,
     required this.isUnlocked,
     required this.glow,
     required this.mode,
@@ -328,8 +361,12 @@ class _NeonModeCard extends StatelessWidget {
     final themeColor = _modeColor(mode);
     final desat = isUnlocked ? 1.0 : 0.35;
     final tint = Color.lerp(Colors.white24, themeColor, desat)!;
+    // Accessibility note: tap area 28h × 81w soddisfa WCAG 2.2 AA target
+    // size (24×24 min). Sotto Material 48dp guideline per scelta esplicita
+    // di compattezza richiesta dall'utente (3 file × 11 modi → 28h max).
     return GestureDetector(
       onTap: onTap,
+      behavior: HitTestBehavior.opaque,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 250),
         // Iter 21 (utente: "tap auto-advance, no preselezione classic"):
@@ -359,7 +396,6 @@ class _NeonModeCard extends StatelessWidget {
                     color: tint,
                     seed: mode.hashCode,
                     pulse: glow,
-                    isSelected: false,
                   ),
                 ),
               ),
@@ -427,7 +463,8 @@ class _NeonModeCard extends StatelessWidget {
                                     ? [
                                         Shadow(
                                           color: themeColor.withValues(
-                                              alpha: 0.95),
+                                            alpha: 0.95,
+                                          ),
                                           blurRadius: 8,
                                         ),
                                       ]
@@ -439,9 +476,11 @@ class _NeonModeCard extends StatelessWidget {
                       ),
                       if (!isUnlocked) ...[
                         const SizedBox(width: 4),
-                        Icon(Icons.lock_rounded,
-                            color: Colors.orange.withValues(alpha: 0.65),
-                            size: 10),
+                        Icon(
+                          Icons.lock_rounded,
+                          color: Colors.orange.withValues(alpha: 0.65),
+                          size: 10,
+                        ),
                         const SizedBox(width: 2),
                         Text(
                           '${config.unlockCost}',
@@ -468,18 +507,16 @@ class _NeonModeCard extends StatelessWidget {
 
 /// Cosmic card background: radial gradient mode-color + stelle deterministiche
 /// (seed = mode.hashCode, sempre stesse posizioni per card consistente).
-/// `pulse` (0..1) anima twinkle stelle. `isSelected` boost luminosità.
+/// `pulse` (0..1) anima twinkle stelle.
 class _CosmicCardPainter extends CustomPainter {
   final Color color;
   final int seed;
   final double pulse;
-  final bool isSelected;
 
   _CosmicCardPainter({
     required this.color,
     required this.seed,
     required this.pulse,
-    required this.isSelected,
   });
 
   // Cached paint allocs.
@@ -490,15 +527,11 @@ class _CosmicCardPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final rect = Offset.zero & size;
-    // Base scuro con gradient radiale colorato (più intenso se selected).
-    final gradStrength = isSelected ? 0.55 : 0.32;
+    // Base scuro con gradient radiale colorato.
     _bgPaint.shader = RadialGradient(
       center: const Alignment(-0.4, -0.6),
       radius: 1.4,
-      colors: [
-        color.withValues(alpha: gradStrength),
-        const Color(0xFF050010),
-      ],
+      colors: [color.withValues(alpha: 0.32), const Color(0xFF050010)],
     ).createShader(rect);
     canvas.drawRect(rect, _bgPaint);
     _bgPaint.shader = null;
@@ -508,9 +541,10 @@ class _CosmicCardPainter extends CustomPainter {
       ..color = color.withValues(alpha: 0.18 + pulse * 0.08)
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 14);
     canvas.drawCircle(
-        Offset(size.width * 0.75, size.height * 0.7),
-        size.width * 0.45,
-        _nebulaPaint);
+      Offset(size.width * 0.75, size.height * 0.7),
+      size.width * 0.45,
+      _nebulaPaint,
+    );
     _nebulaPaint.maskFilter = null;
 
     // Stelle (deterministe via seed).
@@ -523,8 +557,9 @@ class _CosmicCardPainter extends CustomPainter {
       // Twinkle: ogni stella pulsa con phase diversa derivata da i.
       final phase = (pulse + i * 0.13) % 1.0;
       final twinkle = 0.4 + (math.sin(phase * math.pi * 2) * 0.5 + 0.5) * 0.6;
-      _starPaint.color = const Color(0xFFFFFFFF)
-          .withValues(alpha: twinkle * (isSelected ? 0.95 : 0.7));
+      _starPaint.color = const Color(
+        0xFFFFFFFF,
+      ).withValues(alpha: twinkle * 0.7);
       canvas.drawCircle(Offset(x, y), r, _starPaint);
     }
     // Stella accenti color (3) più grandi.
@@ -540,10 +575,7 @@ class _CosmicCardPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_CosmicCardPainter old) =>
-      old.pulse != pulse ||
-      old.color != color ||
-      old.seed != seed ||
-      old.isSelected != isSelected;
+      old.pulse != pulse || old.color != color || old.seed != seed;
 }
 
 // Removed unused _NeonDifficultyCard (legacy iter 19 — difficulty now lives
