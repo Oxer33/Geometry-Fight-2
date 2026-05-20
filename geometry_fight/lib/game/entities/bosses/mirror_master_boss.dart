@@ -26,19 +26,23 @@ class _FloorMirror {
 class MirrorMasterBoss extends BossBase {
   double _mirrorAngle = 0;
   double _attackTimer = 2.5;
-  // Floor mirrors (nuova meccanica richiesta utente): 3 specchi riflettono
-  // i proiettili del player. Distruttibili, HP 25 ciascuno.
+  // Floor mirrors: bloccano (riflettono) i proiettili del player.
+  // Count scala con la fase: phase 0 → 3, phase 1 → 5, phase 2 → 8.
+  // Distruttibili, HP 25 ciascuno. Respawn 8s dopo morte totale.
   final List<_FloorMirror> _mirrors = [];
-  bool _mirrorsSpawned = false;
-  // Respawn timer: appena tutti gli specchi muoiono, parte countdown 8s
-  // → respawn 3 nuovi specchi. Senza questo il boss restava nudo dopo
-  // che il player rompeva gli specchi → meccanica "morta" mid-fight.
+  int _spawnedPhase = -1;
   double _mirrorRespawnTimer = 0;
-  // Mirror-side attack: ogni specchio spara un _MirrorBullet verso il
-  // player ogni `_mirrorShootInterval` secondi. Visualmente "attivi"
-  // invece di solo riflettori passivi (user feedback).
-  double _mirrorShootTimer = 3.0;
-  static const double _mirrorShootInterval = 2.5;
+
+  int _mirrorCountForPhase(int phase) {
+    switch (phase) {
+      case 0:
+        return 3;
+      case 1:
+        return 5;
+      default:
+        return 8;
+    }
+  }
 
   MirrorMasterBoss()
       : super(
@@ -57,12 +61,14 @@ class MirrorMasterBoss extends BossBase {
     final cy = game.isTunnelMode
         ? game.camera.viewfinder.position.y
         : arenaHeight / 2;
-    // Triangolo: 3 specchi ai vertici di un triangolo equilatero attorno al centro.
+    // N specchi sui vertici di un poligono regolare attorno al centro.
+    // Count cresce con la fase: 3 → 5 → 8.
+    final count = _mirrorCountForPhase(currentPhase);
     const r = 180.0;
     final yMin = game.camera.viewfinder.position.y - 200;
     final yMax = game.camera.viewfinder.position.y + 200;
-    for (int i = 0; i < 3; i++) {
-      final ang = i * math.pi * 2 / 3 - math.pi / 2;
+    for (int i = 0; i < count; i++) {
+      final ang = i * math.pi * 2 / count - math.pi / 2;
       final mx = cx + math.cos(ang) * r;
       var my = cy + math.sin(ang) * r;
       if (game.isTunnelMode) {
@@ -72,7 +78,7 @@ class MirrorMasterBoss extends BossBase {
         ..position = Vector2(mx, my)
         ..angle = ang + math.pi / 2);
     }
-    _mirrorsSpawned = true;
+    _spawnedPhase = currentPhase;
   }
 
   // MirrorMaster è ARGENTO/CIANO → mob riflettenti (mirror + glitch + orbiter).
@@ -92,9 +98,11 @@ class MirrorMasterBoss extends BossBase {
     _mirrorAngle += dt * (1.0 + currentPhase * 0.5);
 
     // Lazy spawn mirrors al primo frame (game.size non disponibile in ctor).
-    if (!_mirrorsSpawned) _spawnMirrors();
+    // Inoltre: se la fase è cambiata, respawna subito con il nuovo count
+    // (più alto a fasi successive — più specchi a HP basso).
+    if (_spawnedPhase != currentPhase) _spawnMirrors();
 
-    // Respawn check: tutti gli specchi morti → countdown 8s → respawn 3.
+    // Respawn check: tutti gli specchi morti → countdown 8s → respawn.
     final aliveCount = _mirrors.where((m) => m.alive).length;
     if (aliveCount == 0) {
       _mirrorRespawnTimer -= dt;
@@ -183,25 +191,6 @@ class MirrorMasterBoss extends BossBase {
     if (_attackTimer <= 0) {
       _attackTimer = 2.0 - currentPhase * 0.4;
       _shootMirrorBurst();
-    }
-
-    // Mirror-side attack: ogni specchio vivo spara un bullet al player
-    // ogni _mirrorShootInterval secondi → specchi "attivi" anziché
-    // solo riflettori passivi.
-    _mirrorShootTimer -= dt;
-    if (_mirrorShootTimer <= 0) {
-      _mirrorShootTimer = _mirrorShootInterval;
-      for (final m in _mirrors) {
-        if (!m.alive) continue;
-        final dir = playerPosition - m.position;
-        if (dir.length < 0.001) continue;
-        final bullet = _MirrorBullet(
-          direction: dir.normalized(),
-          color: const Color(0xFFFF88FF),
-        );
-        bullet.position = m.position.clone();
-        game.world.add(bullet);
-      }
     }
   }
 
