@@ -71,7 +71,7 @@ class PlayerBullet extends PositionComponent
     // Clamp divisore 0.3 min: bomb-freeze (timeScale≈0.05) darebbe realDt=20×dt
     // → bullet salta 6m in 1 frame = bucava collision senza hit.
     final realDt = dt / game.timeScale.clamp(0.3, 1.0);
-    super.update(realDt);
+    super.update(dt);
 
     if (_reflectCooldown > 0) _reflectCooldown -= realDt;
 
@@ -822,6 +822,9 @@ class HomingMissile extends PositionComponent
   @override
   void update(double dt) {
     super.update(dt);
+    // Homing missiles are NOT affected by slow-motion: compensate timeScale
+    // to match PlayerBullet / LaserBeam / PlasmaBullet / GaussBullet behaviour.
+    final realDt = dt / game.timeScale.clamp(0.3, 1.0);
 
     // Target search throttled: ogni 5 frame, o se target morto/perso.
     _searchCooldown--;
@@ -846,7 +849,7 @@ class HomingMissile extends PositionComponent
       final toTarget = target.position - position;
       if (toTarget.length2 > 1e-6) {
         final desired = toTarget.normalized() * 500;
-        final steering = (desired - _velocity)..clampLength(0, 800 * dt);
+        final steering = (desired - _velocity)..clampLength(0, 800 * realDt);
         _velocity += steering;
         if (_velocity.length > 500) {
           _velocity = _velocity.normalized() * 500;
@@ -854,9 +857,9 @@ class HomingMissile extends PositionComponent
       }
     }
 
-    position += _velocity * dt;
-    _flamePhase += dt * 30;
-    _lifetime -= dt;
+    position += _velocity * realDt;
+    _flamePhase += realDt * 30;
+    _lifetime -= realDt;
     if (_lifetime <= 0) {
       _releaseVolleyClaim();
       removeFromParent();

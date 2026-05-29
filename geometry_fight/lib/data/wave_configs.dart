@@ -331,7 +331,12 @@ List<WaveConfig> generateWaveConfigs() {
     final spawns = archetype.generator(wave)
         .map((s) => WaveSpawn(
               s.type,
-              (s.count * 2).clamp(1, 300),
+              // Gate is not multiplied: spawning more than the archetype
+              // intended causes mechanics issues (the comment above says
+              // "Gate escluso dal moltiplicatore").
+              s.type == EnemyType.gate
+                  ? s.count.clamp(1, 300)
+                  : (s.count * 2).clamp(1, 300),
               delay: s.delay,
             ))
         .toList();
@@ -356,7 +361,10 @@ List<WaveConfig> generateWaveConfigs() {
       for (final s in secondArchetype.generator(wave)) {
         spawns.add(WaveSpawn(
           s.type,
-          ((s.count * 2) * 0.6).round().clamp(1, 200),
+          // Gate is not multiplied (same exclusion as the primary archetype).
+          s.type == EnemyType.gate
+              ? s.count.clamp(1, 200)
+              : ((s.count * 2) * 0.6).round().clamp(1, 200),
           delay: s.delay + secondaryOffset,
         ));
       }

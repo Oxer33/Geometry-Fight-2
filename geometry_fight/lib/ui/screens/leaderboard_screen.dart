@@ -298,7 +298,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
         padding: const EdgeInsets.symmetric(horizontal: 16),
         child: Row(
           children: [
-            SizedBox(width: 30, child: Text('#', style: _headerStyle)),
+            const SizedBox(width: 30, child: Text('#', style: _headerStyle)),
             const SizedBox(width: 8),
             Expanded(flex: 4, child: Text(l10n.score, style: _headerStyle)),
             Expanded(flex: 2, child: Text(l10n.wave, style: _headerStyle)),
@@ -405,8 +405,9 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
     );
   }
 
-  TextStyle get _headerStyle => TextStyle(
-        color: Colors.white.withValues(alpha: 0.3),
+  // Static const avoids allocating a new TextStyle on every AnimatedBuilder frame.
+  static const TextStyle _headerStyle = TextStyle(
+        color: Color(0x4DFFFFFF), // equivalent to Colors.white.withValues(alpha: 0.3)
         fontSize: 9,
         fontWeight: FontWeight.bold,
         fontFamily: 'monospace',

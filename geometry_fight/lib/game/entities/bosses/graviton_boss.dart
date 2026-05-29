@@ -256,7 +256,7 @@ class _GravBullet extends PositionComponent with HasGameReference<GeometryFightG
     super.update(dt);
     position += _velocity * dt;
     _lifetime -= dt;
-    if (_lifetime <= 0) removeFromParent();
+    if (_lifetime <= 0) { removeFromParent(); return; }
     if (position.distanceTo(game.player.position) < 14) {
       if (!game.player.isInvincible) game.player.takeDamage();
       removeFromParent();

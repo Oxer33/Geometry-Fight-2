@@ -154,8 +154,14 @@ class GridDistortion extends PositionComponent {
           // Update position
           node.position += node.velocity * _physicsStep;
 
-          // Check if any node still has meaningful velocity
-          if (node.velocity.length2 > 0.1) stillActive = true;
+          // Check if any node still has meaningful velocity OR displacement.
+          // Velocity-only check would stop physics while nodes are still
+          // visibly displaced from rest (spring decelerates before reaching
+          // rest position), causing the grid to freeze mid-warp.
+          if (node.velocity.length2 > 0.1 ||
+              (node.position - node.restPosition).length2 > 0.25) {
+            stillActive = true;
+          }
         }
       }
       _physicsAccumulator -= _physicsStep;

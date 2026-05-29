@@ -152,9 +152,11 @@ void main(List<String> args) {
     },
   ));
 
-  stdout.writeln(
-    'Generated ${outDir.listSync().length} SFX files in ${outDir.path}',
-  );
+  // Hard-code the count to match the number of _writeWav calls above so that
+  // re-runs (which overwrite existing files) report the correct number instead
+  // of counting pre-existing files in the directory.
+  const generatedCount = 10;
+  stdout.writeln('Generated $generatedCount SFX files in ${outDir.path}');
 }
 
 Float64List _synth({

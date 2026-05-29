@@ -88,14 +88,17 @@ class TeslaEnemy extends EnemyBase {
         _connectedPositions.add(child.position.clone());
 
         // Se il player è vicino all'arco, danno! (con cooldown 0.5s)
-        final playerDist = _distanceToLine(
-          game.player.position,
-          position,
-          child.position,
-        );
-        if (playerDist < 15 && _arcHitCd <= 0) {
-          game.player.takeDamage();
-          _arcHitCd = 0.5;
+        // Guard su isMounted: evita takeDamage su player morto/rimosso.
+        if (game.player.isMounted) {
+          final playerDist = _distanceToLine(
+            game.player.position,
+            position,
+            child.position,
+          );
+          if (playerDist < 15 && _arcHitCd <= 0) {
+            game.player.takeDamage();
+            _arcHitCd = 0.5;
+          }
         }
       }
     }
@@ -175,6 +178,10 @@ class TeslaEnemy extends EnemyBase {
   // Random condiviso: prima `math.Random(seed)` veniva istanziato per ogni
   // arco in ogni frame (allocazione + setup state RNG inutile).
   static final math.Random _lightningRng = math.Random();
+  // Path condiviso: evita allocazione heap per ogni arco per ogni frame
+  // (fino a 3 archi × N Tesla × 60fps). canvas.drawPath() registra il path
+  // immediatamente nel picture, quindi è sicuro resettare prima del prossimo arco.
+  static final Path _lightningPath = Path();
 
   /// Disegna un arco elettrico tra due punti
   void _drawLightning(
@@ -186,16 +193,17 @@ class TeslaEnemy extends EnemyBase {
     _lightningPaint.color = neonColor.withValues(alpha: 0.6);
     _lightningGlowPaint.color = neonColor.withValues(alpha: 0.2);
 
-    final path = Path()..moveTo(x1, y1);
+    _lightningPath.reset();
+    _lightningPath.moveTo(x1, y1);
     for (int i = 1; i < steps; i++) {
       final t = i / steps;
       final mx = x1 + dx * t + (_lightningRng.nextDouble() - 0.5) * 15;
       final my = y1 + dy * t + (_lightningRng.nextDouble() - 0.5) * 15;
-      path.lineTo(mx, my);
+      _lightningPath.lineTo(mx, my);
     }
-    path.lineTo(x2, y2);
+    _lightningPath.lineTo(x2, y2);
 
-    canvas.drawPath(path, _lightningGlowPaint);
-    canvas.drawPath(path, _lightningPaint);
+    canvas.drawPath(_lightningPath, _lightningGlowPaint);
+    canvas.drawPath(_lightningPath, _lightningPaint);
   }
 }

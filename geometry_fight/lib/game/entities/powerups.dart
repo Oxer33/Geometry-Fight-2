@@ -66,7 +66,14 @@ class PowerUpRarityConfig {
   }
 
   static PowerUpRarity rarityOf(PowerUpType type) {
-    return configs.firstWhere((c) => c.type == type).rarity;
+    // orElse guard: prevents StateError if a new PowerUpType is added to the
+    // enum without a matching config entry (firstWhere throws without orElse).
+    return configs
+        .firstWhere(
+          (c) => c.type == type,
+          orElse: () => PowerUpRarityConfig(type, PowerUpRarity.common, 0),
+        )
+        .rarity;
   }
 }
 

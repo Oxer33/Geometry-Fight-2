@@ -95,12 +95,10 @@ class PulsarEnemy extends EnemyBase {
 
     // Pentagono con rotazione lenta
     final path = Path();
-    final vertices = <Offset>[];
     for (int i = 0; i < 5; i++) {
       final angle = i * math.pi * 2 / 5 - math.pi / 2 + idlePhase * 0.5;
       final x = cx + r * math.cos(angle);
       final y = cy + r * math.sin(angle);
-      vertices.add(Offset(x, y));
       if (i == 0) {
         path.moveTo(x, y);
       } else {
@@ -112,6 +110,13 @@ class PulsarEnemy extends EnemyBase {
 
     // Dettagli interni solo sul layer principale
     if (scale <= 1.01) {
+      // Ricalcola i vertici solo per il layer di dettaglio (evita alloc sul
+      // glow pass dove scale > 1.01 e questa lista non sarebbe usata).
+      final vertices = <Offset>[];
+      for (int i = 0; i < 5; i++) {
+        final angle = i * math.pi * 2 / 5 - math.pi / 2 + idlePhase * 0.5;
+        vertices.add(Offset(cx + r * math.cos(angle), cy + r * math.sin(angle)));
+      }
       // Indicatore di carica (cerchio che si riempie prima del pulse)
       final chargeProgress = 1.0 - (_pulseTimer / 2.5).clamp(0.0, 1.0);
       if (chargeProgress > 0.1) {

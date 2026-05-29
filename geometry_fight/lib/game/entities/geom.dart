@@ -17,6 +17,9 @@ class Geom extends PositionComponent
   static final _random = math.Random();
   late Color _color;
   late double _rotationSpeed;
+  // Cached diamond path — gemSize depends only on `value` (final), so the
+  // path never changes after onLoad(). Avoids one Path allocation per frame.
+  late Path _diamondPath;
 
   Geom({this.value = 1})
       : super(size: Vector2(10, 10), anchor: Anchor.center);
@@ -27,6 +30,14 @@ class Geom extends PositionComponent
     _rotationSpeed = (_random.nextDouble() - 0.5) * 5;
     add(CircleHitbox(radius: geomCollectRadius, anchor: Anchor.center, isSolid: true)
       ..position = size / 2);
+    // Build diamond path once — gemSize is constant for the life of this geom.
+    final gemSize = 4.0 + value * 1.5;
+    _diamondPath = Path()
+      ..moveTo(0, -gemSize)
+      ..lineTo(gemSize * 0.6, 0)
+      ..lineTo(0, gemSize)
+      ..lineTo(-gemSize * 0.6, 0)
+      ..close();
   }
 
   Color _getColorForValue(int v) {
@@ -117,24 +128,16 @@ class Geom extends PositionComponent
     final blinkVisible = !blinkActive || ((_lifetime * 8).toInt() % 2 == 0);
     if (!blinkVisible) return; // Non renderizzare durante il blink off
     final alpha = _lifetime < 2 ? (_lifetime / 2).clamp(0.2, 1.0) : 1.0;
-    final gemSize = 4.0 + value * 1.5;
 
     final cx = size.x / 2;
     final cy = size.y / 2;
 
-    // Diamond shape
+    // Diamond shape (uses _diamondPath cached in onLoad — no per-frame allocation)
     _geomBodyPaint.color = _color.withValues(alpha: alpha);
     canvas.save();
     canvas.translate(cx, cy);
     canvas.rotate(_phase);
-
-    final path = Path()
-      ..moveTo(0, -gemSize)
-      ..lineTo(gemSize * 0.6, 0)
-      ..lineTo(0, gemSize)
-      ..lineTo(-gemSize * 0.6, 0)
-      ..close();
-    canvas.drawPath(path, _geomBodyPaint);
+    canvas.drawPath(_diamondPath, _geomBodyPaint);
     canvas.restore();
   }
 

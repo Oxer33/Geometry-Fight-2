@@ -202,7 +202,6 @@ class InfernoBoss extends BossBase {
 class _FlameTrail {
   Vector2 position;
   double lifetime;
-  double damageTimer = 0; // FIX H9: cooldown per evitare 60 hit/sec
   _FlameTrail({required this.position, required this.lifetime});
 }
 

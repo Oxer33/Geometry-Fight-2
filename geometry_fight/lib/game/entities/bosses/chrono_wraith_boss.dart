@@ -155,17 +155,27 @@ class ChronoWraithBoss extends BossBase {
 
   @override
   void onRemove() {
-    // FIX C9b: Ripristina timeScale se il boss viene rimosso per qualsiasi ragione
-    if (_priorTimeScale != game.timeScale) {
-      game.timeScale = _priorTimeScale;
+    // Ripristina timeScale se il boss viene rimosso mentre è ancora in warp.
+    // Guard: controlla _timeWarping (stesso criterio di onDeath) invece di
+    // confrontare i valori — _priorTimeScale != game.timeScale può essere vero
+    // anche quando il boss non ha mai attivato il warp (es. player slow-mo attivo
+    // imposta game.timeScale=0.4 mentre _priorTimeScale=1.0), e sovrascrivere
+    // in quel caso romperebbe il power-up del player.
+    if (_timeWarping) {
+      if (game.slowMoTimer <= 0) {
+        game.timeScale = _priorTimeScale;
+      }
     }
     super.onRemove();
   }
 
   void _teleport() {
     // Teleport behind the player
-    final behind = playerPosition +
-        (playerPosition - position).normalized() * -200;
+    final toPlayer = playerPosition - position;
+    // Guard: if boss is exactly at player position, normalized() returns NaN.
+    // Fall back to a fixed offset so position stays valid.
+    final behindDir = toPlayer.length > 0.5 ? toPlayer.normalized() : Vector2(1, 0);
+    final behind = playerPosition + behindDir * -200;
     if (game.isTunnelMode) {
       final cam = game.camera.viewfinder.position;
       final halfW = game.size.x > 0 ? game.size.x / 2 : 400.0;

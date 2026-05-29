@@ -21,6 +21,8 @@ class GravityWellEnemy extends EnemyBase {
     ..strokeWidth = 1;
   static final _particlePaint = Paint();
   static final _corePaint = Paint();
+  // Reusable Path: avoids per-frame heap allocation in renderShape hot path.
+  final _spiralPath = Path();
 
   GravityWellEnemy()
       : super(
@@ -49,7 +51,11 @@ class GravityWellEnemy extends EnemyBase {
     // Inversione controlli: se il player è nel raggio del campo, alza il flag.
     // Il player.update() legge il flag, nega moveInput, e lo resetta a fine tick
     // → va risettato ogni frame finché il player rimane dentro il raggio.
-    if (position.distanceTo(playerPosition) < _invertRadius) {
+    // Guard isMounted: playerPosition restituisce `position` (distanza 0) quando
+    // il player è morto/rimosso, il che attiverebbe sempre il flag su un oggetto
+    // non montato e potrebbe innescare effetti indesiderati.
+    if (game.player.isMounted &&
+        position.distanceTo(playerPosition) < _invertRadius) {
       game.player.controlsInverted = true;
     }
   }
@@ -79,19 +85,19 @@ class GravityWellEnemy extends EnemyBase {
     if (scale <= 1.01) {
       // Spirale interna
       _spiralPaint.color = paint.color.withValues(alpha: 0.3);
-      final spiralPath = Path();
+      _spiralPath.reset();
       for (int i = 0; i < 60; i++) {
         final angle = _spiralPhase + i * 0.15;
         final dist = r * 0.1 + r * 0.7 * (i / 60);
         final sx = cx + dist * math.cos(angle);
         final sy = cy + dist * math.sin(angle);
         if (i == 0) {
-          spiralPath.moveTo(sx, sy);
+          _spiralPath.moveTo(sx, sy);
         } else {
-          spiralPath.lineTo(sx, sy);
+          _spiralPath.lineTo(sx, sy);
         }
       }
-      canvas.drawPath(spiralPath, _spiralPaint);
+      canvas.drawPath(_spiralPath, _spiralPaint);
 
       // Particelle orbitanti (6 particelle)
       for (int i = 0; i < 6; i++) {

@@ -130,6 +130,7 @@ class TeslaLordBoss extends BossBase {
   static final _coreHaloPaint = Paint();
   static final _corePaint = Paint();
   static final _sparkBoltPath = Path();
+  static final _octagonPath = Path();
 
   @override
   void renderBoss(Canvas canvas, Paint paint, double scale) {
@@ -193,19 +194,19 @@ class TeslaLordBoss extends BossBase {
     canvas.save();
     canvas.translate(cx, cy);
     canvas.rotate(_sparkPhase * 0.03);
-    final path = Path();
+    _octagonPath.reset();
     for (int i = 0; i < 8; i++) {
       final angle = i * math.pi / 4;
       final x = r * 0.8 * math.cos(angle);
       final y = r * 0.8 * math.sin(angle);
       if (i == 0) {
-        path.moveTo(x, y);
+        _octagonPath.moveTo(x, y);
       } else {
-        path.lineTo(x, y);
+        _octagonPath.lineTo(x, y);
       }
     }
-    path.close();
-    canvas.drawPath(path, paint);
+    _octagonPath.close();
+    canvas.drawPath(_octagonPath, paint);
 
     // ─── ARCHI ELETTRICI INTERNI (8 spokes) ───
     if (scale <= 1.01) {
@@ -273,14 +274,18 @@ class _TeslaBullet extends PositionComponent with HasGameReference<GeometryFight
       : super(size: Vector2(18, 18), anchor: Anchor.center);
 
   @override
-  Future<void> onLoad() async { _velocity = direction.normalized() * 220; }
+  Future<void> onLoad() async {
+    _velocity = direction.length2 < 1e-6
+        ? Vector2(220, 0)
+        : direction.normalized() * 220;
+  }
 
   @override
   void update(double dt) {
     super.update(dt);
     position += _velocity * dt;
     _lifetime -= dt;
-    if (_lifetime <= 0) removeFromParent();
+    if (_lifetime <= 0) { removeFromParent(); return; }
     if (position.distanceTo(game.player.position) < 14) {
       game.player.takeDamage();
       removeFromParent();

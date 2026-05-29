@@ -48,10 +48,10 @@ class CrashReporter {
         return previousPlatformOnError?.call(error, stack) ?? false;
       }
       // Honor upstream: se un handler precedente esiste, rispetta la sua
-      // decisione (true=swallow, false=fatal). Default `true` solo se
-      // nessuno chained. Prima tornavamo sempre `true` → overriding
-      // upstream false → fatal errors swallowed silenziosamente.
-      return previousPlatformOnError?.call(error, stack) ?? true;
+      // decisione (true=swallow, false=fatal). Default `false` se nessuno
+      // chained: crash recorder registra l'errore ma non deve impedire al
+      // platform di terminare l'app per errori fatali non gestiti altrimenti.
+      return previousPlatformOnError?.call(error, stack) ?? false;
     };
 
     // Ora inizializza prefs: errori precedenti sono in `_pendingEntries`

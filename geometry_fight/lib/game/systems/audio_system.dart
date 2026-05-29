@@ -416,7 +416,7 @@ class AudioSystem {
   /// Game over (raro) — esplosione drammatica gameover_explosion.mp3
   /// + tono game_over.wav legacy in coda. Haptic throttle 200ms.
   static void playGameOver() {
-    if (_sfxVolume > 0 && _canPlay(_fxGameOverExplosion)) {
+    if (_initialized && _sfxVolume > 0 && _canPlay(_fxGameOverExplosion)) {
       final boosted = (_sfxVolume * 1.1).clamp(0.0, 1.0);
       _tryDirectThenPool(_fxGameOverExplosion, boosted,
           _gameOverExplosionMp3Pool);
@@ -428,7 +428,7 @@ class AudioSystem {
   /// Player death — direct play. Haptic throttle 200ms (evita doppia
   /// vibrazione se player muore + boss/bomb in stesso frame).
   static void playPlayerDeath() {
-    if (_sfxVolume > 0 && _canPlay(_fxPlayerDeath)) {
+    if (_initialized && _sfxVolume > 0 && _canPlay(_fxPlayerDeath)) {
       _tryDirectThenPool(_fxPlayerDeath, _sfxVolume, _playerDeathMp3Pool);
     }
     if (_canHapticAt(200)) HapticFeedback.heavyImpact();
@@ -436,7 +436,7 @@ class AudioSystem {
 
   /// Boss killed — fanfara di vittoria. Haptic throttle 200ms.
   static void playBossKilled() {
-    if (_sfxVolume > 0 && _canPlay(_fxBossKilled)) {
+    if (_initialized && _sfxVolume > 0 && _canPlay(_fxBossKilled)) {
       _tryDirectThenPool(_fxBossKilled, _sfxVolume, _bossKilledMp3Pool);
     }
     if (_canHapticAt(200)) HapticFeedback.heavyImpact();

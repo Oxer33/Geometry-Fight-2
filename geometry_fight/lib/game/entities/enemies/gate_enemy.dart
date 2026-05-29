@@ -185,7 +185,7 @@ class GateEnemy extends PositionComponent
     _sphereHitbox2.position = size / 2 - sphereOffset1;
 
     // Check interazione player con il Gate (solo se cooldown finito e non già esploso)
-    if (_cooldown <= 0 && !_exploded) {
+    if (_cooldown <= 0 && !_exploded && game.player.isMounted) {
       final sphere1 = position + sphereOffset1;
       final sphere2 = position - sphereOffset1;
       final playerPos = game.player.position;

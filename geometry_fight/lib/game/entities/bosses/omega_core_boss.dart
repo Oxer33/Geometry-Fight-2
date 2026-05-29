@@ -335,14 +335,16 @@ class _OmegaBullet extends PositionComponent with HasGameReference<GeometryFight
       : super(size: Vector2(18, 18), anchor: Anchor.center);
 
   @override
-  Future<void> onLoad() async { _velocity = direction.normalized() * 180; }
+  Future<void> onLoad() async {
+    _velocity = (direction.length2 < 1e-6 ? Vector2(1, 0) : direction.normalized()) * 180;
+  }
 
   @override
   void update(double dt) {
     super.update(dt);
     position += _velocity * dt;
     _lifetime -= dt;
-    if (_lifetime <= 0) removeFromParent();
+    if (_lifetime <= 0) { removeFromParent(); return; }
     if (position.distanceTo(game.player.position) < 14) {
       game.player.takeDamage();
       removeFromParent();

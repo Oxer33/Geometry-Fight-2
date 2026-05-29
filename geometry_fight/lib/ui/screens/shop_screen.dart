@@ -585,7 +585,7 @@ class _ShopScreenState extends State<ShopScreen>
       },
       onSelect: (item) {
         setState(() => _saveData.activeSkin = item.id);
-        SaveManager.save(_saveData);
+        unawaited(SaveManager.save(_saveData));
       },
       previewBuilder: (item, time) => _SkinPreviewPainter(
         skinId: item.id,
@@ -632,7 +632,7 @@ class _ShopScreenState extends State<ShopScreen>
       },
       onSelect: (item) {
         setState(() => _saveData.activeTrail = item.id);
-        SaveManager.save(_saveData);
+        unawaited(SaveManager.save(_saveData));
       },
       previewBuilder: (item, time) => _TrailPreviewPainter(
         trailId: item.id,
@@ -699,7 +699,7 @@ class _ShopScreenState extends State<ShopScreen>
       },
       onSelect: (item) {
         setState(() => _saveData.startingWeapon = item.id);
-        SaveManager.save(_saveData);
+        unawaited(SaveManager.save(_saveData));
       },
       previewBuilder: (item, time) => _WeaponPreviewPainter(
         pattern: (item as _WeaponDef).pattern,
@@ -745,7 +745,7 @@ class _ShopScreenState extends State<ShopScreen>
       },
       onSelect: (item) {
         setState(() => _saveData.activePet = item.id);
-        SaveManager.save(_saveData);
+        unawaited(SaveManager.save(_saveData));
       },
       previewBuilder: (item, time) => _PetPreviewPainter(
         petType: (item as _PetDef).petType,

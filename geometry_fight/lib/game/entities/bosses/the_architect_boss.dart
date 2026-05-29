@@ -45,6 +45,9 @@ class TheArchitectBoss extends BossBase {
   @override
   void updateBoss(double dt) {
     _phase += dt;
+    // Wrap to avoid floating-point precision drift on long fights (mirrors
+    // BossBase._fxPhase wrapping). sin/cos are periodic so the wrap is safe.
+    if (_phase > math.pi * 20) _phase -= math.pi * 20;
 
     // Orbital movement around arena center (or camera in tunnel mode)
     final center = game.isTunnelMode
@@ -147,6 +150,9 @@ class TheArchitectBoss extends BossBase {
   static final _structurePaint = Paint()
     ..style = PaintingStyle.stroke
     ..strokeWidth = 2;
+  // Reused path for per-structure hexagon drawing — avoids N Path allocations
+  // per render frame (one per live structure).
+  static final _structurePath = Path();
   // Body paint cached: evita di mutare l'arg `paint` passato dal caller
   // (BossBase usa lo stesso Paint per glow+main → mutation leak).
   static final _bodyPaint = Paint();
@@ -248,25 +254,25 @@ class TheArchitectBoss extends BossBase {
       canvas.drawCircle(
           Offset(cx + sPos.x, cy + sPos.y), 18, _structureGlowPaint);
 
-      final path = Path();
+      _structurePath.reset();
       for (int i = 0; i < 6; i++) {
         final angle = i * math.pi / 3;
         final x = cx + sPos.x + 12 * math.cos(angle);
         final y = cy + sPos.y + 12 * math.sin(angle);
         if (i == 0) {
-          path.moveTo(x, y);
+          _structurePath.moveTo(x, y);
         } else {
-          path.lineTo(x, y);
+          _structurePath.lineTo(x, y);
         }
       }
-      path.close();
+      _structurePath.close();
 
       _structureFillPaint.color =
           NeonColors.electricBlue.withValues(alpha: 0.25 * lifeT);
-      canvas.drawPath(path, _structureFillPaint);
+      canvas.drawPath(_structurePath, _structureFillPaint);
       _structurePaint.color =
           NeonColors.electricBlue.withValues(alpha: lifeT);
-      canvas.drawPath(path, _structurePaint);
+      canvas.drawPath(_structurePath, _structurePaint);
 
       _structureFillPaint.color =
           const Color(0xFFFFFFFF).withValues(alpha: 0.8 * lifeT * pulse);

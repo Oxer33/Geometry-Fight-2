@@ -401,8 +401,10 @@ class _NeonPauseButtonState extends State<_NeonPauseButton>
 }
 
 class _PauseParticlesPainter extends CustomPainter {
-  // Instance cache: evita alloc per frame × 20 particles.
-  final Paint _paintCache = Paint()..style = PaintingStyle.fill;
+  // Static cache: the painter is reconstructed every frame by AnimatedBuilder,
+  // so an instance field would allocate a new Paint each frame.  A static
+  // field is safe because CustomPainter.paint() runs on the main isolate only.
+  static final Paint _paintCache = Paint()..style = PaintingStyle.fill;
 
   final double time;
   final double opacity;

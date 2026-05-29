@@ -519,12 +519,13 @@ class _AchievementsScreenState extends State<AchievementsScreen>
   Widget _buildCategoryHeader(String title, Color color, IconData icon,
       double entrance, double delay, String category) {
     final catEntrance = (delay >= 1.0 ? 1.0 : ((entrance - delay) / (1.0 - delay)).clamp(0.0, 1.0));
-    final catAchievements =
-        allAchievements.where((a) => a.category == category);
-    final catUnlocked =
-        catAchievements.where((a) => _unlockedCache[a.id] == true);
+    // Use the pre-built category list from initState to avoid re-filtering
+    // allAchievements on every AnimatedBuilder frame.
+    final catAchievements = _achievementsByCategory[category]!;
+    final catUnlockedCount =
+        catAchievements.where((a) => _unlockedCache[a.id] == true).length;
     final catPct = catAchievements.isNotEmpty
-        ? catUnlocked.length / catAchievements.length
+        ? catUnlockedCount / catAchievements.length
         : 0.0;
 
     return Opacity(
@@ -593,7 +594,7 @@ class _AchievementsScreenState extends State<AchievementsScreen>
               ),
               const SizedBox(width: 8),
               Text(
-                '${catUnlocked.length}/${catAchievements.length}',
+                '$catUnlockedCount/${catAchievements.length}',
                 style: TextStyle(
                   color: color.withValues(alpha: 0.5),
                   fontSize: 9,

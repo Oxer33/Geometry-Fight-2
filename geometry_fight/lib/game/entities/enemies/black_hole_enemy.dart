@@ -73,7 +73,7 @@ class BlackHoleEnemy extends EnemyBase {
     }
     // Player attraction: long-range (600px) + force quadratica con proximity
     // (più vicino → MOLTO più forte). Skip se invincible/dead.
-    if (!game.player.isInvincible && game.player.lives > 0) {
+    if (game.player.isMounted && !game.player.isInvincible && game.player.lives > 0) {
       final toHole = position - game.player.position;
       const playerPullRadius = 600.0;
       const playerPullRadiusSq = playerPullRadius * playerPullRadius;

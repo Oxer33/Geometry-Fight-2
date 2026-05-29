@@ -89,6 +89,9 @@ class NecroEnemy extends EnemyBase {
 
   /// Chiamato quando un nemico muore vicino al necro
   void onNearbyEnemyDeath(EnemyType type, Vector2 deathPos) {
+    // Guard: se il necro è già morto (rimozione pendente, cache non ancora
+    // aggiornata), ignora la richiesta per evitare leak in _resurrectingIds.
+    if (isRemoved) return;
     final dist = position.distanceTo(deathPos);
     if (dist < _resurrectionRadius && _pendingRes.length < 3) {
       final key = _deathKey(type, deathPos);

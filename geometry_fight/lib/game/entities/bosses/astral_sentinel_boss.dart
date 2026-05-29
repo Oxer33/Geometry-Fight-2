@@ -221,7 +221,10 @@ class AstralSentinelBoss extends BossBase {
 
     // Stelle + linee (render relativo a boss)
     if (_starsActive && _starPositions.isNotEmpty) {
-      final windFrac = 1.0 - (_starWindUp / _starWindUpInit).clamp(0.0, 1.0);
+      // Guard against division by zero if _starWindUpInit is ever 0.
+      final windFrac = _starWindUpInit > 0
+          ? (1.0 - (_starWindUp / _starWindUpInit).clamp(0.0, 1.0))
+          : 1.0;
       final lineAlpha = windFrac.clamp(0.0, 1.0);
 
       _linePaint.color =

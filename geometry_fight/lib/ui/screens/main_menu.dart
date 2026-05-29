@@ -34,6 +34,7 @@ class MainMenuScreen extends StatefulWidget {
 
 class _MainMenuScreenState extends State<MainMenuScreen>
     with TickerProviderStateMixin {
+  static final math.Random _glitchRandom = math.Random();
   late AnimationController _bgController;
   late AnimationController _entranceController;
   late AnimationController _pulseController;
@@ -397,7 +398,7 @@ class _MainMenuScreenState extends State<MainMenuScreen>
         // Micro glitch: shift orizzontale per 2 frame ogni ~4s
         final glitchPhase = _glitchController.value;
         final isGlitch = glitchPhase > 0.92 && glitchPhase < 0.94;
-        final glitchOffset = isGlitch ? (math.Random().nextDouble() - 0.5) * 4 : 0.0;
+        final glitchOffset = isGlitch ? (_glitchRandom.nextDouble() - 0.5) * 4 : 0.0;
 
         return Transform.translate(
           offset: Offset(glitchOffset, 0),

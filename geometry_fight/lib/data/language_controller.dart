@@ -31,9 +31,14 @@ class LanguageController extends ChangeNotifier {
 
   /// Seeds the controller from the persisted save. Call after
   /// `SaveManager.init()` in `main()` and before `runApp`.
+  ///
+  /// Falls back to 'it' when the persisted code is empty or not in
+  /// [supportedLocales], preventing an unsupported locale from being
+  /// forwarded to `MaterialApp`.
   Future<void> init() async {
     final code = SaveManager.load().languageCode;
-    _locale = Locale(code);
+    final isSupported = supportedLocales.any((l) => l.languageCode == code);
+    _locale = isSupported ? Locale(code) : const Locale('it');
   }
 
   /// Updates the active language and persists the change.
@@ -45,6 +50,9 @@ class LanguageController extends ChangeNotifier {
   /// `init()`, `load()`, `save()`, `clear()`, `close()`).
   Future<void> setLanguage(String code) async {
     if (_locale.languageCode == code) return;
+    // Guard come init(): non persistere/applicare un locale non supportato
+    // se un caller bypassa la picker UI (es. test, deep-link futuro).
+    if (!supportedLocales.any((l) => l.languageCode == code)) return;
     _locale = Locale(code);
     final current = SaveManager.load();
     await SaveManager.save(current.copyWith(languageCode: code));

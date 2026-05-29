@@ -67,9 +67,10 @@ class VoidKrakenBoss extends BossBase {
     _phase += dt;
 
     final toPlayer = playerPosition - position;
-    if (toPlayer.length > _kHoverMaxDist) {
+    final toPlayerLen = toPlayer.length;
+    if (toPlayerLen > _kHoverMaxDist) {
       position += toPlayer.normalized() * _kHoverOuterSpeed * dt;
-    } else if (toPlayer.length < _kHoverMinDist) {
+    } else if (toPlayerLen > 0.001 && toPlayerLen < _kHoverMinDist) {
       position -= toPlayer.normalized() * _kHoverInnerSpeed * dt;
     }
 

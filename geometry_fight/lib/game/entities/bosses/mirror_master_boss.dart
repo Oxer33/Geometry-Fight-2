@@ -31,7 +31,7 @@ class MirrorMasterBoss extends BossBase {
   // Distruttibili, HP 25 ciascuno. Respawn 8s dopo morte totale.
   final List<_FloorMirror> _mirrors = [];
   int _spawnedPhase = -1;
-  double _mirrorRespawnTimer = 0;
+  double _mirrorRespawnTimer = 8.0;
 
   int _mirrorCountForPhase(int phase) {
     switch (phase) {

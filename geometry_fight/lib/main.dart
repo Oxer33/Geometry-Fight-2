@@ -56,8 +56,12 @@ void main() async {
         await Hive.deleteFromDisk();
         await Hive.initFlutter();
       } catch (e2, st2) {
+        // Do NOT rethrow: a rethrow inside an async runZonedGuarded body
+        // propagates through the returned Future and is re-thrown in main()
+        // *outside* the zone, bypassing handleZoneError and crashing the
+        // process with an unhandled exception. Log and continue; subsequent
+        // initOrResetBox calls will surface further failures properly.
         CrashReporter.handleZoneError(e2, st2);
-        rethrow;
       }
     }
 

@@ -212,8 +212,9 @@ class SnakeEnemy extends EnemyBase {
     if (scale <= 1.01 && _segments.isNotEmpty) {
       final head = _segments[0] - position;
       // Occhi (nella direzione di movimento)
-      final moveDir = _segments.length > 1
-          ? (_segments[0] - _segments[1]).normalized()
+      final rawDir = _segments.length > 1 ? (_segments[0] - _segments[1]) : null;
+      final moveDir = (rawDir != null && rawDir.length2 > 1e-6)
+          ? rawDir.normalized()
           : Vector2(0, -1);
       final eyeOffset = 2.5;
       final perpDir = Vector2(-moveDir.y, moveDir.x);

@@ -141,7 +141,11 @@ class PhantomKingBoss extends BossBase {
   }
 
   void _shootAtPlayer() {
-    final dir = (playerPosition - position).normalized();
+    final delta = playerPosition - position;
+    // Guard: if player is exactly at boss position, skip to avoid NaN from
+    // normalizing a zero-length vector.
+    if (delta.length < 0.001) return;
+    final dir = delta.normalized();
     for (int i = -1; i <= 1; i++) {
       final angle = math.atan2(dir.y, dir.x) + i * 0.2;
       final bulletDir = Vector2(math.cos(angle), math.sin(angle));
@@ -329,14 +333,22 @@ class _PhantomBullet extends PositionComponent with HasGameReference<GeometryFig
       : super(size: Vector2(18, 18), anchor: Anchor.center);
 
   @override
-  Future<void> onLoad() async { _velocity = direction.normalized() * 230; }
+  Future<void> onLoad() async {
+    // Guard against a zero-length direction producing NaN velocity.
+    _velocity = direction.length > 0.001
+        ? direction.normalized() * 230
+        : Vector2(1, 0) * 230;
+  }
 
   @override
   void update(double dt) {
     super.update(dt);
     position += _velocity * dt;
     _lifetime -= dt;
-    if (_lifetime <= 0) removeFromParent();
+    if (_lifetime <= 0) {
+      removeFromParent();
+      return; // expired bullet must not deal damage after lifetime ends
+    }
     if (position.distanceTo(game.player.position) < 14) {
       game.player.takeDamage();
       removeFromParent();

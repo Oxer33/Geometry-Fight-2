@@ -29,11 +29,11 @@ class LeaderboardEntry {
 
   factory LeaderboardEntry.fromJson(Map<String, dynamic> json) =>
       LeaderboardEntry(
-        mode: json['mode'] ?? 'classic',
-        difficulty: json['difficulty'] ?? 'normal',
-        score: json['score'] ?? 0,
-        wave: json['wave'] ?? 0,
-        kills: json['kills'] ?? 0,
+        mode: (json['mode'] as String?) ?? 'classic',
+        difficulty: (json['difficulty'] as String?) ?? 'normal',
+        score: (json['score'] as num?)?.toInt() ?? 0,
+        wave: (json['wave'] as num?)?.toInt() ?? 0,
+        kills: (json['kills'] as num?)?.toInt() ?? 0,
         date: DateTime.tryParse(json['date'] ?? '') ?? DateTime.now(),
       );
 }
@@ -59,10 +59,15 @@ class LeaderboardManager {
     final raw = _box.get(key);
     if (raw == null) return [];
 
-    final list = List<Map<String, dynamic>>.from(
-      (raw as List).map((e) => Map<String, dynamic>.from(e)),
-    );
-    final entries = list.map((e) => LeaderboardEntry.fromJson(e)).toList();
+    final rawList = raw as List;
+    final entries = <LeaderboardEntry>[];
+    for (final e in rawList) {
+      try {
+        entries.add(LeaderboardEntry.fromJson(Map<String, dynamic>.from(e as Map)));
+      } catch (_) {
+        // skip malformed entry
+      }
+    }
     // Ordina per score decrescente
     entries.sort((a, b) => b.score.compareTo(a.score));
     return entries;

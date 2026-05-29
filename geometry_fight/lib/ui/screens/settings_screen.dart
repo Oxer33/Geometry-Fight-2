@@ -141,10 +141,7 @@ class _SettingsScreenState extends State<SettingsScreen>
               final label = item.$2;
               final isSel = code == _languageCode;
               return InkWell(
-                onTap: () async {
-                  await _onLanguageSelected(code);
-                  if (mounted) setState(() {});
-                },
+                onTap: () => _onLanguageSelected(code),
                 borderRadius: BorderRadius.circular(8),
                 child: Container(
                   padding: const EdgeInsets.symmetric(
@@ -377,7 +374,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                         icon: Icons.music_note_rounded,
                         color: Colors.cyanAccent,
                         onChanged: (v) => setState(() => _bgmVolume = v),
-                        onChangeEnd: (_) => _saveSettings(),
+                        onChangeEnd: (_) => unawaited(_saveSettings()),
                         entrance: entrance,
                         delay: 0.08,
                         glow: glow,
@@ -389,7 +386,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                         icon: Icons.surround_sound_rounded,
                         color: const Color(0xFFFF4466),
                         onChanged: (v) => setState(() => _sfxVolume = v),
-                        onChangeEnd: (_) => _saveSettings(),
+                        onChangeEnd: (_) => unawaited(_saveSettings()),
                         entrance: entrance,
                         delay: 0.12,
                         glow: glow,
@@ -412,7 +409,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                         color: const Color(0xFFCC00FF),
                         onChanged: (v) {
                           setState(() => _vibration = v);
-                          _saveSettings();
+                          unawaited(_saveSettings());
                         },
                         entrance: entrance,
                         delay: 0.22,
@@ -426,7 +423,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                         color: Colors.greenAccent,
                         onChanged: (v) {
                           setState(() => _showFps = v);
-                          _saveSettings();
+                          unawaited(_saveSettings());
                         },
                         entrance: entrance,
                         delay: 0.26,

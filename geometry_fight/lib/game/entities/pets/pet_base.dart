@@ -159,6 +159,9 @@ class CollectPet extends PetBase {
   CollectPet() : super(kPetCatalog[1]);
   Vector2 _wanderTarget = Vector2.zero();
   double _wanderTimer = 0;
+  // Reusable buffers — avoids per-frame heap allocation in update() hot path.
+  final List<Geom> _pickupBuffer = [];
+  final Vector2 _toVec = Vector2.zero();
 
   @override
   void onPetUpdate(double dt) {
@@ -187,19 +190,21 @@ class CollectPet extends PetBase {
         );
       }
     }
-    final to = _wanderTarget - position;
-    if (to.length2 > 1) position += to.normalized() * 380 * dt;
+    _toVec.setFrom(_wanderTarget);
+    _toVec.sub(position);
+    if (_toVec.length2 > 1) position += _toVec.normalized() * 380 * dt;
 
     // Physical pickup (utente: "deve proprio andare in giro e fisicamente
     // raccogliere i geom"). Geom entro 25px → collect direct + remove.
     // Pet contribuisce al gold sessione bypassando magnet logic player.
-    final pickups = <Geom>[];
+    // _pickupBuffer is reused to avoid per-frame List allocation.
+    _pickupBuffer.clear();
     for (final c in game.world.children) {
       if (c is Geom && c.position.distanceTo(position) < 25) {
-        pickups.add(c);
+        _pickupBuffer.add(c);
       }
     }
-    for (final g in pickups) {
+    for (final g in _pickupBuffer) {
       game.collectGeom(g.value);
       g.removeFromParent();
     }
@@ -556,18 +561,20 @@ class RamPet extends PetBase {
 
   @override
   void render(Canvas canvas) {
-    final target = _target;
-    if (target == null || target.isRemoved) return;
     final cx = size.x / 2;
     final cy = size.y / 2;
     final pulse = 0.6 + math.sin(phase * 7) * 0.4;
     _glowPaint.color = def.color.withValues(alpha: 0.5 * pulse);
     canvas.drawCircle(Offset(cx, cy), 15, _glowPaint);
-    // Chevron arrow puntato verso direzione movimento (target o player).
-    final toTarget = target.position - position;
-    final aim = toTarget.length2 > 1e-6
-        ? toTarget.normalized()
-        : Vector2(1, 0);
+    // Chevron arrow puntato verso target se presente, altrimenti usa cachedAim.
+    final target = _target;
+    final Vector2 aim;
+    if (target != null && !target.isRemoved) {
+      final toTarget = target.position - position;
+      aim = toTarget.length2 > 1e-6 ? toTarget.normalized() : cachedAim;
+    } else {
+      aim = cachedAim;
+    }
     final ang = math.atan2(aim.y, aim.x);
     canvas.save();
     canvas.translate(cx, cy);

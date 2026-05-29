@@ -281,10 +281,12 @@ class WaveSystem {
       if (_pendingBoss != null && game.bossCount == 0) {
         game.spawnBoss(_pendingBoss!);
         _pendingBoss = null;
-      }
-      // Wait for boss to die, ma continua a spawnare nemici se presenti
-      if (game.bossCount == 0 && _pendingBoss == null &&
+        // Skip the completion check this frame: bossCount cache is stale
+        // (50ms refresh) and would immediately fire the condition below,
+        // completing the wave in the same frame the pending boss was spawned.
+      } else if (game.bossCount == 0 && _pendingBoss == null &&
           _allSpawned && game.enemyCount == 0) {
+        // Wait for boss to die, ma continua a spawnare nemici se presenti
         _bossActive = false;
         _completeWave();
         return;
@@ -1579,7 +1581,13 @@ class WaveSystem {
     final ringCounts = [ring1Count, ring2Count, ring3Count];
     final positions = <Vector2>[];
     for (int ring = 0; ring < 3; ring++) {
-      final n = math.max(1, ringCounts[ring]);
+      final n = ringCounts[ring];
+      // Skip empty rings (e.g. count < 6 → ring0/ring1 may be 0).
+      // math.max(1, n) was wrong: it forced enemies into inner rings for small
+      // counts, causing wrong distribution (e.g. count=2 → 1 inner + 1 middle
+      // instead of 2 in outer). The division `/ n` is never reached when n=0
+      // because the inner loop runs 0 times.
+      if (n == 0) continue;
       for (int i = 0; i < n && positions.length < count; i++) {
         final angle = i * math.pi * 2 / n;
         positions.add(center + Vector2(

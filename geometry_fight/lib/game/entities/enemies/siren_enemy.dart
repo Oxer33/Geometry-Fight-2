@@ -11,8 +11,10 @@ import '../projectiles.dart';
 /// I proiettili nel suo raggio diventano più lenti e fanno meno danno.
 class SirenEnemy extends EnemyBase {
   double _wavePhase = 0;
-  int _slowFrameCounter = 0;
+  double _slowTimer = 0;
   static const double _interferenceRadius = 150.0;
+  // Throttle interval in seconds (~33ms ≈ every 2 frames at 60fps)
+  static const double _slowInterval = 0.033;
 
   SirenEnemy()
       : super(
@@ -32,10 +34,10 @@ class SirenEnemy extends EnemyBase {
     final velocity = seekPlayer(speed);
     position += velocity * dt;
 
-    // Rallenta i proiettili del player nel raggio (throttled: ogni 2 frame)
-    _slowFrameCounter++;
-    if (_slowFrameCounter >= 2) {
-      _slowFrameCounter = 0;
+    // Rallenta i proiettili del player nel raggio (throttled: ogni ~33ms)
+    _slowTimer += dt;
+    if (_slowTimer >= _slowInterval) {
+      _slowTimer = 0;
       final radiusSq = _interferenceRadius * _interferenceRadius;
       for (final bullet in game.world.children.whereType<PlayerBullet>()) {
         final dx = bullet.position.x - position.x;

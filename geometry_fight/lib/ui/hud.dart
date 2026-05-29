@@ -1018,16 +1018,19 @@ class _LifeIconPainter extends CustomPainter {
   static final Paint _glowPaint = Paint()
     ..color = const Color(0xFF00FFFF).withValues(alpha: 0.3)
     ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
+  // Path cache: the triangle shape is fixed, reuse across paint calls.
+  static final Path _path = Path();
 
   @override
   void paint(Canvas canvas, Size size) {
-    final path = Path()
+    _path
+      ..reset()
       ..moveTo(size.width / 2, 0)
       ..lineTo(size.width, size.height)
       ..lineTo(0, size.height)
       ..close();
-    canvas.drawPath(path, _glowPaint);
-    canvas.drawPath(path, _fillPaint);
+    canvas.drawPath(_path, _glowPaint);
+    canvas.drawPath(_path, _fillPaint);
   }
 
   @override
@@ -1041,6 +1044,8 @@ class _GeomIconPainter extends CustomPainter {
   static final Paint _glowPaint = Paint()
     ..color = const Color(0xFF00FFFF).withValues(alpha: 0.3)
     ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
+  // Path cache: diamond shape is fixed, reuse across paint calls.
+  static final Path _path = Path();
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -1048,15 +1053,16 @@ class _GeomIconPainter extends CustomPainter {
     final cy = size.height / 2;
     final r = size.width / 2;
 
-    final path = Path()
+    _path
+      ..reset()
       ..moveTo(cx, cy - r)
       ..lineTo(cx + r * 0.6, cy)
       ..lineTo(cx, cy + r)
       ..lineTo(cx - r * 0.6, cy)
       ..close();
 
-    canvas.drawPath(path, _glowPaint);
-    canvas.drawPath(path, _fillPaint);
+    canvas.drawPath(_path, _glowPaint);
+    canvas.drawPath(_path, _fillPaint);
   }
 
   @override
@@ -1144,6 +1150,9 @@ class _ArrowPainter extends CustomPainter {
   static final Paint _arrowGlowPaint = Paint()
     ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4);
   static final Paint _arrowPaint = Paint();
+  // List and Path caches: avoid per-frame heap allocation.
+  static final List<_EnemyDir> _offscreen = [];
+  static final Path _arrowPath = Path();
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -1151,10 +1160,10 @@ class _ArrowPainter extends CustomPainter {
     final camPos = game.camera.viewfinder.position;
     final halfW = size.width / 2;
     final halfH = size.height / 2;
-    final margin = 20.0; // Distanza dal bordo
+    const margin = 20.0; // Distanza dal bordo
 
     // Raccogli nemici fuori schermo (max 8, i più vicini)
-    final offscreen = <_EnemyDir>[];
+    _offscreen.clear();
     for (final child in game.world.children) {
       if (child is EnemyBase) {
         // Posizione relativa alla camera
@@ -1163,7 +1172,7 @@ class _ArrowPainter extends CustomPainter {
           // NaN guard: se coincide col player, skip arrow.
           final delta = child.position - playerPos;
           if (delta.length < 0.001) continue;
-          offscreen.add(_EnemyDir(
+          _offscreen.add(_EnemyDir(
             direction: delta.normalized(),
             distance: delta.length,
           ));
@@ -1174,7 +1183,7 @@ class _ArrowPainter extends CustomPainter {
         if (rel.x.abs() > halfW + 40 || rel.y.abs() > halfH + 40) {
           final delta = child.position - playerPos;
           if (delta.length < 0.001) continue;
-          offscreen.add(_EnemyDir(
+          _offscreen.add(_EnemyDir(
             direction: delta.normalized(),
             distance: delta.length,
             isBoss: true,
@@ -1184,10 +1193,11 @@ class _ArrowPainter extends CustomPainter {
     }
 
     // Ordina per distanza e prendi max 8
-    offscreen.sort((a, b) => a.distance.compareTo(b.distance));
-    final arrows = offscreen.take(8);
+    _offscreen.sort((a, b) => a.distance.compareTo(b.distance));
+    final count = _offscreen.length < 8 ? _offscreen.length : 8;
 
-    for (final enemy in arrows) {
+    for (var i = 0; i < count; i++) {
+      final enemy = _offscreen[i];
       final dir = enemy.direction;
       // Calcola posizione della freccia sul bordo dello schermo
       double arrowX, arrowY;
@@ -1214,25 +1224,28 @@ class _ArrowPainter extends CustomPainter {
       canvas.translate(arrowX, arrowY);
       canvas.rotate(angle);
 
-      // Glow
-      _arrowGlowPaint.color = color.withValues(alpha: alpha * 0.4);
-      final path = Path()
+      // Build reusable path for this arrow
+      _arrowPath
+        ..reset()
         ..moveTo(0, -arrowSize)
         ..lineTo(arrowSize * 0.6, arrowSize * 0.4)
         ..lineTo(-arrowSize * 0.6, arrowSize * 0.4)
         ..close();
-      canvas.drawPath(path, _arrowGlowPaint);
+
+      // Glow
+      _arrowGlowPaint.color = color.withValues(alpha: alpha * 0.4);
+      canvas.drawPath(_arrowPath, _arrowGlowPaint);
 
       // Freccia solida
       _arrowPaint.color = color.withValues(alpha: alpha);
-      canvas.drawPath(path, _arrowPaint);
+      canvas.drawPath(_arrowPath, _arrowPaint);
 
       canvas.restore();
     }
   }
 
   @override
-  bool shouldRepaint(covariant _ArrowPainter oldDelegate) => false;
+  bool shouldRepaint(covariant _ArrowPainter oldDelegate) => true;
 }
 
 class _EnemyDir {

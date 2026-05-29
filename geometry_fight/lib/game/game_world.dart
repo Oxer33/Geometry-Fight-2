@@ -372,7 +372,7 @@ class GeometryFightGame extends FlameGame
     SwarmDroneEnemy.updateGlobalEnrage(scaledDt);
 
     // Cache conteggi nemici/boss (evita O(n) per ogni chiamata)
-    _updateEntityCounts();
+    _updateEntityCounts(dt);
 
     // NOTA: spatial hash rimosso — Flame usa HasCollisionDetection built-in
     // che è più efficiente. Il spatial hash iterava TUTTI i children ogni frame
@@ -1529,7 +1529,8 @@ class GeometryFightGame extends FlameGame
     // Pet companion: respawn al restart (fix caveman-review: prima attivePet
     // restava reference stale alla vecchia istanza distrutta dal world reset).
     // Pacifist: niente pet (regola Pacifism = no offensiva).
-    if (!isPacifistMode) {
+    // Snake mode: nessun pet (no spari → pet automation irrilevante).
+    if (!isPacifistMode && gameMode != GameMode.snake) {
       final petType = petTypeById(saveData.activePet);
       activePet = createPet(petType);
       if (activePet != null) {
@@ -1573,11 +1574,11 @@ class GeometryFightGame extends FlameGame
   /// Ritorna il boss attivo (se presente) per mostrare la barra HP nella HUD
   BossBase? get activeBoss => _cachedActiveBoss;
 
-  /// Aggiorna i conteggi cached (chiamato ogni 3 frame, singolo pass)
-  void _updateEntityCounts() {
-    _countCacheTimer -= 1;
+  /// Aggiorna i conteggi cached (~20 volte/sec, time-based, frame-rate independent)
+  void _updateEntityCounts(double dt) {
+    _countCacheTimer -= dt;
     if (_countCacheTimer > 0) return;
-    _countCacheTimer = 3; // Aggiorna ogni 3 frame (~20 volte/sec a 60fps)
+    _countCacheTimer = 0.05; // 50ms ≈ 20 aggiornamenti/sec
     int enemies = 0;
     int bosses = 0;
     _cachedNecros.clear();

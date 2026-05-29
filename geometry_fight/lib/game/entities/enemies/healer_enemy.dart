@@ -77,6 +77,9 @@ class HealerEnemy extends EnemyBase {
     final radiusSq = _healRadius * _healRadius;
     for (final child in game.world.children.whereType<EnemyBase>()) {
       if (child == this) continue;
+      // Skip dead-or-dying enemies: hp <= 0 means onDeath() was already called
+      // (pending removal). Healing them would corrupt the dying state.
+      if (child.hp <= 0) continue;
       if (child.hp >= child.maxHp) continue;
       final dx = child.position.x - position.x;
       final dy = child.position.y - position.y;
@@ -99,8 +102,10 @@ class HealerEnemy extends EnemyBase {
       EnemyBase.detailPaint.style = PaintingStyle.stroke;
       EnemyBase.detailPaint.strokeWidth = 2;
       canvas.drawCircle(Offset(cx, cy), _healPulseRadius, EnemyBase.detailPaint);
-      EnemyBase.detailPaint.style = PaintingStyle.fill;
     }
+    // Always reset shared detailPaint style to fill so subsequent renderShape
+    // calls on other enemies receive a consistent fill state.
+    EnemyBase.detailPaint.style = PaintingStyle.fill;
 
     // Croce medica
     final crossW = s * 0.35;

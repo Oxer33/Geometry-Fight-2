@@ -27,6 +27,11 @@ abstract class EnemyBase extends PositionComponent
   // DEVE combaciare con `classicWaveGroupDelaySeconds` (constants.dart) — il blink
   // termina esattamente quando arriva il prossimo gruppo di spawn.
   double _spawnInvulnTimer = 1.2;
+  // Durata iniziale dell'invuln di spawn: usata come denominatore nella curva di
+  // accelerazione del blink (progress = 1 - remaining/initial). Aggiornata ogni
+  // volta che setSpawnInvulnerability() è chiamata, così il denominatore è sempre
+  // coerente con il timer effettivo (elimina il magic literal 1.2 nel blink code).
+  double _spawnInvulnInitial = 1.2;
   // Fase accumulata per flash incrementale: avanza con freqHz*dt così la frequenza
   // può variare nel tempo (lento all'inizio, rapido verso la fine del warning)
   double _blinkPhase = 0;
@@ -40,6 +45,7 @@ abstract class EnemyBase extends PositionComponent
   /// lampeggiare — devono muoversi subito).
   void setSpawnInvulnerability(double seconds) {
     _spawnInvulnTimer = seconds;
+    _spawnInvulnInitial = seconds;
   }
 
   // Fear mechanic (come GW:RE2 — nemici fuggono brevemente quando colpiti da proiettili vicini)
@@ -89,9 +95,14 @@ abstract class EnemyBase extends PositionComponent
     if (_spawnInvulnTimer > 0) {
       // Flash frequency incrementale: 1 Hz all'inizio → 12 Hz a fine warning
       // Curva quadratica: accelera verso la fine per effetto "imminenza".
-      // Divisore = default spawn invuln (1.2s) == `classicWaveGroupDelaySeconds`.
-      // Prima era 2.5 (stale), quindi la curva non arrivava mai a 12 Hz.
-      final progress = 1.0 - (_spawnInvulnTimer / 1.2).clamp(0.0, 1.0);
+      // Usa `_spawnInvulnInitial` come denominatore (aggiornato da
+      // setSpawnInvulnerability) così la curva è sempre corretta anche
+      // se la durata varia (es. figli Splitter con 0.1s invece di 1.2s).
+      // Prima era il magic literal 1.2: se il timer veniva impostato a un
+      // valore diverso la curva non arrivava mai a 12 Hz (bug storico con 2.5s).
+      final progress = _spawnInvulnInitial > 0
+          ? (1.0 - (_spawnInvulnTimer / _spawnInvulnInitial)).clamp(0.0, 1.0)
+          : 1.0;
       final freqHz = 1.0 + progress * progress * 11.0; // 1..12 Hz
       _blinkPhase += freqHz * dt;
       _spawnInvulnTimer -= dt;
@@ -140,6 +151,11 @@ abstract class EnemyBase extends PositionComponent
         updateBehavior(dt);
       }
     }
+
+    // Se updateBehavior ha auto-distrutto il nemico (es. Mutator a fine
+    // mutazioni → onDeath/removeFromParent + _isDead=true), salta clamp/tunnel:
+    // evita di operare su un componente già in coda di rimozione.
+    if (_isDead) return;
 
     // Clamp to arena DOPO il movimento (fear + updateBehavior) per evitare jitter
     if (game.isTunnelMode) {
@@ -273,6 +289,13 @@ abstract class EnemyBase extends PositionComponent
       final showFrame = _blinkPhase.floor() % 2 == 0;
       if (!showFrame) return; // Non renderizza → frame "off" del flash
     }
+
+    // Baseline condiviso: alcune subclass mutano `detailPaint` (style/maskFilter)
+    // dentro renderShape e potrebbero non resettarlo uscendo da un branch early.
+    // Reset qui garantisce stato pulito per ogni nemico → fix paint-state leak
+    // cross-enemy (es. Healer lascia stroke → Proton trail reso come outline).
+    detailPaint.style = PaintingStyle.fill;
+    detailPaint.maskFilter = null;
 
     // === GLOW (senza blur per performance — solo colore più grande e trasparente) ===
     _glowPaint.color = neonColor.withValues(alpha: 0.2);

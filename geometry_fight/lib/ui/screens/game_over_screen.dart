@@ -904,7 +904,9 @@ class _GameOverParticlesPainter extends CustomPainter {
       final x = baseX + sin(time * 2 * pi * speed + phase) * 15;
       final y = baseY + cos(time * 2 * pi * speed * 0.6 + phase) * 12 -
           time * 20;
-      final wrappedY = y % size.height;
+      // Dart's % returns a negative result when y < 0 (sign follows dividend).
+      // Use double-modulo to keep wrappedY in [0, size.height).
+      final wrappedY = ((y % size.height) + size.height) % size.height;
       final alpha = (0.15 + sin(time * 2 * pi + phase) * 0.1) * opacity;
 
       if (hasNewRecord) {

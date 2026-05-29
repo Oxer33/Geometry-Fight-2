@@ -108,7 +108,8 @@ class AchievementManager {
   /// Progresso corrente per un achievement
   static int getProgress(String achievementId) {
     if (!_initialized) return 0;
-    return (_box.get('progress_$achievementId', defaultValue: 0) as num).toInt();
+    final raw = _box.get('progress_$achievementId', defaultValue: 0);
+    return raw is num ? raw.toInt() : 0;
   }
 
   /// Se un achievement è stato sbloccato

@@ -68,6 +68,10 @@ class NexusPrimeBoss extends BossBase {
     _createPortals(2 + phase);
     // Respawn satelliti ad ogni cambio fase (rigenera lo scudo).
     _spawnSatellites();
+    // Reset convergent beam state so stale wind-up from previous phase
+    // doesn't fire beams immediately from freshly-spawned satellite positions.
+    _convergentWindUp = 0;
+    _convergentTimer = currentPhase == 2 ? 4.0 : 6.0;
   }
 
   /// Crea/resetta 4 satelliti orbitanti (tutti alive).
@@ -459,7 +463,7 @@ class _BossBullet extends PositionComponent
     _lifetime -= dt;
     if (_lifetime <= 0) removeFromParent();
     if (position.distanceTo(game.player.position) < 14) {
-      game.player.takeDamage();
+      if (!game.player.isInvincible) game.player.takeDamage();
       removeFromParent();
     }
   }

@@ -192,7 +192,7 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
     // viene settato true ogni frame dal nemico → nega moveInput per invertire
     // i controlli (meccanica GW). Flag resettato a fine tick.
     final moveDir = controlsInverted ? -game.moveInput : game.moveInput;
-    if (moveDir.length > 0) {
+    if (moveDir.length2 > 0) {
       final actualSpeed = speed * (hasOverdrive ? 1.15 : 1.0) *
           game.saveData.speedMultiplier;
       position += moveDir * actualSpeed * realDt;
@@ -254,7 +254,7 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
         (game.isShooting || aimDir.length > 0.3);
     if (wantsToShoot && aimDir.length > 0) {
       _rotation = math.atan2(aimDir.y, aimDir.x) + math.pi / 2;
-    } else if (moveDir.length > 0.1) {
+    } else if (moveDir.length2 > 0.01) {
       _rotation = math.atan2(moveDir.y, moveDir.x) + math.pi / 2;
     }
 
@@ -331,11 +331,11 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
     // Trail di movimento: registra posizione ogni 0.02s
     // Usa realDt: il trail non deve essere rallentato dal slow-mo.
     _trailTimer += realDt;
-    if (_trailTimer >= 0.02 && moveDir.length > 0.1) {
+    if (_trailTimer >= 0.02 && moveDir.length2 > 0.01) {
       _trailTimer = 0;
       _trail.insert(0, position.clone());
       if (_trail.length > _maxTrailLength) _trail.removeLast();
-    } else if (moveDir.length <= 0.1 && _trail.isNotEmpty) {
+    } else if (moveDir.length2 <= 0.01 && _trail.isNotEmpty) {
       // Dissolvenza trail quando fermi
       if (_trailTimer >= 0.05) {
         _trailTimer = 0;
@@ -881,11 +881,7 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
 
     // Bordo rosso luminoso per stealth (si legge sulla fill quasi nera)
     if (skinId == 'stealth' && !isInvincible) {
-      final edgePaint = Paint()
-        ..color = const Color(0xFFFF2244).withValues(alpha: 0.9)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.2;
-      _drawShipBody(canvas, edgePaint, 1.0);
+      _drawShipBody(canvas, _stealthEdgePaint, 1.0);
     }
 
     // === 6. DETTAGLI INTERNI (cockpit, linee strutturali) ===
@@ -902,6 +898,10 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
 
   static final _trailPaint = Paint();
   static final _detailPaint = Paint();
+  static final _stealthEdgePaint = Paint()
+    ..color = const Color(0xFFFF2244).withValues(alpha: 0.9)
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 1.2;
 
   /// Scia luminosa dietro la nave durante il movimento.
   /// Colore deriva dal trail equipaggiato nello shop (activeTrail):
@@ -1125,7 +1125,7 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
   /// Doppi thruster con fiamma animata e particelle
   void _renderThrusters(Canvas canvas, double cx, double cy) {
     final moveDir = game.moveInput;
-    final isMoving = moveDir.length > 0.1;
+    final isMoving = moveDir.length2 > 0.01;
     final flameLength = isMoving ? 10 + math.sin(_thrusterPhase) * 4 : 4 + math.sin(_thrusterPhase * 0.5) * 1;
     final flameWidth = isMoving ? 4.0 : 2.0;
 
@@ -1445,21 +1445,32 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
     canvas.restore();
   }
 
+  // Cached hexagon paths keyed by radius to avoid per-frame Path allocations
+  // in _renderShield (called 3× per frame when shield is active).
+  // The hexagon shape is purely a function of radius; cx/cy are applied via
+  // canvas.translate at the call site so origin-relative paths can be reused.
+  final Map<double, Path> _hexPathCache = {};
+
   /// Esagono a posizione arbitraria
   void _drawHexagonAt(Canvas canvas, double cx, double cy, double radius, Paint paint) {
-    final path = Path();
-    for (int i = 0; i < 6; i++) {
-      final angle = i * math.pi / 3 - math.pi / 6;
-      final x = cx + radius * math.cos(angle);
-      final y = cy + radius * math.sin(angle);
-      if (i == 0) {
-        path.moveTo(x, y);
-      } else {
-        path.lineTo(x, y);
+    Path? path = _hexPathCache[radius];
+    if (path == null) {
+      path = Path();
+      for (int i = 0; i < 6; i++) {
+        final angle = i * math.pi / 3 - math.pi / 6;
+        if (i == 0) {
+          path.moveTo(radius * math.cos(angle), radius * math.sin(angle));
+        } else {
+          path.lineTo(radius * math.cos(angle), radius * math.sin(angle));
+        }
       }
+      path.close();
+      _hexPathCache[radius] = path;
     }
-    path.close();
+    canvas.save();
+    canvas.translate(cx, cy);
     canvas.drawPath(path, paint);
+    canvas.restore();
   }
 
   /// Colore arcobaleno per overdrive

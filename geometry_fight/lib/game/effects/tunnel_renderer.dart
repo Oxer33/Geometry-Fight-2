@@ -244,11 +244,16 @@ class TunnelRenderer extends PositionComponent
   static List<List<double>>? _strieParams;
   // Precomputed stars params: [baseWorldXFrac, yOffsetFrac].
   static List<List<double>>? _starParams;
+  // Precomputed Color objects for strie and stars — avoids Color.fromRGBO
+  // per-frame allocations (45 Color allocs/frame at 60fps = 2700/sec saved).
+  // Safe as static: RGB base is fixed, only alpha varies per-entry (constant).
+  static List<Color>? _strieColors;
+  static List<Color>? _starColors;
 
   static void _precomputeBgParams() {
     if (_strieParams != null) return;
     final strieRng = math.Random(77);
-    _strieParams = List.generate(20, (_) {
+    final strieList = List.generate(20, (_) {
       return <double>[
         strieRng.nextDouble(),               // yOffsetFrac
         15.0 + strieRng.nextDouble() * 60,   // baseLen
@@ -258,13 +263,23 @@ class TunnelRenderer extends PositionComponent
         0.3 + strieRng.nextDouble() * 0.4,   // strokeW
       ];
     });
+    _strieParams = strieList;
+    // Alpha index [4] is fixed per-stria — precompute Color once.
+    _strieColors = List.generate(20, (i) =>
+        Color.fromRGBO(180, 210, 255, strieList[i][4]));
+
+    const layerAlphas = [0.25, 0.45, 0.65];
     final starRng = math.Random(42);
-    _starParams = List.generate(25, (_) {
+    final starList = List.generate(25, (_) {
       return <double>[
         starRng.nextDouble(), // baseWorldXFrac
         starRng.nextDouble(), // yOffsetFrac
       ];
     });
+    _starParams = starList;
+    // Layer alpha is constant per-star (i % 3) — precompute Color once.
+    _starColors = List.generate(25, (i) =>
+        Color.fromRGBO(200, 220, 255, layerAlphas[i % 3]));
   }
 
   /// Particelle bg stile splash: strie + stelle parallax scorrevoli.
@@ -278,6 +293,7 @@ class TunnelRenderer extends PositionComponent
 
     // ─── STRIE (20 strie orizzontali a velocità variate) ───
     final strieList = _strieParams!;
+    final strieColorList = _strieColors!;
     for (int i = 0; i < strieList.length; i++) {
       final p = strieList[i];
       final yOffset = p[0] * sizeY;
@@ -287,7 +303,8 @@ class TunnelRenderer extends PositionComponent
       final period = viewWidth * 2 + baseLen;
       final worldX = ((baseWorldX - cameraX * speedMul) % period + period) % period;
       final screenX = cameraX - viewWidth + worldX;
-      _bgStriePaint.color = Color.fromRGBO(180, 210, 255, p[4]);
+      // Use precomputed Color — no per-frame Color.fromRGBO allocation.
+      _bgStriePaint.color = strieColorList[i];
       _bgStriePaint.strokeWidth = p[5];
       canvas.drawLine(
         Offset(screenX, topY + yOffset),
@@ -299,8 +316,8 @@ class TunnelRenderer extends PositionComponent
     // ─── STELLE (25 totali, 3 layer profondità) ───
     const layerSpeeds = [0.3, 0.7, 1.4];
     const layerSizes = [0.4, 0.7, 1.1];
-    const layerAlphas = [0.25, 0.45, 0.65];
     final starList = _starParams!;
+    final starColorList = _starColors!;
     for (int i = 0; i < starList.length; i++) {
       final p = starList[i];
       final baseWorldX = p[0] * viewWidth * 3;
@@ -308,13 +325,13 @@ class TunnelRenderer extends PositionComponent
       final layer = i % 3;
       final speedMul = layerSpeeds[layer];
       final starSize = layerSizes[layer];
-      final alpha = layerAlphas[layer];
 
       final period = viewWidth * 2 + 10;
       final worldX = ((baseWorldX - cameraX * speedMul) % period + period) % period;
       final screenX = cameraX - viewWidth + worldX;
 
-      _bgStarPaint.color = Color.fromRGBO(200, 220, 255, alpha);
+      // Use precomputed Color — no per-frame Color.fromRGBO allocation.
+      _bgStarPaint.color = starColorList[i];
       canvas.drawCircle(Offset(screenX, topY + yOffset), starSize, _bgStarPaint);
     }
   }

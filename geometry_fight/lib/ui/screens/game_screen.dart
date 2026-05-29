@@ -82,8 +82,10 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
     _game.activeModifiers = List.from(saveData.activeModifiers);
     _game.onGameOver = () {
       if (!mounted) return;
-      unawaited(_saveLeaderboard());
-      setState(() => _showGameOver = true);
+      _saveLeaderboard().then((_) {
+        if (!mounted) return;
+        setState(() => _showGameOver = true);
+      });
     };
     _game.onPause = () {
       if (!mounted) return;

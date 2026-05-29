@@ -70,7 +70,9 @@ class SwarmQueenBoss extends BossBase {
     _wingPhase += dt * 5;
 
     // Conta swarm drone (throttled: ricalcola ogni 6 frame).
-    if (_countTick++ % 6 == 0) {
+    // Wrap at 1<<20 to prevent unbounded growth (matches _walkFrame pattern).
+    if (++_countTick >= (1 << 20)) _countTick = 0;
+    if (_countTick % 6 == 0) {
       int cnt = 0;
       for (final c in game.world.children) {
         if (c is SwarmDroneEnemy) cnt++;

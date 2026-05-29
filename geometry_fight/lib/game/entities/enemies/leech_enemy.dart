@@ -63,8 +63,12 @@ class LeechEnemy extends EnemyBase {
     _attached = false;
     _attachedCount = (_attachedCount - 1).clamp(0, 100);
     // Ripristina la velocità precedente solo quando nessun leech è agganciato.
+    // Guard isMounted: il player potrebbe essere morto/rimosso quando il leech
+    // si sgancia (timer scaduto dopo game-over).
     if (_attachedCount == 0 && _savedPlayerSpeed != null) {
-      game.player.speed = _savedPlayerSpeed!;
+      if (game.player.isMounted) {
+        game.player.speed = _savedPlayerSpeed!;
+      }
       _savedPlayerSpeed = null;
     }
   }
@@ -84,6 +88,11 @@ class LeechEnemy extends EnemyBase {
     _tentaclePhase += dt * 8;
 
     if (_attached) {
+      // Se il player è morto/rimosso, sgancia subito per evitare drift.
+      if (!game.player.isMounted) {
+        _detach();
+        return;
+      }
       // Segui il player attaccato (orbita attorno a lui)
       position = playerPosition + Vector2(
         math.cos(_tentaclePhase * 2) * 20,
@@ -105,7 +114,8 @@ class LeechEnemy extends EnemyBase {
       _attachTimer = 5.0;
       // Applica slow solo al primo leech agganciato, preservando la velocità attuale
       // (upgrade/modificatori già applicati).
-      if (_attachedCount == 0) {
+      // Guard isMounted: non applicare slow se il player è già morto/rimosso.
+      if (_attachedCount == 0 && game.player.isMounted) {
         _savedPlayerSpeed = game.player.speed;
         game.player.speed = game.player.speed * 0.7;
       }

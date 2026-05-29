@@ -505,6 +505,33 @@ class _NeonModeCard extends StatelessWidget {
   }
 }
 
+/// Precomputed star data for one card — derived from seed alone so it never
+/// changes between repaints. Positions are normalized (0..1) and scaled to
+/// actual pixel coords inside paint() to avoid depending on Size at build time.
+class _StarData {
+  _StarData(int seed) {
+    final rng = math.Random(seed);
+    for (int i = 0; i < _kStarCount; i++) {
+      nx[i] = rng.nextDouble();
+      ny[i] = rng.nextDouble();
+      nr[i] = 0.4 + rng.nextDouble() * 1.4;
+    }
+    for (int i = 0; i < _kAccentCount; i++) {
+      ax[i] = rng.nextDouble();
+      ay[i] = rng.nextDouble();
+    }
+  }
+
+  static const int _kStarCount = 18;
+  static const int _kAccentCount = 3;
+
+  final nx = List<double>.filled(_kStarCount, 0.0);
+  final ny = List<double>.filled(_kStarCount, 0.0);
+  final nr = List<double>.filled(_kStarCount, 0.0);
+  final ax = List<double>.filled(_kAccentCount, 0.0);
+  final ay = List<double>.filled(_kAccentCount, 0.0);
+}
+
 /// Cosmic card background: radial gradient mode-color + stelle deterministiche
 /// (seed = mode.hashCode, sempre stesse posizioni per card consistente).
 /// `pulse` (0..1) anima twinkle stelle.
@@ -513,11 +540,21 @@ class _CosmicCardPainter extends CustomPainter {
   final int seed;
   final double pulse;
 
+  // Star positions are deterministic per seed — precomputed once so paint()
+  // allocates no heap objects each frame (rubric: no per-frame allocation in
+  // paint() hot path).
+  final _StarData _stars;
+
+  // Static cache: at most one _StarData per unique seed (one per GameMode).
+  // Survives AnimatedBuilder rebuilds so _StarData is never reallocated for
+  // the same card across frames.
+  static final Map<int, _StarData> _starCache = {};
+
   _CosmicCardPainter({
     required this.color,
     required this.seed,
     required this.pulse,
-  });
+  }) : _stars = _starCache.putIfAbsent(seed, () => _StarData(seed));
 
   // Cached paint allocs.
   static final Paint _bgPaint = Paint();
@@ -547,13 +584,11 @@ class _CosmicCardPainter extends CustomPainter {
     );
     _nebulaPaint.maskFilter = null;
 
-    // Stelle (deterministe via seed).
-    final rng = math.Random(seed);
-    final starCount = 18;
-    for (int i = 0; i < starCount; i++) {
-      final x = rng.nextDouble() * size.width;
-      final y = rng.nextDouble() * size.height;
-      final r = 0.4 + rng.nextDouble() * 1.4;
+    // Stelle (posizioni precomputed, nessuna alloc per frame).
+    for (int i = 0; i < _StarData._kStarCount; i++) {
+      final x = _stars.nx[i] * size.width;
+      final y = _stars.ny[i] * size.height;
+      final r = _stars.nr[i];
       // Twinkle: ogni stella pulsa con phase diversa derivata da i.
       final phase = (pulse + i * 0.13) % 1.0;
       final twinkle = 0.4 + (math.sin(phase * math.pi * 2) * 0.5 + 0.5) * 0.6;
@@ -562,10 +597,10 @@ class _CosmicCardPainter extends CustomPainter {
       ).withValues(alpha: twinkle * 0.7);
       canvas.drawCircle(Offset(x, y), r, _starPaint);
     }
-    // Stella accenti color (3) più grandi.
-    for (int i = 0; i < 3; i++) {
-      final x = rng.nextDouble() * size.width;
-      final y = rng.nextDouble() * size.height;
+    // Stelle accenti color (3) più grandi.
+    for (int i = 0; i < _StarData._kAccentCount; i++) {
+      final x = _stars.ax[i] * size.width;
+      final y = _stars.ay[i] * size.height;
       final phase = (pulse + i * 0.27) % 1.0;
       final twinkle = 0.5 + (math.sin(phase * math.pi * 2) * 0.5 + 0.5) * 0.5;
       _starPaint.color = color.withValues(alpha: twinkle * 0.9);

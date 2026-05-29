@@ -86,6 +86,10 @@ abstract class BossBase extends PositionComponent
     final hitboxRadius = size.x / 2 * hitboxRadiusFactor;
     add(CircleHitbox(radius: hitboxRadius, anchor: Anchor.center)
       ..position = size / 2);
+    // Cache the arc rect used by the counter-rotating ring in render().
+    // `size` is fixed at this point — avoids a Rect heap allocation every frame.
+    final bossR = math.max(size.x, size.y) / 2;
+    _ringArcRect = Rect.fromCircle(center: Offset.zero, radius: bossR * 1.55);
   }
 
   double get healthPercent => hp / maxHp;
@@ -443,6 +447,11 @@ abstract class BossBase extends PositionComponent
   static final _fxEntryPaint = Paint()..style = PaintingStyle.stroke;
   static final _fxChromaticPaint = Paint();
 
+  /// Cached arc rect for the counter-rotating ring (section 4 in render).
+  /// Depends only on `size`, which is fixed after construction — computed once
+  /// in `onLoad` to avoid a per-frame `Rect.fromCircle` heap allocation.
+  late Rect _ringArcRect;
+
   @override
   void render(Canvas canvas) {
     final cx = size.x / 2;
@@ -495,10 +504,9 @@ abstract class BossBase extends PositionComponent
     canvas.save();
     canvas.translate(cx, cy);
     canvas.rotate(-_fxPhase * 1.2);
-    final ringRect = Rect.fromCircle(center: Offset.zero, radius: bossR * 1.55);
-    // Due archi opposti (180° span each with gap)
-    canvas.drawArc(ringRect, 0, math.pi * 0.75, false, _fxRingPaint);
-    canvas.drawArc(ringRect, math.pi, math.pi * 0.75, false, _fxRingPaint);
+    // Due archi opposti (180° span each with gap) — uses cached rect.
+    canvas.drawArc(_ringArcRect, 0, math.pi * 0.75, false, _fxRingPaint);
+    canvas.drawArc(_ringArcRect, math.pi, math.pi * 0.75, false, _fxRingPaint);
     canvas.restore();
 
     // ─── 5. DANGER STROBE (sotto 30% HP) ──────────────────────────────────

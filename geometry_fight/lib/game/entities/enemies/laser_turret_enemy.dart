@@ -57,7 +57,10 @@ class LaserTurretEnemy extends EnemyBase {
       // Distanza punto-segmento player-laser
       final playerDist = _distToSegment(playerPosition, position, laserEnd);
       if (playerDist < 12 && _hitCd <= 0) {
-        game.player.takeDamage();
+        // Guard: player may be removed (dead) while the laser is still active.
+        if (game.player.isMounted) {
+          game.player.takeDamage();
+        }
         _hitCd = 0.5;
       }
     }

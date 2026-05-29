@@ -107,6 +107,14 @@ class _VirtualJoystickState extends State<VirtualJoystick>
         });
         widget.onRelease?.call();
       },
+      onPanCancel: () {
+        setState(() {
+          _isActive = false;
+          _thumbOffset = Offset.zero;
+          _center = null;
+        });
+        widget.onRelease?.call();
+      },
       child: Stack(
         children: [
           // Area trasparente per catturare i tocchi

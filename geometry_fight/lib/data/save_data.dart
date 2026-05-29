@@ -231,7 +231,7 @@ class SaveData {
         // FIX C7: conversione robusta per i valori numerici (evita cast int/double da Hive)
         upgrades: Map<String, int>.from(
             ((json['upgrades'] ?? {}) as Map).map((k, v) =>
-                MapEntry(k.toString(), (v as num).toInt()))),
+                MapEntry(k.toString(), (v as num?)?.toInt() ?? 0))),
         unlockedSkins: List<String>.from(json['unlockedSkins'] ?? ['classic']),
         unlockedTrails: List<String>.from(json['unlockedTrails'] ?? ['normal']),
         unlockedModes: List<String>.from(json['unlockedModes'] ?? ['classic']),
@@ -239,11 +239,11 @@ class SaveData {
             List<String>.from(json['unlockedWeapons'] ?? ['basic']),
         highscores: Map<String, int>.from(
             ((json['highscores'] ?? {}) as Map).map((k, v) =>
-                MapEntry(k.toString(), (v as num).toInt()))),
+                MapEntry(k.toString(), (v as num?)?.toInt() ?? 0))),
         totalPlaytime: (json['totalPlaytime'] as num?)?.toInt() ?? 0,
         stats: Map<String, int>.from(
             ((json['stats'] ?? {}) as Map).map((k, v) =>
-                MapEntry(k.toString(), (v as num).toInt()))),
+                MapEntry(k.toString(), (v as num?)?.toInt() ?? 0))),
         playedModes: List<String>.from(json['playedModes'] ?? []),
         activeModifiers: List<String>.from(json['activeModifiers'] ?? []),
         activeSkin: json['activeSkin'] ?? 'classic',
