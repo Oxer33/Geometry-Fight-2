@@ -16,6 +16,7 @@ import 'data/achievements.dart';
 import 'data/difficulty.dart';
 import 'ui/screens/main_menu.dart';
 import 'ui/screens/game_screen.dart';
+import 'data/daily_challenge.dart';
 import 'ui/screens/shop_screen.dart';
 import 'ui/screens/settings_screen.dart';
 import 'ui/screens/mode_select_screen.dart';
@@ -86,7 +87,9 @@ void main() async {
     await initOrResetBox('geometry_fight_save', SaveManager.init);
     await initOrResetBox('geometry_fight_leaderboard', LeaderboardManager.init);
     await initOrResetBox(
-        'geometry_fight_achievements', AchievementManager.init);
+      'geometry_fight_achievements',
+      AchievementManager.init,
+    );
 
     // Seed locale globale dal save tramite `LanguageController` (Hive →
     // ChangeNotifier). MaterialApp ascolta il controller via AnimatedBuilder
@@ -115,7 +118,9 @@ void main() async {
 /// The new source of truth is [LanguageController.instance]; this notifier
 /// mirrors the controller's locale via a listener registered in
 /// [GeometryFightApp.initState] so existing callers keep working.
-final ValueNotifier<Locale> appLocale = ValueNotifier<Locale>(const Locale('it'));
+final ValueNotifier<Locale> appLocale = ValueNotifier<Locale>(
+  const Locale('it'),
+);
 
 class GeometryFightApp extends StatefulWidget {
   const GeometryFightApp({super.key});
@@ -173,11 +178,11 @@ enum AppScreen {
   splash,
   mainMenu,
   // Pre-game wizard 5 step (richiesta utente: schermate dedicate).
-  modeSelect,        // 1/5 — solo modalità + scroll arrow
-  difficultySelect,  // 2/5 — solo difficoltà
-  modifiersSelect,   // 3/5 — solo modificatori
-  loadout,           // 4/5 — arma + pet (2 step interno)
-  summary,           // 5/5 — riepilogo + multipliers + START
+  modeSelect, // 1/5 — solo modalità + scroll arrow
+  difficultySelect, // 2/5 — solo difficoltà
+  modifiersSelect, // 3/5 — solo modificatori
+  loadout, // 4/5 — arma + pet (2 step interno)
+  summary, // 5/5 — riepilogo + multipliers + START
   game,
   shop,
   settings,
@@ -273,9 +278,18 @@ class _NavigationWrapperState extends State<NavigationWrapper> {
               if (mode == GameMode.pacifist || mode == GameMode.snake) {
                 _selectedDifficulty = Difficulty.normal;
                 _selectedModifiers = <String>[];
+              } else if (mode == GameMode.dailyChallenge) {
+                // Daily = sfida FISSA uguale per tutti: difficoltà auto dalla
+                // data UTC, niente modifiers, arma+pet forzati a game-start
+                // (game_screen). Salta difficoltà/modifiers/loadout → vai
+                // dritto a summary (che mostra il loadout del giorno).
+                _selectedDifficulty = DailyChallenge.todayDifficulty;
+                _selectedModifiers = <String>[];
               }
             });
-            if (mode == GameMode.pacifist || mode == GameMode.snake) {
+            if (mode == GameMode.dailyChallenge) {
+              _navigateTo(AppScreen.summary);
+            } else if (mode == GameMode.pacifist || mode == GameMode.snake) {
               _navigateTo(AppScreen.modifiersSelect);
             } else {
               _navigateTo(AppScreen.difficultySelect);
@@ -307,10 +321,11 @@ class _NavigationWrapperState extends State<NavigationWrapper> {
           mode: _selectedMode,
           // Pacifist & Snake: difficulty step skipped → back va a mode.
           onBack: () => _navigateTo(
-              (_selectedMode == GameMode.pacifist ||
-                      _selectedMode == GameMode.snake)
-                  ? AppScreen.modeSelect
-                  : AppScreen.difficultySelect),
+            (_selectedMode == GameMode.pacifist ||
+                    _selectedMode == GameMode.snake)
+                ? AppScreen.modeSelect
+                : AppScreen.difficultySelect,
+          ),
           onConfirm: (mods) {
             // Step 3/5 → 4/5 loadout.
             // Pacifist & Snake: skip loadout (no shooting → arma irrilevante;
@@ -338,10 +353,13 @@ class _NavigationWrapperState extends State<NavigationWrapper> {
           activeModifiers: _selectedModifiers,
           // Pacifist & Snake: loadout skipped → back va a modifiersSelect.
           onBack: () => _navigateTo(
-              (_selectedMode == GameMode.pacifist ||
+            _selectedMode == GameMode.dailyChallenge
+                ? AppScreen.modeSelect
+                : (_selectedMode == GameMode.pacifist ||
                       _selectedMode == GameMode.snake)
-                  ? AppScreen.modifiersSelect
-                  : AppScreen.loadout),
+                ? AppScreen.modifiersSelect
+                : AppScreen.loadout,
+          ),
           onStart: () async {
             // Persist modifiers in saveData prima del game start: GameWorld
             // li legge da `saveData.activeModifiers` in onLoad.

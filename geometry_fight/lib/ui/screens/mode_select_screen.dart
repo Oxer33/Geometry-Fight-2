@@ -213,10 +213,18 @@ class _ModeSelectScreenState extends State<ModeSelectScreen>
         offset: Offset(0, 15 * (1 - e)),
         child: SizedBox(
           height: 110,
-          // Scrollbar orizzontale sempre visibile in basso (utente).
-          child: Scrollbar(
+          // Scrollbar ciano coerente con shop/altre sezioni: RawScrollbar con
+          // stessi colori/spessore di shop_screen._cyanScrollbar, orientata in
+          // basso (scroll orizzontale).
+          child: RawScrollbar(
             controller: _modeScrollController,
             thumbVisibility: true,
+            trackVisibility: true,
+            thickness: 10,
+            radius: const Radius.circular(5),
+            thumbColor: const Color(0xFF00FFFF),
+            trackColor: const Color(0x3300FFFF),
+            trackBorderColor: const Color(0x8800FFFF),
             scrollbarOrientation: ScrollbarOrientation.bottom,
             child: GridView.count(
               controller: _modeScrollController,
@@ -413,6 +421,7 @@ class _NeonModeCard extends StatelessWidget {
                     color: tint,
                     seed: mode.hashCode,
                     pulse: glow,
+                    isUnlocked: isUnlocked,
                   ),
                 ),
               ),
@@ -566,6 +575,8 @@ class _CosmicCardPainter extends CustomPainter {
   final Color color;
   final int seed;
   final double pulse;
+  // Puntini animati solo se la modalità è sbloccata (utente).
+  final bool isUnlocked;
 
   // Star positions are deterministic per seed — precomputed once so paint()
   // allocates no heap objects each frame (rubric: no per-frame allocation in
@@ -581,6 +592,7 @@ class _CosmicCardPainter extends CustomPainter {
     required this.color,
     required this.seed,
     required this.pulse,
+    required this.isUnlocked,
   }) : _stars = _starCache.putIfAbsent(seed, () => _StarData(seed));
 
   // Cached paint allocs.
@@ -600,9 +612,10 @@ class _CosmicCardPainter extends CustomPainter {
     canvas.drawRect(rect, _bgPaint);
     _bgPaint.shader = null;
 
-    // Nebula soft blob (mode color, blurred-ish).
+    // Nebula soft blob (mode color). Locked: alpha fisso → nessun pulse →
+    // nessun repaint per frame (vedi shouldRepaint). Unlocked: pulsa.
     _nebulaPaint
-      ..color = color.withValues(alpha: 0.18 + pulse * 0.08)
+      ..color = color.withValues(alpha: isUnlocked ? 0.18 + pulse * 0.08 : 0.12)
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 14);
     canvas.drawCircle(
       Offset(size.width * 0.75, size.height * 0.7),
@@ -611,12 +624,16 @@ class _CosmicCardPainter extends CustomPainter {
     );
     _nebulaPaint.maskFilter = null;
 
-    // Stelle (posizioni precomputed, nessuna alloc per frame).
+    // Puntini luminosi SOLO nelle modalità sbloccate (utente) e IN MOVIMENTO:
+    // drift verticale lento wrap-around guidato da `pulse` + twinkle.
+    // Locked → nessun puntino, card statica.
+    if (!isUnlocked) return;
     for (int i = 0; i < _StarData._kStarCount; i++) {
       final x = _stars.nx[i] * size.width;
-      final y = _stars.ny[i] * size.height;
+      // Drift: scorre e wrappa (0..1), velocità leggermente diversa per stella.
+      final fy = (_stars.ny[i] + pulse * (0.10 + _stars.nr[i] * 0.05)) % 1.0;
+      final y = fy * size.height;
       final r = _stars.nr[i];
-      // Twinkle: ogni stella pulsa con phase diversa derivata da i.
       final phase = (pulse + i * 0.13) % 1.0;
       final twinkle = 0.4 + (math.sin(phase * math.pi * 2) * 0.5 + 0.5) * 0.6;
       _starPaint.color = const Color(
@@ -624,10 +641,12 @@ class _CosmicCardPainter extends CustomPainter {
       ).withValues(alpha: twinkle * 0.7);
       canvas.drawCircle(Offset(x, y), r, _starPaint);
     }
-    // Stelle accenti color (3) più grandi.
+    // Stelle accenti color (3) più grandi — drift diagonale leggero.
     for (int i = 0; i < _StarData._kAccentCount; i++) {
-      final x = _stars.ax[i] * size.width;
-      final y = _stars.ay[i] * size.height;
+      final fx = (_stars.ax[i] + pulse * 0.06) % 1.0;
+      final fy = (_stars.ay[i] + pulse * 0.12) % 1.0;
+      final x = fx * size.width;
+      final y = fy * size.height;
       final phase = (pulse + i * 0.27) % 1.0;
       final twinkle = 0.5 + (math.sin(phase * math.pi * 2) * 0.5 + 0.5) * 0.5;
       _starPaint.color = color.withValues(alpha: twinkle * 0.9);
@@ -637,7 +656,11 @@ class _CosmicCardPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_CosmicCardPainter old) =>
-      old.pulse != pulse || old.color != color || old.seed != seed;
+      old.color != color ||
+      old.seed != seed ||
+      old.isUnlocked != isUnlocked ||
+      // Locked = statico (puntini assenti) → niente repaint sul pulse.
+      (isUnlocked && old.pulse != pulse);
 }
 
 // Removed unused _NeonDifficultyCard (legacy iter 19 — difficulty now lives

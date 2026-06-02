@@ -8,6 +8,7 @@ import '../../data/difficulty.dart';
 import '../../data/leaderboard.dart';
 import '../../data/save_data.dart';
 import '../../game/game_world.dart';
+import '../../data/daily_challenge.dart';
 import '../../game/systems/audio_system.dart';
 import '../../game/systems/music_manager.dart';
 import '../hud.dart';
@@ -73,9 +74,14 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
     unawaited(AudioSystem.init());
     // Switch dalla musica intro/menu alla musica gameplay (random shuffle bag)
     unawaited(MusicManager.playBgm());
+    // Daily Challenge: arma + pet auto-assegnati dalla data UTC (identici per
+    // tutti i player) → override del loadout salvato senza scriverlo.
+    final isDaily = widget.gameMode == GameMode.dailyChallenge;
     _game = GeometryFightGame(
       difficulty: widget.difficulty,
       gameMode: widget.gameMode,
+      overrideWeaponId: isDaily ? DailyChallenge.todayWeaponId : null,
+      overridePetId: isDaily ? DailyChallenge.todayPetId : null,
     );
     // Load active modifiers from save data
     final saveData = SaveManager.load();
@@ -96,14 +102,16 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
   Future<void> _saveLeaderboard() async {
     if (_leaderboardSaved || _game.scoreSystem.score <= 0) return;
     _leaderboardSaved = true;
-    await LeaderboardManager.addEntry(LeaderboardEntry(
-      mode: widget.gameMode.name,
-      difficulty: widget.difficulty.name,
-      score: _game.scoreSystem.score,
-      wave: _game.waveSystem.currentWave,
-      kills: _game.sessionKills,
-      date: DateTime.now(),
-    ));
+    await LeaderboardManager.addEntry(
+      LeaderboardEntry(
+        mode: widget.gameMode.name,
+        difficulty: widget.difficulty.name,
+        score: _game.scoreSystem.score,
+        wave: _game.waveSystem.currentWave,
+        kills: _game.sessionKills,
+        date: DateTime.now(),
+      ),
+    );
 
     // Check achievements
     final saveData = _game.saveData;
@@ -123,13 +131,16 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
       totalBombs: stats['totalBombs'] ?? 0,
       modesPlayed: saveData.playedModes.length,
       allUpgradesBought: _checkAllUpgrades(saveData),
-      completedClassicNormal: _game.gameMode == GameMode.classic &&
+      completedClassicNormal:
+          _game.gameMode == GameMode.classic &&
           _game.difficulty == Difficulty.normal &&
           _game.waveSystem.currentWave >= 50,
-      completedClassicHard: _game.gameMode == GameMode.classic &&
+      completedClassicHard:
+          _game.gameMode == GameMode.classic &&
           _game.difficulty == Difficulty.hard &&
           _game.waveSystem.currentWave >= 50,
-      completedClassicNightmare: _game.gameMode == GameMode.classic &&
+      completedClassicNightmare:
+          _game.gameMode == GameMode.classic &&
           _game.difficulty == Difficulty.nightmare &&
           _game.waveSystem.currentWave >= 50,
       bossRushWave: _game.gameMode == GameMode.bossRush
@@ -169,9 +180,14 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
     // Pre-fix: max levels stale (3,2,2,3,3) → achievement triggerava troppo
     // presto. Single source-of-truth: `kMaxUpgradeLevel` da save_data.
     const upgradeIds = [
-      'firepower', 'speed', 'fire_rate',
-      'shield_capacity', 'starting_lives', 'bomb_capacity',
-      'magnet_range', 'xp_boost',
+      'firepower',
+      'speed',
+      'fire_rate',
+      'shield_capacity',
+      'starting_lives',
+      'bomb_capacity',
+      'magnet_range',
+      'xp_boost',
     ];
     for (final id in upgradeIds) {
       if (data.getUpgradeLevel(id) < kMaxUpgradeLevel) return false;
@@ -261,132 +277,131 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
         color: Colors.black,
         child: Stack(
           children: [
-          // Safety net: background nero pieno dietro GameWidget.
-          // ColoredBox + SizedBox.expand → garantito full-size (Container
-          // color-only può avere size indeterminata in alcune configurazioni).
-          const Positioned.fill(
-            child: SizedBox.expand(
-              child: ColoredBox(color: Colors.black),
+            // Safety net: background nero pieno dietro GameWidget.
+            // ColoredBox + SizedBox.expand → garantito full-size (Container
+            // color-only può avere size indeterminata in alcune configurazioni).
+            const Positioned.fill(
+              child: SizedBox.expand(child: ColoredBox(color: Colors.black)),
             ),
-          ),
 
-          // === GAME ENGINE ===
-          // Key cambia ad ogni restart → Flutter distrugge il vecchio GameWidget
-          // e ne crea uno nuovo, garantendo pulizia completa dello stato Flame.
-          // Wrap ColoredBox esterno: forza background nero anche se Flame
-          // avesse un white flash prima del primo render di SpaceBackground.
-          Positioned.fill(
-            child: ColoredBox(
-              color: Colors.black,
-              child: GameWidget(
-                key: ValueKey(_gameKey),
-                game: _game,
-                loadingBuilder: (context) => const SizedBox.expand(
-                  child: ColoredBox(color: Colors.black),
-                ),
-                backgroundBuilder: (context) => const SizedBox.expand(
-                  child: ColoredBox(color: Colors.black),
+            // === GAME ENGINE ===
+            // Key cambia ad ogni restart → Flutter distrugge il vecchio GameWidget
+            // e ne crea uno nuovo, garantendo pulizia completa dello stato Flame.
+            // Wrap ColoredBox esterno: forza background nero anche se Flame
+            // avesse un white flash prima del primo render di SpaceBackground.
+            Positioned.fill(
+              child: ColoredBox(
+                color: Colors.black,
+                child: GameWidget(
+                  key: ValueKey(_gameKey),
+                  game: _game,
+                  loadingBuilder: (context) => const SizedBox.expand(
+                    child: ColoredBox(color: Colors.black),
+                  ),
+                  backgroundBuilder: (context) => const SizedBox.expand(
+                    child: ColoredBox(color: Colors.black),
+                  ),
                 ),
               ),
             ),
-          ),
 
-          // === JOYSTICK VISUALI (dual-stick) ===
-          _buildDualJoysticks(),
+            // === JOYSTICK VISUALI (dual-stick) ===
+            _buildDualJoysticks(),
 
-          // === HUD OVERLAY ===
-          GameHud(game: _game),
+            // === HUD OVERLAY ===
+            GameHud(game: _game),
 
-          // === PULSANTE BOMBA (lato destro, sopra il joystick aim) ===
-          // bottom alzato di ~50px così il pollice destro arriva senza ostacolo
-          // dal joystick aim (richiesta utente — bomba prima inarrivabile).
-          // Pacifist: nessun bottone bomba (regola GW2 Pacifism — 0 bombe).
-          if (!_game.isPacifistMode)
+            // === PULSANTE BOMBA (lato destro, sopra il joystick aim) ===
+            // bottom alzato di ~50px così il pollice destro arriva senza ostacolo
+            // dal joystick aim (richiesta utente — bomba prima inarrivabile).
+            // Pacifist: nessun bottone bomba (regola GW2 Pacifism — 0 bombe).
+            if (!_game.isPacifistMode)
+              Positioned(
+                bottom: 140,
+                right: 20,
+                child: _BombButton(onPressed: () => _game.bombPressed = true),
+              ),
+
+            // === PULSANTE PAUSA (lato destro, sopra il tasto bomba) ===
             Positioned(
-              bottom: 140,
-              right: 20,
-              child: _BombButton(onPressed: () => _game.bombPressed = true),
+              bottom: 215,
+              right: 24,
+              child: _PauseButton(
+                onPressed: () {
+                  if (!_showPause && !_showGameOver) {
+                    _game.togglePause();
+                    setState(() => _showPause = true);
+                  }
+                },
+              ),
             ),
 
-          // === PULSANTE PAUSA (lato destro, sopra il tasto bomba) ===
-          Positioned(
-            bottom: 215,
-            right: 24,
-            child: _PauseButton(onPressed: () {
-              if (!_showPause && !_showGameOver) {
-                _game.togglePause();
-                setState(() => _showPause = true);
-              }
-            }),
-          ),
+            // === OVERLAY PAUSA ===
+            if (_showPause)
+              PauseScreen(
+                onResume: () {
+                  setState(() => _showPause = false);
+                  _game.togglePause();
+                },
+                onQuit: () {
+                  _game.saveSessionData();
+                  unawaited(_saveLeaderboard());
+                  widget.onQuit();
+                },
+              ),
 
-          // === OVERLAY PAUSA ===
-          if (_showPause)
-            PauseScreen(
-              onResume: () {
-                setState(() => _showPause = false);
-                _game.togglePause();
-              },
-              onQuit: () {
-                _game.saveSessionData();
-                unawaited(_saveLeaderboard());
-                widget.onQuit();
-              },
-            ),
+            // === TUTORIAL PRIMO AVVIO ===
+            if (_showTutorial) TutorialOverlay(onDismiss: _dismissTutorial),
 
-          // === TUTORIAL PRIMO AVVIO ===
-          if (_showTutorial)
-            TutorialOverlay(onDismiss: _dismissTutorial),
+            // === OVERLAY GAME OVER ===
+            if (_showGameOver)
+              GameOverScreen(
+                score: _game.scoreSystem.score,
+                wave: _game.waveSystem.currentWave,
+                geoms: _game.sessionGeoms,
+                goldEarned: (_game.sessionGeoms / geomToGoldRatio).round(),
+                kills: _game.sessionKills,
+                bossKills: _game.sessionBossKills,
+                newAchievements: _newAchievements,
+                onRetry: () {
+                  // Ferma il vecchio gioco e l'audio
+                  _game.pauseEngine();
+                  _game.onGameOver = null;
+                  _game.onPause = null;
+                  AudioSystem.stopAll();
+                  // Crea un gioco NUOVO da zero — niente leak di stato Flame
+                  _initGame();
+                  setState(() {
+                    _showGameOver = false;
+                    _leaderboardSaved = false;
+                    _newAchievements = [];
+                    _gameKey++; // Forza ricostruzione GameWidget
+                    _fadeOverlayOpacity = 1.0; // Reset overlay
+                  });
+                  // Dissolvi overlay dopo init nuovo GameWidget (cancellabile).
+                  _fadeTimer?.cancel();
+                  _fadeTimer = Timer(const Duration(milliseconds: 300), () {
+                    if (mounted) setState(() => _fadeOverlayOpacity = 0.0);
+                  });
+                },
+                onQuit: widget.onQuit,
+              ),
 
-          // === OVERLAY GAME OVER ===
-          if (_showGameOver)
-            GameOverScreen(
-              score: _game.scoreSystem.score,
-              wave: _game.waveSystem.currentWave,
-              geoms: _game.sessionGeoms,
-              goldEarned: (_game.sessionGeoms / geomToGoldRatio).round(),
-              kills: _game.sessionKills,
-              bossKills: _game.sessionBossKills,
-              newAchievements: _newAchievements,
-              onRetry: () {
-                // Ferma il vecchio gioco e l'audio
-                _game.pauseEngine();
-                _game.onGameOver = null;
-                _game.onPause = null;
-                AudioSystem.stopAll();
-                // Crea un gioco NUOVO da zero — niente leak di stato Flame
-                _initGame();
-                setState(() {
-                  _showGameOver = false;
-                  _leaderboardSaved = false;
-                  _newAchievements = [];
-                  _gameKey++; // Forza ricostruzione GameWidget
-                  _fadeOverlayOpacity = 1.0; // Reset overlay
-                });
-                // Dissolvi overlay dopo init nuovo GameWidget (cancellabile).
-                _fadeTimer?.cancel();
-                _fadeTimer = Timer(const Duration(milliseconds: 300), () {
-                  if (mounted) setState(() => _fadeOverlayOpacity = 0.0);
-                });
-              },
-              onQuit: widget.onQuit,
-            ),
-
-          // === OVERLAY NERO anti-flash (si dissolve in 300ms dopo l'init) ===
-          // BUG FIX: Container(color: black) senza Positioned.fill in Stack
-          // ha size zero (nessun child + nessuna size) → overlay non copriva
-          // nulla, flash bianco frame iniziali GameWidget visibile.
-          Positioned.fill(
-            child: IgnorePointer(
-              child: AnimatedOpacity(
-                opacity: _fadeOverlayOpacity,
-                duration: const Duration(milliseconds: 250),
-                child: const SizedBox.expand(
-                  child: ColoredBox(color: Colors.black),
+            // === OVERLAY NERO anti-flash (si dissolve in 300ms dopo l'init) ===
+            // BUG FIX: Container(color: black) senza Positioned.fill in Stack
+            // ha size zero (nessun child + nessuna size) → overlay non copriva
+            // nulla, flash bianco frame iniziali GameWidget visibile.
+            Positioned.fill(
+              child: IgnorePointer(
+                child: AnimatedOpacity(
+                  opacity: _fadeOverlayOpacity,
+                  duration: const Duration(milliseconds: 250),
+                  child: const SizedBox.expand(
+                    child: ColoredBox(color: Colors.black),
+                  ),
                 ),
               ),
             ),
-          ),
           ],
         ),
       ),

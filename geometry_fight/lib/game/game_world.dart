@@ -146,9 +146,17 @@ class GeometryFightGame extends FlameGame
   /// = 'none'. Settato in `onLoad` post-spawn player, distrutto al restart.
   PetBase? activePet;
 
+  /// Daily Challenge: forza arma/pet uguali per tutti i player (override del
+  /// loadout salvato, SENZA scrivere su saveData). null → usa saveData
+  /// (modalità normali).
+  final String? overrideWeaponId;
+  final String? overridePetId;
+
   GeometryFightGame({
     this.difficulty = Difficulty.normal,
     this.gameMode = GameMode.classic,
+    this.overrideWeaponId,
+    this.overridePetId,
   }) {
     diffConfig = difficultyConfigs[difficulty]!;
     scoreSystem.geomValueMultiplier = diffConfig.geomValueMultiplier;
@@ -199,13 +207,15 @@ class GeometryFightGame extends FlameGame
   /// Reset a 0 quando il timer scade.
   int gateCombo = 0;
   double gateComboTimer = 0;
+
   /// Iter 13: max gate combo della sessione (per achievement `pacifist_combo_15`).
   int maxGateCombo = 0;
   static const double _gateComboWindow = 4.0;
+
   /// AoE multiplier scaling con combo (gate_enemy.dart legge questo per
   /// allargare il raggio di kill). 1.0 base, +0.15 per combo, max 2.5x.
-  double get gateComboAoeMultiplier =>
-      (1.0 + gateCombo * 0.15).clamp(1.0, 2.5);
+  double get gateComboAoeMultiplier => (1.0 + gateCombo * 0.15).clamp(1.0, 2.5);
+
   /// Score multiplier scaling con combo. 1× per primo gate, fino a 10×.
   int get gateComboScoreMultiplier => gateCombo.clamp(1, 10);
 
@@ -218,8 +228,11 @@ class GeometryFightGame extends FlameGame
   bool hitsTunnelObstacle(Vector2 pos) {
     return tunnelRenderer?.hitsObstacle(pos) ?? false;
   }
-  double tunnelScrollSpeed = 100; // Velocità scroll camera (px/s, cresce nel tempo)
-  double _tunnelCameraX = 0; // Posizione X della camera (avanza indipendentemente dal player)
+
+  double tunnelScrollSpeed =
+      100; // Velocità scroll camera (px/s, cresce nel tempo)
+  double _tunnelCameraX =
+      0; // Posizione X della camera (avanza indipendentemente dal player)
   // Dopo morte boss: 5s di grace period con tunnel pieno, poi 5s di shrink
   // graduale per un totale di 10s. `_tunnelBossShrinkDelay` gestisce il
   // grace; `_tunnelShrinkProgress` gestisce il lerp progressivo (0→1).
@@ -290,14 +303,14 @@ class GeometryFightGame extends FlameGame
     player.position = Vector2(arenaWidth / 2, arenaHeight / 2);
     player.lives = diffConfig.startingLives + (saveData.startingLives - 3);
     player.bombs = diffConfig.startingBombs;
-    player.setWeaponFromId(saveData.startingWeapon);
+    player.setWeaponFromId(overrideWeaponId ?? saveData.startingWeapon);
     world.add(player);
 
     // Pet companion (Geometry Wars 3 style drone). Solo se loadout != 'none'.
     // Pacifist mode: nessun pet (pet attaccano nemici → rompe regola Pacifism).
     // Snake mode: nessun pet (no spari → pet automation irrilevante).
     if (!isPacifistMode && gameMode != GameMode.snake) {
-      final petType = petTypeById(saveData.activePet);
+      final petType = petTypeById(overridePetId ?? saveData.activePet);
       activePet = createPet(petType);
       if (activePet != null) {
         activePet!.position = player.position + Vector2(40, 0);
@@ -409,10 +422,13 @@ class GeometryFightGame extends FlameGame
       _chaosTimer -= scaledDt;
       if (_chaosTimer <= 0) {
         _chaosTimer = 10.0;
-        powerUpSystem.spawnRandomPowerUp(player.position + Vector2(
-          (_random.nextDouble() - 0.5) * 200,
-          (_random.nextDouble() - 0.5) * 200,
-        ));
+        powerUpSystem.spawnRandomPowerUp(
+          player.position +
+              Vector2(
+                (_random.nextDouble() - 0.5) * 200,
+                (_random.nextDouble() - 0.5) * 200,
+              ),
+        );
       }
     }
 
@@ -499,7 +515,8 @@ class GeometryFightGame extends FlameGame
         _tunnelShrinkProgress -= dt / 5.0;
         if (_tunnelShrinkProgress < 0.0) _tunnelShrinkProgress = 0.0;
         // Linear interpolation tra altezza iniziale shrink e 420.
-        tunnelHeight = 420 + (_tunnelShrinkStartHeight - 420) * _tunnelShrinkProgress;
+        tunnelHeight =
+            420 + (_tunnelShrinkStartHeight - 420) * _tunnelShrinkProgress;
         tunnelTargetHeight = tunnelHeight;
       } else {
         // Stato normale post-shrink: target fisso 420.
@@ -520,7 +537,8 @@ class GeometryFightGame extends FlameGame
       final currentPos = camera.viewfinder.position;
       final targetY = player.position.y;
       // Frame-rate independent lerp: stesso feeling a qualunque fps
-      final lerpFactorTunnel = 1.0 - math.pow(1.0 - cameraSmoothing, scaledDt * 60).toDouble();
+      final lerpFactorTunnel =
+          1.0 - math.pow(1.0 - cameraSmoothing, scaledDt * 60).toDouble();
       camera.viewfinder.position = Vector2(
         _tunnelCameraX + arenaWidth / 2, // Offset iniziale + scroll
         currentPos.y + (targetY - currentPos.y) * lerpFactorTunnel,
@@ -530,7 +548,8 @@ class GeometryFightGame extends FlameGame
       final targetPos = player.position.clone();
       final currentPos = camera.viewfinder.position;
       // Frame-rate independent lerp: stesso feeling a qualunque fps
-      final lerpFactor = 1.0 - math.pow(1.0 - cameraSmoothing, scaledDt * 60).toDouble();
+      final lerpFactor =
+          1.0 - math.pow(1.0 - cameraSmoothing, scaledDt * 60).toDouble();
       camera.viewfinder.position =
           currentPos + (targetPos - currentPos) * lerpFactor;
     }
@@ -602,7 +621,9 @@ class GeometryFightGame extends FlameGame
 
   @override
   KeyEventResult onKeyEvent(
-      KeyEvent event, Set<LogicalKeyboardKey> keysPressed) {
+    KeyEvent event,
+    Set<LogicalKeyboardKey> keysPressed,
+  ) {
     _pressedKeys.clear();
     _pressedKeys.addAll(keysPressed);
 
@@ -616,7 +637,8 @@ class GeometryFightGame extends FlameGame
     }
 
     // Auto-shoot when aim keys are pressed
-    isShooting = _pressedKeys.contains(LogicalKeyboardKey.arrowUp) ||
+    isShooting =
+        _pressedKeys.contains(LogicalKeyboardKey.arrowUp) ||
         _pressedKeys.contains(LogicalKeyboardKey.arrowDown) ||
         _pressedKeys.contains(LogicalKeyboardKey.arrowLeft) ||
         _pressedKeys.contains(LogicalKeyboardKey.arrowRight);
@@ -731,8 +753,9 @@ class GeometryFightGame extends FlameGame
       case WaveModifier.loot:
         geomMul = 2.0;
       case WaveModifier.none:
-      case WaveModifier.blitz:    // count handled in WaveSystem._scaledSpawnCount
-      case WaveModifier.haste:    // delay handled in WaveSystem._delayBeforeNextGroup
+      case WaveModifier.blitz: // count handled in WaveSystem._scaledSpawnCount
+      case WaveModifier
+          .haste: // delay handled in WaveSystem._delayBeforeNextGroup
       case WaveModifier.magnetic: // magnet radius handled in geom.dart
         break;
     }
@@ -837,11 +860,12 @@ class GeometryFightGame extends FlameGame
     if (isTunnelMode) {
       final cameraX = camera.viewfinder.position.x;
       final screenHalfW = size.x / 2;
-      final spawnX =
-          cameraX + screenHalfW + 50 + random.nextDouble() * 450;
+      final spawnX = cameraX + screenHalfW + 50 + random.nextDouble() * 450;
       final (topWall, bottomWall) = tunnelWallsAtX(spawnX);
       const margin = 20.0;
-      final ySafe = topWall + margin +
+      final ySafe =
+          topWall +
+          margin +
           random.nextDouble() * (bottomWall - topWall - 2 * margin);
       return Vector2(spawnX, ySafe);
     }
@@ -862,7 +886,12 @@ class GeometryFightGame extends FlameGame
     return best;
   }
 
-  Vector2 _rollCandidate(math.Random random, double vw, double vh, double padding) {
+  Vector2 _rollCandidate(
+    math.Random random,
+    double vw,
+    double vh,
+    double padding,
+  ) {
     final side = random.nextInt(4);
     switch (side) {
       case 0: // top
@@ -906,8 +935,13 @@ class GeometryFightGame extends FlameGame
     world.add(geom);
   }
 
-  void spawnExplosion(Vector2 position, Color color,
-      {double radius = 50, int particleCount = 20, bool epic = false}) {
+  void spawnExplosion(
+    Vector2 position,
+    Color color, {
+    double radius = 50,
+    int particleCount = 20,
+    bool epic = false,
+  }) {
     final explosion = ExplosionEffect(
       color: color,
       radius: radius,
@@ -920,7 +954,7 @@ class GeometryFightGame extends FlameGame
     // Epic = forza e raggio maggiori; mob normali = distorsione piccola e sottile
     if (!isTunnelMode && _gridDistortionCount < 4) {
       final distRadius = epic ? radius * 3.75 : radius * 1.5;
-      final distForce  = epic ? 1200.0 : 270.0;
+      final distForce = epic ? 1200.0 : 270.0;
       grid.applyForce(position, distRadius, distForce);
       _gridDistortionCount++;
     }
@@ -1013,7 +1047,6 @@ class GeometryFightGame extends FlameGame
         }
       }
     }
-
   }
 
   /// Determina il tipo EnemyType di un nemico dalla sua classe
@@ -1130,8 +1163,12 @@ class GeometryFightGame extends FlameGame
       ),
     ];
     _deathExplosionPos = player.position.clone();
-    spawnExplosion(_deathExplosionPos!, const Color(0xFFFF2200),
-        radius: 600, particleCount: 70);
+    spawnExplosion(
+      _deathExplosionPos!,
+      const Color(0xFFFF2200),
+      radius: 600,
+      particleCount: 70,
+    );
 
     // Distorsione griglia massima
     if (!isTunnelMode) {
@@ -1187,8 +1224,7 @@ class GeometryFightGame extends FlameGame
     // Update stats
     saveData.stats['totalKills'] =
         (saveData.stats['totalKills'] ?? 0) + sessionKills;
-    saveData.stats['gamesPlayed'] =
-        (saveData.stats['gamesPlayed'] ?? 0) + 1;
+    saveData.stats['gamesPlayed'] = (saveData.stats['gamesPlayed'] ?? 0) + 1;
     saveData.stats['totalBosses'] =
         (saveData.stats['totalBosses'] ?? 0) + sessionBossKills;
     saveData.stats['totalBombs'] =
@@ -1318,11 +1354,14 @@ class GeometryFightGame extends FlameGame
   }
 
   bool hasModifier(String id) => activeModifiers.contains(id);
-  double get modifierScoreMultiplier => combinedScoreMultiplier(activeModifiers);
+  double get modifierScoreMultiplier =>
+      combinedScoreMultiplier(activeModifiers);
 
   // Arena effettiva (con modificatore tiny_arena)
-  double get effectiveArenaWidth => hasModifier('tiny_arena') ? arenaWidth * 0.5 : arenaWidth;
-  double get effectiveArenaHeight => hasModifier('tiny_arena') ? arenaHeight * 0.5 : arenaHeight;
+  double get effectiveArenaWidth =>
+      hasModifier('tiny_arena') ? arenaWidth * 0.5 : arenaWidth;
+  double get effectiveArenaHeight =>
+      hasModifier('tiny_arena') ? arenaHeight * 0.5 : arenaHeight;
 
   // ══════════════════════════════════════════════════════════════
   // TUNNEL GEOMETRY — usata da nemici, proiettili e TunnelRenderer
@@ -1331,27 +1370,27 @@ class GeometryFightGame extends FlameGame
 
   /// Offset Y del centro del tunnel alla posizione X (curva sinusoidale)
   double tunnelCenterOffsetAt(double x) {
-    final slow  = math.sin(x * 0.0008) * 120;
-    final med   = math.sin(x * 0.003  + 1.7) * 60;
-    final fast  = math.sin(x * 0.008  + 3.1) * 25;
-    final sharp = math.sin(x * 0.015  + 0.5) * 15;
+    final slow = math.sin(x * 0.0008) * 120;
+    final med = math.sin(x * 0.003 + 1.7) * 60;
+    final fast = math.sin(x * 0.008 + 3.1) * 25;
+    final sharp = math.sin(x * 0.015 + 0.5) * 15;
     final sCurve = math.atan(math.sin(x * 0.002 + 2.3) * 3) * 50;
     return slow + med + fast + sharp + sCurve;
   }
 
   /// Metà altezza del tunnel alla posizione X (varia per strozzature)
   double tunnelHalfHeightAt(double x) {
-    final base   = tunnelHeight / 2;
+    final base = tunnelHeight / 2;
     final narrow = math.sin(x * 0.004 + 0.8) * base * 0.15;
-    final wide   = math.sin(x * 0.001 + 2.0) * base * 0.10;
+    final wide = math.sin(x * 0.001 + 2.0) * base * 0.10;
     return (base + narrow + wide).clamp(base * 0.5, base * 1.3);
   }
 
   /// Restituisce (topWall, bottomWall) per la posizione X nel tunnel
   (double, double) tunnelWallsAtX(double x) {
     final offset = tunnelCenterOffsetAt(x);
-    final half   = tunnelHalfHeightAt(x);
-    final cy     = arenaHeight / 2;
+    final half = tunnelHalfHeightAt(x);
+    final cy = arenaHeight / 2;
     return (cy + offset - half, cy + offset + half);
   }
 
@@ -1404,8 +1443,12 @@ class GeometryFightGame extends FlameGame
       ),
     ];
     _bombExplosionPos = player.position.clone();
-    spawnExplosion(_bombExplosionPos!, NeonColors.white,
-        radius: bombRadius, particleCount: 80);
+    spawnExplosion(
+      _bombExplosionPos!,
+      NeonColors.white,
+      radius: bombRadius,
+      particleCount: 80,
+    );
 
     // Screen shake intenso e prolungato
     triggerScreenShake(12, 0.6);
@@ -1523,7 +1566,7 @@ class GeometryFightGame extends FlameGame
     player.position = Vector2(arenaWidth / 2, arenaHeight / 2);
     player.lives = diffConfig.startingLives + (saveData.startingLives - 3);
     player.bombs = diffConfig.startingBombs;
-    player.setWeaponFromId(saveData.startingWeapon);
+    player.setWeaponFromId(overrideWeaponId ?? saveData.startingWeapon);
     world.add(player);
 
     // Pet companion: respawn al restart (fix caveman-review: prima attivePet
@@ -1531,7 +1574,7 @@ class GeometryFightGame extends FlameGame
     // Pacifist: niente pet (regola Pacifism = no offensiva).
     // Snake mode: nessun pet (no spari → pet automation irrilevante).
     if (!isPacifistMode && gameMode != GameMode.snake) {
-      final petType = petTypeById(saveData.activePet);
+      final petType = petTypeById(overridePetId ?? saveData.activePet);
       activePet = createPet(petType);
       if (activePet != null) {
         activePet!.position = player.position + Vector2(40, 0);

@@ -58,8 +58,10 @@ class WaveSystem {
   // wave con boss restavano stuck (never spawn) fino a wave successiva.
   BossType? _pendingBoss;
   bool _allSpawned = false; // Tutti i gruppi sono stati spawnati
-  double _postSpawnDelay = 0; // Delay dopo l'ultimo spawn prima di controllare completamento
-  double _waveElapsedTimer = 0; // Timer per forzare completamento wave in classic mode
+  double _postSpawnDelay =
+      0; // Delay dopo l'ultimo spawn prima di controllare completamento
+  double _waveElapsedTimer =
+      0; // Timer per forzare completamento wave in classic mode
   double _interWaveDelay = 0; // Timer tra una wave e la successiva
   int? _pendingWave; // Wave da avviare dopo il delay
   late List<WaveConfig> _configs;
@@ -67,7 +69,7 @@ class WaveSystem {
   final int _dailySeed;
 
   WaveSystem(this.game)
-      : _dailySeed = _computeDailySeed(DateTime.now().toUtc()) {
+    : _dailySeed = _computeDailySeed(DateTime.now().toUtc()) {
     _configs = generateWaveConfigs();
   }
 
@@ -97,8 +99,7 @@ class WaveSystem {
 
   double _delayBeforeNextGroup() {
     assert(
-      _currentConfig != null &&
-          _spawnIndex < _currentConfig!.spawns.length,
+      _currentConfig != null && _spawnIndex < _currentConfig!.spawns.length,
       'spawnIndex out of bounds',
     );
     // Difensiva runtime: l'assert vale solo in debug, in release ritorna 0
@@ -115,7 +116,8 @@ class WaveSystem {
       // esplicito invece di schiacciare tutto a `classicWaveGroupDelaySeconds`.
       // Senza questo: ENCIRCLE 2.5s/PINCER 0.1s/KAMIKAZE HELL 2.5s collassano
       // tutti a 1.2s → ritmo signature distrutto.
-      final nextSpawn = (_currentConfig != null &&
+      final nextSpawn =
+          (_currentConfig != null &&
               _spawnIndex < _currentConfig!.spawns.length)
           ? _currentConfig!.spawns[_spawnIndex]
           : null;
@@ -174,7 +176,9 @@ class WaveSystem {
     currentWave = wave;
     _waveActive = true;
     _spawnIndex = 0;
-    _spawnTimer = _scaledSpawnDelay(1.0); // Delay iniziale prima del primo spawn
+    _spawnTimer = _scaledSpawnDelay(
+      1.0,
+    ); // Delay iniziale prima del primo spawn
     _allSpawned = false;
     _postSpawnDelay = 0;
     _waveElapsedTimer = 0;
@@ -251,7 +255,8 @@ class WaveSystem {
     // Gestione delay tra wave (sostituisce Future.delayed)
     if (_pendingWave != null) {
       _interWaveDelay -= dt;
-      if (_interWaveDelay <= 0 && game.bossCount == 0 &&
+      if (_interWaveDelay <= 0 &&
+          game.bossCount == 0 &&
           game.gameState == GameState.playing) {
         final wave = _pendingWave!;
         _pendingWave = null;
@@ -284,15 +289,18 @@ class WaveSystem {
         // Skip the completion check this frame: bossCount cache is stale
         // (50ms refresh) and would immediately fire the condition below,
         // completing the wave in the same frame the pending boss was spawned.
-      } else if (game.bossCount == 0 && _pendingBoss == null &&
-          _allSpawned && game.enemyCount == 0) {
+      } else if (game.bossCount == 0 &&
+          _pendingBoss == null &&
+          _allSpawned &&
+          game.enemyCount == 0) {
         // Wait for boss to die, ma continua a spawnare nemici se presenti
         _bossActive = false;
         _completeWave();
         return;
       }
       // Se il boss è attivo ma ci sono ancora spawn da fare, NON uscire — continua sotto
-      if (_allSpawned || (_currentConfig != null && _currentConfig!.spawns.isEmpty)) {
+      if (_allSpawned ||
+          (_currentConfig != null && _currentConfig!.spawns.isEmpty)) {
         return; // Tutti gli spawn sono stati fatti, aspetta solo il boss
       }
     }
@@ -324,7 +332,8 @@ class WaveSystem {
       _postSpawnDelay -= dt;
       // Pacifist + Waves: skip enemyCount==0 → ondate continue, sempre
       // ravvicinate (richiesta utente per Waves "molto più ravvicinate").
-      final canComplete = game.enemyCount == 0 ||
+      final canComplete =
+          game.enemyCount == 0 ||
           _mode == GameMode.pacifist ||
           _mode == GameMode.waves;
       if (_postSpawnDelay <= 0 && canComplete) {
@@ -346,7 +355,8 @@ class WaveSystem {
     // Delay tra wave dipende dalla modalità (in secondi).
     // Classic ridotto 2.0→1.0 (richiesta utente: ritmo più serrato).
     double delaySec;
-    if (_mode == GameMode.survival || _mode == GameMode.tunnel ||
+    if (_mode == GameMode.survival ||
+        _mode == GameMode.tunnel ||
         _mode == GameMode.pacifist) {
       delaySec = 0.5;
     } else if (_mode == GameMode.waves) {
@@ -501,8 +511,11 @@ class WaveSystem {
   static final List<List<EnemyType>> _snakePools = <List<EnemyType>>[
     List<EnemyType>.unmodifiable(_snakeTier1),
     List<EnemyType>.unmodifiable(<EnemyType>[..._snakeTier1, ..._snakeTier2]),
-    List<EnemyType>.unmodifiable(
-        <EnemyType>[..._snakeTier1, ..._snakeTier2, ..._snakeTier3]),
+    List<EnemyType>.unmodifiable(<EnemyType>[
+      ..._snakeTier1,
+      ..._snakeTier2,
+      ..._snakeTier3,
+    ]),
     List<EnemyType>.unmodifiable(<EnemyType>[
       ..._snakeTier1,
       ..._snakeTier2,
@@ -577,8 +590,16 @@ class WaveSystem {
       WaveSpawn(EnemyType.kamikaze, (4 + wave * 2).clamp(4, 20), delay: 1),
       WaveSpawn(EnemyType.weaver, (2 + wave).clamp(2, 12), delay: 1.5),
     ];
-    if (wave >= 3) spawns.add(WaveSpawn(EnemyType.mine, (4 + wave * 2).clamp(4, 20), delay: 1));
-    if (wave >= 5) spawns.add(WaveSpawn(EnemyType.splitter, (wave * 2 ~/ 3).clamp(1, 10), delay: 2));
+    if (wave >= 3) {
+      spawns.add(
+        WaveSpawn(EnemyType.mine, (4 + wave * 2).clamp(4, 20), delay: 1),
+      );
+    }
+    if (wave >= 5) {
+      spawns.add(
+        WaveSpawn(EnemyType.splitter, (wave * 2 ~/ 3).clamp(1, 10), delay: 2),
+      );
+    }
     return WaveConfig(waveNumber: wave, spawns: spawns);
   }
 
@@ -622,21 +643,42 @@ class WaveSystem {
     final kamikazeCount = (totalCount * 0.6).round();
     final swarmCount = totalCount - kamikazeCount;
     final spawns = <WaveSpawn>[
-      WaveSpawn(EnemyType.kamikaze, kamikazeCount,
-          formation: SpawnFormation.borderLine),
-      WaveSpawn(EnemyType.swarmDrone, swarmCount,
-          formation: SpawnFormation.borderLine, delay: 1.5),
-      WaveSpawn(EnemyType.kamikaze, kamikazeCount,
-          formation: SpawnFormation.borderLine, delay: 1.5),
-      WaveSpawn(EnemyType.swarmDrone, swarmCount,
-          formation: SpawnFormation.borderLine, delay: 1.5),
+      WaveSpawn(
+        EnemyType.kamikaze,
+        kamikazeCount,
+        formation: SpawnFormation.borderLine,
+      ),
+      WaveSpawn(
+        EnemyType.swarmDrone,
+        swarmCount,
+        formation: SpawnFormation.borderLine,
+        delay: 1.5,
+      ),
+      WaveSpawn(
+        EnemyType.kamikaze,
+        kamikazeCount,
+        formation: SpawnFormation.borderLine,
+        delay: 1.5,
+      ),
+      WaveSpawn(
+        EnemyType.swarmDrone,
+        swarmCount,
+        formation: SpawnFormation.borderLine,
+        delay: 1.5,
+      ),
     ];
     // Black hole rari: ogni 5 wave. Formation `cross` per posizionamento
     // FISSO ai 4 punti cardinali lontani dal centro.
     if (wave > 0 && wave % 5 == 0) {
       final bhCount = (1 + wave ~/ 10).clamp(1, 4);
-      spawns.add(WaveSpawn(EnemyType.blackHole, bhCount,
-          formation: SpawnFormation.cross, delay: 2.5));
+      spawns.add(
+        WaveSpawn(
+          EnemyType.blackHole,
+          bhCount,
+          formation: SpawnFormation.cross,
+          delay: 2.5,
+        ),
+      );
     }
     return WaveConfig(waveNumber: wave, spawns: spawns);
   }
@@ -684,8 +726,14 @@ class WaveSystem {
     for (int i = 0; i < 3; i++) {
       final type = mobTypes[rng.nextInt(mobTypes.length)];
       final cnt = (mobCount ~/ 3).clamp(2, 5);
-      spawns.add(WaveSpawn(type, cnt,
-          formation: SpawnFormation.scatter, delay: earlyDelays[i]));
+      spawns.add(
+        WaveSpawn(
+          type,
+          cnt,
+          formation: SpawnFormation.scatter,
+          delay: earlyDelays[i],
+        ),
+      );
     }
     // I blackhole NON sono in `spawns`: vengono spawnati direttamente in
     // `_spawnGravityInfernoBlackHoles` (chiamato da `startWave`) con
@@ -875,7 +923,6 @@ class WaveSystem {
     return WaveConfig(waveNumber: wave, spawns: []);
   }
 
-
   /// Daily Challenge — redesign (richiesta utente):
   /// - NO boss (anche le wave "boss" precedenti diventano mob waves).
   /// - Grande numero di mob per wave (50-80 invece di 6-50).
@@ -911,6 +958,10 @@ class WaveSystem {
   ///   blackhole), mutator (modifica altri), gravityWell (hazard), decoy
   ///   (mira diversion), healer (richiede altri da curare), necro (revive
   ///   altri), siren (control), leech (latch su player).
+  /// - vortex (girandola/elica spiral-shooter): spara 1 bullet ogni 0.15s
+  ///   ruotando (3 bracci a spirale). Con 50-80 spawn simultanei →
+  ///   ~400+ proiettili/sec a spirale che saturano l'arena = ingiocabile
+  ///   (utente). Escluso dal pool Daily Challenge.
   /// Quel che resta è un pool di mob "puri" attaccanti/inseguitori, varietà
   /// sufficiente per 10+ wave senza ripetizioni necessarie.
   static const List<EnemyType> _dailyChallengeMobPool = [
@@ -924,7 +975,6 @@ class WaveSystem {
     EnemyType.pulsar,
     EnemyType.mirror,
     EnemyType.phantom,
-    EnemyType.vortex,
     EnemyType.titan,
     EnemyType.orbiter,
     EnemyType.tesla,
@@ -947,7 +997,9 @@ class WaveSystem {
     EnemyType chosenType = _dailyChallengeMobPool.first;
     for (int w = 0; w <= wave; w++) {
       chosenType =
-          _dailyChallengeMobPool[typeRng.nextInt(_dailyChallengeMobPool.length)];
+          _dailyChallengeMobPool[typeRng.nextInt(
+            _dailyChallengeMobPool.length,
+          )];
     }
     // RNG per posizioni: seed include wave per varietà posizionale ma
     // resta deterministico per la stessa data + wave.
@@ -980,99 +1032,1110 @@ class WaveSystem {
   /// Returns the formation for a given classic-mode wave and spawn-group index.
   _Formation _classicFormation(int wave, int groupIndex) {
     const Map<int, List<_Formation>> waveFormations = {
-      1:  [_Formation.ring, _Formation.cross],
-      2:  [_Formation.diamond, _Formation.flower, _Formation.vArrow, _Formation.borderLine],
-      3:  [_Formation.cross, _Formation.doublering, _Formation.cascade, _Formation.scatter, _Formation.ring, _Formation.borderLine, _Formation.playerRing],
-      4:  [_Formation.triangle, _Formation.burst, _Formation.ring, _Formation.xShape, _Formation.arrowHead, _Formation.squareRing, _Formation.playerDoubleRing],
-      5:  [_Formation.hexagon, _Formation.flower, _Formation.pinwheel, _Formation.scatter, _Formation.arrowHead, _Formation.sineWave, _Formation.cascade, _Formation.ring],
-      6:  [_Formation.star5, _Formation.doublering, _Formation.diamond, _Formation.scatter, _Formation.vArrow, _Formation.sineWave, _Formation.cross, _Formation.ring, _Formation.borderLine, _Formation.playerEncircle],
-      7:  [_Formation.pinwheel, _Formation.ring, _Formation.honeycomb, _Formation.xShape, _Formation.arrowHead, _Formation.tripleRing, _Formation.cascade, _Formation.squareRing, _Formation.arc, _Formation.borderLine],
-      8:  [_Formation.comet, _Formation.flower, _Formation.triangle, _Formation.scatter, _Formation.burst, _Formation.sineWave, _Formation.vArrow, _Formation.cross, _Formation.diamond, _Formation.ring, _Formation.playerRing],
-      9:  [_Formation.infinity8, _Formation.doublering, _Formation.hexagon, _Formation.scatter, _Formation.arrowHead, _Formation.sineWave, _Formation.diamond, _Formation.xShape, _Formation.cross, _Formation.arc],
-      11: [_Formation.doubleSpiral, _Formation.ring, _Formation.star5, _Formation.scatter, _Formation.arrowHead, _Formation.sineWave, _Formation.doublering, _Formation.cascade],
-      12: [_Formation.flower, _Formation.honeycomb, _Formation.comet, _Formation.scatter, _Formation.burst, _Formation.sineWave, _Formation.vArrow, _Formation.cross, _Formation.doublering, _Formation.arc, _Formation.ring, _Formation.borderLine],
-      13: [_Formation.wShape, _Formation.burst, _Formation.hexagon, _Formation.scatter, _Formation.arrowHead, _Formation.zigzag, _Formation.diamond, _Formation.ring, _Formation.cross, _Formation.arc],
-      14: [_Formation.honeycomb, _Formation.ring, _Formation.diamond, _Formation.cross, _Formation.arrowHead, _Formation.sineWave, _Formation.cascade, _Formation.star5, _Formation.doublering, _Formation.tripleRing, _Formation.ring],
-      15: [_Formation.tripleRing, _Formation.flower, _Formation.cross, _Formation.scatter, _Formation.vArrow, _Formation.sineWave, _Formation.pinwheel, _Formation.ring, _Formation.comet],
-      16: [_Formation.star5, _Formation.cascade, _Formation.hexagon, _Formation.scatter, _Formation.arrowHead, _Formation.doubleSpiral, _Formation.xShape, _Formation.ring, _Formation.sineWave, _Formation.arc],
-      17: [_Formation.infinity8, _Formation.doublering, _Formation.diamond, _Formation.xShape, _Formation.burst, _Formation.zigzag, _Formation.arrowHead, _Formation.flower, _Formation.ring, _Formation.borderLine],
-      18: [_Formation.squareRing, _Formation.ring, _Formation.triangle, _Formation.scatter, _Formation.arrowHead, _Formation.sineWave, _Formation.cascade, _Formation.cross, _Formation.diamond, _Formation.arc, _Formation.ring],
-      19: [_Formation.pinwheel, _Formation.flower, _Formation.wShape, _Formation.scatter, _Formation.vArrow, _Formation.sineWave, _Formation.xShape, _Formation.hexagon, _Formation.ring, _Formation.arc, _Formation.doublering],
-      21: [_Formation.arrowHead, _Formation.ring, _Formation.star5, _Formation.scatter, _Formation.burst, _Formation.sineWave, _Formation.doublering, _Formation.cascade, _Formation.ring],
-      22: [_Formation.zigzag, _Formation.burst, _Formation.hexagon, _Formation.scatter, _Formation.arrowHead, _Formation.sineWave, _Formation.diamond, _Formation.xShape, _Formation.flower, _Formation.cross],
-      23: [_Formation.doublering, _Formation.flower, _Formation.honeycomb, _Formation.scatter, _Formation.arrowHead, _Formation.sineWave, _Formation.cross, _Formation.comet, _Formation.ring, _Formation.arc, _Formation.borderLine],
-      24: [_Formation.sineWave, _Formation.ring, _Formation.diamond, _Formation.xShape, _Formation.arrowHead, _Formation.zigzag, _Formation.doubleSpiral, _Formation.flower, _Formation.cross, _Formation.arc, _Formation.ring],
-      25: [_Formation.xShape, _Formation.flower, _Formation.star5, _Formation.scatter, _Formation.arrowHead, _Formation.tripleRing, _Formation.pinwheel, _Formation.ring, _Formation.comet],
-      26: [_Formation.cascade, _Formation.ring, _Formation.honeycomb, _Formation.scatter, _Formation.arrowHead, _Formation.wShape, _Formation.diamond, _Formation.xShape, _Formation.sineWave, _Formation.cross],
-      27: [_Formation.pinwheel, _Formation.doublering, _Formation.comet, _Formation.scatter, _Formation.burst, _Formation.sineWave, _Formation.vArrow, _Formation.cross, _Formation.ring, _Formation.arc],
-      28: [_Formation.comet, _Formation.flower, _Formation.triangle, _Formation.scatter, _Formation.arrowHead, _Formation.zigzag, _Formation.diamond, _Formation.ring, _Formation.cross, _Formation.doublering, _Formation.ring, _Formation.sineWave, _Formation.borderLine],
-      29: [_Formation.wShape, _Formation.ring, _Formation.hexagon, _Formation.scatter, _Formation.arrowHead, _Formation.sineWave, _Formation.xShape, _Formation.doubleSpiral, _Formation.cross, _Formation.arc],
-      31: [_Formation.star5, _Formation.flower, _Formation.ring, _Formation.scatter, _Formation.arrowHead, _Formation.sineWave, _Formation.cascade, _Formation.honeycomb, _Formation.cross, _Formation.arc, _Formation.doublering],
-      32: [_Formation.honeycomb, _Formation.burst, _Formation.diamond, _Formation.scatter, _Formation.vArrow, _Formation.zigzag, _Formation.ring, _Formation.xShape, _Formation.sineWave, _Formation.comet, _Formation.cross],
-      33: [_Formation.tripleRing, _Formation.ring, _Formation.hexagon, _Formation.scatter, _Formation.arrowHead, _Formation.sineWave, _Formation.squareRing, _Formation.flower, _Formation.cross, _Formation.arc],
-      34: [_Formation.doubleSpiral, _Formation.flower, _Formation.star5, _Formation.scatter, _Formation.arrowHead, _Formation.sineWave, _Formation.doublering, _Formation.diamond, _Formation.xShape, _Formation.ring, _Formation.arc, _Formation.cross, _Formation.borderLine],
-      35: [_Formation.infinity8, _Formation.ring, _Formation.honeycomb, _Formation.scatter, _Formation.vArrow, _Formation.sineWave, _Formation.cascade, _Formation.arrowHead, _Formation.cross, _Formation.doublering, _Formation.comet],
-      36: [_Formation.zigzag, _Formation.burst, _Formation.diamond, _Formation.scatter, _Formation.arrowHead, _Formation.tripleRing, _Formation.ring, _Formation.xShape, _Formation.sineWave, _Formation.cross],
-      37: [_Formation.squareRing, _Formation.flower, _Formation.hexagon, _Formation.scatter, _Formation.arrowHead, _Formation.sineWave, _Formation.wShape, _Formation.ring, _Formation.cross, _Formation.arc, _Formation.doublering],
-      38: [_Formation.wShape, _Formation.ring, _Formation.comet, _Formation.scatter, _Formation.arrowHead, _Formation.zigzag, _Formation.diamond, _Formation.xShape, _Formation.sineWave, _Formation.flower, _Formation.cross, _Formation.doublering],
-      39: [_Formation.arrowHead, _Formation.doublering, _Formation.star5, _Formation.scatter, _Formation.burst, _Formation.sineWave, _Formation.ring, _Formation.cascade, _Formation.cross, _Formation.arc, _Formation.flower],
-      41: [_Formation.doubleSpiral, _Formation.flower, _Formation.ring, _Formation.scatter, _Formation.arrowHead, _Formation.zigzag, _Formation.honeycomb, _Formation.doublering, _Formation.cross, _Formation.arc],
-      42: [_Formation.flower, _Formation.burst, _Formation.diamond, _Formation.scatter, _Formation.vArrow, _Formation.sineWave, _Formation.ring, _Formation.xShape, _Formation.comet, _Formation.cross, _Formation.arc, _Formation.borderLine],
-      43: [_Formation.hexagon, _Formation.ring, _Formation.honeycomb, _Formation.scatter, _Formation.arrowHead, _Formation.sineWave, _Formation.wShape, _Formation.flower, _Formation.cross, _Formation.doublering, _Formation.arc],
-      44: [_Formation.star5, _Formation.doublering, _Formation.scatter, _Formation.arrowHead, _Formation.tripleRing, _Formation.pinwheel, _Formation.ring, _Formation.cascade, _Formation.cross],
-      46: [_Formation.tripleRing, _Formation.ring, _Formation.hexagon, _Formation.scatter, _Formation.vArrow, _Formation.sineWave, _Formation.squareRing, _Formation.flower, _Formation.cross, _Formation.arc],
-      47: [_Formation.comet, _Formation.flower, _Formation.diamond, _Formation.scatter, _Formation.arrowHead, _Formation.zigzag, _Formation.ring, _Formation.xShape, _Formation.sineWave, _Formation.cross, _Formation.doublering],
-      48: [_Formation.infinity8, _Formation.burst, _Formation.star5, _Formation.scatter, _Formation.arrowHead, _Formation.sineWave, _Formation.doublering, _Formation.honeycomb, _Formation.cross, _Formation.arc, _Formation.flower],
-      49: [_Formation.pinwheel, _Formation.ring, _Formation.cascade, _Formation.scatter, _Formation.burst, _Formation.zigzag, _Formation.arrowHead, _Formation.doublering, _Formation.cross, _Formation.sineWave],
-      51: [_Formation.wShape, _Formation.flower, _Formation.ring, _Formation.scatter, _Formation.arrowHead, _Formation.sineWave, _Formation.xShape, _Formation.star5, _Formation.cross, _Formation.arc, _Formation.doublering],
-      52: [_Formation.squareRing, _Formation.burst, _Formation.hexagon, _Formation.scatter, _Formation.vArrow, _Formation.sineWave, _Formation.ring, _Formation.comet, _Formation.cross, _Formation.flower, _Formation.arc],
-      53: [_Formation.doubleSpiral, _Formation.ring, _Formation.honeycomb, _Formation.scatter, _Formation.arrowHead, _Formation.zigzag, _Formation.diamond, _Formation.xShape, _Formation.sineWave, _Formation.cross, _Formation.doublering, _Formation.borderLine],
-      54: [_Formation.zigzag, _Formation.doublering, _Formation.star5, _Formation.scatter, _Formation.arrowHead, _Formation.tripleRing, _Formation.ring, _Formation.flower, _Formation.cascade, _Formation.arc],
+      1: [_Formation.ring, _Formation.cross],
+      2: [
+        _Formation.diamond,
+        _Formation.flower,
+        _Formation.vArrow,
+        _Formation.borderLine,
+      ],
+      3: [
+        _Formation.cross,
+        _Formation.doublering,
+        _Formation.cascade,
+        _Formation.scatter,
+        _Formation.ring,
+        _Formation.borderLine,
+        _Formation.playerRing,
+      ],
+      4: [
+        _Formation.triangle,
+        _Formation.burst,
+        _Formation.ring,
+        _Formation.xShape,
+        _Formation.arrowHead,
+        _Formation.squareRing,
+        _Formation.playerDoubleRing,
+      ],
+      5: [
+        _Formation.hexagon,
+        _Formation.flower,
+        _Formation.pinwheel,
+        _Formation.scatter,
+        _Formation.arrowHead,
+        _Formation.sineWave,
+        _Formation.cascade,
+        _Formation.ring,
+      ],
+      6: [
+        _Formation.star5,
+        _Formation.doublering,
+        _Formation.diamond,
+        _Formation.scatter,
+        _Formation.vArrow,
+        _Formation.sineWave,
+        _Formation.cross,
+        _Formation.ring,
+        _Formation.borderLine,
+        _Formation.playerEncircle,
+      ],
+      7: [
+        _Formation.pinwheel,
+        _Formation.ring,
+        _Formation.honeycomb,
+        _Formation.xShape,
+        _Formation.arrowHead,
+        _Formation.tripleRing,
+        _Formation.cascade,
+        _Formation.squareRing,
+        _Formation.arc,
+        _Formation.borderLine,
+      ],
+      8: [
+        _Formation.comet,
+        _Formation.flower,
+        _Formation.triangle,
+        _Formation.scatter,
+        _Formation.burst,
+        _Formation.sineWave,
+        _Formation.vArrow,
+        _Formation.cross,
+        _Formation.diamond,
+        _Formation.ring,
+        _Formation.playerRing,
+      ],
+      9: [
+        _Formation.infinity8,
+        _Formation.doublering,
+        _Formation.hexagon,
+        _Formation.scatter,
+        _Formation.arrowHead,
+        _Formation.sineWave,
+        _Formation.diamond,
+        _Formation.xShape,
+        _Formation.cross,
+        _Formation.arc,
+      ],
+      11: [
+        _Formation.doubleSpiral,
+        _Formation.ring,
+        _Formation.star5,
+        _Formation.scatter,
+        _Formation.arrowHead,
+        _Formation.sineWave,
+        _Formation.doublering,
+        _Formation.cascade,
+      ],
+      12: [
+        _Formation.flower,
+        _Formation.honeycomb,
+        _Formation.comet,
+        _Formation.scatter,
+        _Formation.burst,
+        _Formation.sineWave,
+        _Formation.vArrow,
+        _Formation.cross,
+        _Formation.doublering,
+        _Formation.arc,
+        _Formation.ring,
+        _Formation.borderLine,
+      ],
+      13: [
+        _Formation.wShape,
+        _Formation.burst,
+        _Formation.hexagon,
+        _Formation.scatter,
+        _Formation.arrowHead,
+        _Formation.zigzag,
+        _Formation.diamond,
+        _Formation.ring,
+        _Formation.cross,
+        _Formation.arc,
+      ],
+      14: [
+        _Formation.honeycomb,
+        _Formation.ring,
+        _Formation.diamond,
+        _Formation.cross,
+        _Formation.arrowHead,
+        _Formation.sineWave,
+        _Formation.cascade,
+        _Formation.star5,
+        _Formation.doublering,
+        _Formation.tripleRing,
+        _Formation.ring,
+      ],
+      15: [
+        _Formation.tripleRing,
+        _Formation.flower,
+        _Formation.cross,
+        _Formation.scatter,
+        _Formation.vArrow,
+        _Formation.sineWave,
+        _Formation.pinwheel,
+        _Formation.ring,
+        _Formation.comet,
+      ],
+      16: [
+        _Formation.star5,
+        _Formation.cascade,
+        _Formation.hexagon,
+        _Formation.scatter,
+        _Formation.arrowHead,
+        _Formation.doubleSpiral,
+        _Formation.xShape,
+        _Formation.ring,
+        _Formation.sineWave,
+        _Formation.arc,
+      ],
+      17: [
+        _Formation.infinity8,
+        _Formation.doublering,
+        _Formation.diamond,
+        _Formation.xShape,
+        _Formation.burst,
+        _Formation.zigzag,
+        _Formation.arrowHead,
+        _Formation.flower,
+        _Formation.ring,
+        _Formation.borderLine,
+      ],
+      18: [
+        _Formation.squareRing,
+        _Formation.ring,
+        _Formation.triangle,
+        _Formation.scatter,
+        _Formation.arrowHead,
+        _Formation.sineWave,
+        _Formation.cascade,
+        _Formation.cross,
+        _Formation.diamond,
+        _Formation.arc,
+        _Formation.ring,
+      ],
+      19: [
+        _Formation.pinwheel,
+        _Formation.flower,
+        _Formation.wShape,
+        _Formation.scatter,
+        _Formation.vArrow,
+        _Formation.sineWave,
+        _Formation.xShape,
+        _Formation.hexagon,
+        _Formation.ring,
+        _Formation.arc,
+        _Formation.doublering,
+      ],
+      21: [
+        _Formation.arrowHead,
+        _Formation.ring,
+        _Formation.star5,
+        _Formation.scatter,
+        _Formation.burst,
+        _Formation.sineWave,
+        _Formation.doublering,
+        _Formation.cascade,
+        _Formation.ring,
+      ],
+      22: [
+        _Formation.zigzag,
+        _Formation.burst,
+        _Formation.hexagon,
+        _Formation.scatter,
+        _Formation.arrowHead,
+        _Formation.sineWave,
+        _Formation.diamond,
+        _Formation.xShape,
+        _Formation.flower,
+        _Formation.cross,
+      ],
+      23: [
+        _Formation.doublering,
+        _Formation.flower,
+        _Formation.honeycomb,
+        _Formation.scatter,
+        _Formation.arrowHead,
+        _Formation.sineWave,
+        _Formation.cross,
+        _Formation.comet,
+        _Formation.ring,
+        _Formation.arc,
+        _Formation.borderLine,
+      ],
+      24: [
+        _Formation.sineWave,
+        _Formation.ring,
+        _Formation.diamond,
+        _Formation.xShape,
+        _Formation.arrowHead,
+        _Formation.zigzag,
+        _Formation.doubleSpiral,
+        _Formation.flower,
+        _Formation.cross,
+        _Formation.arc,
+        _Formation.ring,
+      ],
+      25: [
+        _Formation.xShape,
+        _Formation.flower,
+        _Formation.star5,
+        _Formation.scatter,
+        _Formation.arrowHead,
+        _Formation.tripleRing,
+        _Formation.pinwheel,
+        _Formation.ring,
+        _Formation.comet,
+      ],
+      26: [
+        _Formation.cascade,
+        _Formation.ring,
+        _Formation.honeycomb,
+        _Formation.scatter,
+        _Formation.arrowHead,
+        _Formation.wShape,
+        _Formation.diamond,
+        _Formation.xShape,
+        _Formation.sineWave,
+        _Formation.cross,
+      ],
+      27: [
+        _Formation.pinwheel,
+        _Formation.doublering,
+        _Formation.comet,
+        _Formation.scatter,
+        _Formation.burst,
+        _Formation.sineWave,
+        _Formation.vArrow,
+        _Formation.cross,
+        _Formation.ring,
+        _Formation.arc,
+      ],
+      28: [
+        _Formation.comet,
+        _Formation.flower,
+        _Formation.triangle,
+        _Formation.scatter,
+        _Formation.arrowHead,
+        _Formation.zigzag,
+        _Formation.diamond,
+        _Formation.ring,
+        _Formation.cross,
+        _Formation.doublering,
+        _Formation.ring,
+        _Formation.sineWave,
+        _Formation.borderLine,
+      ],
+      29: [
+        _Formation.wShape,
+        _Formation.ring,
+        _Formation.hexagon,
+        _Formation.scatter,
+        _Formation.arrowHead,
+        _Formation.sineWave,
+        _Formation.xShape,
+        _Formation.doubleSpiral,
+        _Formation.cross,
+        _Formation.arc,
+      ],
+      31: [
+        _Formation.star5,
+        _Formation.flower,
+        _Formation.ring,
+        _Formation.scatter,
+        _Formation.arrowHead,
+        _Formation.sineWave,
+        _Formation.cascade,
+        _Formation.honeycomb,
+        _Formation.cross,
+        _Formation.arc,
+        _Formation.doublering,
+      ],
+      32: [
+        _Formation.honeycomb,
+        _Formation.burst,
+        _Formation.diamond,
+        _Formation.scatter,
+        _Formation.vArrow,
+        _Formation.zigzag,
+        _Formation.ring,
+        _Formation.xShape,
+        _Formation.sineWave,
+        _Formation.comet,
+        _Formation.cross,
+      ],
+      33: [
+        _Formation.tripleRing,
+        _Formation.ring,
+        _Formation.hexagon,
+        _Formation.scatter,
+        _Formation.arrowHead,
+        _Formation.sineWave,
+        _Formation.squareRing,
+        _Formation.flower,
+        _Formation.cross,
+        _Formation.arc,
+      ],
+      34: [
+        _Formation.doubleSpiral,
+        _Formation.flower,
+        _Formation.star5,
+        _Formation.scatter,
+        _Formation.arrowHead,
+        _Formation.sineWave,
+        _Formation.doublering,
+        _Formation.diamond,
+        _Formation.xShape,
+        _Formation.ring,
+        _Formation.arc,
+        _Formation.cross,
+        _Formation.borderLine,
+      ],
+      35: [
+        _Formation.infinity8,
+        _Formation.ring,
+        _Formation.honeycomb,
+        _Formation.scatter,
+        _Formation.vArrow,
+        _Formation.sineWave,
+        _Formation.cascade,
+        _Formation.arrowHead,
+        _Formation.cross,
+        _Formation.doublering,
+        _Formation.comet,
+      ],
+      36: [
+        _Formation.zigzag,
+        _Formation.burst,
+        _Formation.diamond,
+        _Formation.scatter,
+        _Formation.arrowHead,
+        _Formation.tripleRing,
+        _Formation.ring,
+        _Formation.xShape,
+        _Formation.sineWave,
+        _Formation.cross,
+      ],
+      37: [
+        _Formation.squareRing,
+        _Formation.flower,
+        _Formation.hexagon,
+        _Formation.scatter,
+        _Formation.arrowHead,
+        _Formation.sineWave,
+        _Formation.wShape,
+        _Formation.ring,
+        _Formation.cross,
+        _Formation.arc,
+        _Formation.doublering,
+      ],
+      38: [
+        _Formation.wShape,
+        _Formation.ring,
+        _Formation.comet,
+        _Formation.scatter,
+        _Formation.arrowHead,
+        _Formation.zigzag,
+        _Formation.diamond,
+        _Formation.xShape,
+        _Formation.sineWave,
+        _Formation.flower,
+        _Formation.cross,
+        _Formation.doublering,
+      ],
+      39: [
+        _Formation.arrowHead,
+        _Formation.doublering,
+        _Formation.star5,
+        _Formation.scatter,
+        _Formation.burst,
+        _Formation.sineWave,
+        _Formation.ring,
+        _Formation.cascade,
+        _Formation.cross,
+        _Formation.arc,
+        _Formation.flower,
+      ],
+      41: [
+        _Formation.doubleSpiral,
+        _Formation.flower,
+        _Formation.ring,
+        _Formation.scatter,
+        _Formation.arrowHead,
+        _Formation.zigzag,
+        _Formation.honeycomb,
+        _Formation.doublering,
+        _Formation.cross,
+        _Formation.arc,
+      ],
+      42: [
+        _Formation.flower,
+        _Formation.burst,
+        _Formation.diamond,
+        _Formation.scatter,
+        _Formation.vArrow,
+        _Formation.sineWave,
+        _Formation.ring,
+        _Formation.xShape,
+        _Formation.comet,
+        _Formation.cross,
+        _Formation.arc,
+        _Formation.borderLine,
+      ],
+      43: [
+        _Formation.hexagon,
+        _Formation.ring,
+        _Formation.honeycomb,
+        _Formation.scatter,
+        _Formation.arrowHead,
+        _Formation.sineWave,
+        _Formation.wShape,
+        _Formation.flower,
+        _Formation.cross,
+        _Formation.doublering,
+        _Formation.arc,
+      ],
+      44: [
+        _Formation.star5,
+        _Formation.doublering,
+        _Formation.scatter,
+        _Formation.arrowHead,
+        _Formation.tripleRing,
+        _Formation.pinwheel,
+        _Formation.ring,
+        _Formation.cascade,
+        _Formation.cross,
+      ],
+      46: [
+        _Formation.tripleRing,
+        _Formation.ring,
+        _Formation.hexagon,
+        _Formation.scatter,
+        _Formation.vArrow,
+        _Formation.sineWave,
+        _Formation.squareRing,
+        _Formation.flower,
+        _Formation.cross,
+        _Formation.arc,
+      ],
+      47: [
+        _Formation.comet,
+        _Formation.flower,
+        _Formation.diamond,
+        _Formation.scatter,
+        _Formation.arrowHead,
+        _Formation.zigzag,
+        _Formation.ring,
+        _Formation.xShape,
+        _Formation.sineWave,
+        _Formation.cross,
+        _Formation.doublering,
+      ],
+      48: [
+        _Formation.infinity8,
+        _Formation.burst,
+        _Formation.star5,
+        _Formation.scatter,
+        _Formation.arrowHead,
+        _Formation.sineWave,
+        _Formation.doublering,
+        _Formation.honeycomb,
+        _Formation.cross,
+        _Formation.arc,
+        _Formation.flower,
+      ],
+      49: [
+        _Formation.pinwheel,
+        _Formation.ring,
+        _Formation.cascade,
+        _Formation.scatter,
+        _Formation.burst,
+        _Formation.zigzag,
+        _Formation.arrowHead,
+        _Formation.doublering,
+        _Formation.cross,
+        _Formation.sineWave,
+      ],
+      51: [
+        _Formation.wShape,
+        _Formation.flower,
+        _Formation.ring,
+        _Formation.scatter,
+        _Formation.arrowHead,
+        _Formation.sineWave,
+        _Formation.xShape,
+        _Formation.star5,
+        _Formation.cross,
+        _Formation.arc,
+        _Formation.doublering,
+      ],
+      52: [
+        _Formation.squareRing,
+        _Formation.burst,
+        _Formation.hexagon,
+        _Formation.scatter,
+        _Formation.vArrow,
+        _Formation.sineWave,
+        _Formation.ring,
+        _Formation.comet,
+        _Formation.cross,
+        _Formation.flower,
+        _Formation.arc,
+      ],
+      53: [
+        _Formation.doubleSpiral,
+        _Formation.ring,
+        _Formation.honeycomb,
+        _Formation.scatter,
+        _Formation.arrowHead,
+        _Formation.zigzag,
+        _Formation.diamond,
+        _Formation.xShape,
+        _Formation.sineWave,
+        _Formation.cross,
+        _Formation.doublering,
+        _Formation.borderLine,
+      ],
+      54: [
+        _Formation.zigzag,
+        _Formation.doublering,
+        _Formation.star5,
+        _Formation.scatter,
+        _Formation.arrowHead,
+        _Formation.tripleRing,
+        _Formation.ring,
+        _Formation.flower,
+        _Formation.cascade,
+        _Formation.arc,
+      ],
       55: [_Formation.tripleRing, _Formation.arc],
-      56: [_Formation.honeycomb, _Formation.flower, _Formation.diamond, _Formation.scatter, _Formation.arrowHead, _Formation.sineWave, _Formation.wShape, _Formation.ring, _Formation.cross, _Formation.arc, _Formation.doublering],
-      57: [_Formation.arrowHead, _Formation.burst, _Formation.hexagon, _Formation.scatter, _Formation.zigzag, _Formation.ring, _Formation.xShape, _Formation.sineWave, _Formation.flower, _Formation.cross],
-      58: [_Formation.comet, _Formation.ring, _Formation.star5, _Formation.scatter, _Formation.vArrow, _Formation.sineWave, _Formation.doublering, _Formation.honeycomb, _Formation.cross, _Formation.arc, _Formation.flower],
-      59: [_Formation.tripleRing, _Formation.flower, _Formation.cascade, _Formation.scatter, _Formation.arrowHead, _Formation.sineWave, _Formation.squareRing, _Formation.ring, _Formation.cross, _Formation.doublering, _Formation.arc],
+      56: [
+        _Formation.honeycomb,
+        _Formation.flower,
+        _Formation.diamond,
+        _Formation.scatter,
+        _Formation.arrowHead,
+        _Formation.sineWave,
+        _Formation.wShape,
+        _Formation.ring,
+        _Formation.cross,
+        _Formation.arc,
+        _Formation.doublering,
+      ],
+      57: [
+        _Formation.arrowHead,
+        _Formation.burst,
+        _Formation.hexagon,
+        _Formation.scatter,
+        _Formation.zigzag,
+        _Formation.ring,
+        _Formation.xShape,
+        _Formation.sineWave,
+        _Formation.flower,
+        _Formation.cross,
+      ],
+      58: [
+        _Formation.comet,
+        _Formation.ring,
+        _Formation.star5,
+        _Formation.scatter,
+        _Formation.vArrow,
+        _Formation.sineWave,
+        _Formation.doublering,
+        _Formation.honeycomb,
+        _Formation.cross,
+        _Formation.arc,
+        _Formation.flower,
+      ],
+      59: [
+        _Formation.tripleRing,
+        _Formation.flower,
+        _Formation.cascade,
+        _Formation.scatter,
+        _Formation.arrowHead,
+        _Formation.sineWave,
+        _Formation.squareRing,
+        _Formation.ring,
+        _Formation.cross,
+        _Formation.doublering,
+        _Formation.arc,
+      ],
       60: [_Formation.ring, _Formation.doubleSpiral],
-      61: [_Formation.infinity8, _Formation.burst, _Formation.ring, _Formation.scatter, _Formation.arrowHead, _Formation.zigzag, _Formation.flower, _Formation.xShape, _Formation.sineWave, _Formation.cross, _Formation.doublering],
-      62: [_Formation.star5, _Formation.ring, _Formation.honeycomb, _Formation.scatter, _Formation.burst, _Formation.sineWave, _Formation.wShape, _Formation.doublering, _Formation.cross, _Formation.arc, _Formation.flower],
-      63: [_Formation.pinwheel, _Formation.flower, _Formation.diamond, _Formation.scatter, _Formation.arrowHead, _Formation.tripleRing, _Formation.ring, _Formation.xShape, _Formation.comet, _Formation.cross, _Formation.sineWave],
-      64: [_Formation.doubleSpiral, _Formation.doublering, _Formation.hexagon, _Formation.scatter, _Formation.vArrow, _Formation.zigzag, _Formation.ring, _Formation.flower, _Formation.cross, _Formation.arc, _Formation.cascade],
+      61: [
+        _Formation.infinity8,
+        _Formation.burst,
+        _Formation.ring,
+        _Formation.scatter,
+        _Formation.arrowHead,
+        _Formation.zigzag,
+        _Formation.flower,
+        _Formation.xShape,
+        _Formation.sineWave,
+        _Formation.cross,
+        _Formation.doublering,
+      ],
+      62: [
+        _Formation.star5,
+        _Formation.ring,
+        _Formation.honeycomb,
+        _Formation.scatter,
+        _Formation.burst,
+        _Formation.sineWave,
+        _Formation.wShape,
+        _Formation.doublering,
+        _Formation.cross,
+        _Formation.arc,
+        _Formation.flower,
+      ],
+      63: [
+        _Formation.pinwheel,
+        _Formation.flower,
+        _Formation.diamond,
+        _Formation.scatter,
+        _Formation.arrowHead,
+        _Formation.tripleRing,
+        _Formation.ring,
+        _Formation.xShape,
+        _Formation.comet,
+        _Formation.cross,
+        _Formation.sineWave,
+      ],
+      64: [
+        _Formation.doubleSpiral,
+        _Formation.doublering,
+        _Formation.hexagon,
+        _Formation.scatter,
+        _Formation.vArrow,
+        _Formation.zigzag,
+        _Formation.ring,
+        _Formation.flower,
+        _Formation.cross,
+        _Formation.arc,
+        _Formation.cascade,
+      ],
       65: [_Formation.hexagon, _Formation.cascade],
-      66: [_Formation.squareRing, _Formation.flower, _Formation.star5, _Formation.scatter, _Formation.arrowHead, _Formation.sineWave, _Formation.doublering, _Formation.burst, _Formation.cross, _Formation.arc, _Formation.ring],
-      67: [_Formation.wShape, _Formation.ring, _Formation.comet, _Formation.scatter, _Formation.arrowHead, _Formation.zigzag, _Formation.xShape, _Formation.flower, _Formation.sineWave, _Formation.cross, _Formation.doublering, _Formation.borderLine],
-      68: [_Formation.flower, _Formation.burst, _Formation.hexagon, _Formation.scatter, _Formation.burst, _Formation.sineWave, _Formation.honeycomb, _Formation.ring, _Formation.cross, _Formation.arc, _Formation.doublering, _Formation.flower],
-      69: [_Formation.zigzag, _Formation.ring, _Formation.diamond, _Formation.scatter, _Formation.arrowHead, _Formation.tripleRing, _Formation.pinwheel, _Formation.doublering, _Formation.cross, _Formation.sineWave, _Formation.arc],
+      66: [
+        _Formation.squareRing,
+        _Formation.flower,
+        _Formation.star5,
+        _Formation.scatter,
+        _Formation.arrowHead,
+        _Formation.sineWave,
+        _Formation.doublering,
+        _Formation.burst,
+        _Formation.cross,
+        _Formation.arc,
+        _Formation.ring,
+      ],
+      67: [
+        _Formation.wShape,
+        _Formation.ring,
+        _Formation.comet,
+        _Formation.scatter,
+        _Formation.arrowHead,
+        _Formation.zigzag,
+        _Formation.xShape,
+        _Formation.flower,
+        _Formation.sineWave,
+        _Formation.cross,
+        _Formation.doublering,
+        _Formation.borderLine,
+      ],
+      68: [
+        _Formation.flower,
+        _Formation.burst,
+        _Formation.hexagon,
+        _Formation.scatter,
+        _Formation.burst,
+        _Formation.sineWave,
+        _Formation.honeycomb,
+        _Formation.ring,
+        _Formation.cross,
+        _Formation.arc,
+        _Formation.doublering,
+        _Formation.flower,
+      ],
+      69: [
+        _Formation.zigzag,
+        _Formation.ring,
+        _Formation.diamond,
+        _Formation.scatter,
+        _Formation.arrowHead,
+        _Formation.tripleRing,
+        _Formation.pinwheel,
+        _Formation.doublering,
+        _Formation.cross,
+        _Formation.sineWave,
+        _Formation.arc,
+      ],
       70: [_Formation.scatter, _Formation.zigzag],
-      71: [_Formation.tripleRing, _Formation.flower, _Formation.ring, _Formation.scatter, _Formation.arrowHead, _Formation.sineWave, _Formation.star5, _Formation.xShape, _Formation.cross, _Formation.arc, _Formation.doublering],
-      72: [_Formation.honeycomb, _Formation.burst, _Formation.hexagon, _Formation.scatter, _Formation.vArrow, _Formation.zigzag, _Formation.ring, _Formation.flower, _Formation.sineWave, _Formation.cross, _Formation.arc],
-      73: [_Formation.infinity8, _Formation.ring, _Formation.star5, _Formation.scatter, _Formation.arrowHead, _Formation.sineWave, _Formation.doublering, _Formation.wShape, _Formation.cross, _Formation.arc, _Formation.flower, _Formation.doubleSpiral],
-      74: [_Formation.comet, _Formation.doublering, _Formation.cascade, _Formation.scatter, _Formation.arrowHead, _Formation.tripleRing, _Formation.ring, _Formation.xShape, _Formation.sineWave, _Formation.cross, _Formation.flower, _Formation.arc],
+      71: [
+        _Formation.tripleRing,
+        _Formation.flower,
+        _Formation.ring,
+        _Formation.scatter,
+        _Formation.arrowHead,
+        _Formation.sineWave,
+        _Formation.star5,
+        _Formation.xShape,
+        _Formation.cross,
+        _Formation.arc,
+        _Formation.doublering,
+      ],
+      72: [
+        _Formation.honeycomb,
+        _Formation.burst,
+        _Formation.hexagon,
+        _Formation.scatter,
+        _Formation.vArrow,
+        _Formation.zigzag,
+        _Formation.ring,
+        _Formation.flower,
+        _Formation.sineWave,
+        _Formation.cross,
+        _Formation.arc,
+      ],
+      73: [
+        _Formation.infinity8,
+        _Formation.ring,
+        _Formation.star5,
+        _Formation.scatter,
+        _Formation.arrowHead,
+        _Formation.sineWave,
+        _Formation.doublering,
+        _Formation.wShape,
+        _Formation.cross,
+        _Formation.arc,
+        _Formation.flower,
+        _Formation.doubleSpiral,
+      ],
+      74: [
+        _Formation.comet,
+        _Formation.doublering,
+        _Formation.cascade,
+        _Formation.scatter,
+        _Formation.arrowHead,
+        _Formation.tripleRing,
+        _Formation.ring,
+        _Formation.xShape,
+        _Formation.sineWave,
+        _Formation.cross,
+        _Formation.flower,
+        _Formation.arc,
+      ],
       75: [_Formation.squareRing, _Formation.cross],
-      76: [_Formation.star5, _Formation.flower, _Formation.honeycomb, _Formation.scatter, _Formation.burst, _Formation.sineWave, _Formation.diamond, _Formation.ring, _Formation.cross, _Formation.arc, _Formation.doublering, _Formation.zigzag],
-      77: [_Formation.pinwheel, _Formation.ring, _Formation.star5, _Formation.scatter, _Formation.arrowHead, _Formation.sineWave, _Formation.wShape, _Formation.flower, _Formation.cross, _Formation.comet, _Formation.doublering, _Formation.arc],
-      78: [_Formation.doubleSpiral, _Formation.burst, _Formation.hexagon, _Formation.scatter, _Formation.vArrow, _Formation.zigzag, _Formation.tripleRing, _Formation.ring, _Formation.sineWave, _Formation.cross, _Formation.flower, _Formation.doublering],
-      79: [_Formation.squareRing, _Formation.ring, _Formation.star5, _Formation.scatter, _Formation.arrowHead, _Formation.sineWave, _Formation.xShape, _Formation.honeycomb, _Formation.cross, _Formation.arc, _Formation.flower, _Formation.doublering],
+      76: [
+        _Formation.star5,
+        _Formation.flower,
+        _Formation.honeycomb,
+        _Formation.scatter,
+        _Formation.burst,
+        _Formation.sineWave,
+        _Formation.diamond,
+        _Formation.ring,
+        _Formation.cross,
+        _Formation.arc,
+        _Formation.doublering,
+        _Formation.zigzag,
+      ],
+      77: [
+        _Formation.pinwheel,
+        _Formation.ring,
+        _Formation.star5,
+        _Formation.scatter,
+        _Formation.arrowHead,
+        _Formation.sineWave,
+        _Formation.wShape,
+        _Formation.flower,
+        _Formation.cross,
+        _Formation.comet,
+        _Formation.doublering,
+        _Formation.arc,
+      ],
+      78: [
+        _Formation.doubleSpiral,
+        _Formation.burst,
+        _Formation.hexagon,
+        _Formation.scatter,
+        _Formation.vArrow,
+        _Formation.zigzag,
+        _Formation.tripleRing,
+        _Formation.ring,
+        _Formation.sineWave,
+        _Formation.cross,
+        _Formation.flower,
+        _Formation.doublering,
+      ],
+      79: [
+        _Formation.squareRing,
+        _Formation.ring,
+        _Formation.star5,
+        _Formation.scatter,
+        _Formation.arrowHead,
+        _Formation.sineWave,
+        _Formation.xShape,
+        _Formation.honeycomb,
+        _Formation.cross,
+        _Formation.arc,
+        _Formation.flower,
+        _Formation.doublering,
+      ],
       80: [_Formation.xShape, _Formation.scatter],
-      81: [_Formation.wShape, _Formation.flower, _Formation.diamond, _Formation.scatter, _Formation.arrowHead, _Formation.tripleRing, _Formation.ring, _Formation.xShape, _Formation.sineWave, _Formation.cross, _Formation.doublering, _Formation.arc],
-      82: [_Formation.honeycomb, _Formation.burst, _Formation.ring, _Formation.scatter, _Formation.zigzag, _Formation.flower, _Formation.doublering, _Formation.cross, _Formation.sineWave, _Formation.arc, _Formation.star5, _Formation.borderLine],
-      83: [_Formation.infinity8, _Formation.ring, _Formation.hexagon, _Formation.scatter, _Formation.arrowHead, _Formation.sineWave, _Formation.comet, _Formation.xShape, _Formation.cross, _Formation.flower, _Formation.doublering, _Formation.arc, _Formation.doubleSpiral],
-      84: [_Formation.squareRing, _Formation.doublering, _Formation.star5, _Formation.scatter, _Formation.vArrow, _Formation.tripleRing, _Formation.pinwheel, _Formation.ring, _Formation.cross, _Formation.sineWave, _Formation.arc, _Formation.flower, _Formation.cascade],
+      81: [
+        _Formation.wShape,
+        _Formation.flower,
+        _Formation.diamond,
+        _Formation.scatter,
+        _Formation.arrowHead,
+        _Formation.tripleRing,
+        _Formation.ring,
+        _Formation.xShape,
+        _Formation.sineWave,
+        _Formation.cross,
+        _Formation.doublering,
+        _Formation.arc,
+      ],
+      82: [
+        _Formation.honeycomb,
+        _Formation.burst,
+        _Formation.ring,
+        _Formation.scatter,
+        _Formation.zigzag,
+        _Formation.flower,
+        _Formation.doublering,
+        _Formation.cross,
+        _Formation.sineWave,
+        _Formation.arc,
+        _Formation.star5,
+        _Formation.borderLine,
+      ],
+      83: [
+        _Formation.infinity8,
+        _Formation.ring,
+        _Formation.hexagon,
+        _Formation.scatter,
+        _Formation.arrowHead,
+        _Formation.sineWave,
+        _Formation.comet,
+        _Formation.xShape,
+        _Formation.cross,
+        _Formation.flower,
+        _Formation.doublering,
+        _Formation.arc,
+        _Formation.doubleSpiral,
+      ],
+      84: [
+        _Formation.squareRing,
+        _Formation.doublering,
+        _Formation.star5,
+        _Formation.scatter,
+        _Formation.vArrow,
+        _Formation.tripleRing,
+        _Formation.pinwheel,
+        _Formation.ring,
+        _Formation.cross,
+        _Formation.sineWave,
+        _Formation.arc,
+        _Formation.flower,
+        _Formation.cascade,
+      ],
       85: [_Formation.honeycomb, _Formation.ring],
-      86: [_Formation.tripleRing, _Formation.flower, _Formation.honeycomb, _Formation.scatter, _Formation.arrowHead, _Formation.sineWave, _Formation.star5, _Formation.ring, _Formation.cross, _Formation.arc, _Formation.doublering, _Formation.burst, _Formation.zigzag],
-      87: [_Formation.doubleSpiral, _Formation.burst, _Formation.hexagon, _Formation.scatter, _Formation.arrowHead, _Formation.zigzag, _Formation.ring, _Formation.xShape, _Formation.sineWave, _Formation.flower, _Formation.cross, _Formation.doublering, _Formation.arc],
-      88: [_Formation.comet, _Formation.ring, _Formation.star5, _Formation.scatter, _Formation.burst, _Formation.sineWave, _Formation.wShape, _Formation.doublering, _Formation.cross, _Formation.arc, _Formation.flower, _Formation.hexagon, _Formation.tripleRing],
-      89: [_Formation.flower, _Formation.doublering, _Formation.cascade, _Formation.scatter, _Formation.arrowHead, _Formation.tripleRing, _Formation.squareRing, _Formation.ring, _Formation.cross, _Formation.sineWave, _Formation.arc, _Formation.flower, _Formation.diamond],
+      86: [
+        _Formation.tripleRing,
+        _Formation.flower,
+        _Formation.honeycomb,
+        _Formation.scatter,
+        _Formation.arrowHead,
+        _Formation.sineWave,
+        _Formation.star5,
+        _Formation.ring,
+        _Formation.cross,
+        _Formation.arc,
+        _Formation.doublering,
+        _Formation.burst,
+        _Formation.zigzag,
+      ],
+      87: [
+        _Formation.doubleSpiral,
+        _Formation.burst,
+        _Formation.hexagon,
+        _Formation.scatter,
+        _Formation.arrowHead,
+        _Formation.zigzag,
+        _Formation.ring,
+        _Formation.xShape,
+        _Formation.sineWave,
+        _Formation.flower,
+        _Formation.cross,
+        _Formation.doublering,
+        _Formation.arc,
+      ],
+      88: [
+        _Formation.comet,
+        _Formation.ring,
+        _Formation.star5,
+        _Formation.scatter,
+        _Formation.burst,
+        _Formation.sineWave,
+        _Formation.wShape,
+        _Formation.doublering,
+        _Formation.cross,
+        _Formation.arc,
+        _Formation.flower,
+        _Formation.hexagon,
+        _Formation.tripleRing,
+      ],
+      89: [
+        _Formation.flower,
+        _Formation.doublering,
+        _Formation.cascade,
+        _Formation.scatter,
+        _Formation.arrowHead,
+        _Formation.tripleRing,
+        _Formation.squareRing,
+        _Formation.ring,
+        _Formation.cross,
+        _Formation.sineWave,
+        _Formation.arc,
+        _Formation.flower,
+        _Formation.diamond,
+      ],
       90: [_Formation.ring, _Formation.doubleSpiral],
-      91: [_Formation.star5, _Formation.burst, _Formation.ring, _Formation.scatter, _Formation.arrowHead, _Formation.sineWave, _Formation.infinity8, _Formation.xShape, _Formation.cross, _Formation.doublering, _Formation.arc, _Formation.flower, _Formation.zigzag, _Formation.pinwheel],
-      92: [_Formation.pinwheel, _Formation.ring, _Formation.hexagon, _Formation.scatter, _Formation.vArrow, _Formation.zigzag, _Formation.flower, _Formation.doublering, _Formation.cross, _Formation.sineWave, _Formation.arc, _Formation.burst, _Formation.comet],
-      93: [_Formation.wShape, _Formation.flower, _Formation.star5, _Formation.scatter, _Formation.arrowHead, _Formation.tripleRing, _Formation.ring, _Formation.xShape, _Formation.sineWave, _Formation.cross, _Formation.arc, _Formation.doublering, _Formation.honeycomb, _Formation.doubleSpiral],
-      94: [_Formation.honeycomb, _Formation.burst, _Formation.cascade, _Formation.scatter, _Formation.arrowHead, _Formation.sineWave, _Formation.squareRing, _Formation.ring, _Formation.cross, _Formation.flower, _Formation.doublering, _Formation.arc, _Formation.diamond, _Formation.zigzag],
+      91: [
+        _Formation.star5,
+        _Formation.burst,
+        _Formation.ring,
+        _Formation.scatter,
+        _Formation.arrowHead,
+        _Formation.sineWave,
+        _Formation.infinity8,
+        _Formation.xShape,
+        _Formation.cross,
+        _Formation.doublering,
+        _Formation.arc,
+        _Formation.flower,
+        _Formation.zigzag,
+        _Formation.pinwheel,
+      ],
+      92: [
+        _Formation.pinwheel,
+        _Formation.ring,
+        _Formation.hexagon,
+        _Formation.scatter,
+        _Formation.vArrow,
+        _Formation.zigzag,
+        _Formation.flower,
+        _Formation.doublering,
+        _Formation.cross,
+        _Formation.sineWave,
+        _Formation.arc,
+        _Formation.burst,
+        _Formation.comet,
+      ],
+      93: [
+        _Formation.wShape,
+        _Formation.flower,
+        _Formation.star5,
+        _Formation.scatter,
+        _Formation.arrowHead,
+        _Formation.tripleRing,
+        _Formation.ring,
+        _Formation.xShape,
+        _Formation.sineWave,
+        _Formation.cross,
+        _Formation.arc,
+        _Formation.doublering,
+        _Formation.honeycomb,
+        _Formation.doubleSpiral,
+      ],
+      94: [
+        _Formation.honeycomb,
+        _Formation.burst,
+        _Formation.cascade,
+        _Formation.scatter,
+        _Formation.arrowHead,
+        _Formation.sineWave,
+        _Formation.squareRing,
+        _Formation.ring,
+        _Formation.cross,
+        _Formation.flower,
+        _Formation.doublering,
+        _Formation.arc,
+        _Formation.diamond,
+        _Formation.zigzag,
+      ],
       95: [_Formation.burst, _Formation.scatter],
-      96: [_Formation.infinity8, _Formation.ring, _Formation.star5, _Formation.scatter, _Formation.burst, _Formation.sineWave, _Formation.doubleSpiral, _Formation.doublering, _Formation.cross, _Formation.arc, _Formation.flower, _Formation.xShape, _Formation.tripleRing, _Formation.zigzag, _Formation.comet],
-      97: [_Formation.tripleRing, _Formation.flower, _Formation.hexagon, _Formation.scatter, _Formation.arrowHead, _Formation.zigzag, _Formation.ring, _Formation.xShape, _Formation.sineWave, _Formation.cross, _Formation.doublering, _Formation.arc, _Formation.wShape, _Formation.burst, _Formation.star5],
-      98: [_Formation.squareRing, _Formation.burst, _Formation.honeycomb, _Formation.scatter, _Formation.vArrow, _Formation.sineWave, _Formation.flower, _Formation.ring, _Formation.cross, _Formation.arc, _Formation.doublering, _Formation.tripleRing, _Formation.arrowHead, _Formation.diamond, _Formation.zigzag, _Formation.comet],
-      99: [_Formation.doubleSpiral, _Formation.ring, _Formation.star5, _Formation.scatter, _Formation.arrowHead, _Formation.tripleRing, _Formation.pinwheel, _Formation.xShape, _Formation.sineWave, _Formation.cross, _Formation.doublering, _Formation.arc, _Formation.flower, _Formation.wShape, _Formation.burst, _Formation.zigzag, _Formation.comet, _Formation.cascade],
+      96: [
+        _Formation.infinity8,
+        _Formation.ring,
+        _Formation.star5,
+        _Formation.scatter,
+        _Formation.burst,
+        _Formation.sineWave,
+        _Formation.doubleSpiral,
+        _Formation.doublering,
+        _Formation.cross,
+        _Formation.arc,
+        _Formation.flower,
+        _Formation.xShape,
+        _Formation.tripleRing,
+        _Formation.zigzag,
+        _Formation.comet,
+      ],
+      97: [
+        _Formation.tripleRing,
+        _Formation.flower,
+        _Formation.hexagon,
+        _Formation.scatter,
+        _Formation.arrowHead,
+        _Formation.zigzag,
+        _Formation.ring,
+        _Formation.xShape,
+        _Formation.sineWave,
+        _Formation.cross,
+        _Formation.doublering,
+        _Formation.arc,
+        _Formation.wShape,
+        _Formation.burst,
+        _Formation.star5,
+      ],
+      98: [
+        _Formation.squareRing,
+        _Formation.burst,
+        _Formation.honeycomb,
+        _Formation.scatter,
+        _Formation.vArrow,
+        _Formation.sineWave,
+        _Formation.flower,
+        _Formation.ring,
+        _Formation.cross,
+        _Formation.arc,
+        _Formation.doublering,
+        _Formation.tripleRing,
+        _Formation.arrowHead,
+        _Formation.diamond,
+        _Formation.zigzag,
+        _Formation.comet,
+      ],
+      99: [
+        _Formation.doubleSpiral,
+        _Formation.ring,
+        _Formation.star5,
+        _Formation.scatter,
+        _Formation.arrowHead,
+        _Formation.tripleRing,
+        _Formation.pinwheel,
+        _Formation.xShape,
+        _Formation.sineWave,
+        _Formation.cross,
+        _Formation.doublering,
+        _Formation.arc,
+        _Formation.flower,
+        _Formation.wShape,
+        _Formation.burst,
+        _Formation.zigzag,
+        _Formation.comet,
+        _Formation.cascade,
+      ],
       100: [_Formation.squareRing, _Formation.tripleRing, _Formation.cross],
     };
 
@@ -1081,7 +2144,8 @@ class WaveSystem {
       return list[groupIndex];
     }
     // Fallback deterministic per boss waves e wave non mappate
-    return _Formation.values[(wave * 7 + groupIndex * 3) % _Formation.values.length];
+    return _Formation.values[(wave * 7 + groupIndex * 3) %
+        _Formation.values.length];
   }
 
   /// Traduce SpawnFormation pubblico (in wave_configs.dart) → _Formation
@@ -1090,35 +2154,64 @@ class WaveSystem {
   /// doverli importare.
   _Formation _translateSpawnFormation(SpawnFormation s) {
     switch (s) {
-      case SpawnFormation.ring: return _Formation.ring;
-      case SpawnFormation.diamond: return _Formation.diamond;
-      case SpawnFormation.cross: return _Formation.cross;
-      case SpawnFormation.triangle: return _Formation.triangle;
-      case SpawnFormation.flower: return _Formation.flower;
-      case SpawnFormation.star5: return _Formation.star5;
-      case SpawnFormation.pinwheel: return _Formation.pinwheel;
-      case SpawnFormation.comet: return _Formation.comet;
-      case SpawnFormation.infinity8: return _Formation.infinity8;
-      case SpawnFormation.doubleSpiral: return _Formation.doubleSpiral;
-      case SpawnFormation.honeycomb: return _Formation.honeycomb;
-      case SpawnFormation.wShape: return _Formation.wShape;
-      case SpawnFormation.hexagon: return _Formation.hexagon;
-      case SpawnFormation.tripleRing: return _Formation.tripleRing;
-      case SpawnFormation.sineWave: return _Formation.sineWave;
-      case SpawnFormation.cascade: return _Formation.cascade;
-      case SpawnFormation.squareRing: return _Formation.squareRing;
-      case SpawnFormation.burst: return _Formation.burst;
-      case SpawnFormation.arrowHead: return _Formation.arrowHead;
-      case SpawnFormation.scatter: return _Formation.scatter;
-      case SpawnFormation.doublering: return _Formation.doublering;
-      case SpawnFormation.vArrow: return _Formation.vArrow;
-      case SpawnFormation.xShape: return _Formation.xShape;
-      case SpawnFormation.arc: return _Formation.arc;
-      case SpawnFormation.zigzag: return _Formation.zigzag;
-      case SpawnFormation.borderLine: return _Formation.borderLine;
-      case SpawnFormation.playerRing: return _Formation.playerRing;
-      case SpawnFormation.playerDoubleRing: return _Formation.playerDoubleRing;
-      case SpawnFormation.playerEncircle: return _Formation.playerEncircle;
+      case SpawnFormation.ring:
+        return _Formation.ring;
+      case SpawnFormation.diamond:
+        return _Formation.diamond;
+      case SpawnFormation.cross:
+        return _Formation.cross;
+      case SpawnFormation.triangle:
+        return _Formation.triangle;
+      case SpawnFormation.flower:
+        return _Formation.flower;
+      case SpawnFormation.star5:
+        return _Formation.star5;
+      case SpawnFormation.pinwheel:
+        return _Formation.pinwheel;
+      case SpawnFormation.comet:
+        return _Formation.comet;
+      case SpawnFormation.infinity8:
+        return _Formation.infinity8;
+      case SpawnFormation.doubleSpiral:
+        return _Formation.doubleSpiral;
+      case SpawnFormation.honeycomb:
+        return _Formation.honeycomb;
+      case SpawnFormation.wShape:
+        return _Formation.wShape;
+      case SpawnFormation.hexagon:
+        return _Formation.hexagon;
+      case SpawnFormation.tripleRing:
+        return _Formation.tripleRing;
+      case SpawnFormation.sineWave:
+        return _Formation.sineWave;
+      case SpawnFormation.cascade:
+        return _Formation.cascade;
+      case SpawnFormation.squareRing:
+        return _Formation.squareRing;
+      case SpawnFormation.burst:
+        return _Formation.burst;
+      case SpawnFormation.arrowHead:
+        return _Formation.arrowHead;
+      case SpawnFormation.scatter:
+        return _Formation.scatter;
+      case SpawnFormation.doublering:
+        return _Formation.doublering;
+      case SpawnFormation.vArrow:
+        return _Formation.vArrow;
+      case SpawnFormation.xShape:
+        return _Formation.xShape;
+      case SpawnFormation.arc:
+        return _Formation.arc;
+      case SpawnFormation.zigzag:
+        return _Formation.zigzag;
+      case SpawnFormation.borderLine:
+        return _Formation.borderLine;
+      case SpawnFormation.playerRing:
+        return _Formation.playerRing;
+      case SpawnFormation.playerDoubleRing:
+        return _Formation.playerDoubleRing;
+      case SpawnFormation.playerEncircle:
+        return _Formation.playerEncircle;
     }
   }
 
@@ -1152,8 +2245,8 @@ class WaveSystem {
     // corrente del gruppo in spawn è `_spawnIndex` (stesso che usa
     // `_classicFormation` sotto).
     final groupIdx = _spawnIndex;
-    final spawnFormationHint = _currentConfig != null &&
-            groupIdx < _currentConfig!.spawns.length
+    final spawnFormationHint =
+        _currentConfig != null && groupIdx < _currentConfig!.spawns.length
         ? _currentConfig!.spawns[groupIdx].formation
         : null;
     final _Formation formation;
@@ -1239,10 +2332,14 @@ class WaveSystem {
   /// Direzione perpendicolare al bordo, puntata verso l'interno dell'arena.
   Vector2 _borderRushDirection(_BorderSide side) {
     switch (side) {
-      case _BorderSide.top:    return Vector2(0, 1);
-      case _BorderSide.bottom: return Vector2(0, -1);
-      case _BorderSide.left:   return Vector2(1, 0);
-      case _BorderSide.right:  return Vector2(-1, 0);
+      case _BorderSide.top:
+        return Vector2(0, 1);
+      case _BorderSide.bottom:
+        return Vector2(0, -1);
+      case _BorderSide.left:
+        return Vector2(1, 0);
+      case _BorderSide.right:
+        return Vector2(-1, 0);
     }
   }
 
@@ -1261,38 +2358,72 @@ class WaveSystem {
   }
 
   /// Dispatcher: seleziona il metodo di formazione corretto
-  List<Vector2> _buildFormation(_Formation f, int count, Vector2 center, Vector2 playerPos) {
+  List<Vector2> _buildFormation(
+    _Formation f,
+    int count,
+    Vector2 center,
+    Vector2 playerPos,
+  ) {
     switch (f) {
-      case _Formation.ring:         return _fRing(count, center, playerPos);
-      case _Formation.diamond:      return _fDiamond(count, center, playerPos);
-      case _Formation.cross:        return _fCross(count, center, playerPos);
-      case _Formation.triangle:     return _fTriangle(count, center, playerPos);
-      case _Formation.flower:       return _fFlower(count, center, playerPos);
-      case _Formation.star5:        return _fStar5(count, center, playerPos);
-      case _Formation.pinwheel:     return _fPinwheel(count, center, playerPos);
-      case _Formation.comet:        return _fComet(count, center, playerPos);
-      case _Formation.infinity8:    return _fInfinity8(count, center, playerPos);
-      case _Formation.doubleSpiral: return _fDoubleSpiral(count, center, playerPos);
-      case _Formation.honeycomb:    return _fHoneycomb(count, center, playerPos);
-      case _Formation.wShape:       return _fWShape(count, center, playerPos);
-      case _Formation.hexagon:      return _fHexagon(count, center, playerPos);
-      case _Formation.tripleRing:   return _fTripleRing(count, center, playerPos);
-      case _Formation.sineWave:     return _fSineWave(count, center, playerPos);
-      case _Formation.cascade:      return _fCascade(count, center, playerPos);
-      case _Formation.squareRing:   return _fSquareRing(count, center, playerPos);
-      case _Formation.burst:        return _fBurst(count, center, playerPos);
-      case _Formation.arrowHead:    return _fArrowHead(count, center, playerPos);
-      case _Formation.scatter:      return _fScatter(count, center, playerPos);
-      case _Formation.doublering:   return _fDoublering(count, center, playerPos);
-      case _Formation.vArrow:       return _fVArrow(count, center, playerPos);
-      case _Formation.xShape:       return _fXShape(count, center, playerPos);
-      case _Formation.arc:          return _fArc(count, center, playerPos);
-      case _Formation.zigzag:       return _fZigzag(count, center, playerPos);
-      case _Formation.borderLine:   return _fBorderLine(count);
+      case _Formation.ring:
+        return _fRing(count, center, playerPos);
+      case _Formation.diamond:
+        return _fDiamond(count, center, playerPos);
+      case _Formation.cross:
+        return _fCross(count, center, playerPos);
+      case _Formation.triangle:
+        return _fTriangle(count, center, playerPos);
+      case _Formation.flower:
+        return _fFlower(count, center, playerPos);
+      case _Formation.star5:
+        return _fStar5(count, center, playerPos);
+      case _Formation.pinwheel:
+        return _fPinwheel(count, center, playerPos);
+      case _Formation.comet:
+        return _fComet(count, center, playerPos);
+      case _Formation.infinity8:
+        return _fInfinity8(count, center, playerPos);
+      case _Formation.doubleSpiral:
+        return _fDoubleSpiral(count, center, playerPos);
+      case _Formation.honeycomb:
+        return _fHoneycomb(count, center, playerPos);
+      case _Formation.wShape:
+        return _fWShape(count, center, playerPos);
+      case _Formation.hexagon:
+        return _fHexagon(count, center, playerPos);
+      case _Formation.tripleRing:
+        return _fTripleRing(count, center, playerPos);
+      case _Formation.sineWave:
+        return _fSineWave(count, center, playerPos);
+      case _Formation.cascade:
+        return _fCascade(count, center, playerPos);
+      case _Formation.squareRing:
+        return _fSquareRing(count, center, playerPos);
+      case _Formation.burst:
+        return _fBurst(count, center, playerPos);
+      case _Formation.arrowHead:
+        return _fArrowHead(count, center, playerPos);
+      case _Formation.scatter:
+        return _fScatter(count, center, playerPos);
+      case _Formation.doublering:
+        return _fDoublering(count, center, playerPos);
+      case _Formation.vArrow:
+        return _fVArrow(count, center, playerPos);
+      case _Formation.xShape:
+        return _fXShape(count, center, playerPos);
+      case _Formation.arc:
+        return _fArc(count, center, playerPos);
+      case _Formation.zigzag:
+        return _fZigzag(count, center, playerPos);
+      case _Formation.borderLine:
+        return _fBorderLine(count);
       // Player-centered: formazioni chiuse attorno al player.
-      case _Formation.playerRing:       return _fRing(count, playerPos, playerPos);
-      case _Formation.playerDoubleRing: return _fDoublering(count, playerPos, playerPos);
-      case _Formation.playerEncircle:   return _fTripleRing(count, playerPos, playerPos);
+      case _Formation.playerRing:
+        return _fRing(count, playerPos, playerPos);
+      case _Formation.playerDoubleRing:
+        return _fDoublering(count, playerPos, playerPos);
+      case _Formation.playerEncircle:
+        return _fTripleRing(count, playerPos, playerPos);
     }
   }
 
@@ -1303,7 +2434,8 @@ class WaveSystem {
     final radius = 60.0 + count * 3.5;
     return List.generate(count, (i) {
       final angle = i * math.pi * 2 / count;
-      return center + Vector2(math.cos(angle) * radius, math.sin(angle) * radius);
+      return center +
+          Vector2(math.cos(angle) * radius, math.sin(angle) * radius);
     });
   }
 
@@ -1313,7 +2445,10 @@ class WaveSystem {
   List<Vector2> _fDiamond(int count, Vector2 center, Vector2 _) {
     final r = 70.0 + count * 2.0;
     final corners = [
-      Vector2(0, -r), Vector2(r, 0), Vector2(0, r), Vector2(-r, 0),
+      Vector2(0, -r),
+      Vector2(r, 0),
+      Vector2(0, r),
+      Vector2(-r, 0),
     ];
     final positions = <Vector2>[];
     for (int s = 0; s < 4 && positions.length < count; s++) {
@@ -1322,10 +2457,13 @@ class WaveSystem {
       final sideCount = ((count - positions.length) / (4 - s)).ceil();
       for (int p = 0; p < sideCount && positions.length < count; p++) {
         final t = sideCount <= 1 ? 0.0 : p / sideCount;
-        positions.add(center + Vector2(
-          start.x + (end.x - start.x) * t,
-          start.y + (end.y - start.y) * t,
-        ));
+        positions.add(
+          center +
+              Vector2(
+                start.x + (end.x - start.x) * t,
+                start.y + (end.y - start.y) * t,
+              ),
+        );
       }
     }
     return positions;
@@ -1337,7 +2475,10 @@ class WaveSystem {
   List<Vector2> _fCross(int count, Vector2 center, Vector2 _) {
     // Direzioni: su, destra, giù, sinistra
     const dirs = [
-      [0.0, -1.0], [1.0, 0.0], [0.0, 1.0], [-1.0, 0.0],
+      [0.0, -1.0],
+      [1.0, 0.0],
+      [0.0, 1.0],
+      [-1.0, 0.0],
     ];
     final positions = <Vector2>[];
     for (int a = 0; a < 4 && positions.length < count; a++) {
@@ -1346,9 +2487,7 @@ class WaveSystem {
       // Distribuzione greedy: arm a riceve `count/4` arrotondato con resto.
       final armCount = ((count - positions.length) / (4 - a)).ceil();
       for (int p = 0; p < armCount && positions.length < count; p++) {
-        final dist = armCount <= 1
-            ? 65.0
-            : 20.0 + p * (110.0 / (armCount - 1));
+        final dist = armCount <= 1 ? 65.0 : 20.0 + p * (110.0 / (armCount - 1));
         positions.add(center + Vector2(dx * dist, dy * dist));
       }
     }
@@ -1370,10 +2509,13 @@ class WaveSystem {
       final sideCount = ((count - positions.length) / (3 - s)).ceil();
       for (int p = 0; p < sideCount && positions.length < count; p++) {
         final t = sideCount <= 1 ? 0.0 : p / sideCount;
-        positions.add(center + Vector2(
-          start.x + (end.x - start.x) * t,
-          start.y + (end.y - start.y) * t,
-        ));
+        positions.add(
+          center +
+              Vector2(
+                start.x + (end.x - start.x) * t,
+                start.y + (end.y - start.y) * t,
+              ),
+        );
       }
     }
     return positions;
@@ -1388,16 +2530,21 @@ class WaveSystem {
     final positions = <Vector2>[];
     for (int p = 0; p < petals && positions.length < count; p++) {
       final petalAngle = p * math.pi * 2 / petals;
-      final petalCenter = center + Vector2(
-        math.cos(petalAngle) * petalDist,
-        math.sin(petalAngle) * petalDist,
-      );
+      final petalCenter =
+          center +
+          Vector2(
+            math.cos(petalAngle) * petalDist,
+            math.sin(petalAngle) * petalDist,
+          );
       for (int e = 0; e < enemiesPerPetal && positions.length < count; e++) {
         final angle = e * math.pi * 2 / enemiesPerPetal;
-        positions.add(petalCenter + Vector2(
-          math.cos(angle) * petalRadius,
-          math.sin(angle) * petalRadius,
-        ));
+        positions.add(
+          petalCenter +
+              Vector2(
+                math.cos(angle) * petalRadius,
+                math.sin(angle) * petalRadius,
+              ),
+        );
       }
     }
     return positions;
@@ -1421,10 +2568,13 @@ class WaveSystem {
       final pts = ((count - positions.length) / (10 - s)).ceil();
       for (int p = 0; p < pts && positions.length < count; p++) {
         final t = pts <= 1 ? 0.0 : p / (pts - 1);
-        positions.add(center + Vector2(
-          start.x + (end.x - start.x) * t,
-          start.y + (end.y - start.y) * t,
-        ));
+        positions.add(
+          center +
+              Vector2(
+                start.x + (end.x - start.x) * t,
+                start.y + (end.y - start.y) * t,
+              ),
+        );
       }
     }
     return positions;
@@ -1441,7 +2591,9 @@ class WaveSystem {
         final t = p / math.max(1, ppa - 1);
         final angle = baseAngle + t * math.pi * 0.8;
         final r = t * armLen;
-        positions.add(center + Vector2(math.cos(angle) * r, math.sin(angle) * r));
+        positions.add(
+          center + Vector2(math.cos(angle) * r, math.sin(angle) * r),
+        );
       }
     }
     return positions;
@@ -1457,7 +2609,10 @@ class WaveSystem {
     // Testa: cerchio denso attorno al center
     for (int i = 0; i < headCount; i++) {
       final angle = i * math.pi * 2 / math.max(1, headCount);
-      positions.add(center + Vector2(math.cos(angle) * headRadius, math.sin(angle) * headRadius));
+      positions.add(
+        center +
+            Vector2(math.cos(angle) * headRadius, math.sin(angle) * headRadius),
+      );
     }
 
     // Coda: punti nella direzione opposta al player
@@ -1497,7 +2652,9 @@ class WaveSystem {
       for (int i = 0; i < armCount; i++) {
         final angle = arm * math.pi + i * 4 * math.pi / math.max(1, armCount);
         final r = 20.0 + i * 3.0;
-        positions.add(center + Vector2(math.cos(angle) * r, math.sin(angle) * r));
+        positions.add(
+          center + Vector2(math.cos(angle) * r, math.sin(angle) * r),
+        );
       }
     }
     return positions;
@@ -1520,15 +2677,20 @@ class WaveSystem {
       }
     }
     // Ordina per distanza e prendi i primi `count`
-    positions.sort((a, b) => (a - center).length2.compareTo((b - center).length2));
+    positions.sort(
+      (a, b) => (a - center).length2.compareTo((b - center).length2),
+    );
     return positions.take(count).toList();
   }
 
   /// WShape: W doppia-V (5 waypoints)
   List<Vector2> _fWShape(int count, Vector2 center, Vector2 _) {
     final waypoints = [
-      Vector2(-130, 80), Vector2(-65, -20), Vector2(0, 80),
-      Vector2(65, -20), Vector2(130, 80),
+      Vector2(-130, 80),
+      Vector2(-65, -20),
+      Vector2(0, 80),
+      Vector2(65, -20),
+      Vector2(130, 80),
     ];
     final segments = waypoints.length - 1; // 4 segmenti
     final pointsPerSeg = math.max(1, count ~/ segments);
@@ -1536,13 +2698,18 @@ class WaveSystem {
     for (int s = 0; s < segments && positions.length < count; s++) {
       final start = waypoints[s];
       final end = waypoints[s + 1];
-      final pts = (s == segments - 1) ? (count - positions.length) : pointsPerSeg;
+      final pts = (s == segments - 1)
+          ? (count - positions.length)
+          : pointsPerSeg;
       for (int p = 0; p < pts && positions.length < count; p++) {
         final t = pts <= 1 ? 0.0 : p / (pts - 1);
-        positions.add(center + Vector2(
-          start.x + (end.x - start.x) * t,
-          start.y + (end.y - start.y) * t,
-        ));
+        positions.add(
+          center +
+              Vector2(
+                start.x + (end.x - start.x) * t,
+                start.y + (end.y - start.y) * t,
+              ),
+        );
       }
     }
     return positions;
@@ -1563,10 +2730,13 @@ class WaveSystem {
       final sideCount = ((count - positions.length) / (6 - s)).ceil();
       for (int p = 0; p < sideCount && positions.length < count; p++) {
         final t = sideCount <= 1 ? 0.0 : p / sideCount;
-        positions.add(center + Vector2(
-          start.x + (end.x - start.x) * t,
-          start.y + (end.y - start.y) * t,
-        ));
+        positions.add(
+          center +
+              Vector2(
+                start.x + (end.x - start.x) * t,
+                start.y + (end.y - start.y) * t,
+              ),
+        );
       }
     }
     return positions;
@@ -1590,10 +2760,13 @@ class WaveSystem {
       if (n == 0) continue;
       for (int i = 0; i < n && positions.length < count; i++) {
         final angle = i * math.pi * 2 / n;
-        positions.add(center + Vector2(
-          math.cos(angle) * radii[ring],
-          math.sin(angle) * radii[ring],
-        ));
+        positions.add(
+          center +
+              Vector2(
+                math.cos(angle) * radii[ring],
+                math.sin(angle) * radii[ring],
+              ),
+        );
       }
     }
     return positions;
@@ -1626,8 +2799,10 @@ class WaveSystem {
     final side = 160.0 + count * 2.0;
     final half = side / 2;
     final corners = [
-      Vector2(-half, -half), Vector2(half, -half),
-      Vector2(half, half), Vector2(-half, half),
+      Vector2(-half, -half),
+      Vector2(half, -half),
+      Vector2(half, half),
+      Vector2(-half, half),
     ];
     final positions = <Vector2>[];
     for (int s = 0; s < 4 && positions.length < count; s++) {
@@ -1636,10 +2811,13 @@ class WaveSystem {
       final sideCount = ((count - positions.length) / (4 - s)).ceil();
       for (int p = 0; p < sideCount && positions.length < count; p++) {
         final t = sideCount <= 1 ? 0.0 : p / sideCount;
-        positions.add(center + Vector2(
-          start.x + (end.x - start.x) * t,
-          start.y + (end.y - start.y) * t,
-        ));
+        positions.add(
+          center +
+              Vector2(
+                start.x + (end.x - start.x) * t,
+                start.y + (end.y - start.y) * t,
+              ),
+        );
       }
     }
     return positions;
@@ -1655,7 +2833,9 @@ class WaveSystem {
       for (int p = 0; p < ppr && positions.length < count; p++) {
         final t = ppr <= 1 ? 0.5 : p / (ppr - 1);
         final dist = 20.0 + t * 120.0;
-        positions.add(center + Vector2(math.cos(angle) * dist, math.sin(angle) * dist));
+        positions.add(
+          center + Vector2(math.cos(angle) * dist, math.sin(angle) * dist),
+        );
       }
     }
     return positions;
@@ -1676,7 +2856,11 @@ class WaveSystem {
     final wingR = center - dir * 40.0 - perp * 80.0;
 
     // 3 segmenti: tip→wingL, tip→wingR, wingL→wingR
-    final lines = [[tip, wingL], [tip, wingR], [wingL, wingR]];
+    final lines = [
+      [tip, wingL],
+      [tip, wingR],
+      [wingL, wingR],
+    ];
     final ppl = math.max(1, count ~/ 3);
     final positions = <Vector2>[];
     for (int l = 0; l < 3 && positions.length < count; l++) {
@@ -1685,10 +2869,12 @@ class WaveSystem {
       final pts = (l == 2) ? (count - positions.length) : ppl;
       for (int p = 0; p < pts && positions.length < count; p++) {
         final t = pts <= 1 ? 0.0 : p / (pts - 1);
-        positions.add(Vector2(
-          start.x + (end.x - start.x) * t,
-          start.y + (end.y - start.y) * t,
-        ));
+        positions.add(
+          Vector2(
+            start.x + (end.x - start.x) * t,
+            start.y + (end.y - start.y) * t,
+          ),
+        );
       }
     }
     return positions;
@@ -1713,11 +2899,15 @@ class WaveSystem {
     final positions = <Vector2>[];
     for (int i = 0; i < innerCount; i++) {
       final angle = i * math.pi * 2 / math.max(1, innerCount);
-      positions.add(center + Vector2(math.cos(angle) * innerR, math.sin(angle) * innerR));
+      positions.add(
+        center + Vector2(math.cos(angle) * innerR, math.sin(angle) * innerR),
+      );
     }
     for (int i = 0; i < outerCount && positions.length < count; i++) {
       final angle = i * math.pi * 2 / math.max(1, outerCount);
-      positions.add(center + Vector2(math.cos(angle) * outerR, math.sin(angle) * outerR));
+      positions.add(
+        center + Vector2(math.cos(angle) * outerR, math.sin(angle) * outerR),
+      );
     }
     return positions;
   }
@@ -1740,19 +2930,19 @@ class WaveSystem {
     // Braccio sinistro: center → leftEnd
     for (int p = 0; p < half; p++) {
       final t = half <= 1 ? 0.0 : p / (half - 1);
-      positions.add(center + Vector2(
-        (leftEnd.x - center.x) * t,
-        (leftEnd.y - center.y) * t,
-      ));
+      positions.add(
+        center +
+            Vector2((leftEnd.x - center.x) * t, (leftEnd.y - center.y) * t),
+      );
     }
     // Braccio destro: center → rightEnd
     final rem = count - half;
     for (int p = 0; p < rem && positions.length < count; p++) {
       final t = rem <= 1 ? 0.0 : p / (rem - 1);
-      positions.add(center + Vector2(
-        (rightEnd.x - center.x) * t,
-        (rightEnd.y - center.y) * t,
-      ));
+      positions.add(
+        center +
+            Vector2((rightEnd.x - center.x) * t, (rightEnd.y - center.y) * t),
+      );
     }
     return positions;
   }
@@ -1762,7 +2952,12 @@ class WaveSystem {
   List<Vector2> _fXShape(int count, Vector2 center, Vector2 _) {
     const armLen = 130.0;
     // Angoli 45°, 135°, 225°, 315°
-    final angles = [math.pi / 4, 3 * math.pi / 4, 5 * math.pi / 4, 7 * math.pi / 4];
+    final angles = [
+      math.pi / 4,
+      3 * math.pi / 4,
+      5 * math.pi / 4,
+      7 * math.pi / 4,
+    ];
     final positions = <Vector2>[];
     for (int a = 0; a < 4 && positions.length < count; a++) {
       final armCount = ((count - positions.length) / (4 - a)).ceil();
@@ -1770,10 +2965,10 @@ class WaveSystem {
         final dist = armCount <= 1
             ? 75.0
             : 20.0 + p * (armLen - 20.0) / (armCount - 1);
-        positions.add(center + Vector2(
-          math.cos(angles[a]) * dist,
-          math.sin(angles[a]) * dist,
-        ));
+        positions.add(
+          center +
+              Vector2(math.cos(angles[a]) * dist, math.sin(angles[a]) * dist),
+        );
       }
     }
     return positions;
@@ -1794,7 +2989,8 @@ class WaveSystem {
     return List.generate(count, (i) {
       final t = count <= 1 ? 0.0 : i / (count - 1);
       final angle = baseAngle + math.pi / 2 + t * math.pi; // da +90° a +270°
-      return center + Vector2(math.cos(angle) * radius, math.sin(angle) * radius);
+      return center +
+          Vector2(math.cos(angle) * radius, math.sin(angle) * radius);
     });
   }
 
@@ -1806,7 +3002,7 @@ class WaveSystem {
     final chosen = side ?? _BorderSide.values[_formRng.nextInt(4)];
     final eW = game.effectiveArenaWidth;
     final eH = game.effectiveArenaHeight;
-    const edgePad = 40.0;    // distanza dal bordo perpendicolare (dentro arena)
+    const edgePad = 40.0; // distanza dal bordo perpendicolare (dentro arena)
     // sidePad: distanza dagli angoli. Modalità classic/zen/etc lasciano
     // 140px buffer per dare spazio al player.
     // Waves mode (richiesta utente "spawnano lungo TUTTO il bordo, anche
@@ -1859,17 +3055,33 @@ class WaveSystem {
 
     // ── MASSA STUPIDA (~70%) — raddoppiata ──
     spawns.add(WaveSpawn(EnemyType.swarmDrone, (60 + wave * 4).clamp(60, 120)));
-    spawns.add(WaveSpawn(EnemyType.drone, (40 + wave * 4).clamp(40, 100), delay: 0.3));
-    spawns.add(WaveSpawn(EnemyType.drone, (24 + wave * 2).clamp(24, 60), delay: 0.5));
-    spawns.add(WaveSpawn(EnemyType.mine, (6 + wave * 2 ~/ 3).clamp(6, 24), delay: 1));
+    spawns.add(
+      WaveSpawn(EnemyType.drone, (40 + wave * 4).clamp(40, 100), delay: 0.3),
+    );
+    spawns.add(
+      WaveSpawn(EnemyType.drone, (24 + wave * 2).clamp(24, 60), delay: 0.5),
+    );
+    spawns.add(
+      WaveSpawn(EnemyType.mine, (6 + wave * 2 ~/ 3).clamp(6, 24), delay: 1),
+    );
 
     // ── PERICOLOSI (~30%) — raddoppiati ──
-    spawns.add(WaveSpawn(EnemyType.kamikaze, (4 + wave * 2 ~/ 3).clamp(4, 20), delay: 2));
-    spawns.add(WaveSpawn(EnemyType.weaver, (2 + wave ~/ 2).clamp(2, 16), delay: 2.5));
-    spawns.add(WaveSpawn(EnemyType.splitter, (2 + wave * 2 ~/ 5).clamp(2, 12), delay: 3));
-    spawns.add(WaveSpawn(EnemyType.shieldEnemy, (2 + wave ~/ 3).clamp(2, 10), delay: 3));
+    spawns.add(
+      WaveSpawn(EnemyType.kamikaze, (4 + wave * 2 ~/ 3).clamp(4, 20), delay: 2),
+    );
+    spawns.add(
+      WaveSpawn(EnemyType.weaver, (2 + wave ~/ 2).clamp(2, 16), delay: 2.5),
+    );
+    spawns.add(
+      WaveSpawn(EnemyType.splitter, (2 + wave * 2 ~/ 5).clamp(2, 12), delay: 3),
+    );
+    spawns.add(
+      WaveSpawn(EnemyType.shieldEnemy, (2 + wave ~/ 3).clamp(2, 10), delay: 3),
+    );
     spawns.add(WaveSpawn(EnemyType.leech, (wave ~/ 3).clamp(2, 10), delay: 3));
-    spawns.add(WaveSpawn(EnemyType.pulsar, (wave ~/ 4).clamp(2, 8), delay: 3.5));
+    spawns.add(
+      WaveSpawn(EnemyType.pulsar, (wave ~/ 4).clamp(2, 8), delay: 3.5),
+    );
     spawns.add(WaveSpawn(EnemyType.glitch, (wave ~/ 5).clamp(2, 6), delay: 4));
     spawns.add(WaveSpawn(EnemyType.mirror, (wave ~/ 5).clamp(2, 6), delay: 4));
     spawns.add(WaveSpawn(EnemyType.vortex, (wave ~/ 6).clamp(2, 6), delay: 5));
@@ -1877,16 +3089,40 @@ class WaveSystem {
     spawns.add(WaveSpawn(EnemyType.tesla, (wave ~/ 6).clamp(2, 6), delay: 5));
 
     // Rari/speciali — raddoppiati
-    if (wave % 3 == 0) spawns.add(WaveSpawn(EnemyType.titan, (wave ~/ 8).clamp(1, 4), delay: 5));
-    if (wave % 4 == 0) spawns.add(const WaveSpawn(EnemyType.blackHole, 2, delay: 6));
-    if (wave % 3 == 0) spawns.add(WaveSpawn(EnemyType.healer, (wave ~/ 10).clamp(1, 4), delay: 5));
-    if (wave % 4 == 0) spawns.add(WaveSpawn(EnemyType.laserTurret, (wave ~/ 12).clamp(1, 4), delay: 6));
-    if (wave % 5 == 0) spawns.add(const WaveSpawn(EnemyType.gravityWell, 2, delay: 7));
-    if (wave % 3 == 0) spawns.add(WaveSpawn(EnemyType.timeBomb, (wave ~/ 10).clamp(1, 4), delay: 5));
-    if (wave % 2 == 0) spawns.add(WaveSpawn(EnemyType.decoy, (wave ~/ 5).clamp(2, 6), delay: 4));
+    if (wave % 3 == 0) {
+      spawns.add(WaveSpawn(EnemyType.titan, (wave ~/ 8).clamp(1, 4), delay: 5));
+    }
+    if (wave % 4 == 0) {
+      spawns.add(const WaveSpawn(EnemyType.blackHole, 2, delay: 6));
+    }
+    if (wave % 3 == 0) {
+      spawns.add(
+        WaveSpawn(EnemyType.healer, (wave ~/ 10).clamp(1, 4), delay: 5),
+      );
+    }
+    if (wave % 4 == 0) {
+      spawns.add(
+        WaveSpawn(EnemyType.laserTurret, (wave ~/ 12).clamp(1, 4), delay: 6),
+      );
+    }
+    if (wave % 5 == 0) {
+      spawns.add(const WaveSpawn(EnemyType.gravityWell, 2, delay: 7));
+    }
+    if (wave % 3 == 0) {
+      spawns.add(
+        WaveSpawn(EnemyType.timeBomb, (wave ~/ 10).clamp(1, 4), delay: 5),
+      );
+    }
+    if (wave % 2 == 0) {
+      spawns.add(WaveSpawn(EnemyType.decoy, (wave ~/ 5).clamp(2, 6), delay: 4));
+    }
     if (wave > 110) {
-      spawns.add(WaveSpawn(EnemyType.orbiter, (wave ~/ 8).clamp(2, 6), delay: 5));
-      spawns.add(WaveSpawn(EnemyType.siren, (wave ~/ 10).clamp(2, 4), delay: 6));
+      spawns.add(
+        WaveSpawn(EnemyType.orbiter, (wave ~/ 8).clamp(2, 6), delay: 5),
+      );
+      spawns.add(
+        WaveSpawn(EnemyType.siren, (wave ~/ 10).clamp(2, 4), delay: 6),
+      );
       spawns.add(const WaveSpawn(EnemyType.necro, 2, delay: 7));
     }
 

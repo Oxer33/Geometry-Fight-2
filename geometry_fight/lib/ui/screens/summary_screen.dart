@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../data/constants.dart';
 import '../../data/difficulty.dart';
+import '../../data/daily_challenge.dart';
 import '../../data/modifiers.dart';
 import '../../data/save_data.dart';
 import '../../l10n/generated/app_localizations.dart';
@@ -9,62 +10,100 @@ import '../widgets/neon_back_button.dart';
 /// Localized difficulty label (matches helper in difficulty_select_screen).
 String _diffName(AppLocalizations l10n, Difficulty d) {
   switch (d) {
-    case Difficulty.easy: return l10n.diffEasy;
-    case Difficulty.normal: return l10n.diffNormal;
-    case Difficulty.hard: return l10n.diffHard;
-    case Difficulty.nightmare: return l10n.diffNightmare;
+    case Difficulty.easy:
+      return l10n.diffEasy;
+    case Difficulty.normal:
+      return l10n.diffNormal;
+    case Difficulty.hard:
+      return l10n.diffHard;
+    case Difficulty.nightmare:
+      return l10n.diffNightmare;
   }
 }
 
 /// Localized weapon label by id (mirrors shop_screen `_weaponName`).
 String _weaponName(AppLocalizations l10n, String id) {
   switch (id) {
-    case 'basic': return l10n.weaponNameBasic;
-    case 'triple': return l10n.weaponNameTriple;
-    case 'spread': return l10n.weaponNameSpread;
-    case 'ricochet': return l10n.weaponNameRicochet;
-    case 'homing': return l10n.weaponNameHoming;
-    case 'plasma': return l10n.weaponNamePlasma;
-    case 'laser': return l10n.weaponNameLaser;
-    case 'gauss': return l10n.weaponNameGauss;
-    case 'chain': return l10n.weaponNameChain;
-    default: return id.toUpperCase();
+    case 'basic':
+      return l10n.weaponNameBasic;
+    case 'triple':
+      return l10n.weaponNameTriple;
+    case 'spread':
+      return l10n.weaponNameSpread;
+    case 'ricochet':
+      return l10n.weaponNameRicochet;
+    case 'homing':
+      return l10n.weaponNameHoming;
+    case 'plasma':
+      return l10n.weaponNamePlasma;
+    case 'laser':
+      return l10n.weaponNameLaser;
+    case 'gauss':
+      return l10n.weaponNameGauss;
+    case 'chain':
+      return l10n.weaponNameChain;
+    default:
+      return id.toUpperCase();
   }
 }
 
 /// Localized pet label by id (mirrors shop_screen `_petName`).
 String _petName(AppLocalizations l10n, String id) {
   switch (id) {
-    case 'attack': return l10n.petNameAttack;
-    case 'collect': return l10n.petNameCollect;
-    case 'sweep': return l10n.petNameSweep;
-    case 'defend': return l10n.petNameDefend;
-    case 'snipe': return l10n.petNameSnipe;
-    case 'ram': return l10n.petNameRam;
-    case 'phoenix': return l10n.petNamePhoenix;
-    case 'black_hole_pet': return l10n.petNameBlackHole;
-    case 'emp_drone': return l10n.petNameEmpDrone;
-    case 'tactical_spotter': return l10n.petNameTacticalSpotter;
-    default: return id.toUpperCase();
+    case 'attack':
+      return l10n.petNameAttack;
+    case 'collect':
+      return l10n.petNameCollect;
+    case 'sweep':
+      return l10n.petNameSweep;
+    case 'defend':
+      return l10n.petNameDefend;
+    case 'snipe':
+      return l10n.petNameSnipe;
+    case 'ram':
+      return l10n.petNameRam;
+    case 'phoenix':
+      return l10n.petNamePhoenix;
+    case 'black_hole_pet':
+      return l10n.petNameBlackHole;
+    case 'emp_drone':
+      return l10n.petNameEmpDrone;
+    case 'tactical_spotter':
+      return l10n.petNameTacticalSpotter;
+    default:
+      return id.toUpperCase();
   }
 }
 
 /// Localized modifier label by id (matches helper in modifiers_select_screen).
 String _modifierLabel(AppLocalizations l10n, String id) {
   switch (id) {
-    case 'glass_cannon': return l10n.modNameGlassCannon;
-    case 'bullet_hell': return l10n.modNameBulletHell;
-    case 'speed_demon': return l10n.modNameSpeedDemon;
-    case 'no_powerups': return l10n.modNameNoPowerups;
-    case 'fog_of_war': return l10n.modNameFogOfWar;
-    case 'tiny_arena': return l10n.modNameTinyArena;
-    case 'one_shot': return l10n.modNameOneShot;
-    case 'chaos': return l10n.modNameChaos;
-    case 'giant_mode': return l10n.modNameGiantMode;
-    case 'ricochet_world': return l10n.modNameRicochetWorld;
-    case 'infinite_bombs': return l10n.modNameInfiniteBombs;
-    case 'magnet_king': return l10n.modNameMagnetKing;
-    default: return getModifier(id)?.name ?? id;
+    case 'glass_cannon':
+      return l10n.modNameGlassCannon;
+    case 'bullet_hell':
+      return l10n.modNameBulletHell;
+    case 'speed_demon':
+      return l10n.modNameSpeedDemon;
+    case 'no_powerups':
+      return l10n.modNameNoPowerups;
+    case 'fog_of_war':
+      return l10n.modNameFogOfWar;
+    case 'tiny_arena':
+      return l10n.modNameTinyArena;
+    case 'one_shot':
+      return l10n.modNameOneShot;
+    case 'chaos':
+      return l10n.modNameChaos;
+    case 'giant_mode':
+      return l10n.modNameGiantMode;
+    case 'ricochet_world':
+      return l10n.modNameRicochetWorld;
+    case 'infinite_bombs':
+      return l10n.modNameInfiniteBombs;
+    case 'magnet_king':
+      return l10n.modNameMagnetKing;
+    default:
+      return getModifier(id)?.name ?? id;
   }
 }
 
@@ -156,18 +195,20 @@ class _SummaryScreenState extends State<SummaryScreen> {
                   ),
                   Container(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 10, vertical: 4),
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(
-                          color: NeonColors.cyan.withValues(alpha: 0.5)),
+                        color: NeonColors.cyan.withValues(alpha: 0.5),
+                      ),
                     ),
                     // Step indicator dinamico: pacifist/snake skippano
                     // difficulty + loadout → summary è step 3 di 3 (wizard
                     // corto). Altre modalità è 5 di 5 (wizard completo).
                     child: Text(
-                      (mode == GameMode.pacifist ||
-                              mode == GameMode.snake)
+                      (mode == GameMode.pacifist || mode == GameMode.snake)
                           ? '3/3'
                           : '5/5',
                       style: const TextStyle(
@@ -192,34 +233,61 @@ class _SummaryScreenState extends State<SummaryScreen> {
                 trackColor: const Color(0x3300FFFF),
                 trackBorderColor: const Color(0x8800FFFF),
                 child: ListView(
-                controller: _scrollCtrl,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                children: [
-                  _section(l10n.modeTitle, _modeName(mode), NeonColors.cyan),
-                  _section(l10n.diffTitle, _diffName(l10n, difficulty),
-                      _diffColor(difficulty),
-                      sub: '×${diffCfg.scoreMultiplier.toStringAsFixed(2)} ${l10n.diffScoreMultiplier} · '
-                          'HP ×${diffCfg.enemyHpMultiplier} · '
-                          'SPD ×${diffCfg.enemySpeedMultiplier}'),
-                  // Pacifist & Snake: skip ARMA + PET (non si spara, no pet).
-                  if (mode != GameMode.pacifist &&
-                      mode != GameMode.snake) ...[
-                    _section(l10n.loadoutWeapon,
-                        _weaponName(l10n, saveData.startingWeapon),
-                        NeonColors.bulletYellow),
+                  controller: _scrollCtrl,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  children: [
+                    _section(l10n.modeTitle, _modeName(mode), NeonColors.cyan),
                     _section(
-                        l10n.loadoutPet,
-                        saveData.activePet == 'none'
-                            ? l10n.loadoutPetNone
-                            : _petName(l10n, saveData.activePet),
-                        NeonColors.pink),
+                      l10n.diffTitle,
+                      _diffName(l10n, difficulty),
+                      _diffColor(difficulty),
+                      sub:
+                          '×${diffCfg.scoreMultiplier.toStringAsFixed(2)} ${l10n.diffScoreMultiplier} · '
+                          'HP ×${diffCfg.enemyHpMultiplier} · '
+                          'SPD ×${diffCfg.enemySpeedMultiplier}',
+                    ),
+                    // Pacifist & Snake: skip ARMA + PET (non si spara, no pet).
+                    if (mode != GameMode.pacifist &&
+                        mode != GameMode.snake) ...[
+                      // Daily Challenge: arma + pet sono auto-assegnati dalla
+                      // data UTC (uguali per tutti), non dal loadout salvato.
+                      () {
+                        final isDaily = mode == GameMode.dailyChallenge;
+                        final weaponId = isDaily
+                            ? DailyChallenge.todayWeaponId
+                            : saveData.startingWeapon;
+                        return _section(
+                          l10n.loadoutWeapon,
+                          _weaponName(l10n, weaponId),
+                          NeonColors.bulletYellow,
+                          sub: isDaily ? l10n.modeDailyChallenge : null,
+                        );
+                      }(),
+                      () {
+                        final isDaily = mode == GameMode.dailyChallenge;
+                        final petId = isDaily
+                            ? DailyChallenge.todayPetId
+                            : saveData.activePet;
+                        return _section(
+                          l10n.loadoutPet,
+                          petId == 'none'
+                              ? l10n.loadoutPetNone
+                              : _petName(l10n, petId),
+                          NeonColors.pink,
+                          sub: isDaily ? l10n.modeDailyChallenge : null,
+                        );
+                      }(),
+                    ],
+                    _modifiersSection(l10n),
+                    const SizedBox(height: 12),
+                    _multiplierBreakdown(
+                      l10n,
+                      diffCfg.scoreMultiplier,
+                      modScore,
+                      totalScore,
+                    ),
                   ],
-                  _modifiersSection(l10n),
-                  const SizedBox(height: 12),
-                  _multiplierBreakdown(l10n, diffCfg.scoreMultiplier, modScore,
-                      totalScore),
-                ],
-              ),
+                ),
               ),
             ),
             Padding(
@@ -232,12 +300,14 @@ class _SummaryScreenState extends State<SummaryScreen> {
                     borderRadius: BorderRadius.circular(12),
                     color: NeonColors.green.withValues(alpha: 0.18),
                     border: Border.all(
-                        color: NeonColors.green.withValues(alpha: 0.9),
-                        width: 2),
+                      color: NeonColors.green.withValues(alpha: 0.9),
+                      width: 2,
+                    ),
                     boxShadow: [
                       BoxShadow(
-                          color: NeonColors.green.withValues(alpha: 0.5),
-                          blurRadius: 18)
+                        color: NeonColors.green.withValues(alpha: 0.5),
+                        blurRadius: 18,
+                      ),
                     ],
                   ),
                   alignment: Alignment.center,
@@ -263,26 +333,41 @@ class _SummaryScreenState extends State<SummaryScreen> {
   String _modeName(GameMode m) {
     final l10n = AppLocalizations.of(context)!;
     switch (m) {
-      case GameMode.classic: return l10n.modeClassic;
-      case GameMode.zenMode: return l10n.modeZen;
-      case GameMode.tunnel: return l10n.modeTunnel;
-      case GameMode.bossRush: return l10n.modeBossRush;
-      case GameMode.timeAttack: return l10n.modeTimeAttack;
-      case GameMode.survival: return l10n.modeSurvival;
-      case GameMode.dailyChallenge: return l10n.modeDailyChallenge;
-      case GameMode.pacifist: return l10n.modePacifist;
-      case GameMode.waves: return l10n.modeWaves;
-      case GameMode.gravityInferno: return l10n.modeGravityInferno;
-      case GameMode.snake: return l10n.modeSnake;
+      case GameMode.classic:
+        return l10n.modeClassic;
+      case GameMode.zenMode:
+        return l10n.modeZen;
+      case GameMode.tunnel:
+        return l10n.modeTunnel;
+      case GameMode.bossRush:
+        return l10n.modeBossRush;
+      case GameMode.timeAttack:
+        return l10n.modeTimeAttack;
+      case GameMode.survival:
+        return l10n.modeSurvival;
+      case GameMode.dailyChallenge:
+        return l10n.modeDailyChallenge;
+      case GameMode.pacifist:
+        return l10n.modePacifist;
+      case GameMode.waves:
+        return l10n.modeWaves;
+      case GameMode.gravityInferno:
+        return l10n.modeGravityInferno;
+      case GameMode.snake:
+        return l10n.modeSnake;
     }
   }
 
   Color _diffColor(Difficulty d) {
     switch (d) {
-      case Difficulty.easy: return NeonColors.green;
-      case Difficulty.normal: return NeonColors.cyan;
-      case Difficulty.hard: return NeonColors.orange;
-      case Difficulty.nightmare: return NeonColors.red;
+      case Difficulty.easy:
+        return NeonColors.green;
+      case Difficulty.normal:
+        return NeonColors.cyan;
+      case Difficulty.hard:
+        return NeonColors.orange;
+      case Difficulty.nightmare:
+        return NeonColors.red;
     }
   }
 
@@ -346,20 +431,33 @@ class _SummaryScreenState extends State<SummaryScreen> {
 
   Widget _modifiersSection(AppLocalizations l10n) {
     if (activeModifiers.isEmpty) {
-      return _section(l10n.modifiersTitle, l10n.summaryNone,
-          Colors.white.withValues(alpha: 0.5));
+      return _section(
+        l10n.modifiersTitle,
+        l10n.summaryNone,
+        Colors.white.withValues(alpha: 0.5),
+      );
     }
     final names = activeModifiers
         .map((id) => _modifierLabel(l10n, id))
         .join(', ');
     final mult = combinedScoreMultiplier(activeModifiers);
-    return _section(l10n.modifiersTitle, names, const Color(0xFFFF4466),
-        sub: l10n.summaryActiveModifiers(
-            activeModifiers.length, mult.toStringAsFixed(2)));
+    return _section(
+      l10n.modifiersTitle,
+      names,
+      const Color(0xFFFF4466),
+      sub: l10n.summaryActiveModifiers(
+        activeModifiers.length,
+        mult.toStringAsFixed(2),
+      ),
+    );
   }
 
   Widget _multiplierBreakdown(
-      AppLocalizations l10n, double diffMul, double modMul, double total) {
+    AppLocalizations l10n,
+    double diffMul,
+    double modMul,
+    double total,
+  ) {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -370,9 +468,15 @@ class _SummaryScreenState extends State<SummaryScreen> {
             NeonColors.gold.withValues(alpha: 0.04),
           ],
         ),
-        border: Border.all(color: NeonColors.gold.withValues(alpha: 0.7), width: 2),
+        border: Border.all(
+          color: NeonColors.gold.withValues(alpha: 0.7),
+          width: 2,
+        ),
         boxShadow: [
-          BoxShadow(color: NeonColors.gold.withValues(alpha: 0.3), blurRadius: 14)
+          BoxShadow(
+            color: NeonColors.gold.withValues(alpha: 0.3),
+            blurRadius: 14,
+          ),
         ],
       ),
       child: Column(
@@ -392,8 +496,7 @@ class _SummaryScreenState extends State<SummaryScreen> {
           _row(l10n.summaryDifficultyRow, '×${diffMul.toStringAsFixed(2)}'),
           _row(l10n.summaryModifiersRow, '×${modMul.toStringAsFixed(2)}'),
           const Divider(color: Colors.white24),
-          _row(l10n.summaryTotal, '×${total.toStringAsFixed(2)}',
-              big: true),
+          _row(l10n.summaryTotal, '×${total.toStringAsFixed(2)}', big: true),
         ],
       ),
     );
