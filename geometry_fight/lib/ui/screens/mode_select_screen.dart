@@ -39,6 +39,8 @@ class _ModeSelectScreenState extends State<ModeSelectScreen>
 
   late AnimationController _entranceController;
   late AnimationController _glowController;
+  // Controller condiviso GridView + Scrollbar orizzontale (bottom).
+  late final ScrollController _modeScrollController;
 
   @override
   void initState() {
@@ -50,10 +52,14 @@ class _ModeSelectScreenState extends State<ModeSelectScreen>
       vsync: this,
     )..forward();
 
+    // Pulsazione molto lenta (utente): glow bianco soft sulle scritte
+    // unlocked. 3500ms × reverse ≈ 7s ciclo completo.
     _glowController = AnimationController(
-      duration: const Duration(milliseconds: 2500),
+      duration: const Duration(milliseconds: 3500),
       vsync: this,
     )..repeat(reverse: true);
+
+    _modeScrollController = ScrollController();
 
     // Iter 19: rimosso _startBtnController — non più bottone AVANTI (tap-to-advance).
   }
@@ -62,6 +68,7 @@ class _ModeSelectScreenState extends State<ModeSelectScreen>
   void dispose() {
     _entranceController.dispose();
     _glowController.dispose();
+    _modeScrollController.dispose();
     super.dispose();
   }
 
@@ -125,6 +132,8 @@ class _ModeSelectScreenState extends State<ModeSelectScreen>
               Expanded(
                 child: Text(
                   l10n.modeSelectTitle,
+                  // Centrato come nelle schermate successive (difficulty/summary).
+                  textAlign: TextAlign.center,
                   style: const TextStyle(
                     color: Colors.cyanAccent,
                     fontSize: 18,
@@ -204,43 +213,51 @@ class _ModeSelectScreenState extends State<ModeSelectScreen>
         offset: Offset(0, 15 * (1 - e)),
         child: SizedBox(
           height: 110,
-          child: GridView.count(
-            scrollDirection: Axis.horizontal,
-            crossAxisCount: 3, // 3 rows visibili
-            mainAxisSpacing: 6,
-            crossAxisSpacing: 6,
-            childAspectRatio: 28 / 81, // crossExtent/mainExtent = card 81×28
-            padding: const EdgeInsets.all(5),
-            children: GameMode.values.map((mode) {
-              final config = gameModeConfigs[mode]!;
-              final isUnlocked =
-                  config.unlockCost == 0 ||
-                  saveData.unlockedModes.contains(mode.name);
-              return _NeonModeCard(
-                config: config,
-                modeName: _modeName(l10n, mode),
-                mode: mode,
-                isUnlocked: isUnlocked,
-                glow: glow,
-                onTap: () {
-                  // Iter 19 (utente: "tap auto-advance"). Locked → snackbar
-                  // "Sblocca nello SHOP"; unlocked → onConfirm immediato.
-                  // Caveman-review: _isAdvancing guard blocks double-tap race
-                  // (PageRoute push not yet committed → second tap re-fires).
-                  if (_isAdvancing) return;
-                  if (!isUnlocked) {
-                    _showLockedSnack(l10n);
-                    return;
-                  }
-                  _isAdvancing = true;
-                  // Iter 22: rimosso `setState(_selectedMode = mode)` — il
-                  // visual `isSelected` non esiste più (cards uniformi), e
-                  // il widget unmount tramite onConfirm rende il rebuild
-                  // sprecato.
-                  widget.onConfirm(mode);
-                },
-              );
-            }).toList(),
+          // Scrollbar orizzontale sempre visibile in basso (utente).
+          child: Scrollbar(
+            controller: _modeScrollController,
+            thumbVisibility: true,
+            scrollbarOrientation: ScrollbarOrientation.bottom,
+            child: GridView.count(
+              controller: _modeScrollController,
+              scrollDirection: Axis.horizontal,
+              crossAxisCount: 3, // 3 rows visibili
+              mainAxisSpacing: 6,
+              crossAxisSpacing: 6,
+              childAspectRatio: 28 / 81, // crossExtent/mainExtent = card 81×28
+              // Bottom 16: gutter per la scrollbar → non copre l'ultima riga.
+              padding: const EdgeInsets.fromLTRB(5, 5, 5, 16),
+              children: GameMode.values.map((mode) {
+                final config = gameModeConfigs[mode]!;
+                final isUnlocked =
+                    config.unlockCost == 0 ||
+                    saveData.unlockedModes.contains(mode.name);
+                return _NeonModeCard(
+                  config: config,
+                  modeName: _modeName(l10n, mode),
+                  mode: mode,
+                  isUnlocked: isUnlocked,
+                  glow: glow,
+                  onTap: () {
+                    // Iter 19 (utente: "tap auto-advance"). Locked → snackbar
+                    // "Sblocca nello SHOP"; unlocked → onConfirm immediato.
+                    // Caveman-review: _isAdvancing guard blocks double-tap race
+                    // (PageRoute push not yet committed → second tap re-fires).
+                    if (_isAdvancing) return;
+                    if (!isUnlocked) {
+                      _showLockedSnack(l10n);
+                      return;
+                    }
+                    _isAdvancing = true;
+                    // Iter 22: rimosso `setState(_selectedMode = mode)` — il
+                    // visual `isSelected` non esiste più (cards uniformi), e
+                    // il widget unmount tramite onConfirm rende il rebuild
+                    // sprecato.
+                    widget.onConfirm(mode);
+                  },
+                );
+              }).toList(),
+            ),
           ),
         ),
       ),
@@ -424,7 +441,7 @@ class _NeonModeCard extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.center,
                     mainAxisSize: MainAxisSize.max,
                     children: [
-                      Text(config.icon, style: const TextStyle(fontSize: 14)),
+                      Text(config.icon, style: const TextStyle(fontSize: 16.8)),
                       const SizedBox(width: 4),
                       // Caveman-review: FittedBox.scaleDown senza floor poteva
                       // ridurre "GRAVITY INFERNO" (15 chars × monospace) sotto
@@ -455,7 +472,8 @@ class _NeonModeCard extends StatelessWidget {
                                 color: isUnlocked
                                     ? Colors.white
                                     : Colors.white30,
-                                fontSize: 13,
+                                // +20% (13 → 15.6) richiesta utente.
+                                fontSize: 15.6,
                                 fontWeight: FontWeight.w700,
                                 fontFamily: 'monospace',
                                 letterSpacing: -0.5,
@@ -466,6 +484,15 @@ class _NeonModeCard extends StatelessWidget {
                                             alpha: 0.95,
                                           ),
                                           blurRadius: 8,
+                                        ),
+                                        // Glow bianco soft pulsante (lento):
+                                        // alpha 0.15→0.70, blur 4→16 guidati da
+                                        // `glow` (_glowController, ciclo ~7s).
+                                        Shadow(
+                                          color: Colors.white.withValues(
+                                            alpha: 0.15 + glow * 0.55,
+                                          ),
+                                          blurRadius: 4 + glow * 12,
                                         ),
                                       ]
                                     : null,
@@ -479,14 +506,14 @@ class _NeonModeCard extends StatelessWidget {
                         Icon(
                           Icons.lock_rounded,
                           color: Colors.orange.withValues(alpha: 0.65),
-                          size: 10,
+                          size: 12,
                         ),
                         const SizedBox(width: 2),
                         Text(
                           '${config.unlockCost}',
                           style: TextStyle(
                             color: Colors.orange.withValues(alpha: 0.7),
-                            fontSize: 9,
+                            fontSize: 10.8,
                             fontFamily: 'monospace',
                           ),
                           overflow: TextOverflow.ellipsis,
