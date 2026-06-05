@@ -949,22 +949,19 @@ class WaveSystem {
     return WaveConfig(waveNumber: wave, spawns: const [], boss: null);
   }
 
-  /// Pool di tipi mob validi per Daily Challenge — esclude:
-  /// - boss-only (non c'è EnemyType per boss, ma escludiamo comunque).
-  /// - weaver e glitch (utente: "skip ... weaver/glitch if those are special").
-  /// - tipi "support / hazard" che non sono mob standalone:
-  ///   blackHole (hazard non killabile mainstream), spawner (spawna altri),
-  ///   gate (mechanic specifico modalità pacifist), proton (spawn-only da
-  ///   blackhole), mutator (modifica altri), gravityWell (hazard), decoy
-  ///   (mira diversion), healer (richiede altri da curare), necro (revive
-  ///   altri), siren (control), leech (latch su player).
-  /// - vortex (girandola/elica spiral-shooter): spara 1 bullet ogni 0.15s
-  ///   ruotando (3 bracci a spirale). Con 50-80 spawn simultanei →
-  ///   ~400+ proiettili/sec a spirale che saturano l'arena = ingiocabile
-  ///   (utente). Escluso dal pool Daily Challenge.
-  /// Quel che resta è un pool di mob "puri" attaccanti/inseguitori, varietà
-  /// sufficiente per 10+ wave senza ripetizioni necessarie.
+  /// Pool di tipi mob per Daily Challenge (richiesta utente: pool ampio per
+  /// varietà). Esclusi SOLO 3 tipi che romperebbero la modalità a 50-80×
+  /// simultanei:
+  /// - blackHole: hazard che risucchia/assorbe gli altri mob, non un mob.
+  /// - gate: cancello non-killabile coi proiettili (mechanic pacifist).
+  /// - vortex: spiral-shooter → ~400+ proiettili/sec a 50-80× = ingiocabile.
+  ///
+  /// Alcuni tipi "intensi" (spawner/necro/gravityWell/leech/siren/healer/
+  /// mutator) restano nel pool ma con un cap di conteggio dedicato
+  /// (`_dailyTypeSoftCap`) così la wave resta vincibile invece di
+  /// stallare o bloccare il player a 80×.
   static const List<EnemyType> _dailyChallengeMobPool = [
+    // Attaccanti / inseguitori puri (roll pieno 50-80×).
     EnemyType.drone,
     EnemyType.swarmDrone,
     EnemyType.kamikaze,
@@ -980,7 +977,84 @@ class WaveSystem {
     EnemyType.tesla,
     EnemyType.laserTurret,
     EnemyType.timeBomb,
+    EnemyType.weaver,
+    EnemyType.glitch,
+    EnemyType.proton,
+    EnemyType.decoy,
+    // Tipi "intensi" — conteggio limitato da `_dailyTypeSoftCap`.
+    EnemyType.siren,
+    EnemyType.mutator,
+    EnemyType.healer,
+    EnemyType.necro,
+    EnemyType.spawner,
+    EnemyType.gravityWell,
+    EnemyType.leech,
   ];
+
+  /// Cap di conteggio per i tipi "intensi" nel Daily: senza, 50-80× di questi
+  /// renderebbe la wave non completabile o il player immobilizzato. I tipi
+  /// non elencati usano il roll standard 50-80×.
+  static const Map<EnemyType, int> _dailyTypeSoftCap = {
+    EnemyType.spawner: 12, // ognuno sforna droni → 80× sfonda il cap arena
+    EnemyType.necro: 16, // si rianimano a vicenda → rischio wave infinita
+    EnemyType.gravityWell: 10, // controlli invertiti + pull → 80× = fermo
+    EnemyType.leech: 16, // latch + slow → 80× = player bloccato
+    EnemyType.siren: 12, // rallenta i proiettili → 80× = non uccidi nulla
+    EnemyType.healer: 18, // si curano a vicenda
+    EnemyType.mutator: 18, // si potenziano a vicenda
+  };
+
+  /// Distanza minima di spawn dal player in Daily Challenge (px, center-to-
+  /// center). Richiesta utente: "i mob non devono spawnare a meno di X pixel
+  /// dal player (proviamo con 50?)". Tunabile.
+  static const double _dailyMinPlayerSpawnDist = 50.0;
+
+  /// Tipo mob per la wave Daily via SHUFFLE BAG (richiesta utente: "non
+  /// devono mai spawnare due volte di fila gli stessi mob ... prima un giro
+  /// completo di tutti i mob"). Ogni "ciclo" di N wave (N = pool.length)
+  /// mostra TUTTI i tipi una volta in ordine shuffle deterministico (è una
+  /// permutazione → nessuna ripetizione interna). La correzione di seam tra
+  /// cicli garantisce che nemmeno al confine ciclo-su-ciclo si ripeta lo
+  /// stesso tipo due wave di fila. Deterministico dal seed giornaliero →
+  /// stesso ordine per tutti i player nello stesso giorno.
+  EnemyType _dailyTypeForWave(int wave) {
+    final pool = _dailyChallengeMobPool;
+    final n = pool.length;
+    if (n <= 1) return pool.first;
+    final cycle = wave ~/ n;
+    final idx = wave % n;
+    return pool[_dailyShuffledOrder(cycle)[idx]];
+  }
+
+  /// Permutazione [0..n) deterministica per il `cycle`-esimo giro del pool,
+  /// con correzione di seam: se il primo elemento di questo ciclo coincide
+  /// con l'ultimo del ciclo precedente, scambia i primi due → mai due wave
+  /// consecutive con lo stesso tipo. Iterativo da 0 a `cycle` (no ricorsione);
+  /// chiamato una volta per wave-start, costo O(cycle·n) trascurabile.
+  List<int> _dailyShuffledOrder(int cycle) {
+    final n = _dailyChallengeMobPool.length;
+    List<int>? prev;
+    var order = <int>[];
+    for (int c = 0; c <= cycle; c++) {
+      order = List<int>.generate(n, (i) => i);
+      // Stream distinto per ciclo, scorrelato dal seed posizioni.
+      final rng = math.Random(_dailySeed ^ (0x9E3779B9 + c * 0x85EBCA77));
+      for (int i = n - 1; i > 0; i--) {
+        final j = rng.nextInt(i + 1);
+        final tmp = order[i];
+        order[i] = order[j];
+        order[j] = tmp;
+      }
+      // Seam fix: evita ripetizione al confine col ciclo precedente.
+      if (prev != null && order[0] == prev[n - 1]) {
+        final tmp = order[0];
+        order[0] = order[1];
+        order[1] = tmp;
+      }
+      prev = order;
+    }
+    return order;
+  }
 
   /// Spawna i mob della Daily Challenge: 50-80 mob di un singolo tipo,
   /// distribuiti arena-wide random (no clustering). Tipo deterministico
@@ -991,32 +1065,57 @@ class WaveSystem {
   /// Poisson-disc (con 50-80 mob sarebbe troppo restrittivo e degraderebbe
   /// in fallback ammassato) — il caos è desiderato qui.
   void _spawnDailyChallengeMobs(int wave) {
-    // RNG per type: sequenziale dal seed daily. Le wave consumano N "tipi"
-    // dalla stessa sequenza per garantire indipendenza wave-by-wave.
-    final typeRng = math.Random(_dailySeed);
-    EnemyType chosenType = _dailyChallengeMobPool.first;
-    for (int w = 0; w <= wave; w++) {
-      chosenType =
-          _dailyChallengeMobPool[typeRng.nextInt(
-            _dailyChallengeMobPool.length,
-          )];
-    }
+    // Tipo via shuffle bag: giro completo di tutti i mob prima di ripetere,
+    // mai due wave di fila lo stesso tipo (richiesta utente).
+    final chosenType = _dailyTypeForWave(wave);
     // RNG per posizioni: seed include wave per varietà posizionale ma
     // resta deterministico per la stessa data + wave.
     final posRng = math.Random(_dailySeed * 13 + wave * 17);
-    // 50-80 mob per wave. Scaling leggero con wave per intensità crescente,
-    // ma cap a 80 per non sfondare il count limit dell'arena.
+    // 50-80 mob per wave (roll sempre eseguito → posRng allineato anche per i
+    // tipi capped). I tipi "intensi" usano un cap dedicato (vedi
+    // `_dailyTypeSoftCap`) così la wave resta vincibile; gli altri 50-80×.
     final baseCount = 50 + posRng.nextInt(31); // 50..80
-    final mobCount = _scaledSpawnCount(baseCount).clamp(50, 80);
+    final softCap = _dailyTypeSoftCap[chosenType];
+    final mobCount = softCap != null
+        ? _scaledSpawnCount(softCap).clamp(1, softCap)
+        : _scaledSpawnCount(baseCount).clamp(50, 80);
 
     final eW = game.effectiveArenaWidth;
     final eH = game.effectiveArenaHeight;
     const margin = 60.0;
+    // Esclusione spawn vicino al player (richiesta utente): rejection sampling
+    // su distanza² (no sqrt). Se dopo N tentativi è ancora troppo vicino,
+    // spinge il mob lungo il vettore di allontanamento fino a minDist.
+    final hasPlayer = game.player.isMounted;
+    final playerPos = hasPlayer ? game.player.position : null;
+    const minDist2 = _dailyMinPlayerSpawnDist * _dailyMinPlayerSpawnDist;
+    const maxPosAttempts = 24;
     for (int i = 0; i < mobCount; i++) {
-      final pos = Vector2(
+      var pos = Vector2(
         margin + posRng.nextDouble() * (eW - margin * 2),
         margin + posRng.nextDouble() * (eH - margin * 2),
       );
+      if (playerPos != null) {
+        var attempts = 0;
+        while (pos.distanceToSquared(playerPos) < minDist2 &&
+            attempts < maxPosAttempts) {
+          pos = Vector2(
+            margin + posRng.nextDouble() * (eW - margin * 2),
+            margin + posRng.nextDouble() * (eH - margin * 2),
+          );
+          attempts++;
+        }
+        // Fallback dopo i tentativi: spingi lungo il vettore di allontanamento.
+        if (pos.distanceToSquared(playerPos) < minDist2) {
+          final away = pos - playerPos;
+          final dir = away.length2 > 0.0001
+              ? away.normalized()
+              : Vector2(1, 0);
+          pos = playerPos + dir * _dailyMinPlayerSpawnDist;
+          pos.x = pos.x.clamp(margin, eW - margin);
+          pos.y = pos.y.clamp(margin, eH - margin);
+        }
+      }
       game.spawnEnemy(chosenType, pos);
     }
   }

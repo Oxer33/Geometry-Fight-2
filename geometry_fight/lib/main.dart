@@ -279,12 +279,17 @@ class _NavigationWrapperState extends State<NavigationWrapper> {
                 _selectedDifficulty = Difficulty.normal;
                 _selectedModifiers = <String>[];
               } else if (mode == GameMode.dailyChallenge) {
-                // Daily = sfida FISSA uguale per tutti: difficoltà auto dalla
-                // data UTC, niente modifiers, arma+pet forzati a game-start
+                // Daily = sfida FISSA uguale per tutti: difficoltà + 2
+                // modifiers auto dalla data UTC, arma+pet forzati a game-start
                 // (game_screen). Salta difficoltà/modifiers/loadout → vai
-                // dritto a summary (che mostra il loadout del giorno).
+                // dritto a summary (che mostra loadout + modifiers del giorno).
+                // I 2 modifiers deterministici (richiesta utente: "sempre ...
+                // ma non più di due, visibili in prepartita") fluiscono in
+                // SummaryScreen e vengono persistiti a saveData in onStart.
                 _selectedDifficulty = DailyChallenge.todayDifficulty;
-                _selectedModifiers = <String>[];
+                _selectedModifiers = List<String>.of(
+                  DailyChallenge.todayModifiers,
+                );
               }
             });
             if (mode == GameMode.dailyChallenge) {

@@ -18,6 +18,11 @@ class _Mp3Pool {
   int _next = 0;
   bool _ready = false;
 
+  /// True se almeno un player ha caricato la sorgente (preparato → `play()`
+  /// fa solo seek+resume, niente prepare). I caller pool-first lo controllano
+  /// per decidere se usare il pool o il fallback diretto.
+  bool get isReady => _ready;
+
   _Mp3Pool(this.assetRelPath, {int size = 4})
       : _players = List.generate(size, (_) => AudioPlayer());
 
@@ -413,12 +418,33 @@ class AudioSystem {
     }
   }
 
+  /// Inverso di `_tryDirectThenPool`: usa PRIMA il pool preloaded (player già
+  /// preparato in `init` → `seek(0)+resume` parte subito, nessun prepare),
+  /// `FlameAudio.play` solo come fallback se il pool non ha caricato.
+  ///
+  /// Per gli FX "boom" critici dove la LATENZA conta (player death, game over):
+  /// sotto carico — death shockwave (kill 600px + 70+ particelle + grid
+  /// distortion) e "troppa roba a schermo" — la UI thread è satura. Creare e
+  /// preparare un MediaPlayer nuovo via `FlameAudio.play` accoda diverse call
+  /// pesanti sul platform channel → il suono arriva in ritardo. Il pool fa una
+  /// sola call leggera (resume) → boom immediato.
+  static void _tryPoolThenDirect(String asset, double volume, _Mp3Pool? pool) {
+    if (pool != null && pool.isReady) {
+      pool.play(volume: volume);
+    } else {
+      // Pool assente o non pronto → best effort diretto (pool come 2° fallback).
+      _tryDirectThenPool(asset, volume, pool);
+    }
+  }
+
   /// Game over (raro) — esplosione drammatica gameover_explosion.mp3
   /// + tono game_over.wav legacy in coda. Haptic throttle 200ms.
   static void playGameOver() {
     if (_initialized && _sfxVolume > 0 && _canPlay(_fxGameOverExplosion)) {
       final boosted = (_sfxVolume * 1.1).clamp(0.0, 1.0);
-      _tryDirectThenPool(_fxGameOverExplosion, boosted,
+      // Pool-first per la stessa ragione di playerDeath: il game over arriva
+      // su un frame pesantissimo (mega esplosione finale) → niente latenza.
+      _tryPoolThenDirect(_fxGameOverExplosion, boosted,
           _gameOverExplosionMp3Pool);
     }
     _playRare(_fxGameOver, volumeScale: 0.6);
@@ -429,7 +455,10 @@ class AudioSystem {
   /// vibrazione se player muore + boss/bomb in stesso frame).
   static void playPlayerDeath() {
     if (_initialized && _sfxVolume > 0 && _canPlay(_fxPlayerDeath)) {
-      _tryDirectThenPool(_fxPlayerDeath, _sfxVolume, _playerDeathMp3Pool);
+      // Pool-first: il BOOM deve partire SUBITO anche col frame intasato dalla
+      // death shockwave + tanti entity a schermo (utente: "arriva in ritardo
+      // se c'è troppa roba sullo schermo").
+      _tryPoolThenDirect(_fxPlayerDeath, _sfxVolume, _playerDeathMp3Pool);
     }
     if (_canHapticAt(200)) HapticFeedback.heavyImpact();
   }

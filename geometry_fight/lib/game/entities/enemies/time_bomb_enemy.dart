@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 import 'dart:ui';
+import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
 import '../../../data/constants.dart';
 import 'enemy_base.dart';
@@ -35,8 +36,6 @@ class TimeBombEnemy extends EnemyBase {
   static final Paint _ringPaint = Paint()
     ..style = PaintingStyle.stroke
     ..strokeWidth = 1;
-  static final Paint _lockPaint = Paint()
-    ..color = const Color(0xFF4488FF).withValues(alpha: 0.6);
 
   TimeBombEnemy()
       : super(
@@ -45,8 +44,25 @@ class TimeBombEnemy extends EnemyBase {
           pointValue: 12,
           geomValue: 4,
           neonColor: const Color(0xFFFF6600),
-          size: Vector2(24, 24),
+          // Bump 24→30: bomba più massiccia e leggibile (richiesta utente
+          // "disegnamolo molto più figo"). Component = size*2 = 60px, raggio
+          // scocca/hitbox = 30px.
+          size: Vector2(30, 30),
         );
+
+  @override
+  Future<void> onLoad() async {
+    // Hitbox = corpo visibile (scocca), così "coincide con la grandezza del
+    // corpo" (richiesta utente). Sostituisce la hitbox base di EnemyBase: il
+    // bug era che il glow-pass ridisegnava il body OPACO a scale 1.3 → disco
+    // visibile (~r39) più grande della hitbox (r24). Ora il body solido è
+    // disegnato a r=size/2 e la hitbox lo ricalca (*1.05 copre la base delle
+    // punte → tutta la silhouette è colpibile).
+    add(
+      CircleHitbox(radius: size.x / 2 * 1.05, anchor: Anchor.center)
+        ..position = size / 2,
+    );
+  }
 
   @override
   void updateBehavior(double dt) {
@@ -116,6 +132,11 @@ class TimeBombEnemy extends EnemyBase {
     super.onDeath();
   }
 
+  // Colori scocca metallica (riusati, niente alloc per frame).
+  static const Color _spikeMetal = Color(0xFF6B7280); // acciaio grigio
+  static const Color _casingDark = Color(0xFF14161F); // scocca scura
+  static const Color _white = Color(0xFFFFFFFF);
+
   @override
   void renderShape(Canvas canvas, Paint paint, double scale) {
     final cx = size.x / 2;
@@ -125,63 +146,117 @@ class TimeBombEnemy extends EnemyBase {
     // urgency 0→1 mentre il countdown va da 8 → 0.
     final urgency = 1.0 - (_countdown / 8.0).clamp(0.0, 1.0);
 
-    // === Color logic ===
-    // [8..2]s: lerp arancio → rosso (mappato su 0..1 sul range 8-2 = 6s).
-    // [2..0]s: alterna rosso vivo + giallo vivo a frequenza alta.
-    Color bodyColor;
+    // === Color logic (countdown) ===
+    // [8..2]s: lerp arancio → rosso. [2..0]s: lampeggio rosso ↔ giallo.
+    final Color bodyColor;
     if (_countdown > 2) {
-      // Mappa 8→0 e 2→1 nel sotto-intervallo lerp (6s di range).
       final t = ((8.0 - _countdown) / 6.0).clamp(0.0, 1.0);
-      bodyColor = Color.lerp(
-        const Color(0xFFFF6600),
-        const Color(0xFFFF0000),
-        t,
-      )!;
+      bodyColor =
+          Color.lerp(const Color(0xFFFF6600), const Color(0xFFFF0000), t)!;
     } else {
-      // Pulsing brillante: rosso vivo ↔ giallo vivo. Frequenza alta (~8Hz).
       final flash = (idlePhase * 8).toInt() % 2 == 0;
       bodyColor = flash ? const Color(0xFFFF0000) : const Color(0xFFFFEE00);
     }
 
-    // === Radius pulse ===
-    // Sotto 1s: ±25% body radius pulse (sin a ~10Hz tramite idlePhase).
-    double r = baseR;
-    if (_countdown < 1.0 && _activated) {
-      final pulse = math.sin(idlePhase * 10 * math.pi);
-      r = baseR * (1.0 + 0.25 * pulse);
+    // === GLOW PASS (scale ~1.3): alone morbido TRASPARENTE ===
+    // FIX hitbox-mismatch: prima qui il corpo veniva ridisegnato OPACO a
+    // scale 1.3 → disco visibile più grande della hitbox. Ora è solo un alone
+    // fioco; il corpo solido (main pass) coincide con la hitbox.
+    if (scale > 1.1) {
+      _bodyPaint
+        ..color = bodyColor.withValues(alpha: 0.16)
+        ..style = PaintingStyle.fill;
+      canvas.drawCircle(Offset(cx, cy), baseR * 0.92, _bodyPaint);
+      return;
     }
 
-    // Cerchio principale
-    _bodyPaint.color = bodyColor;
+    // === Radius pulse (<1s): oscillazione radiale ±18% ===
+    var r = baseR;
+    if (_countdown < 1.0 && _activated) {
+      r = baseR * (1.0 + 0.18 * math.sin(idlePhase * 10 * math.pi));
+    }
+
+    // === PUNTE (mina navale): unica Path per 8 spine, un solo drawPath ===
+    const spikeCount = 8;
+    final spikeBase = r * 0.86;
+    final spikeTip = r * 1.34;
+    const halfW = 0.18; // mezza ampiezza angolare base punta (rad)
+    final spin = idlePhase * 0.5; // lenta rotazione → look "armato"
+    final spikes = Path();
+    for (var i = 0; i < spikeCount; i++) {
+      final a = (i / spikeCount) * math.pi * 2 + spin;
+      spikes
+        ..moveTo(cx + math.cos(a - halfW) * spikeBase,
+            cy + math.sin(a - halfW) * spikeBase)
+        ..lineTo(cx + math.cos(a) * spikeTip, cy + math.sin(a) * spikeTip)
+        ..lineTo(cx + math.cos(a + halfW) * spikeBase,
+            cy + math.sin(a + halfW) * spikeBase)
+        ..close();
+    }
+    _bodyPaint
+      ..color = _spikeMetal
+      ..style = PaintingStyle.fill;
+    canvas.drawPath(spikes, _bodyPaint);
+    _ringPaint
+      ..color = bodyColor.withValues(alpha: 0.9)
+      ..strokeWidth = 1.2;
+    canvas.drawPath(spikes, _ringPaint); // bordo neon sulle punte
+
+    // === SCOCCA (corpo solido = hitbox) ===
+    _bodyPaint
+      ..color = _casingDark
+      ..style = PaintingStyle.fill;
     canvas.drawCircle(Offset(cx, cy), r, _bodyPaint);
+    _ringPaint
+      ..color = bodyColor
+      ..strokeWidth = 2.5;
+    canvas.drawCircle(Offset(cx, cy), r, _ringPaint); // anello neon di bordo
 
+    // === CORE pulsante (innesco) ===
+    final corePulse = 1.0 + 0.15 * math.sin(idlePhase * 6 + urgency * 6);
+    final coreR = r * (0.34 + 0.10 * urgency) * corePulse;
+    _bodyPaint.color = bodyColor;
+    canvas.drawCircle(Offset(cx, cy), coreR, _bodyPaint);
+    _bodyPaint.color = Color.lerp(_white, bodyColor, 0.25)!;
+    canvas.drawCircle(Offset(cx, cy), coreR * 0.45, _bodyPaint); // punto caldo
+
+    // === Dettagli costosi: solo high-detail (swarm li salta per perf) ===
     if (scale <= 1.01) {
-      // Scudo attivazione (se non ancora attivato) — INVARIATO.
-      if (!_activated) {
-        final shieldAlpha = (_activationTimer / 2.0).clamp(0.0, 1.0);
-        EnemyBase.detailPaint.color = const Color(0xFF4488FF).withValues(alpha: shieldAlpha * 0.4);
-        EnemyBase.detailPaint.style = PaintingStyle.stroke;
-        EnemyBase.detailPaint.strokeWidth = 2;
-        canvas.drawCircle(Offset(cx, cy), baseR * 1.3, EnemyBase.detailPaint);
-
-        // Icona scudo durante attivazione (piccolo disco ciano centrale).
-        canvas.drawCircle(Offset(cx, cy), baseR * 0.3, _lockPaint);
+      // Rivetti (4) sulla scocca.
+      _bodyPaint.color = bodyColor.withValues(alpha: 0.85);
+      for (var i = 0; i < 4; i++) {
+        final a = (i / 4) * math.pi * 2 + math.pi / 4 + spin;
+        canvas.drawCircle(
+          Offset(cx + math.cos(a) * r * 0.66, cy + math.sin(a) * r * 0.66),
+          1.6,
+          _bodyPaint,
+        );
       }
 
-      // Anelli di pericolo (appaiono quando countdown < 4s).
-      // <2s: ring count raddoppia (4 invece di 2), ampiezza oscillazione
-      // raddoppia (0.6 vs 0.3) e alpha aumenta (0.7 vs 0.3 base brightness).
+      // Scudo attivazione (immune 2s): anello ciano che si dissolve.
+      if (!_activated) {
+        final shieldAlpha = (_activationTimer / 2.0).clamp(0.0, 1.0);
+        EnemyBase.detailPaint
+          ..color = const Color(0xFF4488FF).withValues(alpha: shieldAlpha * 0.5)
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 2;
+        canvas.drawCircle(Offset(cx, cy), r * 1.45, EnemyBase.detailPaint);
+      }
+
+      // Anelli di pericolo (countdown < 4s). <2s: più anelli, più ampi e vivi.
       if (_activated && _countdown < 4) {
         final lateStage = _countdown < 2.0;
         final ringCount = lateStage ? 4 : 2;
         final ampMul = lateStage ? 0.6 : 0.3;
         final brightnessBoost = lateStage ? 0.7 : 0.3;
-        for (int i = 0; i < ringCount; i++) {
-          final ringProgress = ((idlePhase * 2 + i / ringCount) % 1.0);
+        _ringPaint.strokeWidth = 1;
+        for (var i = 0; i < ringCount; i++) {
+          final ringProgress = (idlePhase * 2 + i / ringCount) % 1.0;
           final ringR = r * 1.5 + ringProgress * _explosionRadius * ampMul;
           final ringAlpha =
               ((1 - ringProgress) * urgency * brightnessBoost).clamp(0.0, 1.0);
-          _ringPaint.color = const Color(0xFFFF0000).withValues(alpha: ringAlpha);
+          _ringPaint.color =
+              const Color(0xFFFF0000).withValues(alpha: ringAlpha);
           canvas.drawCircle(Offset(cx, cy), ringR, _ringPaint);
         }
       }
