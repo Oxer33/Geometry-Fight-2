@@ -754,7 +754,12 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
       // player ripristinando vite (formula identica a `_startRun`) + 2s di
       // invincibilità. Skip onPlayerDeath() per evitare game over.
       final pet = game.activePet;
-      if (pet is PhoenixPet && pet.tryConsumeRevive()) {
+      // Skip in zen/time-attack (già immortali): phoenix sarebbe sprecato e
+      // bypasserebbe onPlayerDeath → romperebbe death-count zen / il restore.
+      if (!game.isZenMode &&
+          !game.isTimeAttackMode &&
+          pet is PhoenixPet &&
+          pet.tryConsumeRevive()) {
         lives = game.diffConfig.startingLives +
             (game.saveData.startingLives - 3);
         if (lives < 1) lives = 1;

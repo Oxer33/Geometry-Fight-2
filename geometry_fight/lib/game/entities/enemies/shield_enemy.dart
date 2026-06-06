@@ -247,7 +247,10 @@ class ShieldEnemy extends EnemyBase {
           final segAngle = -math.pi / 3 + i * (math.pi * 2 / 3) / 4;
           final segX = 14 * scale * math.cos(segAngle);
           final segY = 14 * scale * math.sin(segAngle);
-          final segActive = i < shieldHp / 2; // 5 segmenti = 10 HP (2 HP/seg)
+          // 5 segmenti = 10 HP (2 HP/seg). `i*2 < shieldHp` tiene acceso
+          // l'ultimo segmento finché lo scudo non è davvero a 0 (prima
+          // `i < shieldHp/2` lo spegneva già a 1 HP residuo).
+          final segActive = i * 2 < shieldHp;
           _segPaint.color = segActive
               ? NeonColors.purple.withValues(alpha: 0.8)
               : NeonColors.purple.withValues(alpha: 0.15);

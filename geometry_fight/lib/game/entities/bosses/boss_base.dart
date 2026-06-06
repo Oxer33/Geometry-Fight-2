@@ -175,10 +175,19 @@ abstract class BossBase extends PositionComponent
       final halfW = game.size.x > 0 ? game.size.x / 2 : 400.0;
       final halfH = game.size.y > 0 ? game.size.y / 2 : 300.0;
 
-      // X target: ancorato al lato destro (55% a destra dal centro).
-      final targetX = cam.x + halfW * 0.55;
-      // Lerp 3× per secondo (~smooth ~0.5s d'entrata dal bordo destro).
-      position.x += (targetX - position.x) * 3.0 * effectiveDt;
+      // X: molla MORBIDA verso una fascia destra + clamp al viewport. Prima il
+      // lerp 3.0 verso 0.55*halfW strappava indietro a destra i boss che
+      // caricano verso il player (es. Phantom King "veniva addosso e tornava
+      // istant a destra" — richiesta utente). Ora rate 1.2 (entrata/ritorno
+      // morbidi) e ancora a 0.45; il clamp permette di avvicinarsi fino a ~metà
+      // schermo senza snap e senza uscire dal bordo destro.
+      final anchorX = cam.x + halfW * 0.45;
+      position.x += (anchorX - position.x) * 1.2 * effectiveDt;
+      position.x = position.x.clamp(
+        cam.x, // può avvicinarsi fino al centro schermo (resta on-screen e a
+        //       destra del player, tipicamente nella metà sinistra)
+        cam.x + halfW - size.x / 2 - 20, // resta dentro il bordo destro
+      );
 
       // Y: segue il player con smoothing + oscillazione sinusoidale per varietà
       final targetY = game.player.position.y;

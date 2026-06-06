@@ -148,6 +148,9 @@ class WaveSystem {
     _nextBossAt = 120; // Primo boss a 120 kill (richiesta utente)
     _tunnelBossCooldown = 0;
     _tunnelBossBag.clear();
+    _tunnelBossPending = null;
+    _tunnelBossPendingTimer = 0;
+    game.tunnelBossIncoming = false; // evita tunnel allargato stale al restart
     _resetSurvival();
     _resetSnake();
     currentWave = 0;
@@ -511,9 +514,10 @@ class WaveSystem {
   static final _snakeRng = math.Random();
 
   // Tier-based snake pool. Spawn pescato dall'unione dei tier sbloccati.
-  // `_snakeElapsed` guida lo sblocco. Nemici stazionari o non-pursuing
-  // (mine, laserTurret, pulsar, tesla, splitter) sono esclusi: in Snake mode
-  // il player deve essere costantemente inseguito.
+  // `_snakeElapsed` guida lo sblocco. Richiesta utente: spawnano TUTTI i mob
+  // tranne quelli che NON si muovono → esclusi solo mine, laserTurret, decoy
+  // (stazionari) e gate (non uccidibile dalla scia). Tutto il resto che si
+  // muove è incluso, distribuito sui tier per progressione.
   static const List<EnemyType> _snakeTier1 = <EnemyType>[
     EnemyType.drone,
     EnemyType.swarmDrone,
@@ -521,22 +525,35 @@ class WaveSystem {
   static const List<EnemyType> _snakeTier2 = <EnemyType>[
     EnemyType.kamikaze,
     EnemyType.snake,
+    EnemyType.weaver,
+    EnemyType.glitch,
   ];
   static const List<EnemyType> _snakeTier3 = <EnemyType>[
     EnemyType.orbiter,
     EnemyType.phantom,
+    EnemyType.pulsar,
+    EnemyType.tesla,
+    EnemyType.proton,
   ];
   static const List<EnemyType> _snakeTier4 = <EnemyType>[
     EnemyType.mirror,
     EnemyType.vortex,
     EnemyType.titan,
+    EnemyType.splitter,
+    EnemyType.spawner,
+    EnemyType.leech,
   ];
-  // Tier 5: nemici tardivi più pericolosi. shieldEnemy è incluso perché il
-  // suo updateBehavior implementa una state machine approach→lockOn→charge
-  // (movimento attivo verso il player), non un blocco stazionario.
+  // Tier 5: nemici tardivi più pericolosi + support (ora più efficaci). Tutti
+  // si muovono attivamente.
   static const List<EnemyType> _snakeTier5 = <EnemyType>[
     EnemyType.timeBomb,
     EnemyType.shieldEnemy,
+    EnemyType.healer,
+    EnemyType.siren,
+    EnemyType.necro,
+    EnemyType.mutator,
+    EnemyType.gravityWell,
+    EnemyType.blackHole,
   ];
 
   // Soglie di sblocco (secondi): tier1 da 0, tier2 >30s, tier3 >90s,
@@ -870,6 +887,10 @@ class WaveSystem {
   // Boss successivi a +30 kill incrementali.
   int _nextBossAt = 120;
   double _tunnelBossCooldown = 0; // Tempo minimo tra boss (s)
+  // Boss "incoming": alla soglia kill il tunnel inizia ad allargarsi e dopo 5s
+  // spawna il boss (richiesta utente: "il tunnel deve allargarsi 5s prima").
+  BossType? _tunnelBossPending;
+  double _tunnelBossPendingTimer = 0;
   // Shuffle bag per ordine randomico dei boss (richiesta utente "ordine
   // randomico"). Riempito con tutti i BossType.values, pescato dal front,
   // refill quando vuoto → nessun boss ripete finché non li hai visti tutti.
@@ -922,16 +943,29 @@ class WaveSystem {
     // update), quindi `bossCount == 0` può essere true per qualche frame dopo
     // lo spawn → potevano partire 3-4 boss in sequenza. Ora settiamo subito
     // un cooldown di 5s per dare tempo alla boss di materializzarsi.
+    // Soglia kill raggiunta: avvia l'allargamento del tunnel SUBITO e spawna
+    // il boss 5s dopo (richiesta utente: "il tunnel deve allargarsi 5s prima").
     if (_tunnelKillCount >= _nextBossAt &&
         game.bossCount == 0 &&
-        _tunnelBossCooldown <= 0) {
+        _tunnelBossCooldown <= 0 &&
+        _tunnelBossPending == null) {
       // Ordine randomico via shuffle bag (richiesta utente).
       if (_tunnelBossBag.isEmpty) _refillTunnelBossBag();
-      final boss = _tunnelBossBag.removeAt(0);
-      game.spawnBoss(boss);
-      // Gap tra boss RADDOPPIATO (richiesta utente): +60 kill invece di +30.
-      _nextBossAt += 60;
-      _tunnelBossCooldown = 5.0; // Cooldown 5s: copre materializzazione async
+      _tunnelBossPending = _tunnelBossBag.removeAt(0);
+      _tunnelBossPendingTimer = 5.0;
+      game.tunnelBossIncoming = true; // game_world allarga il tunnel ORA
+    }
+    // Conto alla rovescia 5s → spawn del boss a tunnel già allargato.
+    if (_tunnelBossPending != null) {
+      _tunnelBossPendingTimer -= dt;
+      if (_tunnelBossPendingTimer <= 0) {
+        game.spawnBoss(_tunnelBossPending!);
+        _tunnelBossPending = null;
+        game.tunnelBossIncoming = false;
+        // Gap tra boss RADDOPPIATO (richiesta utente): +60 kill invece di +30.
+        _nextBossAt += 60;
+        _tunnelBossCooldown = 5.0; // copre materializzazione async
+      }
     }
   }
 
@@ -1079,8 +1113,9 @@ class WaveSystem {
         order[i] = order[j];
         order[j] = tmp;
       }
-      // Seam fix: evita ripetizione al confine col ciclo precedente.
-      if (prev != null && order[0] == prev[n - 1]) {
+      // Seam fix (solo n>2: con n<=2 lo swap [0]<->[1] ricreerebbe l'adiacenza
+      // vietata). Pool attuale = 26 → sempre attivo.
+      if (n > 2 && prev != null && order[0] == prev[n - 1]) {
         final tmp = order[0];
         order[0] = order[1];
         order[1] = tmp;

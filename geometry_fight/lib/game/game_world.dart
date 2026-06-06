@@ -239,6 +239,9 @@ class GeometryFightGame extends FlameGame
   double _tunnelBossShrinkDelay = 0;
   double _tunnelShrinkProgress = 1.0; // 1.0 = pieno, 0.0 = ristretto
   double _tunnelShrinkStartHeight = 420; // altezza all'inizio dello shrink
+  // Boss "incoming": settato da WaveSystem 5s prima dello spawn del boss in
+  // tunnel → il tunnel si allarga in anticipo (richiesta utente).
+  bool tunnelBossIncoming = false;
 
   /// Contatore boss uccisi in modalità tunnel: usato per scalare l'altezza
   /// degli ostacoli (muri rossi) +3% per ogni boss ucciso.
@@ -503,7 +506,8 @@ class GeometryFightGame extends FlameGame
     //   Boss morto + shrink → interpola linearmente da 1800 a 420 su 5s
     if (isTunnelMode) {
       if (_tunnelBossShrinkDelay > 0) _tunnelBossShrinkDelay -= dt;
-      final tunnelExpanded = bossCount > 0 || _tunnelBossShrinkDelay > 0;
+      final tunnelExpanded =
+          bossCount > 0 || _tunnelBossShrinkDelay > 0 || tunnelBossIncoming;
       if (tunnelExpanded) {
         // Pieno: target 1800, lerp rapido. Reset shrink state per prossimo ciclo.
         tunnelTargetHeight = 1800;
@@ -1268,10 +1272,21 @@ class GeometryFightGame extends FlameGame
     // morti — 1 vita logica → +1 per OGNI hit (vedi _applyModifiers), così il
     // contatore conta bene. Time Attack: vite ILLIMITATE, finisce a tempo.
     if (isZenMode || isTimeAttackMode) {
-      if (isZenMode) sessionDeaths++;
+      // Restore PRIMA dello scudo. Guard >=1: con difficoltà a poche vite il
+      // formula può dare 0 → prossimo hit = game over rompendo l'immortalità.
       player.lives = isZenMode
           ? 1
           : diffConfig.startingLives + (saveData.startingLives - 3);
+      if (player.lives < 1) player.lives = 1;
+      if (isZenMode) {
+        sessionDeaths++;
+        // Scudo post-morte (upgrade shop): con 1 vita logica zen, `lives` va a
+        // 0 → il check `lives > 0` in Player.takeDamage salta lo scudo. Lo
+        // riapplichiamo qui dopo il restore così compare anche in zen
+        // (richiesta utente: "non compare lo scudo dopo che muoio").
+        final shieldDur = saveData.postDeathShieldDuration;
+        if (shieldDur > 0) player.applyShield(999, duration: shieldDur);
+      }
       return;
     }
 
@@ -1342,6 +1357,14 @@ class GeometryFightGame extends FlameGame
     // ripristinate in onPlayerDeath). Col buffer vite scattava solo ogni N hit.
     if (isZenMode) {
       player.lives = 1;
+    }
+
+    // Time Attack: vite ILLIMITATE (immortale, finisce a tempo). Ignora i
+    // modifier che forzano lives=1 (glass_cannon/one_shot) → parte col buffer
+    // pieno (nascosto in HUD), coerente col restore in onPlayerDeath.
+    if (isTimeAttackMode) {
+      player.lives = diffConfig.startingLives + (saveData.startingLives - 3);
+      if (player.lives < 1) player.lives = 1;
     }
   }
 
@@ -1518,6 +1541,7 @@ class GeometryFightGame extends FlameGame
     // il tunnel partiva pre-shrunk al primo frame di un nuovo game tunnel.
     _tunnelShrinkProgress = 1.0;
     _tunnelShrinkStartHeight = 420;
+    tunnelBossIncoming = false;
     tunnelBossesKilled = 0;
     _chaosTimer = 10.0;
     // Reset Pacifism gate combo state — campi sopravvivono restart se game

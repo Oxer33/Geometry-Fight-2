@@ -90,7 +90,9 @@ class DailyChallenge {
     final ids = List<String>.of(_modifierIds);
     // XOR con costante (golden ratio 32-bit) per scorrelare dallo stream usato
     // da weapon/pet/difficulty: niente accoppiamento arma↔modifier.
-    final rng = math.Random(seedForDate(utc) ^ 0x9E3779B9);
+    // Mask 32-bit: stesso seed (→ stessi modifier) su tutte le piattaforme
+    // (native 64-bit vs web 53-bit troncano il seed diversamente).
+    final rng = math.Random((seedForDate(utc) ^ 0x9E3779B9) & 0xFFFFFFFF);
     for (int i = ids.length - 1; i > 0; i--) {
       final j = rng.nextInt(i + 1);
       final tmp = ids[i];

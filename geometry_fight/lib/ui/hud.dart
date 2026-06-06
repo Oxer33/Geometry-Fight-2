@@ -450,7 +450,7 @@ class _StatusPanel extends StatelessWidget {
                     ),
                   ),
                 ...List.generate(
-                  lives,
+                  lives.clamp(0, 12), // cap icone (difensivo)
                   (i) => Padding(
                     padding: const EdgeInsets.only(left: 3),
                     child: CustomPaint(
@@ -468,7 +468,7 @@ class _StatusPanel extends StatelessWidget {
             Row(
               mainAxisSize: MainAxisSize.min,
               children: List.generate(
-                bombs,
+                bombs.clamp(0, 12), // cap icone: infinite_bombs=999 → no jank
                 (i) => Padding(
                   padding: const EdgeInsets.only(left: 3),
                   child: Container(

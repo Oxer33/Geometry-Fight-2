@@ -92,6 +92,10 @@ class MutatorEnemy extends EnemyBase {
   }
 
   void _mutateEnemy(EnemyBase enemy) {
+    // Guard double-mutation: se due Mutator raggiungono lo stesso target nello
+    // stesso frame, il secondo lo troverebbe già giallo → evita buff composto
+    // (con ×2.6 speed / ×2.0 HP un doppio potenziamento sarebbe estremo).
+    if (enemy.neonColor == const Color(0xFFFFDD44)) return;
     // Potenzia il nemico — buff 2× più forte (richiesta utente).
     enemy.speed *= 2.6; // +160% velocità (era +80%)
     // Fix ordine: bump maxHp PRIMA del clamp, altrimenti hp > maxHp

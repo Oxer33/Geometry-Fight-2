@@ -196,26 +196,30 @@ class GateEnemy extends PositionComponent
     // proiettili e blocca i missili Homing, non solo le sfere. Check manuale
     // punto-segmento. Salta i bullet/missili vicini alle sfere (già gestiti
     // dalle hitbox sfera in onCollisionStart) per non interferire.
+    // Singolo walk dei children (perf: prima erano 2 `whereType` = 2 passate
+    // su tutti i figli ogni frame). Bullet vicini a una sfera sono saltati
+    // (gestiti da onCollisionStart).
     final wireA = position + sphereOffset1;
     final wireB = position - sphereOffset1;
-    for (final bullet in game.world.children.whereType<PlayerBullet>()) {
-      final bp = bullet.position;
-      if (bp.distanceTo(wireA) < _sphereHitboxR ||
-          bp.distanceTo(wireB) < _sphereHitboxR) {
+    for (final child in game.world.children) {
+      final Vector2 cp;
+      if (child is PlayerBullet) {
+        cp = child.position;
+      } else if (child is HomingMissile) {
+        cp = child.position;
+      } else {
         continue;
       }
-      if (_pointToSegmentDistance(bp, wireA, wireB) < _wireReflectRadius) {
-        bullet.reflect();
-      }
-    }
-    for (final missile in game.world.children.whereType<HomingMissile>()) {
-      final mp = missile.position;
-      if (mp.distanceTo(wireA) < _sphereHitboxR ||
-          mp.distanceTo(wireB) < _sphereHitboxR) {
+      if (cp.distanceTo(wireA) < _sphereHitboxR ||
+          cp.distanceTo(wireB) < _sphereHitboxR) {
         continue;
       }
-      if (_pointToSegmentDistance(mp, wireA, wireB) < _wireReflectRadius) {
-        missile.blockAtGate();
+      if (_pointToSegmentDistance(cp, wireA, wireB) < _wireReflectRadius) {
+        if (child is PlayerBullet) {
+          child.reflect();
+        } else if (child is HomingMissile) {
+          child.blockAtGate();
+        }
       }
     }
 
