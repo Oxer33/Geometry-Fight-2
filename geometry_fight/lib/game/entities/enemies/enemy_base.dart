@@ -251,11 +251,21 @@ abstract class EnemyBase extends PositionComponent
   /// Rispetta isImmuneToAreaDamage: Splitter sopravvivono alla shockwave.
   /// Guard su `_isDead`: se due sistemi invocano `killSilently` nello stesso
   /// frame (es. bomba + gate explosion), evita doppia esplosione visiva.
-  void killSilently() {
+  ///
+  /// `spawnPuff`: se false salta il puff di 3 particelle per-nemico. La
+  /// shockwave di morte del player può uccidere centinaia di mob in un frame
+  /// → 3 particelle × N intasa l'event-loop Dart e ritarda boom + cambio
+  /// canzone. La mega-esplosione 600px copre già visivamente la "wave che
+  /// distrugge i nemici". Default true: gli altri caller (black hole, ecc.)
+  /// mantengono il puff.
+  void killSilently({bool spawnPuff = true}) {
     if (isImmuneToAreaDamage) return;
     if (_isDead) return;
     _isDead = true;
-    game.spawnExplosion(position, neonColor, radius: size.x * 0.5, particleCount: 3);
+    if (spawnPuff) {
+      game.spawnExplosion(position, neonColor,
+          radius: size.x * 0.5, particleCount: 3);
+    }
     removeFromParent();
   }
 

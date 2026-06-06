@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flame_audio/flame_audio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
@@ -56,6 +58,31 @@ class _Mp3Pool {
       await p.resume();
     } catch (e) {
       debugPrint('_Mp3Pool play error ($assetRelPath): $e');
+    }
+  }
+
+  /// Variante a LATENZA ZERO per i boom critici (player death, game over).
+  ///
+  /// `play()` fa `await Future.wait([setVolume, seek]); await resume()`: due
+  /// round-trip sul platform-channel. Ogni `await` aspetta la reply nativa che
+  /// torna sull'event-loop Dart — se l'event-loop è intasato (frame di morte:
+  /// shockwave + centinaia di particelle) la continuation `resume()` parte
+  /// tardi → boom in ritardo (utente: "non si sente subito, lagga").
+  ///
+  /// Qui invece i tre comandi vengono *dispatchati* senza attendere le reply:
+  /// l'executor nativo di audioplayers li esegue in ordine (setVolume→seek→
+  /// resume) sul suo thread, indipendente dalla congestione dell'event-loop
+  /// Dart. Nessuna attesa Dart-side → il resume raggiunge il plugin subito.
+  void playImmediate({double volume = 1.0}) {
+    if (!_ready) return;
+    final p = _players[_next];
+    _next = (_next + 1) % _players.length;
+    try {
+      unawaited(p.setVolume(volume));
+      unawaited(p.seek(Duration.zero));
+      unawaited(p.resume());
+    } catch (e) {
+      debugPrint('_Mp3Pool playImmediate error ($assetRelPath): $e');
     }
   }
 
@@ -428,9 +455,16 @@ class AudioSystem {
   /// preparare un MediaPlayer nuovo via `FlameAudio.play` accoda diverse call
   /// pesanti sul platform channel → il suono arriva in ritardo. Il pool fa una
   /// sola call leggera (resume) → boom immediato.
-  static void _tryPoolThenDirect(String asset, double volume, _Mp3Pool? pool) {
+  static void _tryPoolThenDirect(String asset, double volume, _Mp3Pool? pool,
+      {bool immediate = false}) {
     if (pool != null && pool.isReady) {
-      pool.play(volume: volume);
+      // `immediate`: dispatch senza await reply (vedi `playImmediate`) → boom
+      // non affogato dalla congestione event-loop del frame di morte.
+      if (immediate) {
+        pool.playImmediate(volume: volume);
+      } else {
+        pool.play(volume: volume);
+      }
     } else {
       // Pool assente o non pronto → best effort diretto (pool come 2° fallback).
       _tryDirectThenPool(asset, volume, pool);
@@ -442,10 +476,11 @@ class AudioSystem {
   static void playGameOver() {
     if (_initialized && _sfxVolume > 0 && _canPlay(_fxGameOverExplosion)) {
       final boosted = (_sfxVolume * 1.1).clamp(0.0, 1.0);
-      // Pool-first per la stessa ragione di playerDeath: il game over arriva
-      // su un frame pesantissimo (mega esplosione finale) → niente latenza.
+      // Pool-first + immediate per la stessa ragione di playerDeath: il game
+      // over arriva su un frame pesantissimo (mega esplosione finale) → niente
+      // latenza, dispatch senza await reply.
       _tryPoolThenDirect(_fxGameOverExplosion, boosted,
-          _gameOverExplosionMp3Pool);
+          _gameOverExplosionMp3Pool, immediate: true);
     }
     _playRare(_fxGameOver, volumeScale: 0.6);
     if (_canHapticAt(200)) HapticFeedback.heavyImpact();
@@ -455,10 +490,13 @@ class AudioSystem {
   /// vibrazione se player muore + boss/bomb in stesso frame).
   static void playPlayerDeath() {
     if (_initialized && _sfxVolume > 0 && _canPlay(_fxPlayerDeath)) {
-      // Pool-first: il BOOM deve partire SUBITO anche col frame intasato dalla
-      // death shockwave + tanti entity a schermo (utente: "arriva in ritardo
-      // se c'è troppa roba sullo schermo").
-      _tryPoolThenDirect(_fxPlayerDeath, _sfxVolume, _playerDeathMp3Pool);
+      // Pool-first + immediate: il BOOM deve partire SUBITO anche col frame
+      // intasato dalla death shockwave + tanti entity a schermo (utente:
+      // "arriva in ritardo se c'è troppa roba sullo schermo"). `immediate`
+      // dispatcha seek+resume senza attendere le reply → nessun ritardo
+      // event-loop Dart-side.
+      _tryPoolThenDirect(_fxPlayerDeath, _sfxVolume, _playerDeathMp3Pool,
+          immediate: true);
     }
     if (_canHapticAt(200)) HapticFeedback.heavyImpact();
   }

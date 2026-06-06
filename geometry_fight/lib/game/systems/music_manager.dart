@@ -182,12 +182,17 @@ class MusicManager {
   /// Usato su player death: la nuova canzone parte mentre il player respawn.
   static Future<void> skipToNext() async {
     if (!_initialized) return;
+    // Verify+retry come in playBgm/playIntro: su player death il frame è
+    // intasato → `bgm.play` può fallire silenziosamente o partire in ritardo.
+    // Senza verify la canzone non cambiava finché l'utente non metteva pausa.
     switch (_mode) {
       case _Mode.bgm:
         await _playFromBgmBag();
+        await _verifyPlayingOrRetry(_Mode.bgm);
         break;
       case _Mode.intro:
         await _playFromIntroBag();
+        await _verifyPlayingOrRetry(_Mode.intro);
         break;
       case _Mode.idle:
         break;

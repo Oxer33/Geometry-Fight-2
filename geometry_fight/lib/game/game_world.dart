@@ -1141,13 +1141,17 @@ class GeometryFightGame extends FlameGame
     triggerScreenShake(15, 0.8); // Shake più intenso della bomba
     hitFlashTimer = 0.5; // Flash rosso prolungato
 
-    // Uccidi tutti i nemici nel raggio SENZA dare punti/geom/kill
+    // Uccidi tutti i nemici nel raggio SENZA dare punti/geom/kill.
+    // spawnPuff:false → niente puff 3-particelle per-mob: con centinaia di mob
+    // intaserebbe l'event-loop e ritarderebbe il boom + il cambio canzone
+    // (causa del lag che si "sbloccava" mettendo pausa). La mega-esplosione
+    // 600px sotto copre già la "wave che distrugge i nemici".
     const deathRadius = 600.0;
     final enemies = world.children.whereType<EnemyBase>().toList();
     for (final enemy in enemies) {
       final dist = enemy.position.distanceTo(player.position);
       if (dist < deathRadius) {
-        enemy.killSilently();
+        enemy.killSilently(spawnPuff: false);
       }
     }
 

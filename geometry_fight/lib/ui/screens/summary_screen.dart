@@ -236,50 +236,58 @@ class _SummaryScreenState extends State<SummaryScreen> {
                   controller: _scrollCtrl,
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   children: [
-                    _section(l10n.modeTitle, _modeName(mode), NeonColors.cyan),
-                    _section(
-                      l10n.diffTitle,
-                      _diffName(l10n, difficulty),
-                      _diffColor(difficulty),
-                      sub:
-                          '×${diffCfg.scoreMultiplier.toStringAsFixed(2)} ${l10n.diffScoreMultiplier} · '
-                          'HP ×${diffCfg.enemyHpMultiplier} · '
-                          'SPD ×${diffCfg.enemySpeedMultiplier}',
+                    const SizedBox(height: 4),
+                    // Riga 1: modalità | difficoltà.
+                    _twoCol(
+                      _section(
+                          l10n.modeTitle, _modeName(mode), NeonColors.cyan),
+                      _section(
+                        l10n.diffTitle,
+                        _diffName(l10n, difficulty),
+                        _diffColor(difficulty),
+                        sub:
+                            '×${diffCfg.scoreMultiplier.toStringAsFixed(2)} ${l10n.diffScoreMultiplier} · '
+                            'HP ×${diffCfg.enemyHpMultiplier} · '
+                            'SPD ×${diffCfg.enemySpeedMultiplier}',
+                      ),
                     ),
-                    // Pacifist & Snake: skip ARMA + PET (non si spara, no pet).
-                    if (mode != GameMode.pacifist &&
-                        mode != GameMode.snake) ...[
-                      // Daily Challenge: arma + pet sono auto-assegnati dalla
-                      // data UTC (uguali per tutti), non dal loadout salvato.
-                      () {
-                        final isDaily = mode == GameMode.dailyChallenge;
-                        final weaponId = isDaily
-                            ? DailyChallenge.todayWeaponId
-                            : saveData.startingWeapon;
-                        return _section(
-                          l10n.loadoutWeapon,
-                          _weaponName(l10n, weaponId),
-                          NeonColors.bulletYellow,
-                          sub: isDaily ? l10n.modeDailyChallenge : null,
-                        );
-                      }(),
-                      () {
-                        final isDaily = mode == GameMode.dailyChallenge;
-                        final petId = isDaily
-                            ? DailyChallenge.todayPetId
-                            : saveData.activePet;
-                        return _section(
-                          l10n.loadoutPet,
-                          petId == 'none'
-                              ? l10n.loadoutPetNone
-                              : _petName(l10n, petId),
-                          NeonColors.pink,
-                          sub: isDaily ? l10n.modeDailyChallenge : null,
-                        );
-                      }(),
-                    ],
+                    // Riga 2: arma | pet. Pacifist & Snake li saltano (non si
+                    // spara, no pet) → niente riga loadout.
+                    if (mode != GameMode.pacifist && mode != GameMode.snake)
+                      _twoCol(
+                        // Daily Challenge: arma + pet auto-assegnati dalla data
+                        // UTC (uguali per tutti), non dal loadout salvato.
+                        () {
+                          final isDaily = mode == GameMode.dailyChallenge;
+                          final weaponId = isDaily
+                              ? DailyChallenge.todayWeaponId
+                              : saveData.startingWeapon;
+                          return _section(
+                            l10n.loadoutWeapon,
+                            _weaponName(l10n, weaponId),
+                            NeonColors.bulletYellow,
+                            sub: isDaily ? l10n.modeDailyChallenge : null,
+                          );
+                        }(),
+                        () {
+                          final isDaily = mode == GameMode.dailyChallenge;
+                          final petId = isDaily
+                              ? DailyChallenge.todayPetId
+                              : saveData.activePet;
+                          return _section(
+                            l10n.loadoutPet,
+                            petId == 'none'
+                                ? l10n.loadoutPetNone
+                                : _petName(l10n, petId),
+                            NeonColors.pink,
+                            sub: isDaily ? l10n.modeDailyChallenge : null,
+                          );
+                        }(),
+                      ),
+                    // Modificatori: full width (possono essere molti).
                     _modifiersSection(l10n),
                     const SizedBox(height: 12),
+                    // Score multiplier: full width.
                     _multiplierBreakdown(
                       l10n,
                       diffCfg.scoreMultiplier,
@@ -371,60 +379,72 @@ class _SummaryScreenState extends State<SummaryScreen> {
     }
   }
 
+  /// Card compatta verticale: etichetta in alto, valore sotto, sub opzionale.
+  /// Usata sia a piena larghezza (modificatori) sia dentro `_twoCol` (2 col).
+  /// Niente margin: lo spacing è gestito dal contenitore (twoCol / ListView).
   Widget _section(String label, String value, Color color, {String? sub}) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(10),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(8),
         color: color.withValues(alpha: 0.08),
         border: Border.all(color: color.withValues(alpha: 0.4)),
       ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          SizedBox(
-            width: 90,
-            child: Text(
-              label,
+          Text(
+            label,
+            style: TextStyle(
+              color: color.withValues(alpha: 0.7),
+              fontSize: 10,
+              fontWeight: FontWeight.w900,
+              fontFamily: 'monospace',
+              letterSpacing: 2,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: TextStyle(
+              color: color,
+              fontSize: 14,
+              fontWeight: FontWeight.w900,
+              fontFamily: 'monospace',
+              letterSpacing: 1.5,
+            ),
+          ),
+          if (sub != null) ...[
+            const SizedBox(height: 3),
+            Text(
+              sub,
               style: TextStyle(
-                color: color.withValues(alpha: 0.7),
-                fontSize: 10,
-                fontWeight: FontWeight.w900,
+                color: Colors.white.withValues(alpha: 0.5),
+                fontSize: 9,
                 fontFamily: 'monospace',
-                letterSpacing: 2,
               ),
             ),
-          ),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  value,
-                  style: TextStyle(
-                    color: color,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w900,
-                    fontFamily: 'monospace',
-                    letterSpacing: 2,
-                  ),
-                ),
-                if (sub != null) ...[
-                  const SizedBox(height: 2),
-                  Text(
-                    sub,
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.5),
-                      fontSize: 9,
-                      fontFamily: 'monospace',
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
+          ],
         ],
+      ),
+    );
+  }
+
+  /// Due card affiancate su 2 colonne, di pari altezza (IntrinsicHeight +
+  /// CrossAxisAlignment.stretch così la card più corta si allunga a pareggiare).
+  Widget _twoCol(Widget left, Widget right) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Expanded(child: left),
+            const SizedBox(width: 8),
+            Expanded(child: right),
+          ],
+        ),
       ),
     );
   }
