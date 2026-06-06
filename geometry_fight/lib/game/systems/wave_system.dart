@@ -956,10 +956,11 @@ class WaveSystem {
   /// - gate: cancello non-killabile coi proiettili (mechanic pacifist).
   /// - vortex: spiral-shooter → ~400+ proiettili/sec a 50-80× = ingiocabile.
   ///
-  /// Alcuni tipi "intensi" (spawner/necro/gravityWell/leech/siren/healer/
-  /// mutator) restano nel pool ma con un cap di conteggio dedicato
-  /// (`_dailyTypeSoftCap`) così la wave resta vincibile invece di
-  /// stallare o bloccare il player a 80×.
+  /// Tutti i tipi spawnano con lo STESSO range 50-80× (richiesta utente: "più
+  /// o meno uguali di numero"). I tipi "intensi" sono safe anche a 80× nel
+  /// daily single-type: necro non rianima altri necro (no-op), spawner si
+  /// auto-limita a enemyCount<60, healer cura solo +1/2.5s (il burst del daily
+  /// weapon uccide comunque), mutator si auto-distrugge dopo N mutazioni.
   static const List<EnemyType> _dailyChallengeMobPool = [
     // Attaccanti / inseguitori puri (roll pieno 50-80×).
     EnemyType.drone,
@@ -981,7 +982,7 @@ class WaveSystem {
     EnemyType.glitch,
     EnemyType.proton,
     EnemyType.decoy,
-    // Tipi "intensi" — conteggio limitato da `_dailyTypeSoftCap`.
+    // Tipi "intensi" (support/hazard) — stesso range 50-80× degli altri.
     EnemyType.siren,
     EnemyType.mutator,
     EnemyType.healer,
@@ -991,23 +992,10 @@ class WaveSystem {
     EnemyType.leech,
   ];
 
-  /// Cap di conteggio per i tipi "intensi" nel Daily: senza, 50-80× di questi
-  /// renderebbe la wave non completabile o il player immobilizzato. I tipi
-  /// non elencati usano il roll standard 50-80×.
-  static const Map<EnemyType, int> _dailyTypeSoftCap = {
-    EnemyType.spawner: 12, // ognuno sforna droni → 80× sfonda il cap arena
-    EnemyType.necro: 16, // si rianimano a vicenda → rischio wave infinita
-    EnemyType.gravityWell: 10, // controlli invertiti + pull → 80× = fermo
-    EnemyType.leech: 16, // latch + slow → 80× = player bloccato
-    EnemyType.siren: 12, // rallenta i proiettili → 80× = non uccidi nulla
-    EnemyType.healer: 18, // si curano a vicenda
-    EnemyType.mutator: 18, // si potenziano a vicenda
-  };
-
   /// Distanza minima di spawn dal player in Daily Challenge (px, center-to-
-  /// center). Richiesta utente: "i mob non devono spawnare a meno di X pixel
-  /// dal player (proviamo con 50?)". Tunabile.
-  static const double _dailyMinPlayerSpawnDist = 50.0;
+  /// center). 50 era troppo poco (mob grossi → comunque "addosso" al player);
+  /// 160 dà un gap chiaro così non spawnano vicino. Tunabile.
+  static const double _dailyMinPlayerSpawnDist = 160.0;
 
   /// Tipo mob per la wave Daily via SHUFFLE BAG (richiesta utente: "non
   /// devono mai spawnare due volte di fila gli stessi mob ... prima un giro
@@ -1071,50 +1059,42 @@ class WaveSystem {
     // RNG per posizioni: seed include wave per varietà posizionale ma
     // resta deterministico per la stessa data + wave.
     final posRng = math.Random(_dailySeed * 13 + wave * 17);
-    // 50-80 mob per wave (roll sempre eseguito → posRng allineato anche per i
-    // tipi capped). I tipi "intensi" usano un cap dedicato (vedi
-    // `_dailyTypeSoftCap`) così la wave resta vincibile; gli altri 50-80×.
-    final baseCount = 50 + posRng.nextInt(31); // 50..80
-    final softCap = _dailyTypeSoftCap[chosenType];
-    final mobCount = softCap != null
-        ? _scaledSpawnCount(softCap).clamp(1, softCap)
-        : _scaledSpawnCount(baseCount).clamp(50, 80);
+    // 50-80 mob per wave, UGUALE per ogni tipo (richiesta utente: "più o meno
+    // uguali di numero"). Nessun soft-cap: i tipi intensi sono safe a 80× nel
+    // daily single-type (vedi commento del pool).
+    final mobCount = _scaledSpawnCount(50 + posRng.nextInt(31)).clamp(50, 80);
 
     final eW = game.effectiveArenaWidth;
     final eH = game.effectiveArenaHeight;
     const margin = 60.0;
-    // Esclusione spawn vicino al player (richiesta utente): rejection sampling
-    // su distanza² (no sqrt). Se dopo N tentativi è ancora troppo vicino,
-    // spinge il mob lungo il vettore di allontanamento fino a minDist.
-    final hasPlayer = game.player.isMounted;
-    final playerPos = hasPlayer ? game.player.position : null;
+    // Esclusione spawn vicino al player (richiesta utente). Best-of-N: campiona
+    // finché trova un punto oltre minDist; se nessuno passa (arena minuscola),
+    // TIENE il candidato PIÙ LONTANO campionato. Niente più push+clamp, che
+    // vicino ai bordi poteva ri-avvicinare al player → "ancora spawn vicino".
+    // A inizio partita il player è già posizionato al centro (game_world setta
+    // player.position PRIMA di startWave) ma NON è ancora mounted nello stesso
+    // tick: il vecchio gate `isMounted` rendeva playerPos null → esclusione
+    // saltata → mob addosso a inizio partita (utente). La position è valida
+    // anche prima del mount → usala sempre.
+    final playerPos = game.player.position.clone();
     const minDist2 = _dailyMinPlayerSpawnDist * _dailyMinPlayerSpawnDist;
-    const maxPosAttempts = 24;
+    const maxPosAttempts = 30;
+    Vector2 samplePos() => Vector2(
+          margin + posRng.nextDouble() * (eW - margin * 2),
+          margin + posRng.nextDouble() * (eH - margin * 2),
+        );
     for (int i = 0; i < mobCount; i++) {
-      var pos = Vector2(
-        margin + posRng.nextDouble() * (eW - margin * 2),
-        margin + posRng.nextDouble() * (eH - margin * 2),
-      );
-      if (playerPos != null) {
-        var attempts = 0;
-        while (pos.distanceToSquared(playerPos) < minDist2 &&
-            attempts < maxPosAttempts) {
-          pos = Vector2(
-            margin + posRng.nextDouble() * (eW - margin * 2),
-            margin + posRng.nextDouble() * (eH - margin * 2),
-          );
-          attempts++;
+      var pos = samplePos();
+      var bestD2 = pos.distanceToSquared(playerPos);
+      var attempts = 0;
+      while (bestD2 < minDist2 && attempts < maxPosAttempts) {
+        final cand = samplePos();
+        final d2 = cand.distanceToSquared(playerPos);
+        if (d2 > bestD2) {
+          pos = cand;
+          bestD2 = d2;
         }
-        // Fallback dopo i tentativi: spingi lungo il vettore di allontanamento.
-        if (pos.distanceToSquared(playerPos) < minDist2) {
-          final away = pos - playerPos;
-          final dir = away.length2 > 0.0001
-              ? away.normalized()
-              : Vector2(1, 0);
-          pos = playerPos + dir * _dailyMinPlayerSpawnDist;
-          pos.x = pos.x.clamp(margin, eW - margin);
-          pos.y = pos.y.clamp(margin, eH - margin);
-        }
+        attempts++;
       }
       game.spawnEnemy(chosenType, pos);
     }

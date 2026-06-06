@@ -207,18 +207,12 @@ class _GameOverScreenState extends State<GameOverScreen>
               ),
             ),
 
-            // Content
+            // Content — NESSUNA scrollbar (richiesta utente). SingleChildScroll
+            // View resta solo come safety anti-overflow su schermi piccoli, ma
+            // senza barra visibile (RawScrollbar rimosso). Gli achievement sono
+            // spostati a sinistra (Positioned) così la colonna non si allunga.
             Center(
-              child: RawScrollbar(
-                controller: _scrollCtrl,
-                thumbVisibility: true,
-                trackVisibility: true,
-                thickness: 10,
-                radius: const Radius.circular(5),
-                thumbColor: const Color(0xFF00FFFF),
-                trackColor: const Color(0x3300FFFF),
-                trackBorderColor: const Color(0x8800FFFF),
-                child: SingleChildScrollView(
+              child: SingleChildScrollView(
                 controller: _scrollCtrl,
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -293,21 +287,12 @@ class _GameOverScreenState extends State<GameOverScreen>
                       ),
                     ],
 
-                    // Achievement notifications
-                    if (widget.newAchievements.isNotEmpty) ...[
-                      const SizedBox(height: 10),
-                      Opacity(
-                        opacity: _badgesFade.value,
-                        child: _buildAchievements(l10n),
-                      ),
-                    ],
-
-                    // Buttons spostati fuori (Positioned right side) per
-                    // evitare taglio fondo schermo (richiesta utente).
+                    // Achievement panel spostato a SINISTRA (Positioned, fuori
+                    // dalla colonna) → la colonna non si allunga, niente
+                    // overflow né scrollbar. Buttons a destra (Positioned).
                     const SizedBox(height: 16),
                   ],
                 ),
-              ),
               ),
             ),
 
@@ -328,6 +313,26 @@ class _GameOverScreenState extends State<GameOverScreen>
                 ),
               ),
             ),
+
+            // Achievement notifications — LATO SINISTRO, centrato in verticale,
+            // mirror dei bottoni a destra (richiesta utente: "achiv a sinistra,
+            // c'è spazio, come i bottoni a destra"). Fuori dalla colonna
+            // centrale → la colonna resta corta e non serve scroll.
+            if (widget.newAchievements.isNotEmpty)
+              Positioned(
+                left: 24,
+                top: 0,
+                bottom: 0,
+                child: Center(
+                  child: Opacity(
+                    opacity: _badgesFade.value,
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 300),
+                      child: _buildAchievements(l10n),
+                    ),
+                  ),
+                ),
+              ),
 
             // Buttons (right side, vertical stack — richiesta utente:
             // "metterli sulla destra" perché in basso erano tagliati).
@@ -587,7 +592,9 @@ class _GameOverScreenState extends State<GameOverScreen>
 
   Widget _buildAchievements(AppLocalizations l10n) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 40),
+      // Niente margin orizzontale: il pannello è posizionato a sinistra
+      // (Positioned + ConstrainedBox maxWidth), non più centrato in colonna.
+      margin: EdgeInsets.zero,
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
