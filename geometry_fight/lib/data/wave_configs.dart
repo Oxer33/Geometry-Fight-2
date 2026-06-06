@@ -243,33 +243,19 @@ const Map<int, BossType> _classicBossSchedule = {
   200: BossType.eternityEngine,
 };
 
-// Spawn "entourage" pre-boss. Wave bassi (5-50) = piccoli entourage leggeri
-// per non lasciare l'arena sterile durante il boss fight. Wave alti (55+) =
-// entourage pesanti già presenti.
-const Map<int, List<WaveSpawn>> _bossEntourageSpawns = {
-  // Early bosses entourage (leggero, per varietà).
-  5: [WaveSpawn(EnemyType.drone, 8, delay: 3)],
-  15: [WaveSpawn(EnemyType.kamikaze, 6, delay: 3)],
-  25: [WaveSpawn(EnemyType.weaver, 6, delay: 3)],
-  35: [WaveSpawn(EnemyType.swarmDrone, 20, delay: 3)],
-  45: [WaveSpawn(EnemyType.shieldEnemy, 4, delay: 3)],
-  50: [WaveSpawn(EnemyType.splitter, 4), WaveSpawn(EnemyType.snake, 4, delay: 3)],
-  // Mid/late bosses entourage (preservati).
-  55: [WaveSpawn(EnemyType.tesla, 6), WaveSpawn(EnemyType.orbiter, 8, delay: 2)],
-  60: [WaveSpawn(EnemyType.healer, 4), WaveSpawn(EnemyType.siren, 6, delay: 2)],
-  65: [WaveSpawn(EnemyType.tesla, 10), WaveSpawn(EnemyType.necro, 4, delay: 3)],
-  70: [WaveSpawn(EnemyType.phantom, 8), WaveSpawn(EnemyType.glitch, 6, delay: 2)],
-  75: [WaveSpawn(EnemyType.titan, 6), WaveSpawn(EnemyType.healer, 4, delay: 3)],
-  80: [WaveSpawn(EnemyType.mirror, 8), WaveSpawn(EnemyType.decoy, 10, delay: 2)],
-  85: [WaveSpawn(EnemyType.swarmDrone, 40), WaveSpawn(EnemyType.healer, 4, delay: 3)],
-  90: [WaveSpawn(EnemyType.gravityWell, 4), WaveSpawn(EnemyType.blackHole, 2, delay: 4)],
-  95: [WaveSpawn(EnemyType.kamikaze, 20), WaveSpawn(EnemyType.timeBomb, 6, delay: 3)],
-  100: [
-    WaveSpawn(EnemyType.titan, 8),
-    WaveSpawn(EnemyType.tesla, 10, delay: 2),
-    WaveSpawn(EnemyType.healer, 6, delay: 4)
-  ],
-};
+// Entourage pre-boss LEGGERO e generico per OGNI boss wave (multipli di 10,
+// 10..200). Qualche mob base così l'arena non è vuota all'arrivo del boss; poi
+// il boss spawna i suoi minion a tema (`colorMatchedMinions`). Generico (non
+// più mappa per-wave): prima le chiavi erano legate alle vecchie boss-wave a
+// multipli di 5 → con lo schedule nuovo 10 boss-wave restavano senza entourage.
+// drone/swarmDrone scelti apposta: cheap, niente walk per-frame di world.children.
+List<WaveSpawn> _bossEntourage(int wave) {
+  final n = (5 + wave ~/ 20).clamp(5, 14);
+  return [
+    WaveSpawn(EnemyType.drone, n, delay: 2),
+    WaveSpawn(EnemyType.swarmDrone, n, delay: 3),
+  ];
+}
 
 List<WaveConfig> generateWaveConfigs() {
   final configs = <WaveConfig>[];
@@ -287,7 +273,7 @@ List<WaveConfig> generateWaveConfigs() {
     if (bossType != null) {
       configs.add(WaveConfig(
         waveNumber: wave,
-        spawns: _bossEntourageSpawns[wave] ?? const [],
+        spawns: _bossEntourage(wave),
         boss: bossType,
       ));
       continue;

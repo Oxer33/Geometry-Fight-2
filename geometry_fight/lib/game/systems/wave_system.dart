@@ -476,11 +476,14 @@ class WaveSystem {
       (EnemyType.healer, 1 + 2 * t),
       (EnemyType.mutator, 1 + 2 * t),
       (EnemyType.decoy, 1 + 2 * t),
-      // Tier esotico / hazard — solo tardi (peso 0 a inizio), rari.
-      (EnemyType.vortex, 4 * t),
-      (EnemyType.gravityWell, 3 * t),
-      (EnemyType.spawner, 3 * t),
-      (EnemyType.blackHole, 2 * t),
+      // Tier esotico / hazard — solo tardi, peso RIDOTTO per perf: vortex
+      // spamma proiettili, spawner/blackHole generano cascate di entità →
+      // sono le fonti principali degli spike di lag in survival. Restano nel
+      // pool (varietà) ma più rari.
+      (EnemyType.vortex, 2 * t),
+      (EnemyType.gravityWell, 2 * t),
+      (EnemyType.spawner, 1.5 * t),
+      (EnemyType.blackHole, 1 * t),
     ];
     var total = 0.0;
     for (final p in pool) {
@@ -923,8 +926,10 @@ class WaveSystem {
     // il boss spawna i suoi minion a tema/colore (come in modalità classica).
     // Prima spawnava "qualsiasi tipo" anche durante i boss (richiesta utente).
     if ((_tunnelSpawnTimer <= 0 || game.enemyCount < 10) &&
-        game.bossCount == 0) {
-      // Timer raddoppiato: 0.6-1.6s invece di 0.3-0.8s.
+        game.bossCount == 0 &&
+        _tunnelBossPending == null) {
+      // Niente spawn generico anche nei 5s di pre-boss (tunnel che si allarga)
+      // → arena pulita all'arrivo del boss. Timer 0.6-1.6s.
       // Reset incondizionato: copre sia il path "timer scaduto" sia
       // "count basso" → niente double-fire al prossimo frame.
       _tunnelSpawnTimer = 0.6 + _tunnelRng.nextDouble() * 1.0;

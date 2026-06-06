@@ -14,6 +14,11 @@ class TeslaEnemy extends EnemyBase {
   // Cooldown sul danno player dagli archi: previene 60 dmg/sec se il player
   // sta fermo nell'arco. 0.5s permette comunque di uscire muovendosi.
   double _arcHitCd = 0;
+  // Throttle dei due whereType-walk pesanti (altri Tesla + archi): ogni 3
+  // frame. Con molti Tesla (survival/daily) erano 2 walk di world.children
+  // PER FRAME per istanza = O(K·N)/frame. Movimento resta per-frame su cache.
+  int _scanFrame = 0;
+  final List<TeslaEnemy> _cachedOtherTeslas = [];
   static const double _orbitDistance = 130.0;
   static const double _soloOrbitSpeed = 1.5; // rad/s quando solo
 
@@ -33,11 +38,18 @@ class TeslaEnemy extends EnemyBase {
     _sparkPhase += dt * 12;
     if (_arcHitCd > 0) _arcHitCd -= dt;
 
-    // Trova altri Tesla per comportamento a branco (whereType per perf)
-    final otherTeslas = <TeslaEnemy>[];
-    for (final child in game.world.children.whereType<TeslaEnemy>()) {
-      if (child != this) otherTeslas.add(child);
+    // Walk pesanti throttled ogni 3 frame (vedi _scanFrame). Movimento usa la
+    // lista cache (piccola), gli archi/danno si aggiornano nel frame di scan.
+    _scanFrame++;
+    final doScan = _scanFrame >= 3;
+    if (doScan) {
+      _scanFrame = 0;
+      _cachedOtherTeslas.clear();
+      for (final child in game.world.children.whereType<TeslaEnemy>()) {
+        if (child != this && !child.isRemoved) _cachedOtherTeslas.add(child);
+      }
     }
+    final otherTeslas = _cachedOtherTeslas;
 
     if (otherTeslas.isEmpty) {
       // SOLO: orbita attorno al player
@@ -76,28 +88,32 @@ class TeslaEnemy extends EnemyBase {
       }
     }
 
-    // Trova nemici vicini per creare archi (whereType per perf)
-    _connectedPositions.clear();
-    const arcRangeSq = 150.0 * 150.0;
-    for (final child in game.world.children.whereType<EnemyBase>()) {
-      if (child == this) continue;
-      if (_connectedPositions.length >= 3) break;
-      final dx = child.position.x - position.x;
-      final dy = child.position.y - position.y;
-      if (dx * dx + dy * dy < arcRangeSq) {
-        _connectedPositions.add(child.position.clone());
+    // Archi verso nemici vicini: ricalcolati solo nel frame di scan (il
+    // whereType<EnemyBase> è il walk più costoso). Tra uno scan e l'altro gli
+    // archi restano agli ultimi endpoint (drift ~5px @100px/s, impercettibile).
+    if (doScan) {
+      _connectedPositions.clear();
+      const arcRangeSq = 150.0 * 150.0;
+      for (final child in game.world.children.whereType<EnemyBase>()) {
+        if (child == this) continue;
+        if (_connectedPositions.length >= 3) break;
+        final dx = child.position.x - position.x;
+        final dy = child.position.y - position.y;
+        if (dx * dx + dy * dy < arcRangeSq) {
+          _connectedPositions.add(child.position.clone());
 
-        // Se il player è vicino all'arco, danno! (con cooldown 0.5s)
-        // Guard su isMounted: evita takeDamage su player morto/rimosso.
-        if (game.player.isMounted) {
-          final playerDist = _distanceToLine(
-            game.player.position,
-            position,
-            child.position,
-          );
-          if (playerDist < 15 && _arcHitCd <= 0) {
-            game.player.takeDamage();
-            _arcHitCd = 0.5;
+          // Se il player è vicino all'arco, danno! (con cooldown 0.5s)
+          // Guard su isMounted: evita takeDamage su player morto/rimosso.
+          if (game.player.isMounted) {
+            final playerDist = _distanceToLine(
+              game.player.position,
+              position,
+              child.position,
+            );
+            if (playerDist < 15 && _arcHitCd <= 0) {
+              game.player.takeDamage();
+              _arcHitCd = 0.5;
+            }
           }
         }
       }
