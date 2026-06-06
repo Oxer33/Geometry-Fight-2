@@ -665,22 +665,21 @@ class PhoenixPet extends PetBase {
 
 // ═══════════════════════════════════════════════════════════════════════
 // 8. BLACK HOLE PET — pozzo gravitazionale micro stazionario.
-//     Sta 100px dietro il player; risucchia nemici entro 150px a 80 px/s.
+//     Sta 100px DAVANTI al player; risucchia nemici entro 150px a 80 px/s.
 //     Nessun danno, solo pull/lock.
 // ═══════════════════════════════════════════════════════════════════════
 class BlackHolePet extends PetBase {
   BlackHolePet() : super(kPetCatalog[7]);
   static const double _pullRadius = 150.0;
   static const double _pullSpeed = 80.0;
-  // Offset retro player: fisso 100px dietro alla direzione di aim corrente.
-  static const double _trailOffset = 100.0;
+  // Offset frontale: fisso 100px DAVANTI al player nella direzione di aim.
+  static const double _frontOffset = 100.0;
 
   @override
   void onPetUpdate(double dt) {
-    // Posiziona dietro al player opposto alla direzione di aim corrente.
+    // Posiziona DAVANTI al player nella direzione di aim corrente.
     // Cached aim è già normalized — fallback gestito da _computeAim.
-    final back = -cachedAim;
-    position = game.player.position + back * _trailOffset;
+    position = game.player.position + cachedAim * _frontOffset;
 
     // Risucchia nemici verso il pet. Esclude boss (BossBase, non EnemyBase)
     // automaticamente + spawn-invuln via isValidPetTarget.
@@ -945,6 +944,89 @@ class TacticalSpotterPet extends PetBase {
   }
 }
 
+// ═══════════════════════════════════════════════════════════════════════
+// 11. SLOWER PET — campo di rallentamento frontale.
+//     Sta `_frontOffset`px DAVANTI al player (direzione di aim). Rallenta i
+//     nemici entro `_fieldRadius` al `_slowFactor` della loro velocità,
+//     ri-applicando uno slow breve ogni frame finché restano nel campo.
+//     Nessun danno: pura utility di controllo.
+// ═══════════════════════════════════════════════════════════════════════
+class SlowerPet extends PetBase {
+  SlowerPet() : super(kPetCatalog[10]);
+  static const double _frontOffset = 90.0;
+  static const double _fieldRadius = 130.0;
+  static const double _slowFactor = 0.45;
+  static const double _slowRefresh = 0.2;
+
+  @override
+  void onPetUpdate(double dt) {
+    // Davanti al player nella direzione di aim corrente.
+    position = game.player.position + cachedAim * _frontOffset;
+
+    // Rallenta i nemici dentro al campo. Esclude boss (BossBase, non
+    // EnemyBase) automaticamente + spawn-invuln via isValidPetTarget.
+    for (final c in game.world.children) {
+      if (c is EnemyBase && PetBase.isValidPetTarget(c)) {
+        if (c.position.distanceTo(position) <= _fieldRadius) {
+          c.applySlow(_slowRefresh, _slowFactor);
+        }
+      }
+    }
+  }
+
+  static final _fillPaint = Paint();
+  static final _glowPaint = Paint();
+  static final _ringPaint = Paint()
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 2;
+  static final _strokePaint = Paint()
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 1.8;
+
+  @override
+  void render(Canvas canvas) {
+    final cx = size.x / 2;
+    final cy = size.y / 2;
+    final pulse = 0.5 + math.sin(phase * 3) * 0.5;
+    // Campo di rallentamento: cerchio ampio semitrasparente (area effetto).
+    _ringPaint
+      ..color = def.color.withValues(alpha: 0.12 + pulse * 0.06)
+      ..strokeWidth = 1.4;
+    canvas.drawCircle(Offset(cx, cy), _fieldRadius, _ringPaint);
+    // Glow centrale.
+    _glowPaint.color = def.color.withValues(alpha: 0.5 * pulse);
+    canvas.drawCircle(Offset(cx, cy), 15, _glowPaint);
+    // Onde concentriche lente (slow ripple) che si espandono dal nucleo.
+    for (int i = 0; i < 3; i++) {
+      final t = (phase * 0.4 + i / 3) % 1.0;
+      _ringPaint
+        ..color = def.color.withValues(alpha: (1 - t) * 0.5)
+        ..strokeWidth = 2;
+      canvas.drawCircle(Offset(cx, cy), 6 + t * 12, _ringPaint);
+    }
+    // Corpo: quadrante orologio + lancette lente (metafora "rallenta il tempo").
+    canvas.save();
+    canvas.translate(cx, cy);
+    _strokePaint
+      ..color = def.color
+      ..strokeWidth = 1.8;
+    canvas.drawCircle(Offset.zero, 8, _strokePaint);
+    _strokePaint
+      ..color = const Color(0xFFFFFFFF)
+      ..strokeWidth = 1.6;
+    final hourAng = phase * 0.6 - math.pi / 2;
+    canvas.drawLine(Offset.zero,
+        Offset(math.cos(hourAng) * 5, math.sin(hourAng) * 5), _strokePaint);
+    final minAng = phase * 0.18;
+    canvas.drawLine(Offset.zero,
+        Offset(math.cos(minAng) * 7, math.sin(minAng) * 7), _strokePaint);
+    // Perno centrale.
+    _fillPaint.color = const Color(0xFFFFFFFF);
+    canvas.drawCircle(Offset.zero, 1.8, _fillPaint);
+    canvas.restore();
+  }
+}
+
 /// Factory: instantiate il pet corretto per il tipo. Ritorna null se
 /// `PetType.none`.
 PetBase? createPet(PetType type) {
@@ -960,6 +1042,7 @@ PetBase? createPet(PetType type) {
     case PetType.blackHolePet: return BlackHolePet();
     case PetType.empDrone: return EmpDronePet();
     case PetType.tacticalSpotter: return TacticalSpotterPet();
+    case PetType.slower: return SlowerPet();
   }
 }
 

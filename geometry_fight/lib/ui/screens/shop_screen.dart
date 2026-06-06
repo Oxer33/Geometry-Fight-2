@@ -3933,7 +3933,8 @@ class _PetPreviewPainter extends CustomPainter {
   static const double _ramTargetRadius = 90.0;
   static const double _ramIdleRadius = 60.0;
   static const double _phoenixOrbitRadius = 50.0;
-  static const double _blackHoleBackOffset = 60.0;
+  static const double _blackHoleFrontOffset = 60.0;
+  static const double _slowerFrontOffset = 50.0;
   static const double _empOrbitRadius = 55.0;
   static const double _spotterOrbitRadius = 58.0;
   static const double _snipeTargetRadius = 95.0;
@@ -4087,8 +4088,13 @@ class _PetPreviewPainter extends CustomPainter {
             cy + math.sin(ang) * _phoenixOrbitRadius);
 
       case PetType.blackHolePet:
-        // BlackHole: fisso `_blackHoleBackOffset`px sotto al player.
-        return Offset(cx, cy + _blackHoleBackOffset);
+        // BlackHole: fisso `_blackHoleFrontOffset`px DAVANTI al player. Lo
+        // stub player punta in alto → "davanti" = sopra (cy meno offset).
+        return Offset(cx, cy - _blackHoleFrontOffset);
+
+      case PetType.slower:
+        // Slower: fisso `_slowerFrontOffset`px DAVANTI al player (sopra).
+        return Offset(cx, cy - _slowerFrontOffset);
 
       case PetType.empDrone:
         final ang = time * _empOmega;
@@ -4141,6 +4147,8 @@ class _PetPreviewPainter extends CustomPainter {
         _drawEmpDronePet(canvas, pos);
       case PetType.tacticalSpotter:
         _drawTacticalSpotterPet(canvas, pos);
+      case PetType.slower:
+        _drawSlowerPet(canvas, pos);
       case PetType.none:
         break;
     }
@@ -4534,6 +4542,49 @@ class _PetPreviewPainter extends CustomPainter {
         _strokePaint,
       );
     }
+  }
+
+  // Mirror 1:1 di `SlowerPet.render` (pet_base.dart): stesso corpo orologio +
+  // ripple. Il raggio del campo è scalato per stare nel canvas preview.
+  void _drawSlowerPet(Canvas canvas, Offset pos) {
+    final pulse = 0.5 + math.sin(time * 3) * 0.5;
+    // Campo di rallentamento (area effetto, scalata per il canvas preview).
+    _ringPaint
+      ..color = color.withValues(alpha: 0.12 + pulse * 0.06)
+      ..strokeWidth = 1.4;
+    canvas.drawCircle(pos, 48, _ringPaint);
+    // Glow centrale.
+    _glowPaint
+      ..color = color.withValues(alpha: 0.5 * pulse)
+      ..maskFilter = null;
+    canvas.drawCircle(pos, 15, _glowPaint);
+    // Onde concentriche lente (slow ripple).
+    for (int i = 0; i < 3; i++) {
+      final t = (time * 0.4 + i / 3) % 1.0;
+      _ringPaint
+        ..color = color.withValues(alpha: (1 - t) * 0.5)
+        ..strokeWidth = 2;
+      canvas.drawCircle(pos, 6 + t * 12, _ringPaint);
+    }
+    // Corpo: quadrante orologio + lancette lente.
+    canvas.save();
+    canvas.translate(pos.dx, pos.dy);
+    _strokePaint
+      ..color = color
+      ..strokeWidth = 1.8;
+    canvas.drawCircle(Offset.zero, 8, _strokePaint);
+    _strokePaint
+      ..color = const Color(0xFFFFFFFF)
+      ..strokeWidth = 1.6;
+    final hourAng = time * 0.6 - math.pi / 2;
+    canvas.drawLine(Offset.zero,
+        Offset(math.cos(hourAng) * 5, math.sin(hourAng) * 5), _strokePaint);
+    final minAng = time * 0.18;
+    canvas.drawLine(Offset.zero,
+        Offset(math.cos(minAng) * 7, math.sin(minAng) * 7), _strokePaint);
+    _fillPaint.color = const Color(0xFFFFFFFF);
+    canvas.drawCircle(Offset.zero, 1.8, _fillPaint);
+    canvas.restore();
   }
 
   @override

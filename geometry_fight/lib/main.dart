@@ -177,12 +177,13 @@ class _GeometryFightAppState extends State<GeometryFightApp> {
 enum AppScreen {
   splash,
   mainMenu,
-  // Pre-game wizard 5 step (richiesta utente: schermate dedicate).
-  modeSelect, // 1/5 — solo modalità + scroll arrow
-  difficultySelect, // 2/5 — solo difficoltà
-  modifiersSelect, // 3/5 — solo modificatori
-  loadout, // 4/5 — arma + pet (2 step interno)
-  summary, // 5/5 — riepilogo + multipliers + START
+  // Pre-game wizard 6 step (richiesta utente: schermate dedicate). Il loadout
+  // ha 2 sotto-schermate interne: arma (4/6) e pet (5/6).
+  modeSelect, // 1/6 — solo modalità + scroll arrow
+  difficultySelect, // 2/6 — solo difficoltà
+  modifiersSelect, // 3/6 — solo modificatori
+  loadout, // 4/6 + 5/6 — arma + pet (2 step interno)
+  summary, // 6/6 — riepilogo + multipliers + START
   game,
   shop,
   settings,
@@ -209,6 +210,10 @@ class _NavigationWrapperState extends State<NavigationWrapper> {
   // modificabile in-place se qualche callback futuro tentasse `add/remove`
   // invece di reassign. Evita "Unsupported operation" runtime error.
   List<String> _selectedModifiers = <String>[];
+  // Step interno con cui costruire LoadoutScreen: 0 = armi (4/6), 1 = pet
+  // (5/6). Forward dai modifiers → 0; back dal summary → 1, così il bottone
+  // indietro del summary torna alla schermata pet e non a quella delle armi.
+  int _loadoutInitialStep = 0;
 
   void _navigateTo(AppScreen screen) {
     setState(() => _currentScreen = screen);
@@ -267,7 +272,7 @@ class _NavigationWrapperState extends State<NavigationWrapper> {
           key: const ValueKey('modeSelect'),
           onBack: () => _navigateTo(AppScreen.mainMenu),
           onConfirm: (mode) {
-            // Step 1/5 → 2/5 difficoltà.
+            // Step 1/6 → 2/6 difficoltà.
             // Pacifist: skip difficulty (combo Pacifist+Nightmare = unwinnable
             // perché drone speed ×1.5, player no shoot, lives=1). Forziamo
             // Normal e saltiamo direttamente a modifiersSelect.
@@ -308,7 +313,7 @@ class _NavigationWrapperState extends State<NavigationWrapper> {
           mode: _selectedMode,
           onBack: () => _navigateTo(AppScreen.modeSelect),
           onConfirm: (diff) {
-            // Step 2/5 → 3/5 modificatori.
+            // Step 2/6 → 3/6 modificatori.
             setState(() => _selectedDifficulty = diff);
             // Modifier list parte VUOTA ogni partita (utente: "me ne
             // ritrovo 3 preselezionati sempre"). Sticky behavior precedente
@@ -332,7 +337,7 @@ class _NavigationWrapperState extends State<NavigationWrapper> {
                 : AppScreen.difficultySelect,
           ),
           onConfirm: (mods) {
-            // Step 3/5 → 4/5 loadout.
+            // Step 3/6 → 4/6 loadout (armi).
             // Pacifist & Snake: skip loadout (no shooting → arma irrilevante;
             // pet disabilitato in game_world). Vai diretto a summary.
             setState(() => _selectedModifiers = mods);
@@ -340,6 +345,8 @@ class _NavigationWrapperState extends State<NavigationWrapper> {
                 _selectedMode == GameMode.snake) {
               _navigateTo(AppScreen.summary);
             } else {
+              // Forward: entra nel loadout dalla schermata armi (step 0).
+              setState(() => _loadoutInitialStep = 0);
               _navigateTo(AppScreen.loadout);
             }
           },
@@ -347,6 +354,7 @@ class _NavigationWrapperState extends State<NavigationWrapper> {
       case AppScreen.loadout:
         return LoadoutScreen(
           key: const ValueKey('loadout'),
+          initialStep: _loadoutInitialStep,
           onBack: () => _navigateTo(AppScreen.modifiersSelect),
           onConfirm: () => _navigateTo(AppScreen.summary),
         );
@@ -357,14 +365,19 @@ class _NavigationWrapperState extends State<NavigationWrapper> {
           difficulty: _selectedDifficulty,
           activeModifiers: _selectedModifiers,
           // Pacifist & Snake: loadout skipped → back va a modifiersSelect.
-          onBack: () => _navigateTo(
-            _selectedMode == GameMode.dailyChallenge
-                ? AppScreen.modeSelect
-                : (_selectedMode == GameMode.pacifist ||
-                      _selectedMode == GameMode.snake)
-                ? AppScreen.modifiersSelect
-                : AppScreen.loadout,
-          ),
+          onBack: () {
+            if (_selectedMode == GameMode.dailyChallenge) {
+              _navigateTo(AppScreen.modeSelect);
+            } else if (_selectedMode == GameMode.pacifist ||
+                _selectedMode == GameMode.snake) {
+              _navigateTo(AppScreen.modifiersSelect);
+            } else {
+              // Back dal summary (6/6) → rientra sui PET (step 5/6), non
+              // sulle armi (richiesta utente).
+              setState(() => _loadoutInitialStep = 1);
+              _navigateTo(AppScreen.loadout);
+            }
+          },
           onStart: () async {
             // Persist modifiers in saveData prima del game start: GameWorld
             // li legge da `saveData.activeModifiers` in onLoad.

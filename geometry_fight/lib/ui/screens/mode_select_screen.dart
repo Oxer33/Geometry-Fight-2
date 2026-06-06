@@ -162,7 +162,7 @@ class _ModeSelectScreenState extends State<ModeSelectScreen>
                   ),
                 ),
                 child: Text(
-                  // Step 1 di N: hard-coded a classic (5 step) — il tap
+                  // Step 1 di N: hard-coded a classic (6 step) — il tap
                   // su qualsiasi card avanza prima che l'indicator si
                   // aggiorni, quindi mostriamo sempre il default.
                   '1/${_totalStepsForMode(GameMode.classic)}',
@@ -185,9 +185,10 @@ class _ModeSelectScreenState extends State<ModeSelectScreen>
 
   /// Numero totale di step del wizard pre-game in base alla modalità.
   /// Pacifist/Snake skippano difficulty + loadout → 3 step (mode, modifiers,
-  /// summary). Le altre modalità seguono il flusso completo a 5 step.
+  /// summary). Le altre modalità seguono il flusso completo a 6 step
+  /// (mode, difficoltà, modificatori, arma, pet, summary).
   int _totalStepsForMode(GameMode mode) {
-    return (mode == GameMode.pacifist || mode == GameMode.snake) ? 3 : 5;
+    return (mode == GameMode.pacifist || mode == GameMode.snake) ? 3 : 6;
   }
 
   Widget _buildModeList(

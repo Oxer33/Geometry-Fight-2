@@ -151,7 +151,7 @@ class _ModifiersSelectScreenState extends State<ModifiersSelectScreen> {
   bool _isAdvancing = false;
 
   /// Pacifist/Snake skippano difficulty + loadout → wizard 3 step invece di
-  /// 5. Usato per scegliere l'etichetta dello step indicator ("2/3" vs "3/5").
+  /// 6. Usato per scegliere l'etichetta dello step indicator ("2/3" vs "3/6").
   bool get _isShortWizard =>
       widget.mode == GameMode.pacifist || widget.mode == GameMode.snake;
 
@@ -264,11 +264,11 @@ class _ModifiersSelectScreenState extends State<ModifiersSelectScreen> {
                     ),
                     // Step indicator dinamico: pacifist/snake skippano
                     // difficulty + loadout → questo screen è step 2 di 3.
-                    // Altre modalità è 3 di 5 (full wizard).
+                    // Altre modalità è 3 di 6 (full wizard).
                     child: Text(
                       _isShortWizard
                           ? '2/3'
-                          : '3/5',
+                          : '3/6',
                       style: const TextStyle(
                         color: NeonColors.cyan,
                         fontSize: 12,

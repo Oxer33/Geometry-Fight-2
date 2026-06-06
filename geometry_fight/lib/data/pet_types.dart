@@ -13,9 +13,10 @@ import 'constants.dart';
 /// - `snipe`: orbita lento, laser ray al nemico più vicino periodico.
 /// - `ram`: insegue nemico più vicino e si schianta (kill al contatto).
 /// - `phoenix`: auto-revive player una volta per run quando HP raggiunge 0.
-/// - `blackHolePet`: micro pozzo gravitazionale stazionario dietro il player.
+/// - `blackHolePet`: micro pozzo gravitazionale stazionario davanti al player.
 /// - `empDrone`: pulse stun nemici entro 250px ogni 8s.
 /// - `tacticalSpotter`: trigger slow-mo quando il player è in salute critica.
+/// - `slower`: campo di rallentamento davanti al player; rallenta i nemici vicini.
 enum PetType {
   none,
   attack,
@@ -28,6 +29,7 @@ enum PetType {
   blackHolePet,
   empDrone,
   tacticalSpotter,
+  slower,
 }
 
 /// Definizione metadata pet — display name, descrizione, costo gold,
@@ -143,6 +145,17 @@ const List<PetDef> kPetCatalog = [
     cost: 3000,
     color: NeonColors.lime,
     iconCode: 'T',
+  ),
+  PetDef(
+    type: PetType.slower,
+    id: 'slower',
+    displayName: 'SLOWER',
+    description:
+        'Crea un campo di rallentamento davanti alla navicella: i nemici '
+        'che entrano nel campo si muovono al rallentatore.',
+    cost: 2400,
+    color: NeonColors.teal,
+    iconCode: 'L',
   ),
 ];
 

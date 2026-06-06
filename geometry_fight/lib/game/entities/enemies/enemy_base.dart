@@ -64,6 +64,21 @@ abstract class EnemyBase extends PositionComponent
     if (seconds > _stunTimer) _stunTimer = seconds;
   }
 
+  // Slow mechanic (SLOWER pet): mentre `_slowTimer > 0` il movimento del
+  // nemico è scalato da `_slowFactor` (es. 0.45 = 45% velocità). Il campo del
+  // pet ri-applica uno slow breve ogni frame finché il nemico resta dentro.
+  double _slowTimer = 0;
+  double _slowFactor = 1.0;
+  bool get isSlowed => _slowTimer > 0;
+
+  /// Applica un rallentamento: `factor` (0..1) scala la velocità, `seconds`
+  /// la durata. Prende il factor più forte (minore) e la durata più lunga tra
+  /// corrente e nuovo, così campi sovrapposti non si indeboliscono a vicenda.
+  void applySlow(double seconds, double factor) {
+    if (seconds > _slowTimer) _slowTimer = seconds;
+    if (factor < _slowFactor) _slowFactor = factor;
+  }
+
   /// Immunità danno ad area: bomba, plasma explosion, laser raycast, overdrive,
   /// shockwave morte player, buco nero. Usato dai Splitter per evitare cascata
   /// di divisioni simultanee che fa crashare il gioco.
@@ -109,6 +124,10 @@ abstract class EnemyBase extends PositionComponent
     }
     if (_fearTimer > 0) _fearTimer -= dt;
     if (_stunTimer > 0) _stunTimer -= dt;
+    if (_slowTimer > 0) {
+      _slowTimer -= dt;
+      if (_slowTimer <= 0) _slowFactor = 1.0; // reset quando il campo svanisce
+    }
 
     // Tunnel mode: despawn dietro o oltre la camera.
     if (game.isTunnelMode) {
@@ -148,7 +167,9 @@ abstract class EnemyBase extends PositionComponent
         // Fear: fuggi nella direzione opposta brevemente
         position += _fearDirection! * speed * 2.5 * dt;
       } else {
-        updateBehavior(dt);
+        // SLOWER pet: dt scalato → movimento e timer interni del nemico
+        // rallentano in proporzione finché resta dentro al campo.
+        updateBehavior(isSlowed ? dt * _slowFactor : dt);
       }
     }
 

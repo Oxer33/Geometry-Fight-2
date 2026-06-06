@@ -55,10 +55,17 @@ class LoadoutScreen extends StatefulWidget {
   final VoidCallback onBack;
   final VoidCallback onConfirm;
 
+  /// Step interno iniziale: 0 = armi (4/6), 1 = pet (5/6). Default 0.
+  /// Passato a 1 quando si rientra dal summary, così il bottone indietro
+  /// del summary torna alla schermata PET e non a quella delle armi
+  /// (richiesta utente).
+  final int initialStep;
+
   const LoadoutScreen({
     super.key,
     required this.onBack,
     required this.onConfirm,
+    this.initialStep = 0,
   });
 
   @override
@@ -79,6 +86,9 @@ class _LoadoutScreenState extends State<LoadoutScreen> {
   void initState() {
     super.initState();
     _saveData = SaveManager.load();
+    // Seed dello step interno. Di norma 0 (armi); se rientriamo dal summary
+    // (initialStep = 1) partiamo dai pet. Clamp difensivo a [0, 1].
+    _step = widget.initialStep.clamp(0, 1);
   }
 
   // Iter 18 (utente: "show ALL weapons"): catalog allineato a shop_screen
@@ -197,12 +207,12 @@ class _LoadoutScreenState extends State<LoadoutScreen> {
                       border: Border.all(
                           color: NeonColors.cyan.withValues(alpha: 0.5)),
                     ),
-                    child: const Text(
-                      // Loadout è step 4/5 del wizard pre-game (mode→diff→
-                      // mods→loadout→summary). Sub-step interno (arma/pet)
-                      // mostrato come label nel titolo header.
-                      '4/5',
-                      style: TextStyle(
+                    child: Text(
+                      // Wizard a 6 step: mode(1)→diff(2)→mods(3)→arma(4)→
+                      // pet(5)→summary(6). Arma e pet sono due schermate
+                      // distinte (sub-step interno _step) → 4/6 e 5/6.
+                      isWeaponsStep ? '4/6' : '5/6',
+                      style: const TextStyle(
                         color: NeonColors.cyan,
                         fontSize: 12,
                         fontWeight: FontWeight.w900,
@@ -677,6 +687,19 @@ class _PetIconPainter extends CustomPainter {
             Offset(cx, cy + r * 0.95), _stroke);
         _fill.color = color;
         canvas.drawCircle(Offset(cx, cy), r * 0.18, _fill);
+      case PetType.slower:
+        // Orologio: cerchio + due lancette + perno (metafora "rallenta tempo").
+        _stroke
+          ..color = color
+          ..strokeWidth = 1.8;
+        canvas.drawCircle(Offset(cx, cy), r * 0.78, _stroke);
+        _stroke
+          ..color = const Color(0xFFFFFFFF)
+          ..strokeWidth = 1.4;
+        canvas.drawLine(Offset(cx, cy), Offset(cx, cy - r * 0.42), _stroke);
+        canvas.drawLine(Offset(cx, cy), Offset(cx + r * 0.6, cy), _stroke);
+        _fill.color = color;
+        canvas.drawCircle(Offset(cx, cy), r * 0.16, _fill);
     }
   }
 

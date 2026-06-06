@@ -206,11 +206,11 @@ class _SummaryScreenState extends State<SummaryScreen> {
                     ),
                     // Step indicator dinamico: pacifist/snake skippano
                     // difficulty + loadout → summary è step 3 di 3 (wizard
-                    // corto). Altre modalità è 5 di 5 (wizard completo).
+                    // corto). Altre modalità è 6 di 6 (wizard completo).
                     child: Text(
                       (mode == GameMode.pacifist || mode == GameMode.snake)
                           ? '3/3'
-                          : '5/5',
+                          : '6/6',
                       style: const TextStyle(
                         color: NeonColors.cyan,
                         fontSize: 12,

@@ -77,7 +77,7 @@ class _DifficultySelectScreenState extends State<DifficultySelectScreen> {
                           color: NeonColors.cyan.withValues(alpha: 0.5)),
                     ),
                     child: const Text(
-                      '2/5',
+                      '2/6',
                       style: TextStyle(
                         color: NeonColors.cyan,
                         fontSize: 12,
