@@ -1016,6 +1016,12 @@ class HomingMissile extends PositionComponent
     super.onCollisionStart(intersectionPoints, other);
   }
 
+  /// Bloccato dal Gate (richiesta utente: il Gate deve fermare anche i missili
+  /// Homing). Il Gate è invincibile → nessun danno al Gate; il missile esplode
+  /// sul posto con AoE sui nemici vicini (target null = solo AoE). Idempotente
+  /// via `_detonated`.
+  void blockAtGate() => _detonate(null);
+
   /// `target` nullable: quando la detonazione è border-triggered (muri
   /// arena/tunnel) non c'è direct hit — solo AoE.
   void _detonate(PositionComponent? target) {

@@ -27,10 +27,11 @@ class SnakeTrailSegment extends PositionComponent
   static const double _maxLife = 4.0;
   /// Fade window in the last [_fadeWindow] seconds — alpha 1 → 0 linearly.
   static const double _fadeWindow = 0.5;
-  /// Visual core radius in px.
-  static const double _radius = 6.0;
+  /// Visual core radius in px. -50% (richiesta utente: scia più piccola).
+  static const double _radius = 3.0;
   /// Collision radius (slightly larger than visual for forgiving hits).
-  static const double _hitboxRadius = 8.0;
+  /// -50% in linea col raggio visivo.
+  static const double _hitboxRadius = 4.0;
 
   double _life = _maxLife;
   // Hue phase per segment so the trail visually pulses along its length.

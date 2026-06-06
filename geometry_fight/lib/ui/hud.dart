@@ -71,15 +71,19 @@ class _GameHudState extends State<GameHud> {
                   hasShield: game.player.hasShield,
                   isZenMode: game.isZenMode,
                   isPacifistMode: game.isPacifistMode,
+                  isTimeAttackMode: game.isTimeAttackMode,
                   deaths: game.sessionDeaths,
                 ),
               ),
 
               // === WAVE INDICATOR (margine superiore dello schermo) ===
               // Tunnel mode: non ha wave tradizionali, il contatore confonde
-              // → nascosto. Survival rework iter 8: stesso motivo (no wave,
-              // spawn 1-a-1 continuo) → contatore wave nascosto.
-              if (!game.isTunnelMode && game.gameMode != GameMode.survival)
+              // → nascosto. Survival: stesso motivo (no wave, spawn 1-a-1).
+              // Time Attack: la sfida è il tempo, non le wave (richiesta
+              // utente) → nascosto, resta solo il timer in cima.
+              if (!game.isTunnelMode &&
+                  game.gameMode != GameMode.survival &&
+                  !game.isTimeAttackMode)
                 Positioned(
                   top: topPad,
                   left: 0,
@@ -98,7 +102,8 @@ class _GameHudState extends State<GameHud> {
               // === TIMER TIME ATTACK (sotto wave indicator) ===
               if (game.isTimeAttackMode)
                 Positioned(
-                  top: topPad + 24,
+                  // Wave indicator nascosto in time attack → timer in cima.
+                  top: topPad,
                   left: 0,
                   right: 0,
                   child: Center(
@@ -370,6 +375,7 @@ class _StatusPanel extends StatelessWidget {
   final bool hasShield;
   final bool isZenMode;
   final bool isPacifistMode;
+  final bool isTimeAttackMode;
   final int deaths;
 
   const _StatusPanel({
@@ -379,6 +385,7 @@ class _StatusPanel extends StatelessWidget {
     required this.hasShield,
     required this.isZenMode,
     required this.isPacifistMode,
+    required this.isTimeAttackMode,
     required this.deaths,
   });
 
@@ -389,9 +396,9 @@ class _StatusPanel extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.end,
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Pacifist: nessun counter vite/bombe (1 vita fissa, 0 bombe).
-          // Zen mode: contatore morti invece di vite.
-          if (isPacifistMode) const SizedBox.shrink()
+          // Time Attack: vite illimitate → niente counter vite, solo bombe
+          // (richiesta utente). Pacifist: niente vite/bombe. Zen: conta morti.
+          if (isTimeAttackMode || isPacifistMode) const SizedBox.shrink()
           else if (isZenMode)
             Row(
               mainAxisSize: MainAxisSize.min,

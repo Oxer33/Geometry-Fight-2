@@ -407,7 +407,7 @@ class WaveSystem {
 
   /// Aggiornamento continuo survival: ogni `_survivalSpawnTimer` secondi
   /// spawna 1 mob random. Intervallo decresce: 1.2s start → 0.15s a 5min.
-  /// Tipo random pesato (no boss, no mob speciali troppo letali).
+  /// Tipo random pesato su pool ampio (27 tipi, vedi _randomSurvivalEnemyType).
   void updateSurvival(double dt) {
     _survivalElapsed += dt;
     _survivalSpawnTimer -= dt;
@@ -436,20 +436,59 @@ class WaveSystem {
     if (computedWave > currentWave) currentWave = computedWave;
   }
 
+  /// Tipo mob pesato per survival. Pool AMPIO (richiesta utente: "non spawnano
+  /// tutti i tipi" — prima erano solo 8). Spawn 1-a-1 (cap 200) → anche i tipi
+  /// "intensi" sono ok qui (1 spawner ≠ 80). Pesi t-dipendenti (t = elapsed/300,
+  /// 0→1 in 5min): fodder cala, attaccanti normali costanti, esotici/hazard
+  /// rampano da 0 → variano solo a partita avanzata. Esclusi solo `snake`
+  /// (mob scia della snake-mode) e `gate` (cancello non-killabile, spawn
+  /// speciale a 2 sfere).
   EnemyType _randomSurvivalEnemyType() {
     final t = (_survivalElapsed / 300).clamp(0.0, 1.0);
-    final roll = _survivalRng.nextInt(100);
-    // Mob comuni (60-80% peso, decresce nel tempo)
-    final commonWeight = (80 - 20 * t).round();
-    if (roll < commonWeight ~/ 2) return EnemyType.swarmDrone;
-    if (roll < commonWeight) return EnemyType.drone;
-    // Pericolosi (peso cresce nel tempo)
-    if (roll < commonWeight + 6) return EnemyType.kamikaze;
-    if (roll < commonWeight + 10) return EnemyType.weaver;
-    if (roll < commonWeight + 14) return EnemyType.mine;
-    if (roll < commonWeight + 17) return EnemyType.splitter;
-    if (roll < commonWeight + 19) return EnemyType.shieldEnemy;
-    return EnemyType.glitch;
+    // (tipo, peso). Lista costruita per-spawn (cadenza lenta → alloc trascurabile).
+    final pool = <(EnemyType, double)>[
+      // Fodder — alto all'inizio, scende nel tempo.
+      (EnemyType.swarmDrone, 26 - 14 * t),
+      (EnemyType.drone, 26 - 14 * t),
+      // Attaccanti / inseguitori comuni — peso costante.
+      (EnemyType.kamikaze, 7),
+      (EnemyType.mine, 5),
+      (EnemyType.weaver, 5),
+      (EnemyType.splitter, 5),
+      (EnemyType.shieldEnemy, 4),
+      (EnemyType.glitch, 4),
+      (EnemyType.orbiter, 4),
+      (EnemyType.pulsar, 4),
+      (EnemyType.mirror, 3),
+      (EnemyType.phantom, 3),
+      // Tier medio — rampa col tempo.
+      (EnemyType.titan, 2 + 4 * t),
+      (EnemyType.tesla, 2 + 3 * t),
+      (EnemyType.laserTurret, 2 + 3 * t),
+      (EnemyType.timeBomb, 1 + 3 * t),
+      (EnemyType.leech, 1 + 3 * t),
+      (EnemyType.proton, 1 + 3 * t),
+      (EnemyType.siren, 1 + 2 * t),
+      (EnemyType.necro, 1 + 2 * t),
+      (EnemyType.healer, 1 + 2 * t),
+      (EnemyType.mutator, 1 + 2 * t),
+      (EnemyType.decoy, 1 + 2 * t),
+      // Tier esotico / hazard — solo tardi (peso 0 a inizio), rari.
+      (EnemyType.vortex, 4 * t),
+      (EnemyType.gravityWell, 3 * t),
+      (EnemyType.spawner, 3 * t),
+      (EnemyType.blackHole, 2 * t),
+    ];
+    var total = 0.0;
+    for (final p in pool) {
+      total += p.$2;
+    }
+    var r = _survivalRng.nextDouble() * total;
+    for (final p in pool) {
+      r -= p.$2;
+      if (r <= 0) return p.$1;
+    }
+    return EnemyType.drone; // fallback difensivo (arrotondamenti float)
   }
 
   /// Survival reset (chiamato da `reset()`).
@@ -847,7 +886,8 @@ class WaveSystem {
   /// Tunnel: spawn continuo di nemici randomici davanti al player.
   /// Spawn dimezzato rispetto a prima (era troppo caotico): min 10 nemici
   /// attivi (era 20), batch 2-4 (era 4-8), cap 40 (era 80), timer 2x più lento.
-  /// Boss ogni 30 kill con cooldown 45s.
+  /// Boss: primo a 120 kill, poi gap +60 (raddoppiato), cooldown 5s. Durante
+  /// la boss fight lo spawn generico è sospeso (solo minion del boss).
   void updateTunnel(double dt) {
     _tunnelSpawnTimer -= dt;
     if (_tunnelBossCooldown > 0) _tunnelBossCooldown -= dt;
@@ -858,7 +898,11 @@ class WaveSystem {
     // Il reset di `_tunnelSpawnTimer` qui sotto vale per entrambi i path
     // (anche quello count-based), così non si ha double-fire nel frame
     // successivo.
-    if (_tunnelSpawnTimer <= 0 || game.enemyCount < 10) {
+    // `bossCount == 0`: durante una boss fight NON spawnare mob generici — solo
+    // il boss spawna i suoi minion a tema/colore (come in modalità classica).
+    // Prima spawnava "qualsiasi tipo" anche durante i boss (richiesta utente).
+    if ((_tunnelSpawnTimer <= 0 || game.enemyCount < 10) &&
+        game.bossCount == 0) {
       // Timer raddoppiato: 0.6-1.6s invece di 0.3-0.8s.
       // Reset incondizionato: copre sia il path "timer scaduto" sia
       // "count basso" → niente double-fire al prossimo frame.
@@ -873,7 +917,7 @@ class WaveSystem {
       }
     }
 
-    // Boss ogni 30 kill — usa _nextBossAt per evitare off-by-one.
+    // Boss a intervalli crescenti via _nextBossAt (primo a 120 kill, poi +60).
     // FIX multi-boss: `world.add` è async (la boss viene aggiunta al prossimo
     // update), quindi `bossCount == 0` può essere true per qualche frame dopo
     // lo spawn → potevano partire 3-4 boss in sequenza. Ora settiamo subito
@@ -885,7 +929,8 @@ class WaveSystem {
       if (_tunnelBossBag.isEmpty) _refillTunnelBossBag();
       final boss = _tunnelBossBag.removeAt(0);
       game.spawnBoss(boss);
-      _nextBossAt += 30; // Prossimo boss a +30 kill
+      // Gap tra boss RADDOPPIATO (richiesta utente): +60 kill invece di +30.
+      _nextBossAt += 60;
       _tunnelBossCooldown = 5.0; // Cooldown 5s: copre materializzazione async
     }
   }
@@ -911,8 +956,9 @@ class WaveSystem {
   /// Chiamato da game_world quando un nemico muore in tunnel mode
   void onTunnelKill() {
     _tunnelKillCount++;
-    // Progressione "wave" nel tunnel: 1 wave ogni 30 kill (sincronizzata ai boss).
-    final computedWave = (_tunnelKillCount ~/ 30) + 1;
+    // Progressione "wave" nel tunnel: 1 wave ogni 60 kill (sincronizzata al
+    // gap boss raddoppiato).
+    final computedWave = (_tunnelKillCount ~/ 60) + 1;
     if (computedWave > currentWave) {
       currentWave = computedWave;
     }

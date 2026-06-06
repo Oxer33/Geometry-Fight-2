@@ -12,7 +12,8 @@ import '../projectiles.dart';
 class SirenEnemy extends EnemyBase {
   double _wavePhase = 0;
   double _slowTimer = 0;
-  static const double _interferenceRadius = 150.0;
+  // +40% raggio (richiesta utente: support mob 2× più efficaci). Era 150.
+  static const double _interferenceRadius = 210.0;
   // Throttle interval in seconds (~33ms ≈ every 2 frames at 60fps)
   static const double _slowInterval = 0.033;
 
@@ -47,10 +48,10 @@ class SirenEnemy extends EnemyBase {
           final pushDir = bullet.position - position;
           if (pushDir.length2 > 1e-6) {
             pushDir.normalize();
-            // Push più mite: il 400×dt precedente poteva superare il movimento
-            // per-frame del bullet (al limite invertendo direzione visivamente).
-            // 60×dt è sufficiente per "frenare" il bullet senza overrun.
-            bullet.position -= pushDir * 60 * dt;
+            // Push 2× (richiesta utente: rallentamento più efficace). 120×dt
+            // resta sotto il movimento per-frame del bullet (~10px/frame) →
+            // frena di più senza invertirne la direzione visivamente.
+            bullet.position -= pushDir * 120 * dt;
           }
         }
       }

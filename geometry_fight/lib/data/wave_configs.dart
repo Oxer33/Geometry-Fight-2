@@ -52,8 +52,8 @@ enum BossType {
   inferno,
   eternityEngine,
   // Batch 4 — 4 nuovi boss (richiesta utente: "aggiungere 4 nuovi boss con
-  // meccaniche uniche, FX spettacolari") per coprire i 20 slot boss della
-  // modalità classica (ogni wave multipla di 5).
+  // meccaniche uniche, FX spettacolari"). In classic compaiono a multipli di
+  // 10 insieme agli altri 16 (20 boss → 200 wave).
   crimsonCrown,    // wave 5   — orbi fuoco + lava mines
   prismHunter,     // wave 15  — laser sweeping + rainbow bullet hell
   voidKraken,      // wave 25  — gravity pull + ink cloud + proton spawn
@@ -214,32 +214,33 @@ class WaveConfig {
 }
 
 // ═══════════════════════════════════════════════════════════════════════
-// BOSS PLACEMENT — richiesta utente: un boss ad ogni wave multipla di 5.
-// 100 waves / 5 = 20 slot boss. 16 boss esistenti + 4 nuovi = 20 esatti.
-// Ordine scelto per escalation di difficoltà (boss più dinamici prima,
-// boss "bullet hell" e finali nelle wave alte).
+// BOSS PLACEMENT — richiesta utente: un boss SOLO ad ogni wave multipla di 10
+// (classic + zen; prima era ogni 5 → boss anche a 55 ecc.). 20 boss totali →
+// 200 wave (richiesta utente: "se abbiamo N boss facciamo N×10 waves"). Così
+// TUTTI i 20 boss compaiono in classic (inclusi i 4 nuovi). Ordine =
+// escalation di difficoltà, boss finale (eternityEngine) a wave 200.
 // ═══════════════════════════════════════════════════════════════════════
 const Map<int, BossType> _classicBossSchedule = {
-  5: BossType.crimsonCrown,    // NEW — primo boss "tutorial" meccanico
   10: BossType.theGrid,
-  15: BossType.prismHunter,     // NEW — sweeping laser
-  20: BossType.hydra,
-  25: BossType.voidKraken,      // NEW — gravity pull
-  30: BossType.singularity,
-  35: BossType.astralSentinel,  // NEW — constellation gate
-  40: BossType.swarmMother,
-  45: BossType.theArchitect,
-  50: BossType.chronoWraith,
-  55: BossType.nexusPrime,
-  60: BossType.voidReaper,
-  65: BossType.teslaLord,
-  70: BossType.phantomKing,
-  75: BossType.omegaCore,
-  80: BossType.mirrorMaster,
-  85: BossType.swarmQueen,
-  90: BossType.graviton,
-  95: BossType.inferno,
-  100: BossType.eternityEngine,
+  20: BossType.crimsonCrown,
+  30: BossType.hydra,
+  40: BossType.prismHunter,
+  50: BossType.singularity,
+  60: BossType.voidKraken,
+  70: BossType.swarmMother,
+  80: BossType.astralSentinel,
+  90: BossType.theArchitect,
+  100: BossType.chronoWraith,
+  110: BossType.nexusPrime,
+  120: BossType.voidReaper,
+  130: BossType.teslaLord,
+  140: BossType.phantomKing,
+  150: BossType.omegaCore,
+  160: BossType.mirrorMaster,
+  170: BossType.swarmQueen,
+  180: BossType.graviton,
+  190: BossType.inferno,
+  200: BossType.eternityEngine,
 };
 
 // Spawn "entourage" pre-boss. Wave bassi (5-50) = piccoli entourage leggeri
@@ -278,8 +279,10 @@ List<WaveConfig> generateWaveConfigs() {
   // ignore: unused_local_variable
   final modHistory = <int>[];
 
-  for (int wave = 1; wave <= 100; wave++) {
-    // Boss wave: ogni wave multipla di 5.
+  // 200 wave: 20 boss × 10 (richiesta utente: più boss → più wave). Oltre wave
+  // 200 le run continuano via _generateEndlessWave (no boss).
+  for (int wave = 1; wave <= 200; wave++) {
+    // Boss wave: ogni wave multipla di 10 (classic + zen).
     final bossType = _classicBossSchedule[wave];
     if (bossType != null) {
       configs.add(WaveConfig(
@@ -346,10 +349,10 @@ List<WaveConfig> generateWaveConfigs() {
     // un SECONDO archetipo. Riduce la sensazione "1 archetipo = 1 wave"
     // → più dinamica intra-wave (richiesta utente: "wave system banale").
     // Trigger deterministico (no RNG runtime): wave % 4 == 2 (12, 16, 22,
-    // 26, ecc.) → 25% delle wave non-boss. Skip pre-boss (wave % 5 == 4)
-    // perché già MEGASWARM-saturated.
+    // 26, ecc.) → 25% delle wave non-boss. Skip pre-boss (wave prima di un
+    // boss; boss ora a multipli di 10 → pre-boss = 9,19,...) già saturate.
     // ═══════════════════════════════════════════════════════════════
-    final isPreBossWave = wave % 5 == 4;
+    final isPreBossWave = _classicBossSchedule.containsKey(wave + 1);
     if (wave >= 12 && wave % 4 == 2 && !isPreBossWave) {
       final secondArchetype = _pickArchetype(wave + 1000, history);
       // Offset temporale: secondo archetipo arriva DOPO il primo —

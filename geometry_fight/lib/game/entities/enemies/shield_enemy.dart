@@ -9,7 +9,7 @@ import '../projectiles.dart';
 /// Stati: APPROACH (lento) → LOCK_ON (pausa, mira) → CHARGE (dash veloce con scudo)
 /// Lo scudo assorbe danni frontali. Vulnerabile dal retro e durante recovery.
 class ShieldEnemy extends EnemyBase {
-  double shieldHp = 5;
+  double shieldHp = 10; // 2× scudo (richiesta utente: support più efficaci). Era 5.
   double _shieldRegenTimer = 0;
   final double _shieldRegenDelay = 4.0;
 
@@ -63,7 +63,7 @@ class ShieldEnemy extends EnemyBase {
     if (shieldHp <= 0) {
       _shieldRegenTimer += dt;
       if (_shieldRegenTimer >= _shieldRegenDelay) {
-        shieldHp = 5;
+        shieldHp = 10; // rigenera al massimo (2×, era 5)
         _shieldRegenTimer = 0;
       }
     }
@@ -209,7 +209,7 @@ class ShieldEnemy extends EnemyBase {
       // di playerPosition per frame e mantiene logic/render coerenti.
       final toPlayer = _cachedToPlayer;
       final angle = math.atan2(toPlayer.y, toPlayer.x);
-      final shieldAlpha = (shieldHp / 5.0).clamp(0.0, 1.0);
+      final shieldAlpha = (shieldHp / 10.0).clamp(0.0, 1.0);
 
       canvas.save();
       canvas.translate(cx, cy);
@@ -247,7 +247,7 @@ class ShieldEnemy extends EnemyBase {
           final segAngle = -math.pi / 3 + i * (math.pi * 2 / 3) / 4;
           final segX = 14 * scale * math.cos(segAngle);
           final segY = 14 * scale * math.sin(segAngle);
-          final segActive = i < shieldHp;
+          final segActive = i < shieldHp / 2; // 5 segmenti = 10 HP (2 HP/seg)
           _segPaint.color = segActive
               ? NeonColors.purple.withValues(alpha: 0.8)
               : NeonColors.purple.withValues(alpha: 0.15);

@@ -17,7 +17,8 @@ class MutatorEnemy extends EnemyBase {
   EnemyBase? _target;
   double _pulsePhase = 0;
   int _mutationsCount = 0; // Quanti nemici ha potenziato
-  static const int _maxMutations = 8; // Si autodistrugge dopo 8 potenziamenti
+  // Potenzia 2× più nemici prima di autodistruggersi (richiesta utente). Era 8.
+  static const int _maxMutations = 16;
 
   MutatorEnemy()
       : super(
@@ -91,12 +92,12 @@ class MutatorEnemy extends EnemyBase {
   }
 
   void _mutateEnemy(EnemyBase enemy) {
-    // Potenzia il nemico
-    enemy.speed *= 1.8; // +80% velocit
+    // Potenzia il nemico — buff 2× più forte (richiesta utente).
+    enemy.speed *= 2.6; // +160% velocità (era +80%)
     // Fix ordine: bump maxHp PRIMA del clamp, altrimenti hp > maxHp
-    // → HP bar mostra >100%. +50% HP relativo al vecchio maxHp.
-    final bonusHp = enemy.maxHp * 0.5;
-    enemy.maxHp = enemy.maxHp * 1.5;
+    // → HP bar mostra >100%. +100% HP relativo al vecchio maxHp (era +50%).
+    final bonusHp = enemy.maxHp * 1.0;
+    enemy.maxHp = enemy.maxHp * 2.0;
     enemy.hp = (enemy.hp + bonusHp).clamp(0, enemy.maxHp);
     // Effetto visivo: colore più luminoso/giallo = "mutato"
     // (NO size change — in Flame il resize non aggiorna le hitbox a runtime)

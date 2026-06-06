@@ -13,7 +13,8 @@ import 'enemy_base.dart';
 class NecroEnemy extends EnemyBase {
   double _ritualPhase = 0;
   final List<_PendingResurrection> _pendingRes = [];
-  static const double _resurrectionRadius = 200.0;
+  // +50% raggio (richiesta utente: support mob 2× più efficaci). Era 200.
+  static const double _resurrectionRadius = 300.0;
 
   // Paint caches: evita alloc per frame × N necro.
   static final Paint _ritualPaint = Paint()
@@ -93,14 +94,15 @@ class NecroEnemy extends EnemyBase {
     // aggiornata), ignora la richiesta per evitare leak in _resurrectingIds.
     if (isRemoved) return;
     final dist = position.distanceTo(deathPos);
-    if (dist < _resurrectionRadius && _pendingRes.length < 3) {
+    // 2× più efficace (richiesta utente): max pending 3→6, resurrezione 3s→1.5s.
+    if (dist < _resurrectionRadius && _pendingRes.length < 6) {
       final key = _deathKey(type, deathPos);
       if (_resurrectingIds.contains(key)) return; // un altro necro già accodato
       _resurrectingIds.add(key);
       _pendingRes.add(_PendingResurrection(
         type: type,
         position: deathPos,
-        timer: 3.0,
+        timer: 1.5,
         dedupeKey: key,
       ));
     }

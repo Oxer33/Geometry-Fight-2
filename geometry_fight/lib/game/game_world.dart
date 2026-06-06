@@ -1264,11 +1264,14 @@ class GeometryFightGame extends FlameGame
   }
 
   void onPlayerDeath() {
-    // Zen mode: player immortale. Conta le morti, ripristina lives al valore
-    // iniziale della difficoltà, niente game over.
-    if (isZenMode) {
-      sessionDeaths++;
-      player.lives = diffConfig.startingLives + (saveData.startingLives - 3);
+    // Zen mode + Time Attack: player immortale, niente game over. Zen conta le
+    // morti — 1 vita logica → +1 per OGNI hit (vedi _applyModifiers), così il
+    // contatore conta bene. Time Attack: vite ILLIMITATE, finisce a tempo.
+    if (isZenMode || isTimeAttackMode) {
+      if (isZenMode) sessionDeaths++;
+      player.lives = isZenMode
+          ? 1
+          : diffConfig.startingLives + (saveData.startingLives - 3);
       return;
     }
 
@@ -1332,6 +1335,13 @@ class GeometryFightGame extends FlameGame
     if (isPacifistMode) {
       player.lives = 1;
       player.bombs = 0;
+    }
+
+    // Zen mode: 1 vita "logica" così OGNI hit conta come 1 morte → il
+    // contatore morti conta bene per-hit (player comunque immortale: lives
+    // ripristinate in onPlayerDeath). Col buffer vite scattava solo ogni N hit.
+    if (isZenMode) {
+      player.lives = 1;
     }
   }
 

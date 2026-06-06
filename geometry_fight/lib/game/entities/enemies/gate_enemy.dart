@@ -47,6 +47,11 @@ class GateEnemy extends PositionComponent
   // Wire visual half-thickness (glow 13.5/2 ≈ 7) + player hurtbox 8 = 15.
   // Mantenuto a 15 perché coincide con la half-thickness del glow stroke +50%.
   static const double _wireKillRadius = 15.0;
+  // Wire REFLECT radius (richiesta utente): distanza bullet→segmento entro cui
+  // la LINEA bianca riflette i proiettili e blocca i missili Homing — prima
+  // solo le sfere endpoint lo facevano. ≈ wire half-glow (8) + bullet r (3) +
+  // 3 buffer = 14.
+  static const double _wireReflectRadius = 14.0;
   // Visual sphere radius (cerchio arancio fluo). +50% iter 2: era 9 → 14.
   static const double _sphereVisualR = 14.0;
   // Sphere hitbox radius (per bullet reflect): visual r + small buffer per
@@ -100,6 +105,9 @@ class GateEnemy extends PositionComponent
     super.onCollisionStart(intersectionPoints, other);
     if (other is PlayerBullet) {
       other.reflect();
+    } else if (other is HomingMissile) {
+      // Le sfere bloccano anche i missili Homing (richiesta utente).
+      other.blockAtGate();
     }
   }
 
@@ -183,6 +191,33 @@ class GateEnemy extends PositionComponent
     final sphereOffset1 = Vector2(math.cos(perpAngle) * halfW, math.sin(perpAngle) * halfW);
     _sphereHitbox1.position = size / 2 + sphereOffset1;
     _sphereHitbox2.position = size / 2 - sphereOffset1;
+
+    // ── WIRE REFLECT/BLOCK (richiesta utente): la LINEA bianca riflette i
+    // proiettili e blocca i missili Homing, non solo le sfere. Check manuale
+    // punto-segmento. Salta i bullet/missili vicini alle sfere (già gestiti
+    // dalle hitbox sfera in onCollisionStart) per non interferire.
+    final wireA = position + sphereOffset1;
+    final wireB = position - sphereOffset1;
+    for (final bullet in game.world.children.whereType<PlayerBullet>()) {
+      final bp = bullet.position;
+      if (bp.distanceTo(wireA) < _sphereHitboxR ||
+          bp.distanceTo(wireB) < _sphereHitboxR) {
+        continue;
+      }
+      if (_pointToSegmentDistance(bp, wireA, wireB) < _wireReflectRadius) {
+        bullet.reflect();
+      }
+    }
+    for (final missile in game.world.children.whereType<HomingMissile>()) {
+      final mp = missile.position;
+      if (mp.distanceTo(wireA) < _sphereHitboxR ||
+          mp.distanceTo(wireB) < _sphereHitboxR) {
+        continue;
+      }
+      if (_pointToSegmentDistance(mp, wireA, wireB) < _wireReflectRadius) {
+        missile.blockAtGate();
+      }
+    }
 
     // Check interazione player con il Gate (solo se cooldown finito e non già esploso)
     if (_cooldown <= 0 && !_exploded && game.player.isMounted) {

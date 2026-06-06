@@ -14,7 +14,8 @@ class HealerEnemy extends EnemyBase {
   double _healTimer = 2.0;
   double _healPulseRadius = 0;
   bool _healPulseActive = false;
-  static const double _healRadius = 200.0;
+  // +30% raggio (richiesta utente: support mob più efficaci). Era 200.
+  static const double _healRadius = 260.0;
   static const double _keepDistance = 250.0;
 
   // Paint cache: evita alloc per frame × N healers.
@@ -84,7 +85,8 @@ class HealerEnemy extends EnemyBase {
       final dx = child.position.x - position.x;
       final dy = child.position.y - position.y;
       if (dx * dx + dy * dy < radiusSq) {
-        child.hp = (child.hp + 1).clamp(0, child.maxHp);
+        // +2 HP per pulse (era +1): cura 2× più efficace (richiesta utente).
+        child.hp = (child.hp + 2).clamp(0, child.maxHp);
       }
     }
   }

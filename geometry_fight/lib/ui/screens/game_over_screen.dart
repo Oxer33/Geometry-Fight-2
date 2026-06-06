@@ -616,6 +616,10 @@ class _GameOverScreenState extends State<GameOverScreen>
         ],
       ),
       child: Column(
+        // Hug del contenuto (richiesta utente: card proporzionata a cosa
+        // contiene, non a tutta l'altezza). Senza, la Column riempiva
+        // l'altezza data dal Positioned(top:0,bottom:0) → card enorme.
+        mainAxisSize: MainAxisSize.min,
         children: [
           Text(
             l10n.newAchievementBanner,
