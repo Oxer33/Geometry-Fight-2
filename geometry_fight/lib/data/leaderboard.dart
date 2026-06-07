@@ -1,5 +1,7 @@
 import 'package:hive/hive.dart';
 
+import 'daily_challenge.dart';
+
 /// Entry singola nella leaderboard
 class LeaderboardEntry {
   final String mode;
@@ -44,13 +46,43 @@ class LeaderboardManager {
   static late Box _box;
   static bool _initialized = false;
 
+  /// Nome modalità (`GameMode.dailyChallenge.name`) usato per lo scoping
+  /// speciale della classifica daily (seed del giorno).
+  static const String _dailyModeName = 'dailyChallenge';
+
   static Future<void> init() async {
     _box = await Hive.openBox('geometry_fight_leaderboard');
     _initialized = true;
+    // Daily Challenge: rimuovi le classifiche dei giorni passati così la
+    // classifica si azzera quando cambiano gli affix (richiesta utente).
+    await _pruneStaleDailyBuckets();
   }
 
-  /// Restituisce la chiave di storage per una combinazione mode/difficulty
-  static String _key(String mode, String difficulty) => '${mode}_$difficulty';
+  /// Seed del giorno UTC corrente — scope della classifica daily.
+  static int _todayDailySeed() =>
+      DailyChallenge.seedForDate(DateTime.now().toUtc());
+
+  /// Chiave di storage. La Daily Challenge è scopata al SEED del giorno UTC:
+  /// ogni giorno gli affix cambiano completamente → bucket nuovo → classifica
+  /// azzerata (richiesta utente). La difficoltà è ignorata per il daily (è
+  /// fissata dalla data). Le altre modalità restano `mode_difficulty`.
+  static String _key(String mode, String difficulty) => mode == _dailyModeName
+      ? '${_dailyModeName}_${_todayDailySeed()}'
+      : '${mode}_$difficulty';
+
+  /// Rimuove i bucket Daily Challenge dei giorni passati (seed != oggi), così
+  /// resta solo la sfida odierna.
+  static Future<void> _pruneStaleDailyBuckets() async {
+    if (!_initialized) return;
+    final todayKey = '${_dailyModeName}_${_todayDailySeed()}';
+    final stale = _box.keys
+        .whereType<String>()
+        .where((k) => k.startsWith('${_dailyModeName}_') && k != todayKey)
+        .toList();
+    for (final k in stale) {
+      await _box.delete(k);
+    }
+  }
 
   /// Restituisce le top entries per una modalità e difficoltà
   static List<LeaderboardEntry> getEntries(String mode, String difficulty) {

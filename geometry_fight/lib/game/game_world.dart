@@ -771,9 +771,14 @@ class GeometryFightGame extends FlameGame
       enemy.geomValue = (enemy.geomValue * geomMul).round();
     }
 
-    // Modifier giant_mode: nemici 2× più grandi (richiesta utente).
+    // Modifier giant_mode: nemici 2× più grandi (richiesta utente). Usa il
+    // transform `scale` del componente (applicato live ogni frame su corpo +
+    // hitbox, centrato sull'anchor) invece di mutare `size`: `size.scale()`
+    // scrive lo storage del Vector2 senza notificare Flame, quindi il resize
+    // non si rifletteva sul render dei mob (bug "Giant non funziona, mob
+    // uguali a prima", evidente con molti mob spawnati in formazione).
     if (hasModifier('giant_mode')) {
-      enemy.size.scale(2.0);
+      enemy.scale.setValues(2.0, 2.0);
     }
 
     enemy.position = pos;

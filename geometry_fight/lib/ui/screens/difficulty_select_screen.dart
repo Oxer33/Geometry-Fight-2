@@ -171,8 +171,21 @@ class _DifficultySelectScreenState extends State<DifficultySelectScreen> {
                                     '×${cfg.scoreMultiplier.toStringAsFixed(1)} ${l10n.diffScoreMultiplier}',
                                     style: TextStyle(
                                       color: color.withValues(alpha: 0.8),
-                                      // Iter 18: 9 → 11 (-15% dal 12).
                                       fontSize: 11,
+                                      fontFamily: 'monospace',
+                                    ),
+                                  ),
+                                  const SizedBox(height: 3),
+                                  // Valori moltiplicativi espliciti (HP/SPD
+                                  // nemici) — richiesta utente: visibili qui,
+                                  // NON nella schermata di riepilogo.
+                                  Text(
+                                    'HP ×${cfg.enemyHpMultiplier} · '
+                                    'SPD ×${cfg.enemySpeedMultiplier}',
+                                    style: TextStyle(
+                                      color:
+                                          Colors.white.withValues(alpha: 0.6),
+                                      fontSize: 10,
                                       fontFamily: 'monospace',
                                     ),
                                   ),

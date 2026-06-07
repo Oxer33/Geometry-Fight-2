@@ -178,27 +178,19 @@ class _ModifiersSelectScreenState extends State<ModifiersSelectScreen> {
         .toList();
   }
 
-  // Iter 19 (utente: "tap auto-advance pre-game", "re-tap same → still
-  // advance, don't toggle off"). Tap su mod:
-  //  • già attivo → advance (no toggle-off)
-  //  • non attivo, sotto cap → aggiungi + advance
-  //  • non attivo, cap raggiunto → snackbar cap + advance comunque
-  // Multi-select rimane possibile usando il back+forward del wizard;
-  // semantica primaria è "tap = scegli e prosegui".
+  // Tap su un modificatore = TOGGLE on/off (illumina/spegne). NON avanza più
+  // alla schermata successiva (richiesta utente: "al primo che clicco va
+  // avanti" → ora multi-select). L'avanzamento avviene SOLO dal tap sulla
+  // card di conferma in cima alla lista (`_confirm`).
   void _tapMod(String id) {
-    // Caveman-review: guard against rapid double-tap during page transition.
-    if (_isAdvancing) return;
     final wasActive = _active.contains(id);
-    final atCap = !wasActive && _active.length >= _maxActive;
-    setState(() {
-      if (!wasActive && !atCap) {
-        _active = [..._active, id];
-      }
-    });
-    if (atCap) {
-      // Snackbar happens synchronously here — no await before context use.
-      // mounted check kept defensive in case future code adds async work.
-      if (!mounted) return;
+    if (wasActive) {
+      // Toggle OFF: rimuovi dalla selezione.
+      setState(() => _active = _active.where((m) => m != id).toList());
+      return;
+    }
+    // Toggle ON: aggiungi se sotto il cap, altrimenti snackbar.
+    if (_active.length >= _maxActive) {
       final l10n = AppLocalizations.of(context)!;
       ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
@@ -212,17 +204,17 @@ class _ModifiersSelectScreenState extends State<ModifiersSelectScreen> {
                   fontFamily: 'monospace',
                   fontWeight: FontWeight.w900)),
         ));
+      return;
     }
-    _isAdvancing = true;
-    widget.onConfirm(_active);
+    setState(() => _active = [..._active, id]);
   }
 
-  // "NO MODIFIERS" card tap: clear active mods and advance.
-  void _tapNoMods() {
+  // Card di conferma in cima alla lista: avanza al prossimo step con i
+  // modificatori attualmente attivi (lista vuota = nessun modificatore).
+  void _confirm() {
     if (_isAdvancing) return;
     _isAdvancing = true;
-    setState(() => _active = []);
-    widget.onConfirm(const []);
+    widget.onConfirm(_active);
   }
 
   @override
@@ -323,8 +315,9 @@ class _ModifiersSelectScreenState extends State<ModifiersSelectScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 itemCount: itemCount,
                 itemBuilder: (_, i) {
-                  // First slot: special "NO MODIFIERS" card.
-                  if (i == 0) return _buildNoModsCard(l10n);
+                  // First slot: confirm/summary card (NO MODIFIERS quando
+                  // vuoto, altrimenti nomi mod attivi + moltiplicatore totale).
+                  if (i == 0) return _buildConfirmCard(l10n);
                   final m = _availableModifiers[i - 1];
                   final on = _active.contains(m.id);
                   final color = m.isChallenge
@@ -405,43 +398,117 @@ class _ModifiersSelectScreenState extends State<ModifiersSelectScreen> {
     );
   }
 
-  /// Special "NO MODIFIERS" card pinned at the top. Distinctive style: cyan
-  /// outline with a block icon. Tap clears mods and advances.
-  Widget _buildNoModsCard(AppLocalizations l10n) {
-    final color = NeonColors.cyan.withValues(alpha: 0.85);
-    final greyBorder = Colors.white.withValues(alpha: 0.55);
-    final hasNone = _active.isEmpty;
+  /// Card di conferma in cima alla lista. Funge da pulsante AVANTI.
+  /// - Nessun modificatore attivo: stile cyan "NESSUN MODIFICATORE" (×1.0).
+  /// - Modificatori attivi: stile oro con i NOMI dei mod a sinistra e il loro
+  ///   moltiplicatore TOTALE dei punti a destra (richiesta utente).
+  /// Tap → avanza al prossimo step con la selezione corrente.
+  Widget _buildConfirmCard(AppLocalizations l10n) {
+    if (_active.isEmpty) {
+      final color = NeonColors.cyan.withValues(alpha: 0.85);
+      return GestureDetector(
+        onTap: _confirm,
+        child: Container(
+          margin: const EdgeInsets.only(bottom: 10),
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(8),
+            color: color.withValues(alpha: 0.10),
+            border: Border.all(color: color, width: 2),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 28,
+                height: 28,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(color: color, width: 1.6),
+                ),
+                alignment: Alignment.center,
+                child: Icon(Icons.block_rounded, color: color, size: 18),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      l10n.modNoneCard,
+                      style: TextStyle(
+                        color: color,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w900,
+                        fontFamily: 'monospace',
+                        letterSpacing: 2,
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      l10n.modNoneCardDesc,
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.7),
+                        fontSize: 10,
+                        fontFamily: 'monospace',
+                        height: 1.2,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Text(
+                '×1.0',
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.7),
+                  fontSize: 11,
+                  fontFamily: 'monospace',
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+    // Stato con modificatori attivi: oro + nomi + moltiplicatore totale.
+    final names = _active.map((id) => _modifierName(id, l10n)).join(', ');
+    final total = combinedScoreMultiplier(_active);
     return GestureDetector(
-      onTap: _tapNoMods,
+      onTap: _confirm,
       child: Container(
         margin: const EdgeInsets.only(bottom: 10),
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(8),
-          color: hasNone
-              ? color.withValues(alpha: 0.10)
-              : Colors.white.withValues(alpha: 0.03),
-          border: Border.all(
-            color: hasNone ? color : greyBorder,
-            width: hasNone ? 2 : 1.4,
+          gradient: LinearGradient(
+            colors: [
+              NeonColors.gold.withValues(alpha: 0.20),
+              NeonColors.gold.withValues(alpha: 0.05),
+            ],
           ),
+          border: Border.all(
+            color: NeonColors.gold.withValues(alpha: 0.9),
+            width: 2,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: NeonColors.gold.withValues(alpha: 0.35),
+              blurRadius: 12,
+            ),
+          ],
         ),
         child: Row(
           children: [
-            // Distinctive slash/block icon inside an outlined circle.
             Container(
               width: 28,
               height: 28,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                border: Border.all(color: color, width: 1.6),
+                border: Border.all(color: NeonColors.gold, width: 1.6),
               ),
               alignment: Alignment.center,
-              child: Icon(
-                Icons.block_rounded,
-                color: color,
-                size: 18,
-              ),
+              child: const Icon(Icons.play_arrow_rounded,
+                  color: NeonColors.gold, size: 20),
             ),
             const SizedBox(width: 10),
             Expanded(
@@ -449,35 +516,37 @@ class _ModifiersSelectScreenState extends State<ModifiersSelectScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    l10n.modNoneCard,
-                    style: TextStyle(
-                      color: color,
-                      fontSize: 13,
+                    names,
+                    style: const TextStyle(
+                      color: NeonColors.gold,
+                      fontSize: 12,
                       fontWeight: FontWeight.w900,
                       fontFamily: 'monospace',
-                      letterSpacing: 2,
+                      letterSpacing: 1.2,
+                      height: 1.25,
                     ),
                   ),
-                  const SizedBox(height: 2),
+                  const SizedBox(height: 3),
                   Text(
-                    l10n.modNoneCardDesc,
+                    l10n.modifiersActiveCount(_active.length, _maxActive),
                     style: TextStyle(
                       color: Colors.white.withValues(alpha: 0.7),
                       fontSize: 10,
                       fontFamily: 'monospace',
-                      height: 1.2,
                     ),
                   ),
                 ],
               ),
             ),
+            const SizedBox(width: 8),
+            // Moltiplicatore totale dei punti dei modificatori attivi.
             Text(
-              '×1.0',
-              style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.7),
-                fontSize: 11,
-                fontFamily: 'monospace',
+              '×${total.toStringAsFixed(2)}',
+              style: const TextStyle(
+                color: NeonColors.gold,
+                fontSize: 15,
                 fontWeight: FontWeight.w900,
+                fontFamily: 'monospace',
               ),
             ),
           ],

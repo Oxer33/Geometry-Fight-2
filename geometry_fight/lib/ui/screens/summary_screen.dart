@@ -237,24 +237,16 @@ class _SummaryScreenState extends State<SummaryScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   children: [
                     const SizedBox(height: 4),
-                    // Riga 1: modalità | difficoltà.
-                    _twoCol(
+                    // Riga unica: modalità · difficoltà · arma · pet (richiesta
+                    // utente: tutte su una sola riga). Pacifist & Snake saltano
+                    // arma+pet (non si spara, no pet) → riga a 2 card.
+                    _cardRow([
                       _section(
                           l10n.modeTitle, _modeName(mode), NeonColors.cyan),
-                      _section(
-                        l10n.diffTitle,
-                        _diffName(l10n, difficulty),
-                        _diffColor(difficulty),
-                        sub:
-                            '×${diffCfg.scoreMultiplier.toStringAsFixed(2)} ${l10n.diffScoreMultiplier} · '
-                            'HP ×${diffCfg.enemyHpMultiplier} · '
-                            'SPD ×${diffCfg.enemySpeedMultiplier}',
-                      ),
-                    ),
-                    // Riga 2: arma | pet. Pacifist & Snake li saltano (non si
-                    // spara, no pet) → niente riga loadout.
-                    if (mode != GameMode.pacifist && mode != GameMode.snake)
-                      _twoCol(
+                      _section(l10n.diffTitle, _diffName(l10n, difficulty),
+                          _diffColor(difficulty)),
+                      if (mode != GameMode.pacifist &&
+                          mode != GameMode.snake) ...[
                         // Daily Challenge: arma + pet auto-assegnati dalla data
                         // UTC (uguali per tutti), non dal loadout salvato.
                         () {
@@ -283,17 +275,11 @@ class _SummaryScreenState extends State<SummaryScreen> {
                             sub: isDaily ? l10n.modeDailyChallenge : null,
                           );
                         }(),
-                      ),
-                    // Modificatori: full width (possono essere molti).
-                    _modifiersSection(l10n),
-                    const SizedBox(height: 12),
-                    // Score multiplier: full width.
-                    _multiplierBreakdown(
-                      l10n,
-                      diffCfg.scoreMultiplier,
-                      modScore,
-                      totalScore,
-                    ),
+                      ],
+                    ]),
+                    // Card unica: modificatori (uno per riga + valore) +
+                    // breakdown score multiplier con il TOTALE in fondo.
+                    _scoreCard(l10n, diffCfg.scoreMultiplier, totalScore),
                   ],
                 ),
               ),
@@ -379,12 +365,12 @@ class _SummaryScreenState extends State<SummaryScreen> {
     }
   }
 
-  /// Card compatta verticale: etichetta in alto, valore sotto, sub opzionale.
-  /// Usata sia a piena larghezza (modificatori) sia dentro `_twoCol` (2 col).
-  /// Niente margin: lo spacing è gestito dal contenitore (twoCol / ListView).
+  /// Card compatta verticale: etichetta sopra, valore sotto. Il valore è in un
+  /// FittedBox(scaleDown) così i nomi lunghi si rimpiccioliscono invece di
+  /// andare a capo — necessario con 4 card affiancate su una sola riga.
   Widget _section(String label, String value, Color color, {String? sub}) {
     return Container(
-      padding: const EdgeInsets.all(10),
+      padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(8),
         color: color.withValues(alpha: 0.08),
@@ -396,32 +382,45 @@ class _SummaryScreenState extends State<SummaryScreen> {
         children: [
           Text(
             label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: TextStyle(
               color: color.withValues(alpha: 0.7),
-              fontSize: 10,
+              fontSize: 9,
               fontWeight: FontWeight.w900,
               fontFamily: 'monospace',
-              letterSpacing: 2,
+              letterSpacing: 0.5,
             ),
           ),
           const SizedBox(height: 4),
-          Text(
-            value,
-            style: TextStyle(
-              color: color,
-              fontSize: 14,
-              fontWeight: FontWeight.w900,
-              fontFamily: 'monospace',
-              letterSpacing: 1.5,
+          SizedBox(
+            width: double.infinity,
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(
+                value,
+                maxLines: 1,
+                softWrap: false,
+                style: TextStyle(
+                  color: color,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w900,
+                  fontFamily: 'monospace',
+                  letterSpacing: 1,
+                ),
+              ),
             ),
           ),
           if (sub != null) ...[
             const SizedBox(height: 3),
             Text(
               sub,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
               style: TextStyle(
                 color: Colors.white.withValues(alpha: 0.5),
-                fontSize: 9,
+                fontSize: 8,
                 fontFamily: 'monospace',
               ),
             ),
@@ -431,53 +430,29 @@ class _SummaryScreenState extends State<SummaryScreen> {
     );
   }
 
-  /// Due card affiancate su 2 colonne, di pari altezza (IntrinsicHeight +
-  /// CrossAxisAlignment.stretch così la card più corta si allunga a pareggiare).
-  Widget _twoCol(Widget left, Widget right) {
+  /// Riga di card a larghezza uguale (Expanded) e pari altezza (IntrinsicHeight
+  /// + stretch). Usata per la riga unica modalità·difficoltà·arma·pet.
+  Widget _cardRow(List<Widget> cards) {
+    final children = <Widget>[];
+    for (var i = 0; i < cards.length; i++) {
+      if (i > 0) children.add(const SizedBox(width: 6));
+      children.add(Expanded(child: cards[i]));
+    }
     return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.only(bottom: 10),
       child: IntrinsicHeight(
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Expanded(child: left),
-            const SizedBox(width: 8),
-            Expanded(child: right),
-          ],
+          children: children,
         ),
       ),
     );
   }
 
-  Widget _modifiersSection(AppLocalizations l10n) {
-    if (activeModifiers.isEmpty) {
-      return _section(
-        l10n.modifiersTitle,
-        l10n.summaryNone,
-        Colors.white.withValues(alpha: 0.5),
-      );
-    }
-    final names = activeModifiers
-        .map((id) => _modifierLabel(l10n, id))
-        .join(', ');
-    final mult = combinedScoreMultiplier(activeModifiers);
-    return _section(
-      l10n.modifiersTitle,
-      names,
-      const Color(0xFFFF4466),
-      sub: l10n.summaryActiveModifiers(
-        activeModifiers.length,
-        mult.toStringAsFixed(2),
-      ),
-    );
-  }
-
-  Widget _multiplierBreakdown(
-    AppLocalizations l10n,
-    double diffMul,
-    double modMul,
-    double total,
-  ) {
+  /// Card unica che fonde "modificatori" + "score multiplier" (richiesta
+  /// utente). In colonna: riga difficoltà ×, poi OGNI modificatore attivo con
+  /// il proprio × a destra (uno per riga), e in fondo il TOTALE.
+  Widget _scoreCard(AppLocalizations l10n, double diffMul, double total) {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -513,8 +488,27 @@ class _SummaryScreenState extends State<SummaryScreen> {
             ),
           ),
           const SizedBox(height: 10),
-          _row(l10n.summaryDifficultyRow, '×${diffMul.toStringAsFixed(2)}'),
-          _row(l10n.summaryModifiersRow, '×${modMul.toStringAsFixed(2)}'),
+          // Difficoltà: contribuisce al moltiplicatore punteggio.
+          _row(_diffName(l10n, difficulty), '×${diffMul.toStringAsFixed(2)}'),
+          // Modificatori: uno per riga, con il proprio moltiplicatore a destra.
+          if (activeModifiers.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 3),
+              child: Text(
+                l10n.summaryNone,
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.4),
+                  fontSize: 12,
+                  fontFamily: 'monospace',
+                ),
+              ),
+            )
+          else
+            ...activeModifiers.map((id) {
+              final mul = getModifier(id)?.scoreMultiplier ?? 1.0;
+              return _row(
+                  _modifierLabel(l10n, id), '×${mul.toStringAsFixed(2)}');
+            }),
           const Divider(color: Colors.white24),
           _row(l10n.summaryTotal, '×${total.toStringAsFixed(2)}', big: true),
         ],
@@ -526,17 +520,21 @@ class _SummaryScreenState extends State<SummaryScreen> {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 3),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            label,
-            style: TextStyle(
-              color: Colors.white.withValues(alpha: big ? 0.95 : 0.7),
-              fontSize: big ? 14 : 12,
-              fontFamily: 'monospace',
-              fontWeight: big ? FontWeight.w900 : FontWeight.normal,
+          Expanded(
+            child: Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: Colors.white.withValues(alpha: big ? 0.95 : 0.7),
+                fontSize: big ? 14 : 12,
+                fontFamily: 'monospace',
+                fontWeight: big ? FontWeight.w900 : FontWeight.normal,
+              ),
             ),
           ),
+          const SizedBox(width: 8),
           Text(
             val,
             style: TextStyle(

@@ -207,6 +207,12 @@ class SplitterEnemy extends EnemyBase {
         // i figli esposti → laser che passava per lo splitter large uccideva
         // in un frame i 2 medium + 4 small generati.
         child.setSpawnInvulnerability(0.1);
+        // giant_mode: i figli dello split bypassano game.spawnEnemy (add
+        // diretto), quindi ereditano qui il 2× del modifier (corpo + hitbox
+        // via transform scale).
+        if (game.hasModifier('giant_mode')) {
+          child.scale.setValues(2.0, 2.0);
+        }
         game.world.add(child);
       }
     }
