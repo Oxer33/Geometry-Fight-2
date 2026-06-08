@@ -387,11 +387,20 @@ class WaveSystem {
   /// Boss Rush: ogni wave è UN SOLO boss. I nemici li spawna il boss stesso
   /// tramite _spawnMinions() nel boss_base.dart (automatico ogni 5s).
   /// NESSUN spawn separato per evitare conflitti con _bossActive.
+  // Shuffle bag per ordine RANDOM dei boss in Boss Rush (richiesta utente):
+  // ogni BossType una volta in ordine casuale prima di ripetere.
+  final List<BossType> _bossRushBag = [];
+  static final _bossRushRng = math.Random();
+
   WaveConfig _generateBossRushWave(int wave) {
-    final bosses = BossType.values;
-    final bossIndex = (wave - 1) % bosses.length;
-    // NESSUN spawn di nemici: il boss spawna i suoi minion automaticamente
-    return WaveConfig(waveNumber: wave, spawns: [], boss: bosses[bossIndex]);
+    if (_bossRushBag.isEmpty) {
+      _bossRushBag
+        ..addAll(BossType.values)
+        ..shuffle(_bossRushRng);
+    }
+    final boss = _bossRushBag.removeAt(0);
+    // NESSUN spawn di nemici: il boss spawna i suoi minion automaticamente.
+    return WaveConfig(waveNumber: wave, spawns: [], boss: boss);
   }
 
   /// Survival rework (richiesta utente): no wave, spawn 1-a-1 accelerante.

@@ -37,6 +37,10 @@ class EternityEngineBoss extends BossBase {
   // Rage (phase 3): spawn black hole ogni 10s invece di burst totali
   // (richiesta utente: rage sparava troppi proiettili).
   double _rageBlackHoleTimer = 10.0;
+  // Scia di mine (richiesta utente: "dove passa lascia delle mine"). Lascia
+  // una MineEnemy (stella grigia) sotto di sé a intervalli regolari.
+  double _mineTrailTimer = _kMineTrailInterval;
+  static const double _kMineTrailInterval = 1.5;
   // Shared rng — evita alloc in onPhaseChange/attackHoming/attackWall.
   static final math.Random _rng = math.Random();
 
@@ -121,6 +125,13 @@ class EternityEngineBoss extends BossBase {
       position += toTarget.normalized() * 60 * dt;
     }
 
+    // Scia di mine: dove passa, lascia una MineEnemy (richiesta utente).
+    _mineTrailTimer -= dt;
+    if (_mineTrailTimer <= 0 && game.enemyCount < 60) {
+      _mineTrailTimer = _kMineTrailInterval;
+      game.spawnEnemy(EnemyType.mine, position.clone());
+    }
+
     // Distorsione griglia costante
     if (!game.isTunnelMode) {
       game.grid.applyForce(position, 150, 80 * dt);
@@ -184,7 +195,9 @@ class EternityEngineBoss extends BossBase {
     // Attacco in base alla fase
     _attackTimer -= dt;
     if (_attackTimer <= 0) {
-      _attackTimer = (1.8 - currentPhase * 0.3).clamp(0.5, 2.0);
+      // Spara il 30% in meno (richiesta utente: troppo simile a Omega Core):
+      // intervallo allungato → ~70% dei proiettili nel tempo.
+      _attackTimer = (1.8 - currentPhase * 0.3).clamp(0.5, 2.0) / 0.7;
       switch (currentPhase) {
         case 0: _attackSpiral(8);
         case 1: _attackSpiral(12); _attackRadial();
@@ -477,7 +490,8 @@ class _EternityBullet extends PositionComponent with HasGameReference<GeometryFi
   @override
   void update(double dt) {
     super.update(dt);
-    position += _velocity * dt;
+    // SLOWER pet: rallenta dentro al campo (richiesta utente: tutti i bullet).
+    position += _velocity * dt * game.projectileSlowFactor(position);
     _lifetime -= dt;
     if (_lifetime <= 0) removeFromParent();
     if (position.distanceTo(game.player.position) < 14) {

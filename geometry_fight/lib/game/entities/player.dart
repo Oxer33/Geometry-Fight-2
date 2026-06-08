@@ -57,6 +57,14 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
   bool hasShield = false;
   double shieldTimer = 0;
 
+  // Shake detection (richiesta utente): il wiggle rapido del joystick libera i
+  // Leech agganciati. Accumula i reversal di direzione del movimento e decade
+  // nel tempo; `isShaking` è true sopra la soglia.
+  Vector2 _prevMoveInput = Vector2.zero();
+  double _shakeMeter = 0;
+  static const double _shakeThreshold = 4.0;
+  bool get isShaking => _shakeMeter >= _shakeThreshold;
+
   // Power-up states
   double rapidFireTimer = 0;
   double overdriveTimer = 0;
@@ -310,6 +318,17 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
         shieldHits = 0;
       }
     }
+
+    // Shake detection per liberare i Leech agganciati: conta i reversal rapidi
+    // del joystick (dot < 0 tra input consecutivi) e decade nel tempo.
+    final shakeInput = game.moveInput;
+    if (shakeInput.length2 > 0.04 &&
+        _prevMoveInput.length2 > 0.04 &&
+        shakeInput.normalized().dot(_prevMoveInput.normalized()) < -0.2) {
+      _shakeMeter += 1.0;
+    }
+    _prevMoveInput = shakeInput.clone();
+    _shakeMeter = (_shakeMeter - realDt * 2.0).clamp(0.0, 10.0);
 
     // Bomb
     if (game.bombPressed) {
@@ -1490,6 +1509,9 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
     if (other is EnemyBase) {
       // GW:RE2: nemici in materializzazione sono incorporei — non danneggiano il player
       if (other.isSpawnInvulnerable) return;
+      // Alcuni nemici non danneggiano al contatto (es. Leech: si aggancia e
+      // rallenta invece di uccidere).
+      if (!other.damagesPlayerOnContact) return;
       takeDamage();
     }
     super.onCollisionStart(intersectionPoints, other);

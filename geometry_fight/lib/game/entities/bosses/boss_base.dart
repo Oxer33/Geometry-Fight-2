@@ -397,7 +397,11 @@ abstract class BossBase extends PositionComponent
     // (prima return early → boss non spawnava nulla).
 
     for (int i = 0; i < baseCount; i++) {
-      final isSimple = types.isEmpty || _bossRandom.nextDouble() < 0.7;
+      // In tunnel mode SOLO mob a tema/colore del boss (richiesta utente: non
+      // devono spawnare mob casuali oltre quelli a tema). Negli altri modi
+      // resta il bias 70% verso i mob banali.
+      final isSimple = types.isEmpty ||
+          (!game.isTunnelMode && _bossRandom.nextDouble() < 0.7);
       final pool = isSimple ? simplePool : types;
       final type = pool[_bossRandom.nextInt(pool.length)];
       final angle = _bossRandom.nextDouble() * math.pi * 2;
@@ -490,6 +494,20 @@ abstract class BossBase extends PositionComponent
       final layerAlpha = (0.20 - i * 0.05) * (0.6 + auraPulse * 0.4);
       _fxAuraPaint.color = neonColor.withValues(alpha: layerAlpha);
       canvas.drawCircle(Offset(cx, cy), layerRadius, _fxAuraPaint);
+    }
+
+    // ─── 2.5 HP DAMAGE PULSE (TUTTI i boss) ───────────────────────────────
+    // Pulsazione del colore del boss che diventa sempre più intensa e rapida
+    // man mano che scendono gli HP (richiesta utente). A HP pieni è quasi
+    // assente; vicino alla morte è un battito veloce e brillante.
+    final hpLost = (1.0 - healthPercent).clamp(0.0, 1.0);
+    if (hpLost > 0.02) {
+      final freq = 2.0 + hpLost * 10.0; // pulsa più veloce a HP bassi
+      final dmgPulse = 0.5 + math.sin(_fxPhase * freq) * 0.5;
+      _fxAuraPaint.color =
+          neonColor.withValues(alpha: (0.10 + hpLost * 0.55) * dmgPulse);
+      canvas.drawCircle(
+          Offset(cx, cy), bossR * (1.05 + dmgPulse * 0.2), _fxAuraPaint);
     }
 
     // ─── 3. ANELLO ORBITANTE DI PARTICELLE (12 punti luminosi) ────────────

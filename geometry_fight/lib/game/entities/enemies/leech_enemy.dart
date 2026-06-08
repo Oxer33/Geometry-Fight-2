@@ -12,7 +12,6 @@ import 'enemy_base.dart';
 class LeechEnemy extends EnemyBase {
   bool _attached = false; // Se è agganciato al player
   double _tentaclePhase = 0;
-  double _attachTimer = 0; // Durata dell'aggancio prima di staccarsi
 
   // Paint caches: evita alloc per frame × N leech.
   static final Paint _tentaclePaint = Paint()
@@ -83,6 +82,19 @@ class LeechEnemy extends EnemyBase {
           size: Vector2(14, 14),
         );
 
+  // Non uccide al contatto (richiesta utente): si aggancia e rallenta invece
+  // di danneggiare.
+  @override
+  bool get damagesPlayerOnContact => false;
+
+  // Inattaccabile quando agganciato (richiesta utente): va colpito PRIMA che si
+  // attacchi; dopo l'aggancio lo si stacca solo squotendo la navicella.
+  @override
+  void takeDamage(double amount, {bool isArea = false}) {
+    if (_attached) return;
+    super.takeDamage(amount, isArea: isArea);
+  }
+
   @override
   void updateBehavior(double dt) {
     _tentaclePhase += dt * 8;
@@ -99,8 +111,9 @@ class LeechEnemy extends EnemyBase {
         math.sin(_tentaclePhase * 2) * 20,
       );
 
-      _attachTimer -= dt;
-      if (_attachTimer <= 0) {
+      // Si stacca SOLO quando il player "squote" la navicella (richiesta
+      // utente). Niente più timer automatico di sgancio.
+      if (game.player.isShaking) {
         _detach();
       }
       return;
@@ -111,13 +124,12 @@ class LeechEnemy extends EnemyBase {
     if (dist < 25) {
       // Si aggancia!
       _attached = true;
-      _attachTimer = 5.0;
-      // Applica slow solo al primo leech agganciato, preservando la velocità attuale
-      // (upgrade/modificatori già applicati).
-      // Guard isMounted: non applicare slow se il player è già morto/rimosso.
+      // Slow 50% (richiesta utente: era 30%). Applicato solo al primo leech
+      // agganciato, preservando la velocità attuale (upgrade/modificatori già
+      // applicati). Guard isMounted: non applicare se il player è morto/rimosso.
       if (_attachedCount == 0 && game.player.isMounted) {
         _savedPlayerSpeed = game.player.speed;
-        game.player.speed = game.player.speed * 0.7;
+        game.player.speed = game.player.speed * 0.5;
       }
       _attachedCount++;
     } else {

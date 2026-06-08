@@ -32,6 +32,11 @@ class VoidReaperBoss extends BossBase {
   List<EnemyType> get colorMatchedMinions =>
       const [EnemyType.phantom, EnemyType.mirror, EnemyType.proton];
 
+  // Hitbox più ampia del default 0.7: la falce è sottile ma il corpo deve
+  // poter colpire al contatto (richiesta utente: "se mi tocca non fa danni").
+  @override
+  double get hitboxRadiusFactor => 0.85;
+
   @override
   int getPhase() {
     if (healthPercent > 0.7) return 0;
@@ -43,10 +48,12 @@ class VoidReaperBoss extends BossBase {
   void updateBoss(double dt) {
     _movePhase += dt * 2;
 
-    // Movimento: insegue il player, più veloce in fase finale
+    // Movimento: insegue il player, più veloce in fase finale. Si avvicina
+    // fino a 20px (richiesta utente: prima si fermava a 50px → la hitbox non
+    // raggiungeva mai il player e il contatto non faceva danni).
     final speed = currentPhase == 2 ? 180.0 : 80.0;
     final toPlayer = (playerPosition - position);
-    if (toPlayer.length > 50) {
+    if (toPlayer.length > 20) {
       position += toPlayer.normalized() * speed * dt;
     }
 
@@ -88,19 +95,29 @@ class VoidReaperBoss extends BossBase {
     if (_deathZones.length >= _maxZones) {
       _deathZones.removeAt(0);
     }
-    // Piazza la zona vicino al player
-    final random = _rng;
-    final offset = Vector2(
-      (random.nextDouble() - 0.5) * 300,
-      (random.nextDouble() - 0.5) * 300,
+    // Spawna SULLA posizione attuale del player (richiesta utente): al momento
+    // dello spawn il player è dentro la zona → deve muoversi subito o viene
+    // colpito. Jitter minimo così zone successive non si sovrappongono identiche.
+    final jitter = Vector2(
+      (_rng.nextDouble() - 0.5) * 40,
+      (_rng.nextDouble() - 0.5) * 40,
     );
+    final spawnPos = playerPosition + jitter;
+    // Raggio molto più grande al cambio fase (richiesta utente: "sempre più
+    // grandi a soft/hard enrage"). Fase 0: 70 · soft enrage (1): 120 ·
+    // hard enrage (2): 180. In fase 1+ continua anche a espandersi (updateBoss).
+    final radius = switch (currentPhase) {
+      0 => 70.0,
+      1 => 120.0,
+      _ => 180.0,
+    };
     _deathZones.add(_DeathZone(
-      position: playerPosition + offset,
-      radius: 60 + currentPhase * 20.0,
+      position: spawnPos,
+      radius: radius,
       lifetime: 8.0,
     ));
     if (!game.isTunnelMode) {
-      game.grid.applyForce(playerPosition + offset, 80, 300);
+      game.grid.applyForce(spawnPos, 80, 300);
     }
   }
 

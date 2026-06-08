@@ -167,8 +167,9 @@ class PowerUp extends PositionComponent
         player.temporaryWeapon = WeaponType.spreadFan;
         player.weaponTimer = powerUpDuration;
       case PowerUpType.shield:
-        // Scudo salvavita: dura 60s, assorbe 1 colpo
-        player.applyShield(1, duration: 60.0);
+        // Scudo salvavita: assorbe 2 colpi, dura 60s (richiesta utente:
+        // l'azzurro "sembrava non fare nulla" → reso più impattante).
+        player.applyShield(2, duration: 60.0);
       case PowerUpType.magnet:
         player.magnetTimer = powerUpDuration;
       case PowerUpType.timeSlow:
@@ -181,6 +182,13 @@ class PowerUp extends PositionComponent
         if (player.game.isPacifistMode) break;
         if (player.bombs < player.game.saveData.bombCapacity) {
           player.bombs++;
+        } else {
+          // Già al massimo: detona una bomba "gratis" (screen clear) senza
+          // intaccare lo stock — +1 temporaneo poi useBomb lo riassorbe.
+          // Prima era un no-op silenzioso al cap → "il verde non fa nulla"
+          // (richiesta utente).
+          player.bombs++;
+          player.game.useBomb();
         }
       case PowerUpType.scoreMultiplier:
         player.game.scoreSystem.addGeoms(10);

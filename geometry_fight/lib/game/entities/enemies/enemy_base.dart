@@ -84,6 +84,11 @@ abstract class EnemyBase extends PositionComponent
   /// di divisioni simultanee che fa crashare il gioco.
   bool get isImmuneToAreaDamage => false;
 
+  /// True se il contatto col player infligge danno. Override a false per nemici
+  /// che NON devono uccidere al contatto (es. Leech: si aggancia e rallenta
+  /// invece di danneggiare). Letto da `Player.onCollisionStart`.
+  bool get damagesPlayerOnContact => true;
+
   EnemyBase({
     required this.hp,
     required this.speed,

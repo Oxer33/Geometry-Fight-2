@@ -1399,6 +1399,22 @@ class GeometryFightGame extends FlameGame
   double get modifierScoreMultiplier =>
       combinedScoreMultiplier(activeModifiers);
 
+  // SLOWER pet: campo di rallentamento frontale. SlowerPet aggiorna questi
+  // campi ogni frame (e li azzera su onRemove). I proiettili nemici leggono
+  // `projectileSlowFactor` per scalare il movimento dentro al campo (richiesta
+  // utente: "il pet Slower deve rallentare anche i proiettili").
+  Vector2? slowerFieldCenter;
+  double slowerFieldRadius = 0;
+  double slowerFieldFactor = 1.0;
+
+  /// Fattore di rallentamento (≤ 1.0) per un proiettile a [pos]: < 1.0 dentro
+  /// al campo Slower, 1.0 fuori (o se nessun campo è attivo).
+  double projectileSlowFactor(Vector2 pos) {
+    final c = slowerFieldCenter;
+    if (c == null) return 1.0;
+    return pos.distanceTo(c) <= slowerFieldRadius ? slowerFieldFactor : 1.0;
+  }
+
   // Arena effettiva (con modificatore tiny_arena)
   double get effectiveArenaWidth =>
       hasModifier('tiny_arena') ? arenaWidth * 0.5 : arenaWidth;

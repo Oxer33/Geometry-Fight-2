@@ -36,7 +36,13 @@ class SwarmQueenBoss extends BossBase {
           size: Vector2(110, 110),
         );
 
-  bool get _hiveBondActive => _swarmCount >= _kHiveBondThreshold;
+  // Hive-bond attivo SOLO nelle prime due fasi. Nell'ultima fase lo scudo è
+  // disattivato così il boss è davvero uccidibile (richiesta utente: "in ultima
+  // fase non prende danni"). Prima lo sciame restava sopra soglia per via dei
+  // respawn fitti (11 drone + 2 kamikaze ogni ~1.5s, cap 30) → scudo permanente
+  // → boss invulnerabile con qualsiasi arma.
+  bool get _hiveBondActive =>
+      currentPhase < 2 && _swarmCount >= _kHiveBondThreshold;
 
   @override
   void takeDamage(double amount, {bool isArea = false}) {
@@ -81,10 +87,13 @@ class SwarmQueenBoss extends BossBase {
     }
     _swarmCount = _droneCount;
 
-    // Movimento lento
+    // Movimento: insegue il player attivamente. Prima si fermava a 200px →
+    // restava "fermo in un punto" quando il player era vicino (richiesta
+    // utente). Stop a 120px + velocità che cresce con la fase (50/85/120).
+    final moveSpeed = 50.0 + currentPhase * 35.0;
     final toPlayer = (playerPosition - position);
-    if (toPlayer.length > 200) {
-      position += toPlayer.normalized() * 50 * dt;
+    if (toPlayer.length > 120) {
+      position += toPlayer.normalized() * moveSpeed * dt;
     }
 
     // Spawna sciami

@@ -963,6 +963,12 @@ class SlowerPet extends PetBase {
     // Davanti al player nella direzione di aim corrente.
     position = game.player.position + cachedAim * _frontOffset;
 
+    // Espone il campo al game: anche i proiettili nemici rallentano dentro
+    // l'area (richiesta utente: "deve rallentare anche i proiettili").
+    game.slowerFieldCenter = position;
+    game.slowerFieldRadius = _fieldRadius;
+    game.slowerFieldFactor = _slowFactor;
+
     // Rallenta i nemici dentro al campo. Esclude boss (BossBase, non
     // EnemyBase) automaticamente + spawn-invuln via isValidPetTarget.
     for (final c in game.world.children) {
@@ -972,6 +978,14 @@ class SlowerPet extends PetBase {
         }
       }
     }
+  }
+
+  @override
+  void onRemove() {
+    // Spegne il campo quando il pet sparisce (game over/restart) così i
+    // proiettili tornano a velocità piena.
+    game.slowerFieldCenter = null;
+    super.onRemove();
   }
 
   static final _fillPaint = Paint();

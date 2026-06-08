@@ -459,7 +459,8 @@ class _BossBullet extends PositionComponent
   @override
   void update(double dt) {
     super.update(dt);
-    position += _velocity * dt;
+    // SLOWER pet: rallenta dentro al campo (richiesta utente: tutti i bullet).
+    position += _velocity * dt * game.projectileSlowFactor(position);
     _lifetime -= dt;
     if (_lifetime <= 0) removeFromParent();
     if (position.distanceTo(game.player.position) < 14) {

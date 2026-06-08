@@ -8,7 +8,8 @@ import '../projectiles.dart';
 import 'boss_base.dart';
 
 /// Specchio fisico sul pavimento (nuova meccanica richiesta utente).
-/// Riflette i proiettili del player verso di lui. Distruttibile — HP visibile.
+/// Riflette i proiettili del player verso di lui. INDISTRUTTIBILE (richiesta
+/// utente): non subisce danno, resta sempre attivo.
 class _FloorMirror {
   Vector2 position = Vector2.zero();
   double angle = 0;
@@ -27,20 +28,21 @@ class MirrorMasterBoss extends BossBase {
   double _mirrorAngle = 0;
   double _attackTimer = 2.5;
   // Floor mirrors: bloccano (riflettono) i proiettili del player.
-  // Count scala con la fase: phase 0 → 3, phase 1 → 5, phase 2 → 8.
-  // Distruttibili, HP 25 ciascuno. Respawn 8s dopo morte totale.
+  // Count scala con la fase (richiesta utente): 2 → 4 → 6.
+  // INDISTRUTTIBILI: riflettono sempre, non si rompono.
   final List<_FloorMirror> _mirrors = [];
   int _spawnedPhase = -1;
   double _mirrorRespawnTimer = 8.0;
 
+  // Count specchi per fase (richiesta utente): 2 → 4 → 6.
   int _mirrorCountForPhase(int phase) {
     switch (phase) {
       case 0:
-        return 3;
+        return 2;
       case 1:
-        return 5;
+        return 4;
       default:
-        return 8;
+        return 6;
     }
   }
 
@@ -162,14 +164,16 @@ class MirrorMasterBoss extends BossBase {
       if (child.wasReflected || child.isRemoved) continue;
       for (final m in _mirrors) {
         if (!m.alive) continue;
-        if (child.position.distanceTo(m.position) < 22) {
-          m.hp -= 3;
-          if (m.hp <= 0) {
-            m.alive = false;
-            game.spawnExplosion(m.position, const Color(0xFFCCDDFF),
-                radius: 40, particleCount: 12);
-            game.triggerScreenShake(3, 0.15);
-          }
+        // Detection sull'INTERA superficie dello specchio (rettangolo ~60×10
+        // orientato a m.angle), non solo entro 22px dal centro: prima i colpi
+        // passavano attraverso la parte larga senza riflettersi (richiesta
+        // utente: "non bloccano i colpi"). Distanza dal segmento lungo 60px.
+        final axis = Vector2(math.cos(m.angle), math.sin(m.angle));
+        if (_distToSegment(child.position, m.position - axis * 30,
+                m.position + axis * 30) <
+            14) {
+          // Specchi INDISTRUTTIBILI (richiesta utente): non subiscono danno,
+          // riflettono il proiettile e basta.
           // Reflect verso player — EnemyBullet veloce.
           final dir = (playerPosition - m.position);
           if (dir.length > 0.001) {
@@ -203,6 +207,16 @@ class MirrorMasterBoss extends BossBase {
       bullet.position = position.clone();
       game.world.add(bullet);
     }
+  }
+
+  /// Distanza punto→segmento, per intercettare i proiettili su TUTTA la
+  /// superficie dello specchio (non solo vicino al centro).
+  double _distToSegment(Vector2 p, Vector2 a, Vector2 b) {
+    final ab = b - a;
+    final lenSq = ab.length2;
+    if (lenSq < 1e-6) return p.distanceTo(a);
+    final t = ((p - a).dot(ab) / lenSq).clamp(0.0, 1.0);
+    return p.distanceTo(a + ab * t);
   }
 
   // Signature FX paints
@@ -384,7 +398,8 @@ class _MirrorBullet extends PositionComponent with HasGameReference<GeometryFigh
   @override
   void update(double dt) {
     super.update(dt);
-    position += _velocity * dt;
+    // SLOWER pet: rallenta dentro al campo (richiesta utente).
+    position += _velocity * dt * game.projectileSlowFactor(position);
     _lifetime -= dt;
     if (_lifetime <= 0) removeFromParent();
     if (position.distanceTo(game.player.position) < 14) {

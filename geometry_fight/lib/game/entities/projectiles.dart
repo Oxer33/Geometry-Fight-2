@@ -266,7 +266,9 @@ class EnemyBullet extends PositionComponent
   @override
   void update(double dt) {
     super.update(dt);
-    position += _velocity * dt;
+    // SLOWER pet: rallenta i proiettili nemici dentro al campo (richiesta
+    // utente). Fuori dal campo il fattore è 1.0 → nessun effetto.
+    position += _velocity * dt * game.projectileSlowFactor(position);
 
     _lifetime -= dt;
     if (_lifetime <= 0) { removeFromParent(); return; }

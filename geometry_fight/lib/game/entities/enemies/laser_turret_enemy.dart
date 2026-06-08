@@ -11,6 +11,11 @@ import 'enemy_base.dart';
 class LaserTurretEnemy extends EnemyBase {
   double _laserAngle = 0;
   final double _laserSpeed = 1.2; // radianti/secondo
+  // Senso di rotazione del laser: alterna orario/antiorario così il raggio
+  // spazza in ENTRAMBI i sensi (richiesta utente).
+  double _rotDir = 1.0;
+  double _rotFlipTimer = _rotFlipInterval;
+  static const double _rotFlipInterval = 3.0;
   double _warmupTimer = 1.5; // Tempo prima che il laser si attivi
   bool _laserActive = false;
   static const double _laserLength = 250.0;
@@ -44,8 +49,14 @@ class LaserTurretEnemy extends EnemyBase {
       return;
     }
 
-    // Ruota il laser
-    _laserAngle += _laserSpeed * dt;
+    // Ruota il laser, invertendo il senso ogni _rotFlipInterval secondi
+    // (richiesta utente: "deve ruotare in entrambi i sensi").
+    _rotFlipTimer -= dt;
+    if (_rotFlipTimer <= 0) {
+      _rotFlipTimer = _rotFlipInterval;
+      _rotDir = -_rotDir;
+    }
+    _laserAngle += _laserSpeed * _rotDir * dt;
     if (_hitCd > 0) _hitCd -= dt;
 
     // Check danno al player (con cooldown 0.5s tra hit per evitare 60 dmg/sec).

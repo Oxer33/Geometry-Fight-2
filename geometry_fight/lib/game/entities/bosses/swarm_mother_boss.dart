@@ -32,6 +32,13 @@ class SwarmMotherBoss extends BossBase {
   // Vortex angle (phase 2): rotazione veloce delle 2 metà attorno al boss.
   double _vortexAngle = 0;
 
+  // Cooldown danno da contatto della metà wander/vortex. Questa metà è solo
+  // renderizzata (la hitbox del boss copre solo il chase half), quindi il
+  // danno da contatto va applicato a mano per distanza (richiesta utente:
+  // "una delle due metà non fa nulla, posso passarci attraverso").
+  double _wanderHitCd = 0;
+  static const double _kHalfContactRadius = 60.0; // ≈ raggio visivo (_drawHalf)
+
   SwarmMotherBoss()
       : super(
           hp: 2000,
@@ -112,6 +119,18 @@ class SwarmMotherBoss extends BossBase {
       const vortexR = 90.0;
       _wanderHalfPos = position +
           Vector2(math.cos(_vortexAngle), math.sin(_vortexAngle)) * vortexR;
+    }
+
+    // ── CONTATTO metà wander/vortex (phase 1+): danno manuale per distanza,
+    //    perché questa metà non ha hitbox propria (richiesta utente: non
+    //    deve essere attraversabile a vuoto). Cooldown per evitare 60 dmg/s.
+    if (_wanderHitCd > 0) _wanderHitCd -= dt;
+    if (currentPhase >= 1 &&
+        _wanderHitCd <= 0 &&
+        game.player.isMounted &&
+        playerPosition.distanceTo(_wanderHalfPos) < _kHalfContactRadius) {
+      game.player.takeDamage();
+      _wanderHitCd = 0.6;
     }
 
     // ── SPAWN nemici per fase ─────────────────────────────────────────

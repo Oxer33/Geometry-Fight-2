@@ -113,8 +113,10 @@ class _OrbiterBullet extends PositionComponent
   late Vector2 _velocity;
   double _lifetime = 3.0;
 
+  // Size 18×18 come i proiettili dei boss (richiesta utente: "grandi come i
+  // proiettili dei boss"). Prima 6×6 → percepiti troppo piccoli.
   _OrbiterBullet({required this.direction, required this.color})
-      : super(size: Vector2(6, 6), anchor: Anchor.center);
+      : super(size: Vector2(18, 18), anchor: Anchor.center);
 
   @override
   Future<void> onLoad() async {
@@ -130,12 +132,14 @@ class _OrbiterBullet extends PositionComponent
       removeFromParent();
       return;
     }
-    position += _velocity * dt;
+    // SLOWER pet: rallenta dentro al campo (richiesta utente).
+    position += _velocity * dt * game.projectileSlowFactor(position);
     _lifetime -= dt;
     if (_lifetime <= 0) removeFromParent();
 
-    // Check collision con player (distanza² evita sqrt per frame)
-    const double kHitRadius = 12.0;
+    // Check collision con player (distanza² evita sqrt per frame).
+    // 14 = match dei proiettili boss (bullet ora 18×18).
+    const double kHitRadius = 14.0;
     const double kHitRadiusSq = kHitRadius * kHitRadius;
     if ((position - game.player.position).length2 < kHitRadiusSq) {
       game.player.takeDamage();
@@ -150,11 +154,12 @@ class _OrbiterBullet extends PositionComponent
   void render(Canvas canvas) {
     final cx = size.x / 2;
     final cy = size.y / 2;
-    _bulletPaint.color = color.withValues(alpha: 0.4);
-    canvas.drawCircle(Offset(cx, cy), 5, _bulletPaint);
+    // Glow 8 + body 6 + core 3 — stessa scala dei proiettili boss.
+    _bulletPaint.color = color.withValues(alpha: 0.3);
+    canvas.drawCircle(Offset(cx, cy), 8, _bulletPaint);
     _bulletPaint.color = color;
-    canvas.drawCircle(Offset(cx, cy), 3, _bulletPaint);
+    canvas.drawCircle(Offset(cx, cy), 6, _bulletPaint);
     _bulletPaint.color = const Color(0xFFFFFFFF).withValues(alpha: 0.8);
-    canvas.drawCircle(Offset(cx, cy), 1.5, _bulletPaint);
+    canvas.drawCircle(Offset(cx, cy), 3, _bulletPaint);
   }
 }

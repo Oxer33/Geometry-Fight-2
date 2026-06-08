@@ -39,10 +39,12 @@ class OmegaCoreBoss extends BossBase {
           size: Vector2(120, 120),
         );
 
-  // OmegaCore è BIANCO/ARCOBALENO → mob bianchi/neutri (drone + orbiter + decoy).
+  // OmegaCore è BIANCO/ARCOBALENO → mob bianchi/neutri. NIENTE mob che sparano
+  // (richiesta utente: rimosso orbiter, che sparava palline). Solo drone +
+  // decoy (entrambi non sparano).
   @override
   List<EnemyType> get colorMatchedMinions =>
-      const [EnemyType.drone, EnemyType.orbiter, EnemyType.decoy];
+      const [EnemyType.drone, EnemyType.decoy];
 
   @override
   int getPhase() {
@@ -141,7 +143,10 @@ class OmegaCoreBoss extends BossBase {
   }
 
   void _shootSpiral() {
-    final count = 4 + currentPhase * 2;
+    var count = 4 + currentPhase * 2;
+    // Ultima fase (3): -20% proiettili (richiesta utente: in fase finale
+    // spara troppo). 10 → 8.
+    if (currentPhase == 3) count = (count * 0.8).round();
     for (int i = 0; i < count; i++) {
       final angle = _spiralAngle + i * math.pi * 2 / count;
       final dir = Vector2(math.cos(angle), math.sin(angle));
@@ -342,7 +347,8 @@ class _OmegaBullet extends PositionComponent with HasGameReference<GeometryFight
   @override
   void update(double dt) {
     super.update(dt);
-    position += _velocity * dt;
+    // SLOWER pet: rallenta dentro al campo (richiesta utente).
+    position += _velocity * dt * game.projectileSlowFactor(position);
     _lifetime -= dt;
     if (_lifetime <= 0) { removeFromParent(); return; }
     if (position.distanceTo(game.player.position) < 14) {
