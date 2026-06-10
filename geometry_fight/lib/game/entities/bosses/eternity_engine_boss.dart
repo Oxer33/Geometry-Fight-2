@@ -199,11 +199,14 @@ class EternityEngineBoss extends BossBase {
       // intervallo allungato → ~70% dei proiettili nel tempo.
       _attackTimer = (1.8 - currentPhase * 0.3).clamp(0.5, 2.0) / 0.7;
       switch (currentPhase) {
-        case 0: _attackSpiral(8);
-        case 1: _attackSpiral(12); _attackRadial();
-        case 2: _attackSpiral(16); _attackRadial(); _attackHoming();
+        // -25% proiettili spiral (8/12/16 → 6/9/12) per differenziarlo da
+        // Omega Core e ridurre la densità (richiesta utente). Eternity si
+        // appoggia di più alla sua identità: scia di mine + rewind orbs.
+        case 0: _attackSpiral(6);
+        case 1: _attackSpiral(9); _attackRadial();
+        case 2: _attackSpiral(12); _attackRadial(); _attackHoming();
         // Rage (richiesta utente): spara come phase 2 — no burst totale.
-        case 3: _attackSpiral(16); _attackRadial(); _attackHoming();
+        case 3: _attackSpiral(12); _attackRadial(); _attackHoming();
       }
     }
 
@@ -238,8 +241,9 @@ class EternityEngineBoss extends BossBase {
     final baseAngle = delta.length < 0.001
         ? 0.0
         : math.atan2(delta.y, delta.x);
-    for (int i = 0; i < 6; i++) {
-      final angle = baseAngle + (i - 2.5) * 0.15;
+    // Ventaglio 6 → 5 proiettili (-17%, richiesta utente: meno proiettili).
+    for (int i = 0; i < 5; i++) {
+      final angle = baseAngle + (i - 2.0) * 0.15;
       final bulletDir = Vector2(math.cos(angle), math.sin(angle));
       final bullet = _EternityBullet(direction: bulletDir, color: _getPhaseColor(1), speed: 250);
       bullet.position = position.clone();

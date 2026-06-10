@@ -86,7 +86,9 @@ class OmegaCoreBoss extends BossBase {
     // Attacco base: proiettili spirali
     _attackTimer -= dt;
     if (_attackTimer <= 0) {
-      _attackTimer = currentPhase == 3 ? 0.5 : 1.5 - currentPhase * 0.3;
+      // Fase finale meno "firehose": intervallo 0.5→0.65 (richiesta utente:
+      // ~-23% rate, combinato col -20% count = ~-38% proiettili in fase 3).
+      _attackTimer = currentPhase == 3 ? 0.65 : 1.5 - currentPhase * 0.3;
       _shootSpiral();
     }
 
@@ -143,10 +145,9 @@ class OmegaCoreBoss extends BossBase {
   }
 
   void _shootSpiral() {
-    var count = 4 + currentPhase * 2;
-    // Ultima fase (3): -20% proiettili (richiesta utente: in fase finale
-    // spara troppo). 10 → 8.
-    if (currentPhase == 3) count = (count * 0.8).round();
+    // -20% proiettili su TUTTE le fasi (richiesta utente: spara troppo, non
+    // solo in ultima fase). 4/6/8/10 → 3/5/6/8.
+    var count = ((4 + currentPhase * 2) * 0.8).round();
     for (int i = 0; i < count; i++) {
       final angle = _spiralAngle + i * math.pi * 2 / count;
       final dir = Vector2(math.cos(angle), math.sin(angle));

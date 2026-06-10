@@ -259,7 +259,13 @@ class EnemyBullet extends PositionComponent
     } else {
       _velocity = direction.normalized() * speed;
     }
-    add(CircleHitbox(radius: 9, anchor: Anchor.center)
+    // Modifier giant_mode: proiettili nemici 2× più grandi (richiesta utente
+    // "tutto 2x ... proiettili"). Scala size → render e hitbox scalano con essa.
+    // EnemyBullet è il proiettile condiviso da 9 boss + pulsar/vortex/mirror.
+    if (game.hasModifier('giant_mode')) {
+      size.setValues(size.x * 2, size.y * 2);
+    }
+    add(CircleHitbox(radius: size.x / 2, anchor: Anchor.center)
       ..position = size / 2);
   }
 
@@ -308,15 +314,17 @@ class EnemyBullet extends PositionComponent
   void render(Canvas canvas) {
     final cx = size.x / 2;
     final cy = size.y / 2;
+    // Raggi relativi a size (18 = base) → scalano con giant_mode (size 36 → 2×).
+    final k = size.x / 18.0;
     // Glow esterno (SENZA blur per performance — con 50 proiettili = 50 blur)
     _ebGlowPaint.color = color.withValues(alpha: 0.3);
     _ebGlowPaint.maskFilter = null;
-    canvas.drawCircle(Offset(cx, cy), 8, _ebGlowPaint);
+    canvas.drawCircle(Offset(cx, cy), 8 * k, _ebGlowPaint);
     // Corpo principale
     _ebBodyPaint.color = color;
-    canvas.drawCircle(Offset(cx, cy), 6, _ebBodyPaint);
+    canvas.drawCircle(Offset(cx, cy), 6 * k, _ebBodyPaint);
     // Centro luminoso
-    canvas.drawCircle(Offset(cx, cy), 3, _ebCorePaint);
+    canvas.drawCircle(Offset(cx, cy), 3 * k, _ebCorePaint);
   }
 
   @override

@@ -1,7 +1,6 @@
 import 'dart:ui';
 import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
-import '../../../data/constants.dart';
 import '../../game_world.dart';
 
 abstract class EnemyBase extends PositionComponent
@@ -174,7 +173,11 @@ abstract class EnemyBase extends PositionComponent
       } else {
         // SLOWER pet: dt scalato → movimento e timer interni del nemico
         // rallentano in proporzione finché resta dentro al campo.
-        updateBehavior(isSlowed ? dt * _slowFactor : dt);
+        // Modifier speed_demon (×1.5) / bullet_hell (×2) accelerano il behavior
+        // (movimento + fuoco) — vedi game.enemyBehaviorScale. Si combinano
+        // moltiplicando con lo slow del pet.
+        final base = isSlowed ? dt * _slowFactor : dt;
+        updateBehavior(base * game.enemyBehaviorScale);
       }
     }
 
@@ -200,8 +203,9 @@ abstract class EnemyBase extends PositionComponent
       // utente "bordo arena impenetrabile"). Prima `5` → mezzo mob usciva.
       final hx = size.x / 2;
       final hy = size.y / 2;
-      position.x = position.x.clamp(hx, arenaWidth - hx);
-      position.y = position.y.clamp(hy, arenaHeight - hy);
+      // tiny_arena: clamp all'arena effettiva centrata (i mob restano nel box).
+      position.x = position.x.clamp(game.arenaMinX + hx, game.arenaMaxX - hx);
+      position.y = position.y.clamp(game.arenaMinY + hy, game.arenaMaxY - hy);
     }
   }
 
@@ -217,6 +221,17 @@ abstract class EnemyBase extends PositionComponent
     if (_spawnInvulnTimer > 0) return;
     // Immunità danno ad area (es. Splitter — evita cascata split simultanea)
     if (isArea && isImmuneToAreaDamage) return;
+
+    // Modifier ONE SHOT: qualunque colpo uccide il nemico in un colpo
+    // (richiesta utente: "tutti i nemici muoiono con 1 colpo. Ma anche tu").
+    // DOPO i guard spawn-invuln/area-immunity → non rompe materializzazione né
+    // la cascata Splitter. I boss (BossBase) hanno takeDamage separato → esenti.
+    if (game.hasModifier('one_shot')) {
+      hp = 0;
+      _flashTimer = 0.1;
+      onDeath();
+      return;
+    }
 
     hp -= amount;
     _flashTimer = 0.1;

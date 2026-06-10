@@ -62,7 +62,7 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
   // nel tempo; `isShaking` è true sopra la soglia.
   Vector2 _prevMoveInput = Vector2.zero();
   double _shakeMeter = 0;
-  static const double _shakeThreshold = 4.0;
+  static const double _shakeThreshold = 3.0; // ~2 inversioni nette del joystick
   bool get isShaking => _shakeMeter >= _shakeThreshold;
 
   // Power-up states
@@ -243,9 +243,10 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
         cameraY + screenHalfH - 20,
       );
     } else {
-      // Modalità normali: limiti sia X che Y
-      position.x = position.x.clamp(15, arenaWidth - 15);
-      position.y = position.y.clamp(15, arenaHeight - 15);
+      // Modalità normali: limiti sia X che Y. Modifier tiny_arena → arena
+      // effettiva centrata (meno spazio per schivare — richiesta utente).
+      position.x = position.x.clamp(game.arenaMinX + 15, game.arenaMaxX - 15);
+      position.y = position.y.clamp(game.arenaMinY + 15, game.arenaMaxY - 15);
     }
 
     // Aim direction.
@@ -270,7 +271,11 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
     _fireTimer -= realDt;
     // Snake mode: no spari (regola design — trail-kill puro).
     // Pacifism mode: shooting completamente bloccato (regola GW2 Pacifism).
-    final canShoot = !game.isPacifistMode && game.gameMode != GameMode.snake;
+    // Modifier infinite_bombs (BOMBER): "niente armi" → spari disabilitati,
+    // resta solo la bomba infinita (richiesta utente: modifier non funzionava).
+    final canShoot = !game.isPacifistMode &&
+        game.gameMode != GameMode.snake &&
+        !game.hasModifier('infinite_bombs');
     if (canShoot &&
         (game.isShooting || aimDir.length > 0.3) && _fireTimer <= 0) {
       // Direction default: se il giocatore preme fire senza mirare, usa
@@ -319,16 +324,30 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
       }
     }
 
-    // Shake detection per liberare i Leech agganciati: conta i reversal rapidi
-    // del joystick (dot < 0 tra input consecutivi) e decade nel tempo.
+    // Shake detection per liberare i Leech agganciati. Il vecchio metodo
+    // sommava +1 solo nel singolo frame dell'inversione mentre decadeva a 2/s
+    // → di fatto irraggiungibile (utente: "non si stacca anche se mi scuoto
+    // moltissime volte"). Ora `_prevMoveInput` è la direzione di RIFERIMENTO
+    // (ultima direzione stabile): ogni inversione netta del joystick rispetto
+    // ad essa conta come 1 "scrollata" (+1.5) e aggiorna il riferimento →
+    // bastano ~2-3 wiggle sx/dx per liberare il leech.
     final shakeInput = game.moveInput;
-    if (shakeInput.length2 > 0.04 &&
-        _prevMoveInput.length2 > 0.04 &&
-        shakeInput.normalized().dot(_prevMoveInput.normalized()) < -0.2) {
-      _shakeMeter += 1.0;
+    if (shakeInput.length2 > 0.08) {
+      final cur = shakeInput.normalized();
+      if (_prevMoveInput.length2 > 0.5) {
+        final d = cur.dot(_prevMoveInput);
+        if (d < -0.3) {
+          _shakeMeter += 1.5; // inversione netta → conta 1 scrollata
+          _prevMoveInput = cur.clone();
+        } else if (d > 0.5) {
+          _prevMoveInput = cur.clone(); // stessa direzione: segue derive lente
+        }
+        // d in [-0.3, 0.5]: transizione ambigua → non aggiornare il riferimento
+      } else {
+        _prevMoveInput = cur.clone();
+      }
     }
-    _prevMoveInput = shakeInput.clone();
-    _shakeMeter = (_shakeMeter - realDt * 2.0).clamp(0.0, 10.0);
+    _shakeMeter = (_shakeMeter - realDt * 1.0).clamp(0.0, 12.0);
 
     // Bomb
     if (game.bombPressed) {

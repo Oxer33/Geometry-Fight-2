@@ -1,7 +1,6 @@
 import 'dart:math' as math;
 import 'dart:ui';
 import 'package:flame/components.dart';
-import '../../../data/constants.dart';
 import '../../../data/wave_configs.dart';
 import '../../game_world.dart';
 import '../projectiles.dart';
@@ -11,8 +10,10 @@ import 'boss_base.dart';
 /// Riflette i proiettili del player verso di lui. INDISTRUTTIBILE (richiesta
 /// utente): non subisce danno, resta sempre attivo.
 class _FloorMirror {
-  Vector2 position = Vector2.zero();
-  double angle = 0;
+  double orbitAngle = 0; // posizione angolare attorno al boss (scudo rotante)
+  Vector2 position = Vector2.zero(); // world pos, ricalcolata ogni frame
+  double angle = 0; // orientamento superficie (tangente all'orbita)
+  double reflectCd = 0; // throttle riflessi → niente muro di bullet
   double hp = 25;
   final double maxHp = 25;
   bool alive = true;
@@ -33,6 +34,8 @@ class MirrorMasterBoss extends BossBase {
   final List<_FloorMirror> _mirrors = [];
   int _spawnedPhase = -1;
   double _mirrorRespawnTimer = 8.0;
+  // Raggio orbita degli specchi attorno al boss (just outside body 95px).
+  static const double _kMirrorOrbitR = 115.0;
 
   // Count specchi per fase (richiesta utente): 2 → 4 → 6.
   int _mirrorCountForPhase(int phase) {
@@ -57,28 +60,17 @@ class MirrorMasterBoss extends BossBase {
 
   void _spawnMirrors() {
     _mirrors.clear();
-    final cx = game.isTunnelMode
-        ? game.camera.viewfinder.position.x
-        : arenaWidth / 2;
-    final cy = game.isTunnelMode
-        ? game.camera.viewfinder.position.y
-        : arenaHeight / 2;
-    // N specchi sui vertici di un poligono regolare attorno al centro.
-    // Count cresce con la fase: 3 → 5 → 8.
+    // Specchi distribuiti uniformemente attorno al BOSS (scudo). La posizione
+    // world viene ricalcolata ogni frame in updateBoss (orbita rotante), così
+    // restano SEMPRE tra player e boss invece di stare fissi al centro arena.
     final count = _mirrorCountForPhase(currentPhase);
-    const r = 180.0;
-    final yMin = game.camera.viewfinder.position.y - 200;
-    final yMax = game.camera.viewfinder.position.y + 200;
     for (int i = 0; i < count; i++) {
-      final ang = i * math.pi * 2 / count - math.pi / 2;
-      final mx = cx + math.cos(ang) * r;
-      var my = cy + math.sin(ang) * r;
-      if (game.isTunnelMode) {
-        my = my.clamp(yMin, yMax);
-      }
+      final base = i * math.pi * 2 / count;
       _mirrors.add(_FloorMirror()
-        ..position = Vector2(mx, my)
-        ..angle = ang + math.pi / 2);
+        ..orbitAngle = base
+        ..position =
+            position + Vector2(math.cos(base), math.sin(base)) * _kMirrorOrbitR
+        ..angle = base + math.pi / 2);
     }
     _spawnedPhase = currentPhase;
   }
@@ -137,57 +129,48 @@ class MirrorMasterBoss extends BossBase {
       position += toTarget.normalized() * followSpeed * dt;
     }
 
-    // ─── MIRRORS: reflect PlayerBullet + phase 2 drift verso player ──
+    // ─── MIRRORS: scudo rotante attorno al BOSS ─────────────────────
+    // Prima erano fissi al centro arena mentre il boss orbita il player a
+    // 250px → lontani dall'azione, non intercettavano mai i colpi ("non fanno
+    // nulla, mi seguono soltanto", richiesta utente). Ora orbitano il boss:
+    // sempre tra player e boss → bloccano e riflettono davvero. La rotazione
+    // (gap mobili) è uno skill-check sull'angolo di tiro.
+    final spin = _mirrorAngle * (0.5 + currentPhase * 0.25);
     for (final m in _mirrors) {
       if (!m.alive) continue;
-      // Fase 2+: specchi convergono lentamente sul player.
-      if (currentPhase >= 1) {
-        final toPlayer = (playerPosition - m.position);
-        if (toPlayer.length > 40) {
-          m.position += toPlayer.normalized() * 25 * dt;
-          m.angle = math.atan2(toPlayer.y, toPlayer.x) + math.pi / 2;
-        }
-      }
+      if (m.reflectCd > 0) m.reflectCd -= dt;
+      final a = m.orbitAngle + spin;
+      m.position =
+          position + Vector2(math.cos(a), math.sin(a)) * _kMirrorOrbitR;
+      // Superficie tangente all'orbita → i colpi radiali rimbalzano al player.
+      m.angle = a + math.pi / 2;
     }
 
-    // Intercetta PlayerBullet entro 22px → riflette come EnemyBullet
-    // + danno 3 allo specchio. Bullet ad alto damage (plasma) romperà
-    // lo specchio in 3 hit.
-    //
-    // BUG FIX: `removeFromParent()` di Flame è async (processato a fine
-    // frame). Senza flag, un PlayerBullet fermo sullo specchio veniva
-    // "reflected" ogni frame fino alla rimozione effettiva → rain di
-    // _MirrorBullet. `wasReflected` + `isRemoved` guard + snapshot list
-    // (niente concurrent modification su game.world.children).
-    final bullets = game.world.children.whereType<PlayerBullet>().toList();
-    for (final child in bullets) {
-      if (child.wasReflected || child.isRemoved) continue;
-      for (final m in _mirrors) {
-        if (!m.alive) continue;
-        // Detection sull'INTERA superficie dello specchio (rettangolo ~60×10
-        // orientato a m.angle), non solo entro 22px dal centro: prima i colpi
-        // passavano attraverso la parte larga senza riflettersi (richiesta
-        // utente: "non bloccano i colpi"). Distanza dal segmento lungo 60px.
-        final axis = Vector2(math.cos(m.angle), math.sin(m.angle));
-        if (_distToSegment(child.position, m.position - axis * 30,
-                m.position + axis * 30) <
-            14) {
-          // Specchi INDISTRUTTIBILI (richiesta utente): non subiscono danno,
-          // riflettono il proiettile e basta.
-          // Reflect verso player — EnemyBullet veloce.
-          final dir = (playerPosition - m.position);
-          if (dir.length > 0.001) {
-            final reflected = _MirrorBullet(
-                direction: dir.normalized(),
-                color: const Color(0xFFFF88FF));
-            reflected.position = m.position.clone();
-            game.world.add(reflected);
-          }
-          child.wasReflected = true;
-          child.removeFromParent();
-          break;
-        }
+    // Intercetta TUTTI i proiettili discreti del player (varie armi: base,
+    // plasma, gauss, missile) su tutta la superficie dello specchio → li
+    // BLOCCA sempre e li rimbalza verso il player (throttle per specchio per
+    // non creare muri di bullet con armi rapide). Prima solo PlayerBullet →
+    // con le altre armi i colpi passavano (richiesta utente: "con varie armi").
+    // Snapshot list (niente concurrent modification su world.children);
+    // `wasReflected`/`isRemoved` guard contro reflect ripetuto pre-rimozione.
+    for (final b in game.world.children.whereType<PlayerBullet>().toList()) {
+      if (b.wasReflected || b.isRemoved) continue;
+      if (_reflectAt(b.position)) {
+        b.wasReflected = true;
+        b.removeFromParent();
       }
+    }
+    for (final b in game.world.children.whereType<PlasmaBullet>().toList()) {
+      if (b.isRemoved) continue;
+      if (_reflectAt(b.position)) b.removeFromParent();
+    }
+    for (final b in game.world.children.whereType<GaussBullet>().toList()) {
+      if (b.isRemoved) continue;
+      if (_reflectAt(b.position)) b.removeFromParent();
+    }
+    for (final b in game.world.children.whereType<HomingMissile>().toList()) {
+      if (b.isRemoved) continue;
+      if (_reflectAt(b.position)) b.removeFromParent();
     }
 
     // Attacco
@@ -207,6 +190,34 @@ class MirrorMasterBoss extends BossBase {
       bullet.position = position.clone();
       game.world.add(bullet);
     }
+  }
+
+  /// Riflette/blocca un proiettile del player se tocca la superficie di uno
+  /// specchio (segmento orientato di 60px). Ritorna true se colpito → il
+  /// chiamante rimuove il proiettile. Lo spawn del _MirrorBullet è throttlato
+  /// a 1 ogni 0.15s per specchio (anti muro-di-bullet con armi rapide); il
+  /// BLOCCO invece è sempre applicato.
+  bool _reflectAt(Vector2 bulletPos) {
+    for (final m in _mirrors) {
+      if (!m.alive) continue;
+      final axis = Vector2(math.cos(m.angle), math.sin(m.angle));
+      if (_distToSegment(
+              bulletPos, m.position - axis * 30, m.position + axis * 30) <
+          16) {
+        if (m.reflectCd <= 0) {
+          final dir = playerPosition - m.position;
+          if (dir.length > 0.001) {
+            final reflected = _MirrorBullet(
+                direction: dir.normalized(), color: const Color(0xFFFF88FF));
+            reflected.position = m.position.clone();
+            game.world.add(reflected);
+          }
+          m.reflectCd = 0.15;
+        }
+        return true;
+      }
+    }
+    return false;
   }
 
   /// Distanza punto→segmento, per intercettare i proiettili su TUTTA la

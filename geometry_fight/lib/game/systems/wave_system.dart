@@ -295,8 +295,10 @@ class WaveSystem {
       } else if (game.bossCount == 0 &&
           _pendingBoss == null &&
           _allSpawned &&
-          game.enemyCount == 0) {
-        // Wait for boss to die, ma continua a spawnare nemici se presenti
+          (game.enemyCount == 0 || _mode == GameMode.bossRush)) {
+        // Boss morto → completa la wave. In Boss Rush NON aspettare che i mob
+        // residui muoiano: il prossimo boss arriva 5s dopo la morte, SEMPRE
+        // (richiesta utente). Negli altri mode resta il gate enemyCount==0.
         _bossActive = false;
         _completeWave();
         return;
@@ -366,7 +368,9 @@ class WaveSystem {
       // Waves: ondate continue molto ravvicinate (richiesta utente).
       delaySec = 0.2;
     } else if (_mode == GameMode.bossRush) {
-      delaySec = 3.0;
+      // 5s esatti tra la morte di un boss e lo spawn del successivo, anche con
+      // mob ancora vivi (richiesta utente: prima spawnava subito o al kill mob).
+      delaySec = 5.0;
     } else {
       delaySec = 1.0;
     }
@@ -834,8 +838,8 @@ class WaveSystem {
       Vector2? lastCandidate;
       for (int attempt = 0; attempt < maxAttempts; attempt++) {
         final c = Vector2(
-          margin + rng.nextDouble() * (eW - margin * 2),
-          margin + rng.nextDouble() * (eH - margin * 2),
+          game.arenaMinX + margin + rng.nextDouble() * (eW - margin * 2),
+          game.arenaMinY + margin + rng.nextDouble() * (eH - margin * 2),
         );
         lastCandidate = c;
         bool ok = true;
@@ -1175,8 +1179,8 @@ class WaveSystem {
     const minDist2 = _dailyMinPlayerSpawnDist * _dailyMinPlayerSpawnDist;
     const maxPosAttempts = 30;
     Vector2 samplePos() => Vector2(
-          margin + posRng.nextDouble() * (eW - margin * 2),
-          margin + posRng.nextDouble() * (eH - margin * 2),
+          game.arenaMinX + margin + posRng.nextDouble() * (eW - margin * 2),
+          game.arenaMinY + margin + posRng.nextDouble() * (eH - margin * 2),
         );
     for (int i = 0; i < mobCount; i++) {
       var pos = samplePos();
@@ -2432,21 +2436,13 @@ class WaveSystem {
       formation = _Formation.values[_formRng.nextInt(_Formation.values.length)];
     }
 
-    // Clamp usa effectiveArena per rispettare `tiny_arena` modifier.
-    // Prima usava arenaWidth/Height full → enemy spawnavano fuori view
-    // quando arena era ridotta.
-    final eW = game.effectiveArenaWidth;
-    final eH = game.effectiveArenaHeight;
-
+    // Clamp all'arena effettiva CENTRATA (rispetta tiny_arena): prima usava
+    // [20, eW-20] top-left → mob ammassati in alto-sx col modifier attivo.
     // borderLine per altri tipi: dispone lungo un bordo senza rush forzato.
     if (formation == _Formation.borderLine) {
       final positions = _fBorderLine(count);
       for (final pos in positions) {
-        final clamped = Vector2(
-          pos.x.clamp(20.0, eW - 20.0),
-          pos.y.clamp(20.0, eH - 20.0),
-        );
-        game.spawnEnemy(type, clamped);
+        game.spawnEnemy(type, game.clampInArena(pos, 20.0));
       }
       return;
     }
@@ -2456,11 +2452,7 @@ class WaveSystem {
     final positions = _buildFormation(formation, count, center, playerPos);
 
     for (final pos in positions) {
-      final clamped = Vector2(
-        pos.x.clamp(20.0, eW - 20.0),
-        pos.y.clamp(20.0, eH - 20.0),
-      );
-      game.spawnEnemy(type, clamped);
+      game.spawnEnemy(type, game.clampInArena(pos, 20.0));
     }
   }
 
@@ -2475,9 +2467,6 @@ class WaveSystem {
     final rows = 2 + _formRng.nextInt(2); // 2 o 3 schiere
     final perRow = (count / rows).ceil();
     const rowSpacing = 32.0;
-    // Clamp usa effectiveArena per rispettare `tiny_arena` modifier.
-    final eW = game.effectiveArenaWidth;
-    final eH = game.effectiveArenaHeight;
     // Cap totale a `count` così rows*perRow non eccede il target wave.
     int totalSpawned = 0;
     for (int r = 0; r < rows && totalSpawned < count; r++) {
@@ -2490,10 +2479,8 @@ class WaveSystem {
           pos.x + offset.x + (marchDir.x == 0 ? sidewayShift : 0),
           pos.y + offset.y + (marchDir.y == 0 ? sidewayShift : 0),
         );
-        final clamped = Vector2(
-          rowPos.x.clamp(20.0, eW - 20.0),
-          rowPos.y.clamp(20.0, eH - 20.0),
-        );
+        // Clamp all'arena effettiva centrata (rispetta tiny_arena).
+        final clamped = game.clampInArena(rowPos, 20.0);
         final spawned = game.spawnEnemy(EnemyType.swarmDrone, clamped);
         if (spawned is SwarmDroneEnemy) {
           spawned.setMarchDirection(marchDir);
@@ -2525,9 +2512,10 @@ class WaveSystem {
     final eW = game.effectiveArenaWidth;
     final eH = game.effectiveArenaHeight;
     final pad = math.min(160.0, math.min(eW, eH) * 0.25);
+    // Offset arenaMin → centro nell'arena effettiva centrata (tiny_arena).
     return Vector2(
-      pad + _formRng.nextDouble() * (eW - pad * 2),
-      pad + _formRng.nextDouble() * (eH - pad * 2),
+      game.arenaMinX + pad + _formRng.nextDouble() * (eW - pad * 2),
+      game.arenaMinY + pad + _formRng.nextDouble() * (eH - pad * 2),
     );
   }
 
@@ -3207,6 +3195,15 @@ class WaveSystem {
           final t = n == 1 ? 0.5 : i / (n - 1);
           positions.add(Vector2(x, startY + (endY - startY) * t));
         }
+    }
+    // Le coordinate sono in [0..eW]×[0..eH]; le trasliamo nel box centrato
+    // dell'arena effettiva (offset 0 in modalità normale) → tiny_arena.
+    final ox = game.arenaMinX, oy = game.arenaMinY;
+    if (ox != 0 || oy != 0) {
+      for (final p in positions) {
+        p.x += ox;
+        p.y += oy;
+      }
     }
     return positions;
   }

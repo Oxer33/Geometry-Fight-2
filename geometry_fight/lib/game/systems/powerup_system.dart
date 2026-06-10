@@ -1,6 +1,5 @@
 import 'dart:math' as math;
 import 'package:flame/components.dart';
-import '../../data/constants.dart';
 import '../../data/difficulty.dart';
 import '../game_world.dart';
 import '../entities/powerups.dart';
@@ -40,9 +39,15 @@ class PowerUpSystem {
         cam.y + (_random.nextDouble() - 0.5) * halfH * 1.2,
       );
     } else {
+      // Spawn dentro l'arena effettiva centrata → con tiny_arena i power-up
+      // restano raccoglibili (prima cadevano fuori dal box, irraggiungibili).
       pos = Vector2(
-        100 + _random.nextDouble() * (arenaWidth - 200),
-        100 + _random.nextDouble() * (arenaHeight - 200),
+        game.arenaMinX +
+            100 +
+            _random.nextDouble() * (game.effectiveArenaWidth - 200),
+        game.arenaMinY +
+            100 +
+            _random.nextDouble() * (game.effectiveArenaHeight - 200),
       );
     }
     spawnRandomPowerUp(pos);

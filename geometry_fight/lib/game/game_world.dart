@@ -71,6 +71,7 @@ import 'effects/screen_shake.dart';
 import 'effects/explosion.dart';
 import 'effects/space_background.dart';
 import 'effects/tunnel_renderer.dart';
+import 'effects/fog_of_war.dart';
 import 'systems/wave_system.dart';
 import 'systems/score_system.dart';
 import 'systems/powerup_system.dart';
@@ -845,8 +846,23 @@ class GeometryFightGame extends FlameGame
         boss = AstralSentinelBoss();
     }
 
-    // HP dimezzati per tutti i boss (bilanciamento), poi scalati per difficoltà
-    boss.hp = (boss.hp * 0.5 * diffConfig.enemyHpMultiplier).roundToDouble();
+    if (gameMode == GameMode.bossRush) {
+      // Boss Rush: HP normalizzato + scaling MONOTONO con la wave.
+      // I boss base hanno HP molto diversi (600–3500): con l'ordine random
+      // (shuffle bag) un boss debole dopo uno forte sembrava "perdere vita"
+      // (richiesta utente). Qui ignoriamo l'HP base e usiamo una curva pura
+      // sulla wave → ogni boss successivo ha SEMPRE più vita.
+      // Wave 1 = 900 HP (pre-difficoltà), +15% per wave: w2=1035, w5=1440,
+      // w10=2250… cresce con la potenza del player (upgrade comprati).
+      const baseHp = 900.0;
+      const growthPerWave = 0.15;
+      final waveIdx = (waveSystem.currentWave - 1).clamp(0, 1000);
+      final scaled = baseHp * (1 + waveIdx * growthPerWave);
+      boss.hp = (scaled * diffConfig.enemyHpMultiplier).roundToDouble();
+    } else {
+      // HP dimezzati per tutti i boss (bilanciamento), poi scalati per difficoltà
+      boss.hp = (boss.hp * 0.5 * diffConfig.enemyHpMultiplier).roundToDouble();
+    }
     boss.maxHp = boss.hp;
 
     boss.position = pos;
@@ -1214,6 +1230,9 @@ class GeometryFightGame extends FlameGame
   // Time Attack: timer countdown
   double timeAttackTimer = 180; // 3 minuti
   bool get isTimeAttackMode => gameMode == GameMode.timeAttack;
+  // Boss Rush: usato dall'HUD per mostrare SEMPRE "BOSS WAVE" anche tra un
+  // boss e l'altro (bossCount==0 con mob residui) — richiesta utente.
+  bool get isBossRushMode => gameMode == GameMode.bossRush;
 
   bool _sessionSaved = false;
 
@@ -1350,6 +1369,12 @@ class GeometryFightGame extends FlameGame
         // Others handled in their respective systems
       }
     }
+    // Modifier fog_of_war (NEBBIA DI GUERRA): overlay che oscura l'arena tranne
+    // un cerchio attorno al player (richiesta utente: non era implementato).
+    // world rebuild ad ogni run → nessun fog stale da rimuovere.
+    if (hasModifier('fog_of_war')) {
+      world.add(FogOfWar());
+    }
     // Applica il moltiplicatore score dai modifier (glass_cannon 3×, bullet_hell 2×, ecc.)
     scoreSystem.modifierMultiplier = modifierScoreMultiplier;
 
@@ -1399,6 +1424,19 @@ class GeometryFightGame extends FlameGame
   double get modifierScoreMultiplier =>
       combinedScoreMultiplier(activeModifiers);
 
+  /// Scala temporale del comportamento nemico dai modifier attivi:
+  /// - speed_demon: tutto 1.5× (movimento + timer interni, incluso il fuoco)
+  ///   → coerente con "tutto si muove 1.5x più veloce" (player gestito a parte).
+  /// - bullet_hell: nemici 2× più aggressivi → i loro timer di fuoco corrono
+  ///   2× ("sparano il doppio più velocemente"). Applicato centralmente sul dt
+  ///   del behavior (enemy_base) così copre TUTTI gli shooter
+  ///   (orbiter/pulsar/vortex/mirror/tesla/turret/siren…) senza toccarli uno a
+  ///   uno; come effetto collaterale accelera anche il loro movimento.
+  /// Lo Slower pet si combina moltiplicando (slow × scale).
+  double get enemyBehaviorScale =>
+      (hasModifier('speed_demon') ? 1.5 : 1.0) *
+      (hasModifier('bullet_hell') ? 2.0 : 1.0);
+
   // SLOWER pet: campo di rallentamento frontale. SlowerPet aggiorna questi
   // campi ogni frame (e li azzera su onRemove). I proiettili nemici leggono
   // `projectileSlowFactor` per scalare il movimento dentro al campo (richiesta
@@ -1415,11 +1453,29 @@ class GeometryFightGame extends FlameGame
     return pos.distanceTo(c) <= slowerFieldRadius ? slowerFieldFactor : 1.0;
   }
 
-  // Arena effettiva (con modificatore tiny_arena)
+  // Arena effettiva (con modificatore tiny_arena). Quando tiny_arena è attivo
+  // l'area giocabile è un rettangolo CENTRATO grande la metà: il centro resta
+  // (arenaWidth/2, arenaHeight/2) → player start e orbita boss restano corretti.
   double get effectiveArenaWidth =>
       hasModifier('tiny_arena') ? arenaWidth * 0.5 : arenaWidth;
   double get effectiveArenaHeight =>
       hasModifier('tiny_arena') ? arenaHeight * 0.5 : arenaHeight;
+  // Inset per centrare l'arena ridotta (0 in modalità normale).
+  double get _arenaInsetX => (arenaWidth - effectiveArenaWidth) / 2;
+  double get _arenaInsetY => (arenaHeight - effectiveArenaHeight) / 2;
+  // Bordi dell'arena effettiva (coordinate world): [arenaMinX..arenaMaxX] ×
+  // [arenaMinY..arenaMaxY]. In modalità normale = [0, arenaWidth/Height].
+  double get arenaMinX => _arenaInsetX;
+  double get arenaMaxX => arenaWidth - _arenaInsetX;
+  double get arenaMinY => _arenaInsetY;
+  double get arenaMaxY => arenaHeight - _arenaInsetY;
+
+  /// Clampa [p] dentro l'arena effettiva con un [margin] dai bordi (rispetta
+  /// tiny_arena). Usato dagli spawn per non far apparire mob fuori dal box.
+  Vector2 clampInArena(Vector2 p, double margin) => Vector2(
+        p.x.clamp(arenaMinX + margin, arenaMaxX - margin),
+        p.y.clamp(arenaMinY + margin, arenaMaxY - margin),
+      );
 
   // ══════════════════════════════════════════════════════════════
   // TUNNEL GEOMETRY — usata da nemici, proiettili e TunnelRenderer
@@ -1454,7 +1510,11 @@ class GeometryFightGame extends FlameGame
 
   void useBomb() {
     if (player.bombs <= 0) return;
-    player.bombs--;
+    // Modifier infinite_bombs (BOMBER): bombe davvero infinite → non decrementa
+    // (prima 999 finite). Le armi sono disabilitate altrove (player canShoot).
+    if (!hasModifier('infinite_bombs')) {
+      player.bombs--;
+    }
     sessionBombs++;
 
     // Slow-mo breve (0.3s, scala 0.5 — meno aggressivo)

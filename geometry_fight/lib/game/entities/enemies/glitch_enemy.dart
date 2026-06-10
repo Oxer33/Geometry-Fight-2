@@ -96,6 +96,14 @@ class GlitchEnemy extends EnemyBase {
 
     position = newPos;
 
+    // Grace post-teletrasporto (richiesta utente): per 2s il Glitch è
+    // INATTACCABILE e NON danneggia il player. Riusa lo spawn-invuln di
+    // EnemyBase → durante questi 2s il behavior è congelato (sta fermo dove si
+    // materializza), `takeDamage` è no-op e `onCollisionStart` del player salta
+    // il danno (isSpawnInvulnerable). Il render base lampeggia → telegrafo
+    // chiaro che non è ancora "solido".
+    setSpawnInvulnerability(2.0);
+
     // Distorci la griglia nel punto di arrivo
     if (!game.isTunnelMode) {
       game.grid.applyForce(position, 80, 300);

@@ -380,7 +380,9 @@ class ArenaBorder extends PositionComponent
   void render(Canvas canvas) {
     // Non disegnare il bordo in tunnel mode (il tunnel ha i suoi muri)
     if (game.isTunnelMode) return;
-    final rect = const Rect.fromLTWH(0, 0, arenaWidth, arenaHeight);
+    // Modifier tiny_arena: bordo dell'arena effettiva centrata (non più full).
+    final rect = Rect.fromLTRB(
+        game.arenaMinX, game.arenaMinY, game.arenaMaxX, game.arenaMaxY);
     canvas.drawRect(rect, _borderGlowPaint);
     canvas.drawRect(rect, _borderMainPaint);
     canvas.drawRect(rect, _borderInnerPaint);

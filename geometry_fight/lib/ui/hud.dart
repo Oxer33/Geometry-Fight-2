@@ -92,7 +92,9 @@ class _GameHudState extends State<GameHud> {
                     child: _WaveIndicator(
                       wave: game.waveSystem.currentWave,
                       enemyCount: game.enemyCount,
-                      isBossWave: game.bossCount > 0,
+                      // Boss Rush: SEMPRE "BOSS WAVE" anche tra un boss e
+                      // l'altro (bossCount torna 0 coi mob residui) — utente.
+                      isBossWave: game.isBossRushMode || game.bossCount > 0,
                       modifier: game.waveSystem.activeModifier,
                       l10n: l10n,
                     ),
