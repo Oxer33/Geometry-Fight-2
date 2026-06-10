@@ -18,6 +18,14 @@ class FogOfWar extends PositionComponent
   static const double _clearRadius = 150;
   static const double _darkRadius = 340;
   static final Paint _paint = Paint();
+  // Shader invariante (center/raggi/colori costanti) → costruito una sola
+  // volta, non a ogni frame (evita alloc Gradient.radial per frame).
+  static final Shader _shader = Gradient.radial(
+    Offset.zero,
+    _darkRadius,
+    const [Color(0x00000000), Color(0x00000000), Color(0xF2000000)],
+    [0.0, _clearRadius / _darkRadius, 1.0],
+  );
 
   @override
   void update(double dt) {
@@ -27,16 +35,11 @@ class FogOfWar extends PositionComponent
 
   @override
   void render(Canvas canvas) {
-    _paint.shader = Gradient.radial(
-      Offset.zero,
-      _darkRadius,
-      const [Color(0x00000000), Color(0x00000000), Color(0xF2000000)],
-      [0.0, _clearRadius / _darkRadius, 1.0],
-    );
+    _paint.shader = _shader;
     // Rettangolo grande abbastanza da coprire lo schermo qualunque sia la
     // posizione del player nel viewport (la camera lo segue ~centrato). Oltre
     // `_darkRadius` il gradiente è clampato all'ultimo colore (buio pieno).
-    final reach = (game.size.x + game.size.y) * 1.5 + _darkRadius;
+    final reach = (game.size.x + game.size.y) * 2.0 + _darkRadius;
     canvas.drawRect(
       Rect.fromCenter(center: Offset.zero, width: reach, height: reach),
       _paint,
