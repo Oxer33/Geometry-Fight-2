@@ -25,6 +25,8 @@ class PlayerBullet extends PositionComponent
   double _lifetime = bulletLifetime;
   late Vector2 _velocity;
   double _distanceTravelled = 0;
+  // Modifier giant_mode: fattore 2× su size/hitbox/render (impostato in onLoad).
+  double _giantK = 1.0;
 
   /// Flag: già riflesso da MirrorMaster. Evita "rain" di _MirrorBullet
   /// quando un PlayerBullet resta sullo specchio per più frame prima
@@ -60,8 +62,16 @@ class PlayerBullet extends PositionComponent
     } else {
       _velocity = direction.normalized() * speed;
     }
+    // Modifier giant_mode: anche i proiettili del player 2× (descrizione
+    // "tutto 2x"). _giantK scala i raggi di render; size+hitbox raddoppiano.
+    var hitR = 3 * sizeMultiplier;
+    if (game.hasModifier('giant_mode')) {
+      _giantK = 2.0;
+      size.setValues(size.x * 2, size.y * 2);
+      hitR *= 2;
+    }
     // Hitbox circolare per proiettili rotondi
-    add(CircleHitbox(radius: 3 * sizeMultiplier, anchor: Anchor.center)
+    add(CircleHitbox(radius: hitR, anchor: Anchor.center)
       ..position = size / 2);
   }
 
@@ -163,20 +173,21 @@ class PlayerBullet extends PositionComponent
       _trailPaint.color = color.withValues(alpha: alpha * 0.3);
       final offset = _trail[i] - position;
       canvas.drawCircle(
-        Offset(cx + offset.x, cy + offset.y), 1.5 * sizeMultiplier, _trailPaint,
+        Offset(cx + offset.x, cy + offset.y),
+        1.5 * sizeMultiplier * _giantK, _trailPaint,
       );
     }
 
     // Glow esterno
     _glowPaint.color = color.withValues(alpha: 0.35);
-    canvas.drawCircle(Offset(cx, cy), 4 * sizeMultiplier, _glowPaint);
+    canvas.drawCircle(Offset(cx, cy), 4 * sizeMultiplier * _giantK, _glowPaint);
 
     // Proiettile principale (cerchio pieno)
     _bodyPaint.color = color;
-    canvas.drawCircle(Offset(cx, cy), 3 * sizeMultiplier, _bodyPaint);
+    canvas.drawCircle(Offset(cx, cy), 3 * sizeMultiplier * _giantK, _bodyPaint);
 
     // Centro luminoso bianco
-    canvas.drawCircle(Offset(cx, cy), 1.2 * sizeMultiplier, _corePaint);
+    canvas.drawCircle(Offset(cx, cy), 1.2 * sizeMultiplier * _giantK, _corePaint);
   }
 
   @override
