@@ -20,18 +20,21 @@ class ChronoWraithBoss extends BossBase {
   double _priorTimeScale = 1.0;
 
   ChronoWraithBoss()
-      : super(
-          hp: 1800,
-          bossName: 'CHRONO WRAITH',
-          pointValue: 18000,
-          neonColor: NeonColors.deepPurple,
-          size: Vector2(130, 130),
-        );
+    : super(
+        hp: 1800,
+        bossName: 'CHRONO WRAITH',
+        pointValue: 18000,
+        neonColor: NeonColors.deepPurple,
+        size: Vector2(130, 130),
+      );
 
   // ChronoWraith è VIOLA SCURO → mob viola (phantom + glitch + mirror).
   @override
-  List<EnemyType> get colorMatchedMinions =>
-      const [EnemyType.phantom, EnemyType.glitch, EnemyType.mirror];
+  List<EnemyType> get colorMatchedMinions => const [
+    EnemyType.phantom,
+    EnemyType.glitch,
+    EnemyType.mirror,
+  ];
 
   @override
   int getPhase() {
@@ -61,11 +64,9 @@ class ChronoWraithBoss extends BossBase {
     _afterimageTimer -= dt;
     if (_afterimageTimer <= 0) {
       _afterimageTimer = 0.15;
-      _afterimages.add(_Afterimage(
-        position: position.clone(),
-        lifetime: 1.0,
-        opacity: 0.6,
-      ));
+      _afterimages.add(
+        _Afterimage(position: position.clone(), lifetime: 1.0, opacity: 0.6),
+      );
     }
 
     // Update afterimages — reverse-index loop (no List alloc per frame).
@@ -79,7 +80,10 @@ class ChronoWraithBoss extends BossBase {
     // Shoot
     _shootTimer -= dt;
     if (_shootTimer <= 0) {
-      _shootTimer = (0.5 - currentPhase * 0.1).clamp(0.1, 0.5); // FIX C9c: evita timer negativo/zero
+      _shootTimer = (0.5 - currentPhase * 0.1).clamp(
+        0.1,
+        0.5,
+      ); // FIX C9c: evita timer negativo/zero
       _shoot();
     }
 
@@ -112,7 +116,10 @@ class ChronoWraithBoss extends BossBase {
           final angle = i * math.pi / 3 + _phase * 2;
           final bulletDir = Vector2(math.cos(angle), math.sin(angle));
           final bullet = EnemyBullet(
-              direction: bulletDir, speed: 350, color: NeonColors.deepPurple);
+            direction: bulletDir,
+            speed: 350,
+            color: NeonColors.deepPurple,
+          );
           bullet.position = position.clone();
           game.world.add(bullet);
         }
@@ -131,9 +138,10 @@ class ChronoWraithBoss extends BossBase {
           }
           final toPlayer = delta.normalized();
           final bullet = EnemyBullet(
-              direction: toPlayer,
-              speed: 200,
-              color: NeonColors.deepPurple.withValues(alpha: 0.5));
+            direction: toPlayer,
+            speed: 200,
+            color: NeonColors.deepPurple.withValues(alpha: 0.5),
+          );
           bullet.position = ai.position.clone();
           game.world.add(bullet);
           ai.lifetime = 0.5; // Prevent shooting again
@@ -174,7 +182,9 @@ class ChronoWraithBoss extends BossBase {
     final toPlayer = playerPosition - position;
     // Guard: if boss is exactly at player position, normalized() returns NaN.
     // Fall back to a fixed offset so position stays valid.
-    final behindDir = toPlayer.length > 0.5 ? toPlayer.normalized() : Vector2(1, 0);
+    final behindDir = toPlayer.length > 0.5
+        ? toPlayer.normalized()
+        : Vector2(1, 0);
     final behind = playerPosition + behindDir * -200;
     if (game.isTunnelMode) {
       final cam = game.camera.viewfinder.position;
@@ -191,7 +201,12 @@ class ChronoWraithBoss extends BossBase {
       );
     }
 
-    game.spawnExplosion(position, NeonColors.deepPurple, radius: 40, particleCount: 15);
+    game.spawnExplosion(
+      position,
+      NeonColors.deepPurple,
+      radius: 40,
+      particleCount: 15,
+    );
   }
 
   void _shoot() {
@@ -200,11 +215,16 @@ class ChronoWraithBoss extends BossBase {
     final timeToReach = position.distanceTo(playerPosition) / 300;
     final predictedPos = playerPosition + playerVel * timeToReach;
     final aimDir = predictedPos - position;
-    if (aimDir.length < 1) return; // FIX C9a: evita NaN se player == boss position
+    if (aimDir.length < 1) {
+      return; // FIX C9a: evita NaN se player == boss position
+    }
     final predictedDir = aimDir.normalized();
 
     final bullet = EnemyBullet(
-        direction: predictedDir, speed: 300, color: NeonColors.deepPurple);
+      direction: predictedDir,
+      speed: 300,
+      color: NeonColors.deepPurple,
+    );
     bullet.position = position.clone();
     game.world.add(bullet);
 
@@ -214,7 +234,10 @@ class ChronoWraithBoss extends BossBase {
         final angle = math.atan2(predictedDir.y, predictedDir.x) + offset;
         final spreadDir = Vector2(math.cos(angle), math.sin(angle));
         final spreadBullet = EnemyBullet(
-            direction: spreadDir, speed: 280, color: NeonColors.purple);
+          direction: spreadDir,
+          speed: 280,
+          color: NeonColors.purple,
+        );
         spreadBullet.position = position.clone();
         game.world.add(spreadBullet);
       }
@@ -242,11 +265,15 @@ class ChronoWraithBoss extends BossBase {
     // ─── PRE-TELEPORT RING (appare 0.5s prima del teleport) ───
     if (scale <= 1.01 && _teleportTimer < 0.5 && _teleportTimer > 0) {
       final warnT = 1.0 - _teleportTimer.clamp(0.0, 0.5) / 0.5;
-      _teleportRingPaint.color =
-          NeonColors.deepPurple.withValues(alpha: warnT * 0.7);
+      _teleportRingPaint.color = NeonColors.deepPurple.withValues(
+        alpha: warnT * 0.7,
+      );
       _teleportRingPaint.strokeWidth = 2 + warnT * 3;
-      canvas.drawCircle(Offset(cx, cy), 70 * scale * (1.0 - warnT * 0.3),
-          _teleportRingPaint);
+      canvas.drawCircle(
+        Offset(cx, cy),
+        70 * scale * (1.0 - warnT * 0.3),
+        _teleportRingPaint,
+      );
     }
 
     // Afterimages
@@ -254,13 +281,22 @@ class ChronoWraithBoss extends BossBase {
       final offset = ai.position - position;
       _aiPaint.color = neonColor.withValues(alpha: ai.opacity * 0.3);
       _drawWraithShape(
-          canvas, _aiPaint, scale * 0.9, Offset(cx + offset.x, cy + offset.y),
-          drawClockface: false);
+        canvas,
+        _aiPaint,
+        scale * 0.9,
+        Offset(cx + offset.x, cy + offset.y),
+        drawClockface: false,
+      );
     }
 
     // Corpo principale con clockface
-    _drawWraithShape(canvas, paint, scale, Offset(cx, cy),
-        drawClockface: scale <= 1.01);
+    _drawWraithShape(
+      canvas,
+      paint,
+      scale,
+      Offset(cx, cy),
+      drawClockface: scale <= 1.01,
+    );
 
     // ─── TIME WARP: vortex viola + spirale rotante ───
     if (_timeWarping) {
@@ -300,19 +336,29 @@ class ChronoWraithBoss extends BossBase {
       canvas.rotate(_phase * 3);
       canvas.drawArc(
         Rect.fromCircle(center: Offset.zero, radius: 80 * scale),
-        0, math.pi / 3, false, _arcPaint,
+        0,
+        math.pi / 3,
+        false,
+        _arcPaint,
       );
       canvas.drawArc(
         Rect.fromCircle(center: Offset.zero, radius: 80 * scale),
-        math.pi, math.pi / 3, false, _arcPaint,
+        math.pi,
+        math.pi / 3,
+        false,
+        _arcPaint,
       );
       canvas.restore();
     }
   }
 
   void _drawWraithShape(
-      Canvas canvas, Paint paint, double scale, Offset center,
-      {bool drawClockface = false}) {
+    Canvas canvas,
+    Paint paint,
+    double scale,
+    Offset center, {
+    bool drawClockface = false,
+  }) {
     final r = 50 * scale;
 
     canvas.save();
@@ -378,11 +424,9 @@ class ChronoWraithBoss extends BossBase {
     paint.style = PaintingStyle.fill;
     if (drawClockface) {
       final irisPulse = 0.6 + math.sin(_phase * 5) * 0.4;
-      _irisPaint.color =
-          const Color(0xFF6611AA).withValues(alpha: irisPulse);
+      _irisPaint.color = const Color(0xFF6611AA).withValues(alpha: irisPulse);
       canvas.drawCircle(Offset.zero, 8 * scale * irisPulse, _irisPaint);
-      _pupilPaint.color =
-          const Color(0xFFFFFFFF).withValues(alpha: irisPulse);
+      _pupilPaint.color = const Color(0xFFFFFFFF).withValues(alpha: irisPulse);
       canvas.drawCircle(Offset.zero, 3.5 * scale, _pupilPaint);
     } else {
       canvas.drawCircle(Offset.zero, 5 * scale, paint);

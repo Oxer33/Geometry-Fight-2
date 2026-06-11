@@ -38,17 +38,17 @@ class TimeBombEnemy extends EnemyBase {
     ..strokeWidth = 1;
 
   TimeBombEnemy()
-      : super(
-          hp: 4,
-          speed: 90,
-          pointValue: 12,
-          geomValue: 4,
-          neonColor: const Color(0xFFFF6600),
-          // Bump 24→30: bomba più massiccia e leggibile (richiesta utente
-          // "disegnamolo molto più figo"). Component = size*2 = 60px, raggio
-          // scocca/hitbox = 30px.
-          size: Vector2(30, 30),
-        );
+    : super(
+        hp: 4,
+        speed: 90,
+        pointValue: 12,
+        geomValue: 4,
+        neonColor: const Color(0xFFFF6600),
+        // Bump 24→30: bomba più massiccia e leggibile (richiesta utente
+        // "disegnamolo molto più figo"). Component = size*2 = 60px, raggio
+        // scocca/hitbox = 30px.
+        size: Vector2(30, 30),
+      );
 
   @override
   Future<void> onLoad() async {
@@ -107,7 +107,12 @@ class TimeBombEnemy extends EnemyBase {
       game.player.takeDamage();
     }
     // Esplosione enorme
-    game.spawnExplosion(position, neonColor, radius: _explosionRadius, particleCount: 40);
+    game.spawnExplosion(
+      position,
+      neonColor,
+      radius: _explosionRadius,
+      particleCount: 40,
+    );
     if (!game.isTunnelMode) {
       game.grid.applyForce(position, _explosionRadius * 1.5, 1500);
     }
@@ -127,7 +132,12 @@ class TimeBombEnemy extends EnemyBase {
     _dead = true;
     // Ucciso dal player: no esplosione area, drop power-up garantito
     game.spawnPowerUp(position);
-    game.spawnExplosion(position, NeonColors.green, radius: 30, particleCount: 15);
+    game.spawnExplosion(
+      position,
+      NeonColors.green,
+      radius: 30,
+      particleCount: 15,
+    );
     // super.onDeath gestisce _isDead + game.onEnemyKilled(this) + removeFromParent.
     super.onDeath();
   }
@@ -151,8 +161,11 @@ class TimeBombEnemy extends EnemyBase {
     final Color bodyColor;
     if (_countdown > 2) {
       final t = ((8.0 - _countdown) / 6.0).clamp(0.0, 1.0);
-      bodyColor =
-          Color.lerp(const Color(0xFFFF6600), const Color(0xFFFF0000), t)!;
+      bodyColor = Color.lerp(
+        const Color(0xFFFF6600),
+        const Color(0xFFFF0000),
+        t,
+      )!;
     } else {
       final flash = (idlePhase * 8).toInt() % 2 == 0;
       bodyColor = flash ? const Color(0xFFFF0000) : const Color(0xFFFFEE00);
@@ -186,11 +199,15 @@ class TimeBombEnemy extends EnemyBase {
     for (var i = 0; i < spikeCount; i++) {
       final a = (i / spikeCount) * math.pi * 2 + spin;
       spikes
-        ..moveTo(cx + math.cos(a - halfW) * spikeBase,
-            cy + math.sin(a - halfW) * spikeBase)
+        ..moveTo(
+          cx + math.cos(a - halfW) * spikeBase,
+          cy + math.sin(a - halfW) * spikeBase,
+        )
         ..lineTo(cx + math.cos(a) * spikeTip, cy + math.sin(a) * spikeTip)
-        ..lineTo(cx + math.cos(a + halfW) * spikeBase,
-            cy + math.sin(a + halfW) * spikeBase)
+        ..lineTo(
+          cx + math.cos(a + halfW) * spikeBase,
+          cy + math.sin(a + halfW) * spikeBase,
+        )
         ..close();
     }
     _bodyPaint
@@ -253,10 +270,11 @@ class TimeBombEnemy extends EnemyBase {
         for (var i = 0; i < ringCount; i++) {
           final ringProgress = (idlePhase * 2 + i / ringCount) % 1.0;
           final ringR = r * 1.5 + ringProgress * _explosionRadius * ampMul;
-          final ringAlpha =
-              ((1 - ringProgress) * urgency * brightnessBoost).clamp(0.0, 1.0);
-          _ringPaint.color =
-              const Color(0xFFFF0000).withValues(alpha: ringAlpha);
+          final ringAlpha = ((1 - ringProgress) * urgency * brightnessBoost)
+              .clamp(0.0, 1.0);
+          _ringPaint.color = const Color(
+            0xFFFF0000,
+          ).withValues(alpha: ringAlpha);
           canvas.drawCircle(Offset(cx, cy), ringR, _ringPaint);
         }
       }

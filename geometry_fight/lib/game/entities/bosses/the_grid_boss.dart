@@ -37,20 +37,22 @@ class TheGridBoss extends BossBase {
   static final Paint _laserWhitePaint = Paint();
 
   TheGridBoss()
-      : super(
-          // +50% HP secondo passaggio (era 500 → 750 → 1125) —
-          // utente: "the grid deve avere il 50% in piu degli hp".
-          hp: 1125,
-          bossName: 'THE GRID',
-          pointValue: 5000,
-          neonColor: NeonColors.white,
-          size: Vector2(200, 200),
-        );
+    : super(
+        // +50% HP secondo passaggio (era 500 → 750 → 1125) —
+        // utente: "the grid deve avere il 50% in piu degli hp".
+        hp: 1125,
+        bossName: 'THE GRID',
+        pointValue: 5000,
+        neonColor: NeonColors.white,
+        size: Vector2(200, 200),
+      );
 
   // TheGrid è BIANCO → mob bianchi/neutri (drone + decoy).
   @override
-  List<EnemyType> get colorMatchedMinions =>
-      const [EnemyType.drone, EnemyType.decoy];
+  List<EnemyType> get colorMatchedMinions => const [
+    EnemyType.drone,
+    EnemyType.decoy,
+  ];
 
   // TheGrid renderizza una griglia che copre quasi tutto il bbox 200x200
   // (visual border quasi tangente alla bbox). Override factor a 0.85
@@ -80,7 +82,11 @@ class TheGridBoss extends BossBase {
     // Attack patterns
     _attackTimer -= dt;
     if (_attackTimer <= 0) {
-      final interval = currentPhase == 2 ? 0.8 : currentPhase == 1 ? 1.2 : 2.0;
+      final interval = currentPhase == 2
+          ? 0.8
+          : currentPhase == 1
+          ? 1.2
+          : 2.0;
       _attackTimer = interval;
       _firePattern();
     }
@@ -89,10 +95,14 @@ class TheGridBoss extends BossBase {
     _mineTimer -= dt;
     if (_mineTimer <= 0 && currentPhase >= 1) {
       _mineTimer = 4;
-      game.spawnEnemy(EnemyType.mine, position + Vector2(
-        (_rng.nextDouble() - 0.5) * 150,
-        (_rng.nextDouble() - 0.5) * 150,
-      ));
+      game.spawnEnemy(
+        EnemyType.mine,
+        position +
+            Vector2(
+              (_rng.nextDouble() - 0.5) * 150,
+              (_rng.nextDouble() - 0.5) * 150,
+            ),
+      );
     }
 
     // Phase 2+: Drones
@@ -101,10 +111,14 @@ class TheGridBoss extends BossBase {
       if (_droneTimer <= 0) {
         _droneTimer = 2;
         for (int i = 0; i < 2; i++) {
-          game.spawnEnemy(EnemyType.drone, position + Vector2(
-            (_rng.nextDouble() - 0.5) * 100,
-            (_rng.nextDouble() - 0.5) * 100,
-          ));
+          game.spawnEnemy(
+            EnemyType.drone,
+            position +
+                Vector2(
+                  (_rng.nextDouble() - 0.5) * 100,
+                  (_rng.nextDouble() - 0.5) * 100,
+                ),
+          );
         }
       }
     }
@@ -153,7 +167,9 @@ class TheGridBoss extends BossBase {
         _laserCooldown = 6.0;
         _laserTelegraphTimer = _kLaserTelegraphDuration;
         _laserAngle = math.atan2(
-            playerPosition.y - position.y, playerPosition.x - position.x);
+          playerPosition.y - position.y,
+          playerPosition.x - position.x,
+        );
       }
     }
   }
@@ -178,8 +194,10 @@ class TheGridBoss extends BossBase {
           _shootBullet(angle);
         }
       case 3: // Spread towards player
-        final toPlayer =
-            math.atan2(playerPosition.y - position.y, playerPosition.x - position.x);
+        final toPlayer = math.atan2(
+          playerPosition.y - position.y,
+          playerPosition.x - position.x,
+        );
         for (int i = -3; i <= 3; i++) {
           _shootBullet(toPlayer + i * 0.15);
         }
@@ -188,7 +206,11 @@ class TheGridBoss extends BossBase {
 
   void _shootBullet(double angle) {
     final dir = Vector2(math.cos(angle), math.sin(angle));
-    final bullet = EnemyBullet(direction: dir, speed: 250, color: NeonColors.white);
+    final bullet = EnemyBullet(
+      direction: dir,
+      speed: 250,
+      color: NeonColors.white,
+    );
     bullet.position = position.clone();
     game.world.add(bullet);
   }
@@ -230,17 +252,22 @@ class TheGridBoss extends BossBase {
       final offset = -s + s * 2 * t;
       canvas.drawLine(
         Offset(cx - s, cy + offset + wobble),
-        Offset(cx + s, cy + offset + wobble), _bodyPaint);
+        Offset(cx + s, cy + offset + wobble),
+        _bodyPaint,
+      );
       canvas.drawLine(
         Offset(cx + offset + wobble, cy - s),
-        Offset(cx + offset + wobble, cy + s), _bodyPaint);
+        Offset(cx + offset + wobble, cy + s),
+        _bodyPaint,
+      );
     }
 
     _bodyPaint.style = PaintingStyle.fill;
 
     if (scale <= 1.01) {
       // Nucleo centrale pulsante (più grande nelle fasi avanzate)
-      final pulseR = s * (0.15 + currentPhase * 0.05) + math.sin(_gridPhase * 3) * 5;
+      final pulseR =
+          s * (0.15 + currentPhase * 0.05) + math.sin(_gridPhase * 3) * 5;
       _coreGlowPaint.color = phaseColor.withValues(alpha: 0.2);
       canvas.drawCircle(Offset(cx, cy), pulseR * 1.5, _coreGlowPaint);
       _corePaint.color = phaseColor.withValues(alpha: 0.5);
@@ -261,7 +288,10 @@ class TheGridBoss extends BossBase {
       _phaseDotPaint.color = phaseColor;
       for (int i = 0; i <= currentPhase; i++) {
         canvas.drawCircle(
-          Offset(cx - 8 + i * 8.0, cy + s + 12), 2, _phaseDotPaint);
+          Offset(cx - 8 + i * 8.0, cy + s + 12),
+          2,
+          _phaseDotPaint,
+        );
       }
     }
 
@@ -270,7 +300,9 @@ class TheGridBoss extends BossBase {
       // Blink per visibilità (2x per sec → 6 blink in 1.2s window).
       final blinkPhase = (_laserTelegraphTimer * 4) % 1.0;
       final blinkAlpha = blinkPhase < 0.5 ? 0.8 : 0.3;
-      _warnPaint.color = NeonColors.laserRed.withValues(alpha: blinkAlpha * 0.55);
+      _warnPaint.color = NeonColors.laserRed.withValues(
+        alpha: blinkAlpha * 0.55,
+      );
       canvas.save();
       canvas.translate(cx, cy);
       canvas.rotate(_laserAngle);

@@ -47,19 +47,22 @@ class PrismHunterBoss extends BossBase {
   ];
 
   PrismHunterBoss()
-      : super(
-          // HP DOUBLED (utente: "deve avere il doppio degli hp"). Era 600.
-          hp: 1200,
-          bossName: 'PRISM HUNTER',
-          pointValue: 6500,
-          neonColor: NeonColors.cyan,
-          size: Vector2(110, 110),
-        );
+    : super(
+        // HP DOUBLED (utente: "deve avere il doppio degli hp"). Era 600.
+        hp: 1200,
+        bossName: 'PRISM HUNTER',
+        pointValue: 6500,
+        neonColor: NeonColors.cyan,
+        size: Vector2(110, 110),
+      );
 
   // PrismHunter è CIANO/PRISMATICO → mob ciano-arcobaleno (drone + orbiter + mirror).
   @override
-  List<EnemyType> get colorMatchedMinions =>
-      const [EnemyType.drone, EnemyType.orbiter, EnemyType.mirror];
+  List<EnemyType> get colorMatchedMinions => const [
+    EnemyType.drone,
+    EnemyType.orbiter,
+    EnemyType.mirror,
+  ];
 
   @override
   int getPhase() {
@@ -86,7 +89,10 @@ class PrismHunterBoss extends BossBase {
       _sweepShootTimer = _kSweepInterval;
       final bdir = Vector2(math.cos(_sweepAngle), math.sin(_sweepAngle));
       final bullet = EnemyBullet(
-          direction: bdir, speed: 400, color: const Color(0xFF00FFFF));
+        direction: bdir,
+        speed: 400,
+        color: const Color(0xFF00FFFF),
+      );
       bullet.position = position.clone();
       game.world.add(bullet);
     }
@@ -96,19 +102,22 @@ class PrismHunterBoss extends BossBase {
       if (_refractTimer <= 0) {
         _refractTimer = 2.2;
         final baseAngle = math.atan2(
-            playerPosition.y - position.y, playerPosition.x - position.x);
+          playerPosition.y - position.y,
+          playerPosition.x - position.x,
+        );
         const colors = [
           Color(0xFFFF2255),
           Color(0xFF22FF55),
-          Color(0xFF2255FF)
+          Color(0xFF2255FF),
         ];
         for (int i = 0; i < 3; i++) {
           final ang = baseAngle + (i - 1) * 0.35;
           for (int step = 0; step < 4; step++) {
             final bullet = EnemyBullet(
-                direction: Vector2(math.cos(ang), math.sin(ang)),
-                speed: 320 + step * 40.0,
-                color: colors[i]);
+              direction: Vector2(math.cos(ang), math.sin(ang)),
+              speed: 320 + step * 40.0,
+              color: colors[i],
+            );
             bullet.position = position.clone();
             game.world.add(bullet);
           }
@@ -123,9 +132,10 @@ class PrismHunterBoss extends BossBase {
         for (int i = 0; i < 7; i++) {
           final ang = _phase * 0.7 + i * math.pi * 2 / 7;
           final bullet = EnemyBullet(
-              direction: Vector2(math.cos(ang), math.sin(ang)),
-              speed: 280,
-              color: _rainbow[i]);
+            direction: Vector2(math.cos(ang), math.sin(ang)),
+            speed: 280,
+            color: _rainbow[i],
+          );
           bullet.position = position.clone();
           game.world.add(bullet);
         }
@@ -141,10 +151,14 @@ class PrismHunterBoss extends BossBase {
 
     final r = 28 * scale;
     final p1 = Offset(cx + math.cos(rot) * r, cy + math.sin(rot) * r);
-    final p2 = Offset(cx + math.cos(rot + _kTriAngle1) * r,
-        cy + math.sin(rot + _kTriAngle1) * r);
-    final p3 = Offset(cx + math.cos(rot + _kTriAngle2) * r,
-        cy + math.sin(rot + _kTriAngle2) * r);
+    final p2 = Offset(
+      cx + math.cos(rot + _kTriAngle1) * r,
+      cy + math.sin(rot + _kTriAngle1) * r,
+    );
+    final p3 = Offset(
+      cx + math.cos(rot + _kTriAngle2) * r,
+      cy + math.sin(rot + _kTriAngle2) * r,
+    );
     final path = Path()
       ..moveTo(p1.dx, p1.dy)
       ..lineTo(p2.dx, p2.dy)
@@ -159,25 +173,29 @@ class PrismHunterBoss extends BossBase {
     const refractColors = [
       Color(0xFFFF2255),
       Color(0xFF22FF55),
-      Color(0xFF2255FF)
+      Color(0xFF2255FF),
     ];
     for (int i = 0; i < 3; i++) {
       final vertex = [p1, p2, p3][i];
       final pulse = 0.6 + math.sin(_phase * 4 + i) * 0.4;
-      _refractRayPaint.color =
-          refractColors[i].withValues(alpha: paint.color.a * 0.6 * pulse);
+      _refractRayPaint.color = refractColors[i].withValues(
+        alpha: paint.color.a * 0.6 * pulse,
+      );
       canvas.drawCircle(vertex, 8 * scale * pulse, _refractRayPaint);
-      _refractRayPaint.color =
-          const Color(0xFFFFFFFF).withValues(alpha: paint.color.a * pulse);
+      _refractRayPaint.color = const Color(
+        0xFFFFFFFF,
+      ).withValues(alpha: paint.color.a * pulse);
       canvas.drawCircle(vertex, 2 * scale, _refractRayPaint);
     }
 
-    _prismBodyPaint.color =
-        const Color(0xFFFFFFFF).withValues(alpha: paint.color.a * 0.9);
+    _prismBodyPaint.color = const Color(
+      0xFFFFFFFF,
+    ).withValues(alpha: paint.color.a * 0.9);
     canvas.drawCircle(Offset(cx, cy), 8 * scale, _prismBodyPaint);
 
-    _sweepLinePaint.color =
-        const Color(0xFF00FFFF).withValues(alpha: paint.color.a * 0.6);
+    _sweepLinePaint.color = const Color(
+      0xFF00FFFF,
+    ).withValues(alpha: paint.color.a * 0.6);
     _sweepLinePaint.strokeWidth = 1.2 * scale;
     final bx = cx + math.cos(_sweepAngle) * 80 * scale;
     final by = cy + math.sin(_sweepAngle) * 80 * scale;
@@ -188,8 +206,9 @@ class PrismHunterBoss extends BossBase {
         final ang = _phase * 0.4 + i * math.pi * 2 / 7;
         final rx = cx + math.cos(ang) * 50 * scale;
         final ry = cy + math.sin(ang) * 50 * scale;
-        _refractRayPaint.color =
-            _rainbow[i].withValues(alpha: paint.color.a * 0.7);
+        _refractRayPaint.color = _rainbow[i].withValues(
+          alpha: paint.color.a * 0.7,
+        );
         canvas.drawCircle(Offset(rx, ry), 3 * scale, _refractRayPaint);
       }
     }

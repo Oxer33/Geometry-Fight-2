@@ -78,7 +78,10 @@ class _GameOverScreenState extends State<GameOverScreen>
     super.initState();
 
     _perfBonus = _calcPerformanceBonus();
-    _achievementGold = widget.newAchievements.fold(0, (sum, a) => sum + a.reward);
+    _achievementGold = widget.newAchievements.fold(
+      0,
+      (sum, a) => sum + a.reward,
+    );
     _totalGold = widget.goldEarned + _perfBonus + _achievementGold;
 
     _entranceController = AnimationController(
@@ -106,10 +109,12 @@ class _GameOverScreenState extends State<GameOverScreen>
       parent: _entranceController,
       curve: const Interval(0.0, 0.25, curve: Curves.easeOut),
     );
-    _titleScale = Tween<double>(begin: 1.5, end: 1.0).animate(CurvedAnimation(
-      parent: _entranceController,
-      curve: const Interval(0.05, 0.3, curve: Curves.easeOutBack),
-    ));
+    _titleScale = Tween<double>(begin: 1.5, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _entranceController,
+        curve: const Interval(0.05, 0.3, curve: Curves.easeOutBack),
+      ),
+    );
     _titleFade = CurvedAnimation(
       parent: _entranceController,
       curve: const Interval(0.05, 0.3, curve: Curves.easeOut),
@@ -118,18 +123,22 @@ class _GameOverScreenState extends State<GameOverScreen>
       parent: _entranceController,
       curve: const Interval(0.2, 0.5, curve: Curves.easeOut),
     );
-    _statsSlide = Tween<double>(begin: 20, end: 0).animate(CurvedAnimation(
-      parent: _entranceController,
-      curve: const Interval(0.2, 0.5, curve: Curves.easeOutCubic),
-    ));
+    _statsSlide = Tween<double>(begin: 20, end: 0).animate(
+      CurvedAnimation(
+        parent: _entranceController,
+        curve: const Interval(0.2, 0.5, curve: Curves.easeOutCubic),
+      ),
+    );
     _goldFade = CurvedAnimation(
       parent: _entranceController,
       curve: const Interval(0.4, 0.65, curve: Curves.easeOut),
     );
-    _goldSlide = Tween<double>(begin: 20, end: 0).animate(CurvedAnimation(
-      parent: _entranceController,
-      curve: const Interval(0.4, 0.65, curve: Curves.easeOutCubic),
-    ));
+    _goldSlide = Tween<double>(begin: 20, end: 0).animate(
+      CurvedAnimation(
+        parent: _entranceController,
+        curve: const Interval(0.4, 0.65, curve: Curves.easeOutCubic),
+      ),
+    );
     _badgesFade = CurvedAnimation(
       parent: _entranceController,
       curve: const Interval(0.55, 0.8, curve: Curves.easeOut),
@@ -138,10 +147,12 @@ class _GameOverScreenState extends State<GameOverScreen>
       parent: _entranceController,
       curve: const Interval(0.7, 1.0, curve: Curves.easeOut),
     );
-    _buttonsSlide = Tween<double>(begin: 30, end: 0).animate(CurvedAnimation(
-      parent: _entranceController,
-      curve: const Interval(0.7, 1.0, curve: Curves.easeOutCubic),
-    ));
+    _buttonsSlide = Tween<double>(begin: 30, end: 0).animate(
+      CurvedAnimation(
+        parent: _entranceController,
+        curve: const Interval(0.7, 1.0, curve: Curves.easeOutCubic),
+      ),
+    );
 
     _entranceController.forward();
     // Start counter animation after stats appear
@@ -273,8 +284,11 @@ class _GameOverScreenState extends State<GameOverScreen>
                       offset: Offset(0, _goldSlide.value),
                       child: Opacity(
                         opacity: _goldFade.value,
-                        child: _buildGoldPanel(_totalGold, _perfBonus,
-                            _achievementGold),
+                        child: _buildGoldPanel(
+                          _totalGold,
+                          _perfBonus,
+                          _achievementGold,
+                        ),
                       ),
                     ),
 
@@ -421,8 +435,9 @@ class _GameOverScreenState extends State<GameOverScreen>
             shadows: [
               Shadow(color: Colors.redAccent, blurRadius: glowRadius),
               Shadow(
-                  color: Colors.redAccent.withValues(alpha: 0.5),
-                  blurRadius: glowRadius * 2),
+                color: Colors.redAccent.withValues(alpha: 0.5),
+                blurRadius: glowRadius * 2,
+              ),
             ],
           ),
         ),
@@ -441,10 +456,7 @@ class _GameOverScreenState extends State<GameOverScreen>
         border: Border.all(color: Colors.white.withValues(alpha: 0.1)),
         color: Colors.white.withValues(alpha: 0.05),
         boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.3),
-            blurRadius: 20,
-          ),
+          BoxShadow(color: Colors.black.withValues(alpha: 0.3), blurRadius: 20),
         ],
       ),
       child: Row(
@@ -501,7 +513,8 @@ class _GameOverScreenState extends State<GameOverScreen>
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-            color: const Color(0xFFFFD700).withValues(alpha: 0.3)),
+          color: const Color(0xFFFFD700).withValues(alpha: 0.3),
+        ),
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -531,25 +544,25 @@ class _GameOverScreenState extends State<GameOverScreen>
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
                   fontFamily: 'monospace',
-                  shadows: [
-                    Shadow(color: Color(0xFFFFD700), blurRadius: 8),
-                  ],
+                  shadows: [Shadow(color: Color(0xFFFFD700), blurRadius: 8)],
                 ),
               ),
               const SizedBox(width: 6),
-              Builder(builder: (context) {
-                final l10n = AppLocalizations.of(context)!;
-                return Text(
-                  l10n.gameOverGoldGeoms,
-                  style: const TextStyle(
-                    color: Color(0xFFFFD700),
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                    fontFamily: 'monospace',
-                    letterSpacing: 2,
-                  ),
-                );
-              }),
+              Builder(
+                builder: (context) {
+                  final l10n = AppLocalizations.of(context)!;
+                  return Text(
+                    l10n.gameOverGoldGeoms,
+                    style: const TextStyle(
+                      color: Color(0xFFFFD700),
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      fontFamily: 'monospace',
+                      letterSpacing: 2,
+                    ),
+                  );
+                },
+              ),
             ],
           ),
           if (perfBonus > 0 || achievementGold > 0) ...[
@@ -598,8 +611,7 @@ class _GameOverScreenState extends State<GameOverScreen>
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-            color: Colors.greenAccent.withValues(alpha: 0.4)),
+        border: Border.all(color: Colors.greenAccent.withValues(alpha: 0.4)),
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -633,39 +645,44 @@ class _GameOverScreenState extends State<GameOverScreen>
             ),
           ),
           const SizedBox(height: 8),
-          ...widget.newAchievements.map((a) => Padding(
-                padding: const EdgeInsets.only(bottom: 4),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(a.icon, style: const TextStyle(fontSize: 16)),
+          ...widget.newAchievements.map(
+            (a) => Padding(
+              padding: const EdgeInsets.only(bottom: 4),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(a.icon, style: const TextStyle(fontSize: 16)),
+                  const SizedBox(width: 8),
+                  Text(
+                    achievementName(a.id, l10n),
+                    style: const TextStyle(
+                      color: Colors.greenAccent,
+                      fontSize: 12,
+                      fontFamily: 'monospace',
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  if (a.reward > 0) ...[
                     const SizedBox(width: 8),
                     Text(
-                      achievementName(a.id, l10n),
+                      '+${a.reward}',
                       style: const TextStyle(
-                        color: Colors.greenAccent,
-                        fontSize: 12,
+                        color: Color(0xFFFFD700),
+                        fontSize: 11,
                         fontFamily: 'monospace',
-                        fontWeight: FontWeight.bold,
                       ),
                     ),
-                    if (a.reward > 0) ...[
-                      const SizedBox(width: 8),
-                      Text(
-                        '+${a.reward}',
-                        style: const TextStyle(
-                          color: Color(0xFFFFD700),
-                          fontSize: 11,
-                          fontFamily: 'monospace',
-                        ),
-                      ),
-                      const SizedBox(width: 2),
-                      const Icon(Icons.diamond,
-                          color: Color(0xFFFFD700), size: 10),
-                    ],
+                    const SizedBox(width: 2),
+                    const Icon(
+                      Icons.diamond,
+                      color: Color(0xFFFFD700),
+                      size: 10,
+                    ),
                   ],
-                ),
-              )),
+                ],
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -699,7 +716,9 @@ class _AnimatedStat extends StatelessWidget {
             fontSize: 20,
             fontWeight: FontWeight.bold,
             fontFamily: 'monospace',
-            shadows: [Shadow(color: color.withValues(alpha: 0.5), blurRadius: 6)],
+            shadows: [
+              Shadow(color: color.withValues(alpha: 0.5), blurRadius: 6),
+            ],
           ),
         ),
         const SizedBox(height: 2),
@@ -743,10 +762,7 @@ class _GlowBadge extends StatelessWidget {
           ],
         ),
         boxShadow: [
-          BoxShadow(
-            color: color.withValues(alpha: 0.2),
-            blurRadius: 8,
-          ),
+          BoxShadow(color: color.withValues(alpha: 0.2), blurRadius: 8),
         ],
       ),
       child: Text(
@@ -828,8 +844,9 @@ class _NeonGameOverButtonState extends State<_NeonGameOverButton>
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(
-                  color: widget.color
-                      .withValues(alpha: widget.isPrimary ? 0.8 : 0.4),
+                  color: widget.color.withValues(
+                    alpha: widget.isPrimary ? 0.8 : 0.4,
+                  ),
                   width: widget.isPrimary ? 2 : 1,
                 ),
                 gradient: LinearGradient(
@@ -865,9 +882,9 @@ class _NeonGameOverButtonState extends State<_NeonGameOverButton>
                       shadows: widget.isPrimary
                           ? [
                               Shadow(
-                                  color:
-                                      widget.color.withValues(alpha: 0.5),
-                                  blurRadius: 6)
+                                color: widget.color.withValues(alpha: 0.5),
+                                blurRadius: 6,
+                              ),
                             ]
                           : null,
                     ),
@@ -913,8 +930,8 @@ class _GameOverParticlesPainter extends CustomPainter {
       final radius = 0.8 + rng.nextDouble() * 1.5;
 
       final x = baseX + sin(time * 2 * pi * speed + phase) * 15;
-      final y = baseY + cos(time * 2 * pi * speed * 0.6 + phase) * 12 -
-          time * 20;
+      final y =
+          baseY + cos(time * 2 * pi * speed * 0.6 + phase) * 12 - time * 20;
       // Dart's % returns a negative result when y < 0 (sign follows dividend).
       // Use double-modulo to keep wrappedY in [0, size.height).
       final wrappedY = ((y % size.height) + size.height) % size.height;
@@ -923,14 +940,16 @@ class _GameOverParticlesPainter extends CustomPainter {
       if (hasNewRecord) {
         // Confetti-like colors for achievements
         final hue = (i * 37.0 + time * 360) % 360;
-        paint.color =
-            HSVColor.fromAHSV(alpha.clamp(0.0, 1.0).toDouble(), hue, 0.8, 1.0)
-                .toColor();
+        paint.color = HSVColor.fromAHSV(
+          alpha.clamp(0.0, 1.0).toDouble(),
+          hue,
+          0.8,
+          1.0,
+        ).toColor();
       } else {
-        paint.color = (rng.nextBool()
-                ? Colors.redAccent
-                : const Color(0xFFFF6600))
-            .withValues(alpha: alpha);
+        paint.color =
+            (rng.nextBool() ? Colors.redAccent : const Color(0xFFFF6600))
+                .withValues(alpha: alpha);
       }
 
       canvas.drawCircle(Offset(x, wrappedY), radius, paint);
@@ -945,4 +964,3 @@ class _GameOverParticlesPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant _GameOverParticlesPainter old) => true;
 }
-

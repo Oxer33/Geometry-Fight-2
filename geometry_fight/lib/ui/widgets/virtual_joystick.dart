@@ -80,10 +80,7 @@ class _VirtualJoystickState extends State<VirtualJoystick>
 
           // Clamp al raggio massimo (guard contro dist == 0)
           final clamped = (dist > maxDist && dist > 0)
-              ? Offset(
-                  delta.dx / dist * maxDist,
-                  delta.dy / dist * maxDist,
-                )
+              ? Offset(delta.dx / dist * maxDist, delta.dy / dist * maxDist)
               : delta;
 
           setState(() {
@@ -91,10 +88,7 @@ class _VirtualJoystickState extends State<VirtualJoystick>
           });
 
           // Normalizza e invia il callback
-          var normalized = Offset(
-            clamped.dx / maxDist,
-            clamped.dy / maxDist,
-          );
+          var normalized = Offset(clamped.dx / maxDist, clamped.dy / maxDist);
           if (normalized.distance < 0.08) normalized = Offset.zero;
           widget.onMove(normalized);
         }
@@ -151,7 +145,9 @@ class _VirtualJoystickState extends State<VirtualJoystick>
                 child: Text(
                   widget.label!,
                   style: TextStyle(
-                    color: widget.color.withValues(alpha: _isActive ? 0.6 : 0.2),
+                    color: widget.color.withValues(
+                      alpha: _isActive ? 0.6 : 0.2,
+                    ),
                     fontSize: 10,
                     fontWeight: FontWeight.bold,
                     fontFamily: 'monospace',

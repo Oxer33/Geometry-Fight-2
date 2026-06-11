@@ -50,13 +50,13 @@ class MirrorMasterBoss extends BossBase {
   }
 
   MirrorMasterBoss()
-      : super(
-          hp: 1400,
-          bossName: 'MIRROR MASTER',
-          pointValue: 2800,
-          neonColor: const Color(0xFFCCDDEE),
-          size: Vector2(95, 95),
-        );
+    : super(
+        hp: 1400,
+        bossName: 'MIRROR MASTER',
+        pointValue: 2800,
+        neonColor: const Color(0xFFCCDDEE),
+        size: Vector2(95, 95),
+      );
 
   void _spawnMirrors() {
     _mirrors.clear();
@@ -66,19 +66,25 @@ class MirrorMasterBoss extends BossBase {
     final count = _mirrorCountForPhase(currentPhase);
     for (int i = 0; i < count; i++) {
       final base = i * math.pi * 2 / count;
-      _mirrors.add(_FloorMirror()
-        ..orbitAngle = base
-        ..position =
-            position + Vector2(math.cos(base), math.sin(base)) * _kMirrorOrbitR
-        ..angle = base + math.pi / 2);
+      _mirrors.add(
+        _FloorMirror()
+          ..orbitAngle = base
+          ..position =
+              position +
+              Vector2(math.cos(base), math.sin(base)) * _kMirrorOrbitR
+          ..angle = base + math.pi / 2,
+      );
     }
     _spawnedPhase = currentPhase;
   }
 
   // MirrorMaster è ARGENTO/CIANO → mob riflettenti (mirror + glitch + orbiter).
   @override
-  List<EnemyType> get colorMatchedMinions =>
-      const [EnemyType.mirror, EnemyType.glitch, EnemyType.orbiter];
+  List<EnemyType> get colorMatchedMinions => const [
+    EnemyType.mirror,
+    EnemyType.glitch,
+    EnemyType.orbiter,
+  ];
 
   @override
   int getPhase() {
@@ -114,15 +120,14 @@ class MirrorMasterBoss extends BossBase {
     // resta sempre in vista invece di "fisso a destra" dietro al player.
     final orbitDist = 250 - currentPhase * 40;
     final orbitCenter = game.isTunnelMode
-        ? Vector2(
-            game.camera.viewfinder.position.x + 80,
-            playerPosition.y,
-          )
+        ? Vector2(game.camera.viewfinder.position.x + 80, playerPosition.y)
         : playerPosition;
-    final targetPos = orbitCenter + Vector2(
-      math.cos(_mirrorAngle * 0.3) * orbitDist,
-      math.sin(_mirrorAngle * 0.3) * orbitDist,
-    );
+    final targetPos =
+        orbitCenter +
+        Vector2(
+          math.cos(_mirrorAngle * 0.3) * orbitDist,
+          math.sin(_mirrorAngle * 0.3) * orbitDist,
+        );
     final toTarget = targetPos - position;
     final followSpeed = game.isTunnelMode ? 280.0 : 90.0;
     if (toTarget.length > 5) {
@@ -202,13 +207,18 @@ class MirrorMasterBoss extends BossBase {
       if (!m.alive) continue;
       final axis = Vector2(math.cos(m.angle), math.sin(m.angle));
       if (_distToSegment(
-              bulletPos, m.position - axis * 30, m.position + axis * 30) <
+            bulletPos,
+            m.position - axis * 30,
+            m.position + axis * 30,
+          ) <
           16) {
         if (m.reflectCd <= 0) {
           final dir = playerPosition - m.position;
           if (dir.length > 0.001) {
             final reflected = _MirrorBullet(
-                direction: dir.normalized(), color: const Color(0xFFFF88FF));
+              direction: dir.normalized(),
+              color: const Color(0xFFFF88FF),
+            );
             reflected.position = m.position.clone();
             game.world.add(reflected);
           }
@@ -270,11 +280,13 @@ class MirrorMasterBoss extends BossBase {
           ..lineTo(0, 4)
           ..lineTo(-3, 0)
           ..close();
-        _shardPaint.color = const Color(0xFFCCDDFF)
-            .withValues(alpha: 0.5 * shardPulse);
+        _shardPaint.color = const Color(
+          0xFFCCDDFF,
+        ).withValues(alpha: 0.5 * shardPulse);
         canvas.drawPath(shardPath, _shardPaint);
-        _shardStrokePaint.color =
-            const Color(0xFFFFFFFF).withValues(alpha: shardPulse);
+        _shardStrokePaint.color = const Color(
+          0xFFFFFFFF,
+        ).withValues(alpha: shardPulse);
         _shardStrokePaint.strokeWidth = 1;
         canvas.drawPath(shardPath, _shardStrokePaint);
         canvas.restore();
@@ -306,8 +318,7 @@ class MirrorMasterBoss extends BossBase {
         final a1 = i * math.pi / 4;
         final a2 = (i + 1) * math.pi / 4;
         final shimmer = 0.3 + math.sin(_mirrorAngle * 3 + i * 0.8) * 0.3;
-        _facePaint.color =
-            const Color(0xFFFFFFFF).withValues(alpha: shimmer);
+        _facePaint.color = const Color(0xFFFFFFFF).withValues(alpha: shimmer);
         canvas.drawLine(
           Offset(r * 0.85 * math.cos(a1), r * 0.85 * math.sin(a1)),
           Offset(r * 0.85 * math.cos(a2), r * 0.85 * math.sin(a2)),
@@ -326,16 +337,14 @@ class MirrorMasterBoss extends BossBase {
         _prismaticPaint.strokeWidth = 1.2;
         canvas.drawLine(
           Offset.zero,
-          Offset(math.cos(pAngle) * r * 0.75,
-              math.sin(pAngle) * r * 0.75),
+          Offset(math.cos(pAngle) * r * 0.75, math.sin(pAngle) * r * 0.75),
           _prismaticPaint,
         );
       }
 
       // Ottagono interno contro-rotante
       canvas.rotate(-_mirrorAngle * 0.5);
-      _innerOctPaint.color =
-          const Color(0xFFFFFFFF).withValues(alpha: 0.4);
+      _innerOctPaint.color = const Color(0xFFFFFFFF).withValues(alpha: 0.4);
       _innerOctPaint.strokeWidth = 1;
       final innerPath = Path();
       for (int i = 0; i < 8; i++) {
@@ -354,13 +363,16 @@ class MirrorMasterBoss extends BossBase {
 
       // Core halo + bianco pulsante
       final pulse = 0.5 + math.sin(_mirrorAngle * 2) * 0.4;
-      _coreHaloPaint.color =
-          const Color(0xFFCCDDFF).withValues(alpha: pulse * 0.5);
+      _coreHaloPaint.color = const Color(
+        0xFFCCDDFF,
+      ).withValues(alpha: pulse * 0.5);
       canvas.drawCircle(Offset.zero, r * 0.32, _coreHaloPaint);
-      _coreWhitePaint.color =
-          const Color(0xFFFFFFFF).withValues(alpha: pulse);
+      _coreWhitePaint.color = const Color(0xFFFFFFFF).withValues(alpha: pulse);
       canvas.drawCircle(
-          Offset.zero, r * 0.18 * (0.85 + pulse * 0.2), _coreWhitePaint);
+        Offset.zero,
+        r * 0.18 * (0.85 + pulse * 0.2),
+        _coreWhitePaint,
+      );
     }
     canvas.restore();
 
@@ -376,35 +388,43 @@ class MirrorMasterBoss extends BossBase {
         canvas.save();
         canvas.translate(mx, my);
         canvas.rotate(m.angle);
-        _mirrorGlowPaint.color =
-            const Color(0xFFFF88FF).withValues(alpha: 0.3 + hpRatio * 0.3);
+        _mirrorGlowPaint.color = const Color(
+          0xFFFF88FF,
+        ).withValues(alpha: 0.3 + hpRatio * 0.3);
+        canvas.drawRect(const Rect.fromLTWH(-34, -8, 68, 16), _mirrorGlowPaint);
+        _mirrorBodyPaint.color = Color.lerp(
+          const Color(0xFF886699),
+          const Color(0xFFCCDDFF),
+          hpRatio,
+        )!;
+        canvas.drawRect(const Rect.fromLTWH(-30, -5, 60, 10), _mirrorBodyPaint);
+        _mirrorBorderPaint.color = const Color(
+          0xFFFFFFFF,
+        ).withValues(alpha: 0.9);
         canvas.drawRect(
-            const Rect.fromLTWH(-34, -8, 68, 16), _mirrorGlowPaint);
-        _mirrorBodyPaint.color = Color.lerp(const Color(0xFF886699),
-            const Color(0xFFCCDDFF), hpRatio)!;
-        canvas.drawRect(
-            const Rect.fromLTWH(-30, -5, 60, 10), _mirrorBodyPaint);
-        _mirrorBorderPaint.color =
-            const Color(0xFFFFFFFF).withValues(alpha: 0.9);
-        canvas.drawRect(
-            const Rect.fromLTWH(-30, -5, 60, 10), _mirrorBorderPaint);
+          const Rect.fromLTWH(-30, -5, 60, 10),
+          _mirrorBorderPaint,
+        );
         canvas.restore();
       }
     }
   }
 }
 
-class _MirrorBullet extends PositionComponent with HasGameReference<GeometryFightGame> {
+class _MirrorBullet extends PositionComponent
+    with HasGameReference<GeometryFightGame> {
   final Vector2 direction;
   final Color color;
   late Vector2 _velocity;
   double _lifetime = 3.5;
 
   _MirrorBullet({required this.direction, required this.color})
-      : super(size: Vector2(18, 18), anchor: Anchor.center);
+    : super(size: Vector2(18, 18), anchor: Anchor.center);
 
   @override
-  Future<void> onLoad() async { _velocity = direction.normalized() * 200; }
+  Future<void> onLoad() async {
+    _velocity = direction.normalized() * 200;
+  }
 
   @override
   void update(double dt) {

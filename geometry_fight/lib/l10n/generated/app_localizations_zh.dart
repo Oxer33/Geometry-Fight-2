@@ -99,7 +99,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get settingsTestDebug => '测试 / 调试';
 
   @override
-  String get settingsAddCredits => '+1000 点数';
+  String get settingsAddCredits => '+100K 点数';
 
   @override
   String get settingsResetPurchases => '重置购买';
@@ -109,7 +109,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String settingsCreditsAdded(int total) {
-    return '+1000 点数!总计:$total';
+    return '+100K 点数!总计:$total';
   }
 
   @override
@@ -274,6 +274,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get modeSnake => '贪吃蛇';
+
+  @override
+  String get modeArenaShrink => '竞技场收缩';
 
   @override
   String get splashSkip => '跳过';

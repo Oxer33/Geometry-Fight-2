@@ -34,10 +34,10 @@
   "settingsReset": "RESET DATI",
   "settingsDangerZone": "ZONA PERICOLOSA",
   "settingsTestDebug": "TEST / DEBUG",
-  "settingsAddCredits": "+1000 CREDITI",
+  "settingsAddCredits": "+100K CREDITI",
   "settingsResetPurchases": "RESET ACQUISTI",
   "settingsPurchasesReset": "Acquisti resettati!",
-  "settingsCreditsAdded": "+1000 crediti! Totale: {total}",
+  "settingsCreditsAdded": "+100K crediti! Totale: {total}",
   "@settingsCreditsAdded": {
     "placeholders": { "total": { "type": "int" } }
   },
@@ -117,6 +117,7 @@
   "modeWaves": "WAVES",
   "modeGravityInferno": "GRAVITY INFERNO",
   "modeSnake": "SNAKE",
+  "modeArenaShrink": "ARENA RIDOTTA",
 
   "splashSkip": "SKIP",
   "splashTapToStart": "TOCCA PER INIZIARE",

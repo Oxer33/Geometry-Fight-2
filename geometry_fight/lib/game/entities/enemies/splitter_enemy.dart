@@ -27,18 +27,18 @@ class SplitterEnemy extends EnemyBase {
   double _orbitalPhase = 0;
   late double _orbitalPhaseOffset;
   late double _orbitalFreq; // Hz
-  late double _orbitalAmp;  // px/s di velocità perpendicolare
-  late double _chaosFreq;   // freq secondaria (0 = solo orbita pulita)
+  late double _orbitalAmp; // px/s di velocità perpendicolare
+  late double _chaosFreq; // freq secondaria (0 = solo orbita pulita)
 
   SplitterEnemy({this.splitterSize = SplitterSize.large})
-      : super(
-          hp: 1,
-          speed: _speedForSize(splitterSize),
-          pointValue: _pointsForSize(splitterSize),
-          geomValue: _geomsForSize(splitterSize),
-          neonColor: NeonColors.white,
-          size: _sizeForSize(splitterSize),
-        ) {
+    : super(
+        hp: 1,
+        speed: _speedForSize(splitterSize),
+        pointValue: _pointsForSize(splitterSize),
+        geomValue: _geomsForSize(splitterSize),
+        neonColor: NeonColors.white,
+        size: _sizeForSize(splitterSize),
+      ) {
     _orbitalPhaseOffset = _rng.nextDouble() * math.pi * 2;
     switch (splitterSize) {
       case SplitterSize.large:
@@ -48,14 +48,14 @@ class SplitterEnemy extends EnemyBase {
         _chaosFreq = 0;
       case SplitterSize.medium:
         // Medium: orbita marcata + leggero caos
-        _orbitalFreq = 0.7 + _rng.nextDouble() * 0.3;  // 0.7-1.0 Hz
+        _orbitalFreq = 0.7 + _rng.nextDouble() * 0.3; // 0.7-1.0 Hz
         _orbitalAmp = 110;
-        _chaosFreq = 1.6 + _rng.nextDouble() * 0.4;   // 1.6-2.0 Hz
+        _chaosFreq = 1.6 + _rng.nextDouble() * 0.4; // 1.6-2.0 Hz
       case SplitterSize.small:
         // Small: rotazione aggressiva, caotica
-        _orbitalFreq = 1.1 + _rng.nextDouble() * 0.5;  // 1.1-1.6 Hz
+        _orbitalFreq = 1.1 + _rng.nextDouble() * 0.5; // 1.1-1.6 Hz
         _orbitalAmp = 170;
-        _chaosFreq = 2.2 + _rng.nextDouble() * 0.6;   // 2.2-2.8 Hz
+        _chaosFreq = 2.2 + _rng.nextDouble() * 0.6; // 2.2-2.8 Hz
     }
   }
 
@@ -154,11 +154,14 @@ class SplitterEnemy extends EnemyBase {
     // dà una rotazione che non è mai identica tra un istante e l'altro,
     // senza essere puramente random (quindi leggibile).
     final primary = math.sin(
-        _orbitalPhase * _orbitalFreq * math.pi * 2 + _orbitalPhaseOffset);
+      _orbitalPhase * _orbitalFreq * math.pi * 2 + _orbitalPhaseOffset,
+    );
     final secondary = _chaosFreq > 0
-        ? math.sin(_orbitalPhase * _chaosFreq * math.pi * 2 +
-                _orbitalPhaseOffset * 1.7) *
-            0.5
+        ? math.sin(
+                _orbitalPhase * _chaosFreq * math.pi * 2 +
+                    _orbitalPhaseOffset * 1.7,
+              ) *
+              0.5
         : 0.0;
     final wobbleSpeed = (primary + secondary) * _orbitalAmp;
     position += (velocity + perp * wobbleSpeed) * dt;
@@ -252,22 +255,31 @@ class SplitterEnemy extends EnemyBase {
       // Linee di frattura luminose (dove si dividerà)
       if (splitterSize != SplitterSize.small) {
         final fractureAlpha = 0.15 + math.sin(idlePhase * 4) * 0.1;
-        _splFracturePaint.color =
-            paint.color.withValues(alpha: fractureAlpha);
+        _splFracturePaint.color = paint.color.withValues(alpha: fractureAlpha);
         // 3 linee dal centro ai punti medi dei lati
         canvas.drawLine(Offset.zero, Offset(0, -r * 0.8), _splFracturePaint);
-        canvas.drawLine(Offset.zero, Offset(r * 0.7, r * 0.4), _splFracturePaint);
-        canvas.drawLine(Offset.zero, Offset(-r * 0.7, r * 0.4), _splFracturePaint);
+        canvas.drawLine(
+          Offset.zero,
+          Offset(r * 0.7, r * 0.4),
+          _splFracturePaint,
+        );
+        canvas.drawLine(
+          Offset.zero,
+          Offset(-r * 0.7, r * 0.4),
+          _splFracturePaint,
+        );
 
         // Nodi sui punti medi dei lati (dove si staccheranno i pezzi)
         final vertices = [
           Offset(r * 0.43, -r * 0.25), // Punto medio lato dx
-          Offset(0, r * 0.5),           // Punto medio lato basso
+          Offset(0, r * 0.5), // Punto medio lato basso
           Offset(-r * 0.43, -r * 0.25), // Punto medio lato sx
         ];
         for (int i = 0; i < vertices.length; i++) {
           final nodePulse = 0.3 + math.sin(idlePhase * 5 + i * 2.0) * 0.3;
-          EnemyBase.detailPaint.color = paint.color.withValues(alpha: nodePulse);
+          EnemyBase.detailPaint.color = paint.color.withValues(
+            alpha: nodePulse,
+          );
           canvas.drawCircle(vertices[i], 1.2, EnemyBase.detailPaint);
         }
       }
@@ -276,8 +288,8 @@ class SplitterEnemy extends EnemyBase {
       final coreColor = splitterSize == SplitterSize.large
           ? const Color(0xFFFFFFFF)
           : splitterSize == SplitterSize.medium
-              ? const Color(0xFFDDDDFF)
-              : const Color(0xFFAAAAFF);
+          ? const Color(0xFFDDDDFF)
+          : const Color(0xFFAAAAFF);
       final pulse = 0.5 + math.sin(idlePhase * 5) * 0.3;
       EnemyBase.detailPaint.color = coreColor.withValues(alpha: pulse);
       canvas.drawCircle(Offset.zero, r * 0.18, EnemyBase.detailPaint);
@@ -286,14 +298,15 @@ class SplitterEnemy extends EnemyBase {
       final dotsCount = splitterSize == SplitterSize.large
           ? 3
           : splitterSize == SplitterSize.medium
-              ? 2
-              : 0;
+          ? 2
+          : 0;
       for (int i = 0; i < dotsCount; i++) {
         final dotAngle = i * math.pi * 2 / 3 - math.pi / 2 + idlePhase * 3;
         EnemyBase.detailPaint.color = paint.color.withValues(alpha: 0.5);
         canvas.drawCircle(
           Offset(r * 0.35 * math.cos(dotAngle), r * 0.35 * math.sin(dotAngle)),
-          1.0, EnemyBase.detailPaint,
+          1.0,
+          EnemyBase.detailPaint,
         );
       }
     }

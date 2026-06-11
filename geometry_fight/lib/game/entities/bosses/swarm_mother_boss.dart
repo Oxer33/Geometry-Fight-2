@@ -40,18 +40,21 @@ class SwarmMotherBoss extends BossBase {
   static const double _kHalfContactRadius = 60.0; // ≈ raggio visivo (_drawHalf)
 
   SwarmMotherBoss()
-      : super(
-          hp: 2000,
-          bossName: 'THE SWARM MOTHER',
-          pointValue: 20000,
-          neonColor: NeonColors.orange,
-          size: Vector2(180, 180),
-        );
+    : super(
+        hp: 2000,
+        bossName: 'THE SWARM MOTHER',
+        pointValue: 20000,
+        neonColor: NeonColors.orange,
+        size: Vector2(180, 180),
+      );
 
   // SwarmMother arancione → mob arancio/rossi.
   @override
-  List<EnemyType> get colorMatchedMinions =>
-      const [EnemyType.kamikaze, EnemyType.splitter, EnemyType.swarmDrone];
+  List<EnemyType> get colorMatchedMinions => const [
+    EnemyType.kamikaze,
+    EnemyType.splitter,
+    EnemyType.swarmDrone,
+  ];
 
   @override
   double get hitboxRadiusFactor => 0.85;
@@ -83,9 +86,9 @@ class SwarmMotherBoss extends BossBase {
 
     // ── MOVIMENTO chase half (boss position) ──────────────────────────
     final chaseSpeed = switch (currentPhase) {
-      0 => 50.0,    // lento, sta a spawnare turret + sparare laser
-      1 => 90.0,    // medio, una metà insegue
-      _ => 200.0,   // veloce rage
+      0 => 50.0, // lento, sta a spawnare turret + sparare laser
+      1 => 90.0, // medio, una metà insegue
+      _ => 200.0, // veloce rage
     };
     final dir = (playerPosition - position);
     final stopDist = currentPhase == 2 ? 60.0 : 150.0;
@@ -117,7 +120,8 @@ class SwarmMotherBoss extends BossBase {
     if (currentPhase == 2) {
       _vortexAngle += dt * 6.0;
       const vortexR = 90.0;
-      _wanderHalfPos = position +
+      _wanderHalfPos =
+          position +
           Vector2(math.cos(_vortexAngle), math.sin(_vortexAngle)) * vortexR;
     }
 
@@ -141,28 +145,40 @@ class SwarmMotherBoss extends BossBase {
           // Phase 1 (utente): "spawna molti mob torretta (laserTurret)".
           _spawnTimer = 4.0;
           for (int i = 0; i < 3; i++) {
-            game.spawnEnemy(EnemyType.laserTurret, position + Vector2(
-              (_rng.nextDouble() - 0.5) * 280,
-              (_rng.nextDouble() - 0.5) * 280,
-            ));
+            game.spawnEnemy(
+              EnemyType.laserTurret,
+              position +
+                  Vector2(
+                    (_rng.nextDouble() - 0.5) * 280,
+                    (_rng.nextDouble() - 0.5) * 280,
+                  ),
+            );
           }
         case 1:
           // Phase 2: kamikaze scatter attorno al chase half.
           _spawnTimer = 3.0;
           for (int i = 0; i < 4; i++) {
-            game.spawnEnemy(EnemyType.kamikaze, position + Vector2(
-              (_rng.nextDouble() - 0.5) * 180,
-              (_rng.nextDouble() - 0.5) * 180,
-            ));
+            game.spawnEnemy(
+              EnemyType.kamikaze,
+              position +
+                  Vector2(
+                    (_rng.nextDouble() - 0.5) * 180,
+                    (_rng.nextDouble() - 0.5) * 180,
+                  ),
+            );
           }
         case 2:
           // Phase 3 rage: kamikaze rapidi.
           _spawnTimer = 1.5;
           for (int i = 0; i < 6; i++) {
-            game.spawnEnemy(EnemyType.kamikaze, position + Vector2(
-              (_rng.nextDouble() - 0.5) * 120,
-              (_rng.nextDouble() - 0.5) * 120,
-            ));
+            game.spawnEnemy(
+              EnemyType.kamikaze,
+              position +
+                  Vector2(
+                    (_rng.nextDouble() - 0.5) * 120,
+                    (_rng.nextDouble() - 0.5) * 120,
+                  ),
+            );
           }
       }
     }
@@ -183,7 +199,9 @@ class SwarmMotherBoss extends BossBase {
           _laserCooldown = 6.0;
           _laserTelegraphTimer = _kLaserTelegraphDuration;
           _laserAngle = math.atan2(
-              playerPosition.y - position.y, playerPosition.x - position.x);
+            playerPosition.y - position.y,
+            playerPosition.x - position.x,
+          );
         }
       }
       if (_laserActive) {
@@ -242,11 +260,16 @@ class SwarmMotherBoss extends BossBase {
     // ── SPAWN BURST ring pre-spawn ──────────────────────────────────
     if (scale <= 1.01 && _spawnTimer < 0.4) {
       final burstT = 1.0 - _spawnTimer.clamp(0.0, 0.4) / 0.4;
-      _spawnBurstPaint.color = (currentPhase == 2 ? NeonColors.red : NeonColors.orange)
-          .withValues(alpha: burstT * 0.6);
+      _spawnBurstPaint.color =
+          (currentPhase == 2 ? NeonColors.red : NeonColors.orange).withValues(
+            alpha: burstT * 0.6,
+          );
       _spawnBurstPaint.strokeWidth = 2 + burstT * 4;
-      canvas.drawCircle(Offset(cx, cy), 110 * scale * (0.6 + burstT * 0.5),
-          _spawnBurstPaint);
+      canvas.drawCircle(
+        Offset(cx, cy),
+        110 * scale * (0.6 + burstT * 0.5),
+        _spawnBurstPaint,
+      );
     }
 
     // ── EGG CLUSTER orbitanti (solo phase 0) ────────────────────────
@@ -257,11 +280,13 @@ class SwarmMotherBoss extends BossBase {
         final ex = cx + math.cos(eggAngle) * eggR;
         final ey = cy + math.sin(eggAngle) * eggR;
         final eggPulse = 0.6 + math.sin(_phase * 3 + i * 0.7) * 0.4;
-        _eggClusterPaint.color =
-            NeonColors.orange.withValues(alpha: 0.8 * eggPulse);
+        _eggClusterPaint.color = NeonColors.orange.withValues(
+          alpha: 0.8 * eggPulse,
+        );
         canvas.drawCircle(Offset(ex, ey), 4.5, _eggClusterPaint);
-        _eggClusterPaint.color =
-            const Color(0xFFFFFFFF).withValues(alpha: 0.6 * eggPulse);
+        _eggClusterPaint.color = const Color(
+          0xFFFFFFFF,
+        ).withValues(alpha: 0.6 * eggPulse);
         canvas.drawCircle(Offset(ex, ey), 2, _eggClusterPaint);
       }
     }
@@ -275,32 +300,38 @@ class SwarmMotherBoss extends BossBase {
       // = offset locale = (wanderHalfPos - position).
       final wanderOffset = _wanderHalfPos - position;
       _drawHalf(canvas, bodyPaint, scale, Offset(cx, cy));
-      _drawHalf(canvas, bodyPaint, scale,
-          Offset(cx + wanderOffset.x, cy + wanderOffset.y));
+      _drawHalf(
+        canvas,
+        bodyPaint,
+        scale,
+        Offset(cx + wanderOffset.x, cy + wanderOffset.y),
+      );
       // Linea connettiva luminosa fra le 2 metà.
-      _linkPaint.color = (currentPhase == 2 ? NeonColors.red : NeonColors.orange)
-          .withValues(alpha: 0.4 + math.sin(_phase * 4) * 0.2);
+      _linkPaint.color =
+          (currentPhase == 2 ? NeonColors.red : NeonColors.orange).withValues(
+            alpha: 0.4 + math.sin(_phase * 4) * 0.2,
+          );
       _linkPaint.strokeWidth = 2.5;
       canvas.drawLine(
-          Offset(cx, cy),
-          Offset(cx + wanderOffset.x, cy + wanderOffset.y),
-          _linkPaint);
+        Offset(cx, cy),
+        Offset(cx + wanderOffset.x, cy + wanderOffset.y),
+        _linkPaint,
+      );
     }
 
     // ── VENE pulsanti (solo phase 0, sotto il singolo body) ─────────
     if (scale <= 1.01 && currentPhase == 0) {
-      _veinPaint.color = const Color(0xFFFF8800)
-          .withValues(alpha: 0.5 + math.sin(_phase * 4) * 0.25);
+      _veinPaint.color = const Color(
+        0xFFFF8800,
+      ).withValues(alpha: 0.5 + math.sin(_phase * 4) * 0.25);
       _veinPaint.strokeWidth = 1.5;
       for (int i = 0; i < 6; i++) {
         final vAngle = i * math.pi / 3 + _phase * 0.15;
         final inner = 30 * scale;
         final outer = 68 * scale + math.sin(_phase * 2 + i) * 8;
         canvas.drawLine(
-          Offset(cx + math.cos(vAngle) * inner,
-              cy + math.sin(vAngle) * inner),
-          Offset(cx + math.cos(vAngle) * outer,
-              cy + math.sin(vAngle) * outer),
+          Offset(cx + math.cos(vAngle) * inner, cy + math.sin(vAngle) * inner),
+          Offset(cx + math.cos(vAngle) * outer, cy + math.sin(vAngle) * outer),
           _veinPaint,
         );
       }
@@ -308,8 +339,9 @@ class SwarmMotherBoss extends BossBase {
 
     // ── BERSERK GLOW phase 2 (rage red) ─────────────────────────────
     if (currentPhase == 2) {
-      _berserkPaint.color = NeonColors.red
-          .withValues(alpha: 0.35 + math.sin(_phase * 12) * 0.25);
+      _berserkPaint.color = NeonColors.red.withValues(
+        alpha: 0.35 + math.sin(_phase * 12) * 0.25,
+      );
       canvas.drawCircle(Offset(cx, cy), 130 * scale, _berserkPaint);
     }
 
@@ -320,8 +352,14 @@ class SwarmMotherBoss extends BossBase {
       canvas.save();
       canvas.translate(cx, cy);
       canvas.rotate(_laserAngle);
-      _laserWarnPaint.color = NeonColors.laserRed.withValues(alpha: blinkAlpha * 0.55);
-      canvas.drawLine(const Offset(0, 0), const Offset(1500, 0), _laserWarnPaint);
+      _laserWarnPaint.color = NeonColors.laserRed.withValues(
+        alpha: blinkAlpha * 0.55,
+      );
+      canvas.drawLine(
+        const Offset(0, 0),
+        const Offset(1500, 0),
+        _laserWarnPaint,
+      );
       for (double x = 80; x < 1500; x += 120) {
         canvas.drawLine(Offset(x, -4), Offset(x, 4), _laserWarnPaint);
       }

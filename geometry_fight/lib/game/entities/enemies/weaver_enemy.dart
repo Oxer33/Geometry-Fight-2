@@ -23,14 +23,14 @@ class WeaverEnemy extends EnemyBase {
   double _dodgeMomentum = 0;
 
   WeaverEnemy()
-      : super(
-          hp: 1,
-          speed: 250, // Più veloce del player (200) — aggressivo
-          pointValue: 4,
-          geomValue: 2,
-          neonColor: NeonColors.green,
-          size: Vector2(16, 16),
-        );
+    : super(
+        hp: 1,
+        speed: 250, // Più veloce del player (200) — aggressivo
+        pointValue: 4,
+        geomValue: 2,
+        neonColor: NeonColors.green,
+        size: Vector2(16, 16),
+      );
 
   @override
   bool get canFearDodge => true;
@@ -81,7 +81,9 @@ class WeaverEnemy extends EnemyBase {
           // Scegli il lato che allontana di più dal proiettile
           final side1 = Vector2(-bulletDir.y, bulletDir.x);
           final side2 = Vector2(bulletDir.y, -bulletDir.x);
-          final dodgeDir = (side1.dot(bulletToMe) > side2.dot(bulletToMe)) ? side1 : side2;
+          final dodgeDir = (side1.dot(bulletToMe) > side2.dot(bulletToMe))
+              ? side1
+              : side2;
 
           // Schivata forte e veloce — scala con vicinanza
           final urgency = 1.0 - (closestDist / 140);
@@ -131,17 +133,35 @@ class WeaverEnemy extends EnemyBase {
 
       // Pannelli ala
       _weaverLinePaint.color = paint.color.withValues(alpha: 0.2);
-      canvas.drawLine(Offset(cx + w * 0.2, cy - h * 0.4), Offset(cx + w * 0.8, cy - h * 0.05), _weaverLinePaint);
-      canvas.drawLine(Offset(cx - w * 0.2, cy - h * 0.4), Offset(cx - w * 0.8, cy - h * 0.05), _weaverLinePaint);
-      canvas.drawLine(Offset(cx + w * 0.2, cy + h * 0.4), Offset(cx + w * 0.8, cy + h * 0.05), _weaverLinePaint);
-      canvas.drawLine(Offset(cx - w * 0.2, cy + h * 0.4), Offset(cx - w * 0.8, cy + h * 0.05), _weaverLinePaint);
+      canvas.drawLine(
+        Offset(cx + w * 0.2, cy - h * 0.4),
+        Offset(cx + w * 0.8, cy - h * 0.05),
+        _weaverLinePaint,
+      );
+      canvas.drawLine(
+        Offset(cx - w * 0.2, cy - h * 0.4),
+        Offset(cx - w * 0.8, cy - h * 0.05),
+        _weaverLinePaint,
+      );
+      canvas.drawLine(
+        Offset(cx + w * 0.2, cy + h * 0.4),
+        Offset(cx + w * 0.8, cy + h * 0.05),
+        _weaverLinePaint,
+      );
+      canvas.drawLine(
+        Offset(cx - w * 0.2, cy + h * 0.4),
+        Offset(cx - w * 0.8, cy + h * 0.05),
+        _weaverLinePaint,
+      );
 
       // Flusso energetico
       final flowProgress = (idlePhase * 2 + _waveOffset) % 1.0;
       final flowY = cy - h * 0.6 + flowProgress * h * 1.2;
       final flowAlpha = 0.4 * (1 - (flowProgress - 0.5).abs() * 2);
       if (flowAlpha > 0) {
-        EnemyBase.detailPaint.color = const Color(0xFFFFFFFF).withValues(alpha: flowAlpha);
+        EnemyBase.detailPaint.color = const Color(
+          0xFFFFFFFF,
+        ).withValues(alpha: flowAlpha);
         canvas.drawCircle(Offset(cx, flowY), 1.0, EnemyBase.detailPaint);
       }
 
@@ -156,7 +176,9 @@ class WeaverEnemy extends EnemyBase {
 
       // Nucleo pulsante
       final pulse = 0.5 + math.sin(idlePhase * 5 + _waveOffset) * 0.3;
-      EnemyBase.detailPaint.color = const Color(0xFFFFFFFF).withValues(alpha: pulse);
+      EnemyBase.detailPaint.color = const Color(
+        0xFFFFFFFF,
+      ).withValues(alpha: pulse);
       canvas.drawCircle(Offset(cx, cy), w * 0.2, EnemyBase.detailPaint);
     }
   }

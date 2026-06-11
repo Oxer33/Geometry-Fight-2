@@ -21,14 +21,14 @@ class OrbiterEnemy extends EnemyBase {
   static final math.Random _rng = math.Random();
 
   OrbiterEnemy()
-      : super(
-          hp: 4,
-          speed: 200,
-          pointValue: 8,
-          geomValue: 3,
-          neonColor: const Color(0xFFFF9933),
-          size: Vector2(20, 20),
-        ) {
+    : super(
+        hp: 4,
+        speed: 200,
+        pointValue: 8,
+        geomValue: 3,
+        neonColor: const Color(0xFFFF9933),
+        size: Vector2(20, 20),
+      ) {
     _orbitAngle = _rng.nextDouble() * math.pi * 2;
   }
 
@@ -38,10 +38,12 @@ class OrbiterEnemy extends EnemyBase {
 
     // Orbita attorno al player
     _orbitAngle += dt * 1.5;
-    final targetPos = playerPosition + Vector2(
-      math.cos(_orbitAngle) * _orbitRadius,
-      math.sin(_orbitAngle) * _orbitRadius,
-    );
+    final targetPos =
+        playerPosition +
+        Vector2(
+          math.cos(_orbitAngle) * _orbitRadius,
+          math.sin(_orbitAngle) * _orbitRadius,
+        );
 
     // Smooth movement verso la posizione orbitale
     final toTarget = targetPos - position;
@@ -97,9 +99,13 @@ class OrbiterEnemy extends EnemyBase {
 
     // Nucleo
     if (scale <= 1.01) {
-      EnemyBase.detailPaint.color = const Color(0xFFFFFFFF).withValues(alpha: 0.3);
+      EnemyBase.detailPaint.color = const Color(
+        0xFFFFFFFF,
+      ).withValues(alpha: 0.3);
       canvas.drawCircle(Offset(cx, cy), r * 0.3, EnemyBase.detailPaint);
-      EnemyBase.detailPaint.color = const Color(0xFFFFFFFF).withValues(alpha: 0.6);
+      EnemyBase.detailPaint.color = const Color(
+        0xFFFFFFFF,
+      ).withValues(alpha: 0.6);
       canvas.drawCircle(Offset(cx, cy), r * 0.2, EnemyBase.detailPaint);
     }
   }
@@ -116,7 +122,7 @@ class _OrbiterBullet extends PositionComponent
   // Size 18×18 come i proiettili dei boss (richiesta utente: "grandi come i
   // proiettili dei boss"). Prima 6×6 → percepiti troppo piccoli.
   _OrbiterBullet({required this.direction, required this.color})
-      : super(size: Vector2(18, 18), anchor: Anchor.center);
+    : super(size: Vector2(18, 18), anchor: Anchor.center);
 
   @override
   Future<void> onLoad() async {

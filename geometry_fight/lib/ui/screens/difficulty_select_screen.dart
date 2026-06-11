@@ -70,11 +70,14 @@ class _DifficultySelectScreenState extends State<DifficultySelectScreen> {
                   ),
                   Container(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 10, vertical: 4),
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(
-                          color: NeonColors.cyan.withValues(alpha: 0.5)),
+                        color: NeonColors.cyan.withValues(alpha: 0.5),
+                      ),
                     ),
                     child: const Text(
                       '2/6',
@@ -98,7 +101,9 @@ class _DifficultySelectScreenState extends State<DifficultySelectScreen> {
                   constraints: const BoxConstraints(maxWidth: 700),
                   child: Padding(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 16),
+                      horizontal: 16,
+                      vertical: 16,
+                    ),
                     child: Wrap(
                       alignment: WrapAlignment.center,
                       runAlignment: WrapAlignment.center,
@@ -136,22 +141,23 @@ class _DifficultySelectScreenState extends State<DifficultySelectScreen> {
                                     ? color.withValues(alpha: 0.18)
                                     : color.withValues(alpha: 0.05),
                                 border: Border.all(
-                                    color: color.withValues(
-                                        alpha: selected ? 0.95 : 0.4),
-                                    width: selected ? 2.5 : 1),
+                                  color: color.withValues(
+                                    alpha: selected ? 0.95 : 0.4,
+                                  ),
+                                  width: selected ? 2.5 : 1,
+                                ),
                                 boxShadow: selected
                                     ? [
                                         BoxShadow(
-                                            color: color.withValues(
-                                                alpha: 0.4),
-                                            blurRadius: 12)
+                                          color: color.withValues(alpha: 0.4),
+                                          blurRadius: 12,
+                                        ),
                                       ]
                                     : null,
                               ),
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
-                                crossAxisAlignment:
-                                    CrossAxisAlignment.center,
+                                crossAxisAlignment: CrossAxisAlignment.center,
                                 children: [
                                   Text(
                                     diffLabel,
@@ -183,8 +189,9 @@ class _DifficultySelectScreenState extends State<DifficultySelectScreen> {
                                     'HP ×${cfg.enemyHpMultiplier} · '
                                     'SPD ×${cfg.enemySpeedMultiplier}',
                                     style: TextStyle(
-                                      color:
-                                          Colors.white.withValues(alpha: 0.6),
+                                      color: Colors.white.withValues(
+                                        alpha: 0.6,
+                                      ),
                                       fontSize: 10,
                                       fontFamily: 'monospace',
                                     ),
@@ -210,19 +217,27 @@ class _DifficultySelectScreenState extends State<DifficultySelectScreen> {
 
   Color _diffColor(Difficulty d) {
     switch (d) {
-      case Difficulty.easy: return NeonColors.green;
-      case Difficulty.normal: return NeonColors.cyan;
-      case Difficulty.hard: return NeonColors.orange;
-      case Difficulty.nightmare: return NeonColors.red;
+      case Difficulty.easy:
+        return NeonColors.green;
+      case Difficulty.normal:
+        return NeonColors.cyan;
+      case Difficulty.hard:
+        return NeonColors.orange;
+      case Difficulty.nightmare:
+        return NeonColors.red;
     }
   }
 
   String _diffName(AppLocalizations l10n, Difficulty d) {
     switch (d) {
-      case Difficulty.easy: return l10n.diffEasy;
-      case Difficulty.normal: return l10n.diffNormal;
-      case Difficulty.hard: return l10n.diffHard;
-      case Difficulty.nightmare: return l10n.diffNightmare;
+      case Difficulty.easy:
+        return l10n.diffEasy;
+      case Difficulty.normal:
+        return l10n.diffNormal;
+      case Difficulty.hard:
+        return l10n.diffHard;
+      case Difficulty.nightmare:
+        return l10n.diffNightmare;
     }
   }
 

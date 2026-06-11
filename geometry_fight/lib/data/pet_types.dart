@@ -30,18 +30,20 @@ enum PetType {
   empDrone,
   tacticalSpotter,
   slower,
+  bomber,
+  repulsor,
 }
 
 /// Definizione metadata pet — display name, descrizione, costo gold,
 /// colore neon. Usato da shop + loadout screen.
 class PetDef {
   final PetType type;
-  final String id;            // string id per persistenza saveData
+  final String id; // string id per persistenza saveData
   final String displayName;
   final String description;
-  final int cost;             // gold per unlock (0 = unlock di default)
+  final int cost; // gold per unlock (0 = unlock di default)
   final Color color;
-  final String iconCode;      // 1-2 char rappresentazione testuale (loadout grid)
+  final String iconCode; // 1-2 char rappresentazione testuale (loadout grid)
 
   const PetDef({
     required this.type,
@@ -61,7 +63,7 @@ const List<PetDef> kPetCatalog = [
     id: 'attack',
     displayName: 'ATTACK',
     description: 'Segue il player + spara raffiche extra. Doppia la firepower.',
-    cost: 1500,
+    cost: 15000,
     color: NeonColors.bulletYellow,
     iconCode: 'A',
   ),
@@ -70,7 +72,7 @@ const List<PetDef> kPetCatalog = [
     id: 'collect',
     displayName: 'COLLECT',
     description: 'Vola libero raccoglie geoms a distanza. Boost economy.',
-    cost: 1200,
+    cost: 12000,
     color: NeonColors.cyan,
     iconCode: 'C',
   ),
@@ -79,7 +81,7 @@ const List<PetDef> kPetCatalog = [
     id: 'sweep',
     displayName: 'SWEEP',
     description: 'Orbita il player, instakill nemico al tocco.',
-    cost: 2000,
+    cost: 20000,
     color: NeonColors.pink,
     iconCode: 'S',
   ),
@@ -88,7 +90,7 @@ const List<PetDef> kPetCatalog = [
     id: 'defend',
     displayName: 'DEFEND',
     description: 'Segue retro player, spara nella direzione opposta.',
-    cost: 1800,
+    cost: 18000,
     color: NeonColors.green,
     iconCode: 'D',
   ),
@@ -97,7 +99,7 @@ const List<PetDef> kPetCatalog = [
     id: 'snipe',
     displayName: 'SNIPE',
     description: 'Orbita lento + laser al nemico più vicino ogni 1.5s.',
-    cost: 2200,
+    cost: 22000,
     color: NeonColors.laserRed,
     iconCode: 'N',
   ),
@@ -106,7 +108,7 @@ const List<PetDef> kPetCatalog = [
     id: 'ram',
     displayName: 'RAM',
     description: 'Insegue + si schianta sul nemico più vicino. Cooldown 1s.',
-    cost: 2500,
+    cost: 25000,
     color: NeonColors.orange,
     iconCode: 'R',
   ),
@@ -115,7 +117,7 @@ const List<PetDef> kPetCatalog = [
     id: 'phoenix',
     displayName: 'PHOENIX',
     description: 'Auto-revive una volta per run + 2s di invincibilità.',
-    cost: 3500,
+    cost: 35000,
     color: NeonColors.orange,
     iconCode: 'P',
   ),
@@ -124,7 +126,7 @@ const List<PetDef> kPetCatalog = [
     id: 'black_hole_pet',
     displayName: 'BLACK HOLE',
     description: 'Pozzo gravitazionale: trascina i nemici entro 150px.',
-    cost: 2800,
+    cost: 28000,
     color: NeonColors.purple,
     iconCode: 'B',
   ),
@@ -133,7 +135,7 @@ const List<PetDef> kPetCatalog = [
     id: 'emp_drone',
     displayName: 'EMP DRONE',
     description: 'Pulse stun nemici entro 250px ogni 8s (0.5s di stordimento).',
-    cost: 2600,
+    cost: 26000,
     color: NeonColors.cyan,
     iconCode: 'E',
   ),
@@ -142,7 +144,7 @@ const List<PetDef> kPetCatalog = [
     id: 'tactical_spotter',
     displayName: 'TACTICAL SPOTTER',
     description: 'Slow-mo 0.5s quando il player è in salute critica. CD 6s.',
-    cost: 3000,
+    cost: 30000,
     color: NeonColors.lime,
     iconCode: 'T',
   ),
@@ -153,9 +155,31 @@ const List<PetDef> kPetCatalog = [
     description:
         'Crea un campo di rallentamento davanti alla navicella: i nemici '
         'che entrano nel campo si muovono al rallentatore.',
-    cost: 2400,
+    cost: 24000,
     color: NeonColors.teal,
     iconCode: 'L',
+  ),
+  PetDef(
+    type: PetType.bomber,
+    id: 'bomber',
+    displayName: 'BOMBER',
+    description:
+        'Sgancia mine esplosive attorno al player: detonano al contatto coi '
+        'nemici o a fine vita, infliggendo danno ad area.',
+    cost: 31000,
+    color: NeonColors.orange,
+    iconCode: 'M',
+  ),
+  PetDef(
+    type: PetType.repulsor,
+    id: 'repulsor',
+    displayName: 'REPULSOR',
+    description:
+        'Campo di forza che respinge i nemici vicini al player: nessun danno, '
+        'puro controllo difensivo (opposto del Black Hole).',
+    cost: 27000,
+    color: NeonColors.lime,
+    iconCode: 'X',
   ),
 ];
 

@@ -322,6 +322,18 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
                 child: _BombButton(onPressed: () => _game.bombPressed = true),
               ),
 
+            // === PULSANTE DASH (talent) — accanto alla bomba, lato destro ===
+            // Visibile solo se lo scatto è sbloccato nello shop e la modalità
+            // permette le abilità (no pacifist/snake).
+            if (_game.saveData.dashUnlocked &&
+                !_game.isPacifistMode &&
+                _game.gameMode != GameMode.snake)
+              Positioned(
+                bottom: 140,
+                right: 90,
+                child: _DashButton(onPressed: () => _game.dashPressed = true),
+              ),
+
             // === PULSANTE PAUSA (lato destro, sopra il tasto bomba) ===
             Positioned(
               bottom: 215,
@@ -518,6 +530,80 @@ class _BombButtonState extends State<_BombButton>
             ),
             child: const Center(
               child: Icon(Icons.flash_on, color: Colors.redAccent, size: 26),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// Pulsante dash (talent) con effetto neon ciano pulsante. Stile gemello del
+/// `_BombButton` ma ciano + icona fast-forward.
+class _DashButton extends StatefulWidget {
+  final VoidCallback onPressed;
+  const _DashButton({required this.onPressed});
+
+  @override
+  State<_DashButton> createState() => _DashButtonState();
+}
+
+class _DashButtonState extends State<_DashButton>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 1000),
+      vsync: this,
+    )..repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return NeonAnimatedBuilder(
+      animation: _controller,
+      builder: (context, _) {
+        final glowIntensity = 0.2 + _controller.value * 0.15;
+        return GestureDetector(
+          onTap: widget.onPressed,
+          child: Container(
+            width: 56,
+            height: 56,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: Colors.cyanAccent.withValues(alpha: 0.7),
+                width: 2,
+              ),
+              gradient: RadialGradient(
+                colors: [
+                  Colors.cyan.withValues(alpha: glowIntensity),
+                  Colors.cyan.withValues(alpha: 0.05),
+                ],
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.cyanAccent.withValues(alpha: glowIntensity),
+                  blurRadius: 16,
+                  spreadRadius: 2,
+                ),
+              ],
+            ),
+            child: const Center(
+              child: Icon(
+                Icons.fast_forward,
+                color: Colors.cyanAccent,
+                size: 28,
+              ),
             ),
           ),
         );

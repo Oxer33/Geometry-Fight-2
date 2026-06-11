@@ -34,6 +34,7 @@ class GaussImplosion extends PositionComponent
   static const double baseCoreAmplitude = 1.5;
 
   final Vector2 epicenter;
+
   /// Moltiplicatore radius (1.0 default, 2.0 con FirePower attivo).
   /// `aoeScale` invece di `scale` per evitare collisione con la proprietà
   /// `scale` (NotifyingVector2) di PositionComponent.
@@ -59,8 +60,10 @@ class GaussImplosion extends PositionComponent
   final Paint _corePaint = Paint();
 
   GaussImplosion({required this.epicenter, double aoeScale = 1.0})
-      : aoeScale = (aoeScale.isFinite ? aoeScale : 1.0).clamp(0.1, 4.0).toDouble(),
-        super(position: epicenter.clone(), anchor: Anchor.center);
+    : aoeScale = (aoeScale.isFinite ? aoeScale : 1.0)
+          .clamp(0.1, 4.0)
+          .toDouble(),
+      super(position: epicenter.clone(), anchor: Anchor.center);
 
   @override
   void update(double dt) {
@@ -114,16 +117,19 @@ class GaussImplosion extends PositionComponent
     // Iter 15: base 28→7, ampiezza oscillazione 6→1.5 (scale 0.25).
     // FirePower aoeScale: `_coreR` e `_coreAmp` includono già il moltiplicatore.
     // Moltiplicatori `* 1.8` e `* 0.4` (sotto) restano invariati.
-    final coreR = (_coreR + math.sin(_age * 10) * _coreAmp) *
-        (0.6 + 0.4 * (1 - t));
-    _corePaint.color =
-        const Color(0xFF66DDFF).withValues(alpha: 0.45 * alpha * pulse);
+    final coreR =
+        (_coreR + math.sin(_age * 10) * _coreAmp) * (0.6 + 0.4 * (1 - t));
+    _corePaint.color = const Color(
+      0xFF66DDFF,
+    ).withValues(alpha: 0.45 * alpha * pulse);
     canvas.drawCircle(Offset.zero, coreR * 1.8, _corePaint);
-    _corePaint.color =
-        const Color(0xFFCC66FF).withValues(alpha: 0.75 * alpha * pulse);
+    _corePaint.color = const Color(
+      0xFFCC66FF,
+    ).withValues(alpha: 0.75 * alpha * pulse);
     canvas.drawCircle(Offset.zero, coreR, _corePaint);
-    _corePaint.color =
-        const Color(0xFFFFFFFF).withValues(alpha: 0.9 * alpha * pulse);
+    _corePaint.color = const Color(
+      0xFFFFFFFF,
+    ).withValues(alpha: 0.9 * alpha * pulse);
     canvas.drawCircle(Offset.zero, coreR * 0.4, _corePaint);
 
     // 4 anelli concentrici che si rimpiccioliscono verso il centro durante

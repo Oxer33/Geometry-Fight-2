@@ -67,18 +67,21 @@ class EternityEngineBoss extends BossBase {
     ..strokeWidth = 1.5;
 
   EternityEngineBoss()
-      : super(
-          hp: 3500,
-          bossName: 'ETERNITY ENGINE',
-          pointValue: 12000,
-          neonColor: const Color(0xFFFFFFFF),
-          size: Vector2(130, 130),
-        );
+    : super(
+        hp: 3500,
+        bossName: 'ETERNITY ENGINE',
+        pointValue: 12000,
+        neonColor: const Color(0xFFFFFFFF),
+        size: Vector2(130, 130),
+      );
 
   // EternityEngine è ARCOBALENO ROTANTE → mob neutri (drone + orbiter + decoy).
   @override
-  List<EnemyType> get colorMatchedMinions =>
-      const [EnemyType.drone, EnemyType.orbiter, EnemyType.decoy];
+  List<EnemyType> get colorMatchedMinions => const [
+    EnemyType.drone,
+    EnemyType.orbiter,
+    EnemyType.decoy,
+  ];
 
   @override
   int getPhase() {
@@ -97,9 +100,10 @@ class EternityEngineBoss extends BossBase {
     // Ogni fase spawna nemici di supporto
     for (int i = 0; i < 3 + phase * 2; i++) {
       final angle = _rng.nextDouble() * math.pi * 2;
-      game.spawnEnemy(EnemyType.drone, position + Vector2(
-        math.cos(angle) * 200, math.sin(angle) * 200,
-      ));
+      game.spawnEnemy(
+        EnemyType.drone,
+        position + Vector2(math.cos(angle) * 200, math.sin(angle) * 200),
+      );
     }
   }
 
@@ -116,10 +120,12 @@ class EternityEngineBoss extends BossBase {
         ? game.camera.viewfinder.position
         : Vector2(arenaWidth / 2, arenaHeight / 2);
     final orbitR = 200 + math.sin(_phase * 0.2) * 80;
-    final targetPos = center + Vector2(
-      math.cos(_phase * 0.1) * orbitR,
-      math.sin(_phase * 0.1) * orbitR,
-    );
+    final targetPos =
+        center +
+        Vector2(
+          math.cos(_phase * 0.1) * orbitR,
+          math.sin(_phase * 0.1) * orbitR,
+        );
     final toTarget = targetPos - position;
     if (toTarget.length > 5) {
       position += toTarget.normalized() * 60 * dt;
@@ -148,9 +154,11 @@ class EternityEngineBoss extends BossBase {
     if (_rewindSpawnTimer <= 0) {
       _rewindSpawnTimer = _kRewindSpawnInterval;
       for (int i = 0; i < 3; i++) {
-        _rewindOrbs.add(_RewindOrb()
-          ..position = position.clone()
-          ..orbitAngle = i * math.pi * 2 / 3);
+        _rewindOrbs.add(
+          _RewindOrb()
+            ..position = position.clone()
+            ..orbitAngle = i * math.pi * 2 / 3,
+        );
       }
     }
 
@@ -160,7 +168,8 @@ class EternityEngineBoss extends BossBase {
       if (!orb.isHazard) {
         // Fase orbita: gira attorno al boss.
         orb.orbitAngle += dt * 2.5;
-        orb.position = position +
+        orb.position =
+            position +
             Vector2(math.cos(orb.orbitAngle), math.sin(orb.orbitAngle)) *
                 _kRewindOrbitRadius;
         orb.timer -= dt;
@@ -202,11 +211,20 @@ class EternityEngineBoss extends BossBase {
         // -25% proiettili spiral (8/12/16 → 6/9/12) per differenziarlo da
         // Omega Core e ridurre la densità (richiesta utente). Eternity si
         // appoggia di più alla sua identità: scia di mine + rewind orbs.
-        case 0: _attackSpiral(6);
-        case 1: _attackSpiral(9); _attackRadial();
-        case 2: _attackSpiral(12); _attackRadial(); _attackHoming();
+        case 0:
+          _attackSpiral(6);
+        case 1:
+          _attackSpiral(9);
+          _attackRadial();
+        case 2:
+          _attackSpiral(12);
+          _attackRadial();
+          _attackHoming();
         // Rage (richiesta utente): spara come phase 2 — no burst totale.
-        case 3: _attackSpiral(12); _attackRadial(); _attackHoming();
+        case 3:
+          _attackSpiral(12);
+          _attackRadial();
+          _attackHoming();
       }
     }
 
@@ -215,7 +233,8 @@ class EternityEngineBoss extends BossBase {
       _rageBlackHoleTimer -= dt;
       if (_rageBlackHoleTimer <= 0) {
         _rageBlackHoleTimer = 10.0;
-        final spawnPos = playerPosition +
+        final spawnPos =
+            playerPosition +
             Vector2(
               (_rng.nextDouble() - 0.5) * 300,
               (_rng.nextDouble() - 0.5) * 300,
@@ -238,14 +257,16 @@ class EternityEngineBoss extends BossBase {
   void _attackRadial() {
     // NaN guard: se boss coincide col player, usa baseAngle 0.
     final delta = playerPosition - position;
-    final baseAngle = delta.length < 0.001
-        ? 0.0
-        : math.atan2(delta.y, delta.x);
+    final baseAngle = delta.length < 0.001 ? 0.0 : math.atan2(delta.y, delta.x);
     // Ventaglio 6 → 5 proiettili (-17%, richiesta utente: meno proiettili).
     for (int i = 0; i < 5; i++) {
       final angle = baseAngle + (i - 2.0) * 0.15;
       final bulletDir = Vector2(math.cos(angle), math.sin(angle));
-      final bullet = _EternityBullet(direction: bulletDir, color: _getPhaseColor(1), speed: 250);
+      final bullet = _EternityBullet(
+        direction: bulletDir,
+        color: _getPhaseColor(1),
+        speed: 250,
+      );
       bullet.position = position.clone();
       game.world.add(bullet);
     }
@@ -253,10 +274,14 @@ class EternityEngineBoss extends BossBase {
 
   void _attackHoming() {
     for (int i = 0; i < 2; i++) {
-      game.spawnEnemy(EnemyType.swarmDrone, position + Vector2(
-        (_rng.nextDouble() - 0.5) * 100,
-        (_rng.nextDouble() - 0.5) * 100,
-      ));
+      game.spawnEnemy(
+        EnemyType.swarmDrone,
+        position +
+            Vector2(
+              (_rng.nextDouble() - 0.5) * 100,
+              (_rng.nextDouble() - 0.5) * 100,
+            ),
+      );
     }
   }
 
@@ -298,12 +323,11 @@ class EternityEngineBoss extends BossBase {
           final orbitPulse = 0.6 + math.sin(_phase * 3 + orb.orbitAngle) * 0.4;
           final hue = (_phase * 60 + orb.orbitAngle * 40) % 360;
           final orbColor = HSVColor.fromAHSV(1, hue, 0.8, 1).toColor();
-          _orbGlowPaint.color =
-              orbColor.withValues(alpha: 0.45 * orbitPulse);
-          canvas.drawCircle(
-              Offset(ox, oy), 14 * orbitPulse, _orbGlowPaint);
-          _orbCorePaint.color =
-              const Color(0xFFFFFFFF).withValues(alpha: orbitPulse);
+          _orbGlowPaint.color = orbColor.withValues(alpha: 0.45 * orbitPulse);
+          canvas.drawCircle(Offset(ox, oy), 14 * orbitPulse, _orbGlowPaint);
+          _orbCorePaint.color = const Color(
+            0xFFFFFFFF,
+          ).withValues(alpha: orbitPulse);
           canvas.drawCircle(Offset(ox, oy), 5, _orbCorePaint);
         } else {
           final isGrace = orb.activationDelay > 0;
@@ -313,18 +337,23 @@ class EternityEngineBoss extends BossBase {
           final strobe = isGrace
               ? 0.5 + math.sin(_phase * 14) * 0.3
               : 0.7 + math.sin(_phase * 20) * 0.3;
-          _hazardFillPaint.color =
-              zoneColor.withValues(alpha: 0.25 * strobe);
+          _hazardFillPaint.color = zoneColor.withValues(alpha: 0.25 * strobe);
           canvas.drawCircle(
-              Offset(ox, oy), _kRewindHazardRadius, _hazardFillPaint);
-          _hazardBorderPaint.color =
-              zoneColor.withValues(alpha: 0.8 * strobe);
+            Offset(ox, oy),
+            _kRewindHazardRadius,
+            _hazardFillPaint,
+          );
+          _hazardBorderPaint.color = zoneColor.withValues(alpha: 0.8 * strobe);
           canvas.drawCircle(
-              Offset(ox, oy), _kRewindHazardRadius, _hazardBorderPaint);
+            Offset(ox, oy),
+            _kRewindHazardRadius,
+            _hazardBorderPaint,
+          );
           // Quadrante temporale (orologio che gira) al centro.
           final clockAngle = (orb.hazardTimer / 2.0) * math.pi * 2;
-          _clockPaint.color =
-              const Color(0xFFFFFFFF).withValues(alpha: 0.9 * strobe);
+          _clockPaint.color = const Color(
+            0xFFFFFFFF,
+          ).withValues(alpha: 0.9 * strobe);
           canvas.drawArc(
             Rect.fromCircle(center: Offset(ox, oy), radius: 8),
             -math.pi / 2,
@@ -342,12 +371,15 @@ class EternityEngineBoss extends BossBase {
       for (int i = 0; i < 4; i++) {
         final beamAngle = _phase * 0.4 + i * math.pi / 2;
         final beamPulse = 0.5 + math.sin(_phase * 3 + i) * 0.4;
-        _crossBeamPaint.color =
-            _getPhaseColor(i).withValues(alpha: beamPulse * 0.6);
+        _crossBeamPaint.color = _getPhaseColor(
+          i,
+        ).withValues(alpha: beamPulse * 0.6);
         canvas.drawLine(
           Offset(cx, cy),
-          Offset(cx + math.cos(beamAngle) * r * 1.15,
-              cy + math.sin(beamAngle) * r * 1.15),
+          Offset(
+            cx + math.cos(beamAngle) * r * 1.15,
+            cy + math.sin(beamAngle) * r * 1.15,
+          ),
           _crossBeamPaint,
         );
       }
@@ -388,8 +420,11 @@ class EternityEngineBoss extends BossBase {
     if (scale <= 1.01) {
       final pulse = 0.6 + math.sin(_phase * 2) * 0.3;
       _whiteCorePaint.color = Color.fromRGBO(255, 255, 255, pulse);
-      canvas.drawCircle(Offset(cx, cy), r * 0.08 * (0.9 + pulse * 0.2),
-          _whiteCorePaint);
+      canvas.drawCircle(
+        Offset(cx, cy),
+        r * 0.08 * (0.9 + pulse * 0.2),
+        _whiteCorePaint,
+      );
 
       // Quantum orbit: 4 particelle con core bianco
       for (int i = 0; i < 4; i++) {
@@ -397,13 +432,16 @@ class EternityEngineBoss extends BossBase {
         final pR = r * 0.12;
         _orbitPaint.color = coreColor.withValues(alpha: 0.9);
         canvas.drawCircle(
-            Offset(cx + pR * math.cos(pAngle), cy + pR * math.sin(pAngle)),
-            2, _orbitPaint);
-        _orbitPaint.color =
-            const Color(0xFFFFFFFF).withValues(alpha: 0.8);
+          Offset(cx + pR * math.cos(pAngle), cy + pR * math.sin(pAngle)),
+          2,
+          _orbitPaint,
+        );
+        _orbitPaint.color = const Color(0xFFFFFFFF).withValues(alpha: 0.8);
         canvas.drawCircle(
-            Offset(cx + pR * math.cos(pAngle), cy + pR * math.sin(pAngle)),
-            0.8, _orbitPaint);
+          Offset(cx + pR * math.cos(pAngle), cy + pR * math.sin(pAngle)),
+          0.8,
+          _orbitPaint,
+        );
       }
 
       // Indicatore fase
@@ -413,14 +451,22 @@ class EternityEngineBoss extends BossBase {
         _arcPaint.color = _getPhaseColor(i).withValues(alpha: 0.55);
         canvas.drawArc(
           Rect.fromCircle(center: Offset(cx, cy), radius: r * 0.95),
-          arcAngle, 0.3, false, _arcPaint,
+          arcAngle,
+          0.3,
+          false,
+          _arcPaint,
         );
       }
     }
   }
 
-  void _drawRing(Canvas canvas, double radius, Color color, double scale,
-      int segments) {
+  void _drawRing(
+    Canvas canvas,
+    double radius,
+    Color color,
+    double scale,
+    int segments,
+  ) {
     _ringPaint.color = color.withValues(alpha: 0.55);
     _ringPaint.strokeWidth = 3 * scale;
 
@@ -430,7 +476,10 @@ class EternityEngineBoss extends BossBase {
       final sweepAngle = math.pi * 2 / segments * 0.7;
       canvas.drawArc(
         Rect.fromCircle(center: Offset.zero, radius: radius),
-        startAngle, sweepAngle, false, _ringPaint,
+        startAngle,
+        sweepAngle,
+        false,
+        _ringPaint,
       );
     }
 
@@ -458,7 +507,8 @@ class EternityEngineBoss extends BossBase {
         final angle = i * math.pi * 2 / segments;
         canvas.drawCircle(
           Offset(radius * math.cos(angle), radius * math.sin(angle)),
-          2.2, _nodePaint,
+          2.2,
+          _nodePaint,
         );
       }
 
@@ -478,18 +528,24 @@ class EternityEngineBoss extends BossBase {
   }
 }
 
-class _EternityBullet extends PositionComponent with HasGameReference<GeometryFightGame> {
+class _EternityBullet extends PositionComponent
+    with HasGameReference<GeometryFightGame> {
   final Vector2 direction;
   final Color color;
   final double speed;
   late Vector2 _velocity;
   double _lifetime = 4.0;
 
-  _EternityBullet({required this.direction, required this.color, this.speed = 180})
-      : super(size: Vector2(18, 18), anchor: Anchor.center);
+  _EternityBullet({
+    required this.direction,
+    required this.color,
+    this.speed = 180,
+  }) : super(size: Vector2(18, 18), anchor: Anchor.center);
 
   @override
-  Future<void> onLoad() async { _velocity = direction.normalized() * speed; }
+  Future<void> onLoad() async {
+    _velocity = direction.normalized() * speed;
+  }
 
   @override
   void update(double dt) {

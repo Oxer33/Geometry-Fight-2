@@ -28,15 +28,15 @@ class MirrorEnemy extends EnemyBase {
   static final math.Random _rng = math.Random();
 
   MirrorEnemy()
-      : _orbitAngle = _rng.nextDouble() * math.pi * 2,
-        super(
-          hp: 5,
-          speed: 90,
-          pointValue: 10,
-          geomValue: 4,
-          neonColor: NeonColors.magenta,
-          size: Vector2(26, 26),
-        );
+    : _orbitAngle = _rng.nextDouble() * math.pi * 2,
+      super(
+        hp: 5,
+        speed: 90,
+        pointValue: 10,
+        geomValue: 4,
+        neonColor: NeonColors.magenta,
+        size: Vector2(26, 26),
+      );
 
   @override
   void updateBehavior(double dt) {
@@ -48,7 +48,8 @@ class MirrorEnemy extends EnemyBase {
 
     if (distanceToPlayer > 0) {
       // Posizione target: punto sull'orbita attorno al player
-      final targetPos = playerPosition +
+      final targetPos =
+          playerPosition +
           Vector2(math.cos(_orbitAngle), math.sin(_orbitAngle)) *
               _idealDistance;
 
@@ -125,15 +126,21 @@ class MirrorEnemy extends EnemyBase {
 
       // Nucleo specchiato (riflette la luce)
       final coreShimmer = 0.3 + math.sin(idlePhase * 6) * 0.3;
-      EnemyBase.detailPaint.color = const Color(0xFFFFFFFF).withValues(alpha: coreShimmer * 0.5);
+      EnemyBase.detailPaint.color = const Color(
+        0xFFFFFFFF,
+      ).withValues(alpha: coreShimmer * 0.5);
       canvas.drawCircle(Offset(cx, cy), r * 0.35, EnemyBase.detailPaint);
-      EnemyBase.detailPaint.color = const Color(0xFFFFFFFF).withValues(alpha: coreShimmer);
+      EnemyBase.detailPaint.color = const Color(
+        0xFFFFFFFF,
+      ).withValues(alpha: coreShimmer);
       canvas.drawCircle(Offset(cx, cy), r * 0.25, EnemyBase.detailPaint);
 
       // Indicatore cooldown riflesso
       if (_reflectCooldown > 0) {
         final cooldownProgress = (_reflectCooldown / 0.3).clamp(0.0, 1.0);
-        _cdPaint.color = NeonColors.magenta.withValues(alpha: cooldownProgress * 0.3);
+        _cdPaint.color = NeonColors.magenta.withValues(
+          alpha: cooldownProgress * 0.3,
+        );
         canvas.drawCircle(Offset(cx, cy), r * 1.1, _cdPaint);
       }
     }
@@ -141,17 +148,25 @@ class MirrorEnemy extends EnemyBase {
     // Flash prismatico quando riflette — senza blur
     if (_shieldFlash > 0) {
       // Flash bianco — cerchio grande, no blur
-      EnemyBase.detailPaint.color = NeonColors.white.withValues(alpha: _shieldFlash * 1.5);
+      EnemyBase.detailPaint.color = NeonColors.white.withValues(
+        alpha: _shieldFlash * 1.5,
+      );
       EnemyBase.detailPaint.style = PaintingStyle.fill;
       canvas.drawCircle(Offset(cx, cy), r * 1.8, EnemyBase.detailPaint);
-      EnemyBase.detailPaint.color = NeonColors.white.withValues(alpha: _shieldFlash * 3);
+      EnemyBase.detailPaint.color = NeonColors.white.withValues(
+        alpha: _shieldFlash * 3,
+      );
       canvas.drawCircle(Offset(cx, cy), r * 1.3, EnemyBase.detailPaint);
       // Prisma
-      EnemyBase.detailPaint.color = NeonColors.cyan.withValues(alpha: _shieldFlash * 1.5);
+      EnemyBase.detailPaint.color = NeonColors.cyan.withValues(
+        alpha: _shieldFlash * 1.5,
+      );
       EnemyBase.detailPaint.style = PaintingStyle.stroke;
       EnemyBase.detailPaint.strokeWidth = 1;
       canvas.drawCircle(Offset(cx + 2, cy), r * 1.2, EnemyBase.detailPaint);
-      EnemyBase.detailPaint.color = NeonColors.spreadOrange.withValues(alpha: _shieldFlash * 1.5);
+      EnemyBase.detailPaint.color = NeonColors.spreadOrange.withValues(
+        alpha: _shieldFlash * 1.5,
+      );
       canvas.drawCircle(Offset(cx - 2, cy), r * 1.2, EnemyBase.detailPaint);
     }
   }

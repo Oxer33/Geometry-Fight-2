@@ -19,18 +19,21 @@ class VoidReaperBoss extends BossBase {
   static final math.Random _rng = math.Random();
 
   VoidReaperBoss()
-      : super(
-          hp: 1800,
-          bossName: 'VOID REAPER',
-          pointValue: 3500,
-          neonColor: const Color(0xFF6600AA),
-          size: Vector2(100, 100),
-        );
+    : super(
+        hp: 1800,
+        bossName: 'VOID REAPER',
+        pointValue: 3500,
+        neonColor: const Color(0xFF6600AA),
+        size: Vector2(100, 100),
+      );
 
   // VoidReaper è VIOLA SCURO → mob viola (phantom + mirror + proton).
   @override
-  List<EnemyType> get colorMatchedMinions =>
-      const [EnemyType.phantom, EnemyType.mirror, EnemyType.proton];
+  List<EnemyType> get colorMatchedMinions => const [
+    EnemyType.phantom,
+    EnemyType.mirror,
+    EnemyType.proton,
+  ];
 
   // Hitbox più ampia del default 0.7: la falce è sottile ma il corpo deve
   // poter colpire al contatto (richiesta utente: "se mi tocca non fa danni").
@@ -111,11 +114,9 @@ class VoidReaperBoss extends BossBase {
       1 => 120.0,
       _ => 180.0,
     };
-    _deathZones.add(_DeathZone(
-      position: spawnPos,
-      radius: radius,
-      lifetime: 8.0,
-    ));
+    _deathZones.add(
+      _DeathZone(position: spawnPos, radius: radius, lifetime: 8.0),
+    );
     if (!game.isTunnelMode) {
       game.grid.applyForce(spawnPos, 80, 300);
     }
@@ -147,14 +148,21 @@ class VoidReaperBoss extends BossBase {
         final zCy = cy + offset.y;
         _zoneFillPaint.color = neonColor.withValues(alpha: zAlpha * 0.25);
         canvas.drawCircle(
-            Offset(zCx, zCy), zone.radius * pulse, _zoneFillPaint);
+          Offset(zCx, zCy),
+          zone.radius * pulse,
+          _zoneFillPaint,
+        );
         _zoneBorderPaint.color = neonColor.withValues(alpha: zAlpha * 0.7);
         _zoneBorderPaint.strokeWidth = 2;
         canvas.drawCircle(
-            Offset(zCx, zCy), zone.radius * pulse, _zoneBorderPaint);
+          Offset(zCx, zCy),
+          zone.radius * pulse,
+          _zoneBorderPaint,
+        );
         // Vortex interno: 3 archi rotanti
-        _zoneVortexPaint.color =
-            const Color(0xFFCC44FF).withValues(alpha: zAlpha * 0.5);
+        _zoneVortexPaint.color = const Color(
+          0xFFCC44FF,
+        ).withValues(alpha: zAlpha * 0.5);
         _zoneVortexPaint.strokeWidth = 1.2;
         canvas.save();
         canvas.translate(zCx, zCy);
@@ -162,8 +170,12 @@ class VoidReaperBoss extends BossBase {
         for (int v = 0; v < 3; v++) {
           final vr = zone.radius * (0.3 + v * 0.25) * pulse;
           canvas.drawArc(
-              Rect.fromCircle(center: Offset.zero, radius: vr),
-              v * math.pi * 0.7, math.pi * 0.9, false, _zoneVortexPaint);
+            Rect.fromCircle(center: Offset.zero, radius: vr),
+            v * math.pi * 0.7,
+            math.pi * 0.9,
+            false,
+            _zoneVortexPaint,
+          );
         }
         canvas.restore();
       }
@@ -176,11 +188,11 @@ class VoidReaperBoss extends BossBase {
         final vAngle = vp % (math.pi * 2);
         final vDist = r * (1.0 + ((vp * 0.4) % 1.0) * 0.8);
         final vAlpha = (1.0 - ((vp * 0.4) % 1.0)) * 0.7;
-        _voidParticlePaint.color =
-            const Color(0xFFCC44FF).withValues(alpha: vAlpha);
+        _voidParticlePaint.color = const Color(
+          0xFFCC44FF,
+        ).withValues(alpha: vAlpha);
         canvas.drawCircle(
-          Offset(cx + math.cos(vAngle) * vDist,
-              cy + math.sin(vAngle) * vDist),
+          Offset(cx + math.cos(vAngle) * vDist, cy + math.sin(vAngle) * vDist),
           2 + (i % 3) * 0.8,
           _voidParticlePaint,
         );
@@ -195,15 +207,24 @@ class VoidReaperBoss extends BossBase {
     _arcPaint.strokeWidth = 8 * scale;
     canvas.drawArc(
       Rect.fromCircle(center: Offset.zero, radius: r * 0.7),
-      -math.pi * 0.8, math.pi * 1.2, false, _arcPaint,
+      -math.pi * 0.8,
+      math.pi * 1.2,
+      false,
+      _arcPaint,
     );
     final tipPath = Path()
-      ..moveTo(r * 0.7 * math.cos(-math.pi * 0.8),
-          r * 0.7 * math.sin(-math.pi * 0.8))
-      ..lineTo(r * 0.9 * math.cos(-math.pi * 0.9),
-          r * 0.9 * math.sin(-math.pi * 0.9))
-      ..lineTo(r * 0.5 * math.cos(-math.pi * 0.7),
-          r * 0.5 * math.sin(-math.pi * 0.7))
+      ..moveTo(
+        r * 0.7 * math.cos(-math.pi * 0.8),
+        r * 0.7 * math.sin(-math.pi * 0.8),
+      )
+      ..lineTo(
+        r * 0.9 * math.cos(-math.pi * 0.9),
+        r * 0.9 * math.sin(-math.pi * 0.9),
+      )
+      ..lineTo(
+        r * 0.5 * math.cos(-math.pi * 0.7),
+        r * 0.5 * math.sin(-math.pi * 0.7),
+      )
       ..close();
     _tipPaint.color = paint.color;
     canvas.drawPath(tipPath, _tipPaint);
@@ -212,8 +233,9 @@ class VoidReaperBoss extends BossBase {
     // ─── NUCLEO CROMATICO (halo + occhio viola + pupilla bianca) ───
     if (scale <= 1.01) {
       final pulse = 0.5 + math.sin(_movePhase * 3) * 0.4;
-      _coreHaloPaint.color =
-          const Color(0xFFCC44FF).withValues(alpha: pulse * 0.4);
+      _coreHaloPaint.color = const Color(
+        0xFFCC44FF,
+      ).withValues(alpha: pulse * 0.4);
       canvas.drawCircle(Offset(cx, cy), r * 0.45, _coreHaloPaint);
       _corePaint.color = const Color(0xFFCC44FF).withValues(alpha: pulse);
       canvas.drawCircle(Offset(cx, cy), r * 0.25, _corePaint);

@@ -1,12 +1,7 @@
 // Sistema di difficoltà per Geometry Fight 2.
 // Ogni livello modifica HP nemici, velocità, spawn rate e drop rate.
 
-enum Difficulty {
-  easy,
-  normal,
-  hard,
-  nightmare,
-}
+enum Difficulty { easy, normal, hard, nightmare }
 
 /// Configurazione per ogni livello di difficoltà
 class DifficultyConfig {
@@ -18,7 +13,8 @@ class DifficultyConfig {
   final double spawnDelayMultiplier; // < 1 = più veloce
   final double powerUpDropRate;
   final double geomDropMultiplier;
-  final double geomValueMultiplier; // Quanto vale ogni geom per il moltiplicatore (1.0 = +1x, 1.5 = +1.5x)
+  final double
+  geomValueMultiplier; // Quanto vale ogni geom per il moltiplicatore (1.0 = +1x, 1.5 = +1.5x)
   final double scoreMultiplier;
   final int startingLives;
   final int startingBombs;
@@ -43,7 +39,8 @@ class DifficultyConfig {
 const Map<Difficulty, DifficultyConfig> difficultyConfigs = {
   Difficulty.easy: DifficultyConfig(
     name: 'FACILE',
-    description: 'Per chi inizia. Più vite, nemici deboli, drop power-up raddoppiati vs normale.',
+    description:
+        'Per chi inizia. Più vite, nemici deboli, drop power-up raddoppiati vs normale.',
     enemyHpMultiplier: 0.7,
     enemySpeedMultiplier: 0.8,
     enemyCountMultiplier: 0.7,
@@ -71,7 +68,8 @@ const Map<Difficulty, DifficultyConfig> difficultyConfigs = {
   ),
   Difficulty.hard: DifficultyConfig(
     name: 'DIFFICILE',
-    description: 'Per i veterani. Nemici aggressivi, drop power-up dimezzati vs normale.',
+    description:
+        'Per i veterani. Nemici aggressivi, drop power-up dimezzati vs normale.',
     enemyHpMultiplier: 1.5,
     enemySpeedMultiplier: 1.25,
     enemyCountMultiplier: 1.3,
@@ -85,7 +83,8 @@ const Map<Difficulty, DifficultyConfig> difficultyConfigs = {
   ),
   Difficulty.nightmare: DifficultyConfig(
     name: 'INCUBO',
-    description: 'Impossibile? Forse. Drop power-up rarissimi, solo per i migliori.',
+    description:
+        'Impossibile? Forse. Drop power-up rarissimi, solo per i migliori.',
     enemyHpMultiplier: 2.0,
     enemySpeedMultiplier: 1.5,
     enemyCountMultiplier: 1.6,
@@ -119,6 +118,9 @@ enum GameMode {
   // la tocca. No armi, no boss, no powerup. Spawn continuo nemici random,
   // endless score-attack.
   snake,
+  // Arena Shrink — come classica endless ma l'arena effettiva si restringe
+  // nel tempo: lo spazio per schivare svanisce progressivamente. Sopravvivi!
+  arenaShrink,
 }
 
 /// Configurazione per ogni modalità di gioco
@@ -214,7 +216,8 @@ const Map<GameMode, GameModeConfig> gameModeConfigs = {
   // i Gate per esplosioni a catena. Combo successive = punti × moltiplicatore.
   GameMode.pacifist: GameModeConfig(
     name: 'PACIFISTA',
-    description: 'Niente colpi, niente bombe. Sopravvivi attraversando i Gate per esplosioni a catena.',
+    description:
+        'Niente colpi, niente bombe. Sopravvivi attraversando i Gate per esplosioni a catena.',
     icon: '🕊️',
     unlockCost: 1500,
     hasBosses: false,
@@ -227,7 +230,8 @@ const Map<GameMode, GameModeConfig> gameModeConfigs = {
   // Wave count crescente → mastery del dodge cardinale.
   GameMode.gravityInferno: GameModeConfig(
     name: 'GRAVITY INFERNO',
-    description: 'Tanti buchi neri + pochi mob misti. Niente boss. Caos gravitazionale.',
+    description:
+        'Tanti buchi neri + pochi mob misti. Niente boss. Caos gravitazionale.',
     icon: '🌑',
     unlockCost: 1800,
     hasBosses: false,
@@ -237,7 +241,8 @@ const Map<GameMode, GameModeConfig> gameModeConfigs = {
   ),
   GameMode.waves: GameModeConfig(
     name: 'WAVES',
-    description: 'Solo triangoli rossi cardinali. Rari buchi neri. Test puro di dodge.',
+    description:
+        'Solo triangoli rossi cardinali. Rari buchi neri. Test puro di dodge.',
     icon: '🔻',
     // 800g: progressione coerente. Pacifist=1500 più punitive (no spari);
     // Waves più diretto (spari + dodge) → 800 entry-level dopo TimeAttack.
@@ -253,11 +258,25 @@ const Map<GameMode, GameModeConfig> gameModeConfigs = {
   // score-attack: scoring puramente da kill via trail.
   GameMode.snake: GameModeConfig(
     name: 'SNAKE',
-    description: 'Lascia una scia con la navicella che uccide all\'istante chi la tocca. No armi, no boss, no powerup.',
+    description:
+        'Lascia una scia con la navicella che uccide all\'istante chi la tocca. No armi, no boss, no powerup.',
     icon: '🐍',
     unlockCost: 2500,
     hasBosses: false,
     hasWaves: false,
+    infiniteWaves: true,
+    pauseBetweenWaves: false,
+  ),
+  // Arena Shrink — classica endless con boss, ma l'arena si restringe nel
+  // tempo (vedi GeometryFightGame._arenaShrinkFactor). Sopravvivenza spaziale.
+  GameMode.arenaShrink: GameModeConfig(
+    name: 'ARENA SHRINK',
+    description:
+        'L\'arena si restringe nel tempo: lo spazio per schivare svanisce. Resisti il più a lungo possibile!',
+    icon: '🔳',
+    unlockCost: 2200,
+    hasBosses: true,
+    hasWaves: true,
     infiniteWaves: true,
     pauseBetweenWaves: false,
   ),

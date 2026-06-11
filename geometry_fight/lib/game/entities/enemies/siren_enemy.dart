@@ -18,14 +18,14 @@ class SirenEnemy extends EnemyBase {
   static const double _slowInterval = 0.033;
 
   SirenEnemy()
-      : super(
-          hp: 5,
-          speed: 80,
-          pointValue: 15,
-          geomValue: 4,
-          neonColor: const Color(0xFFBB66FF),
-          size: Vector2(22, 22),
-        );
+    : super(
+        hp: 5,
+        speed: 80,
+        pointValue: 15,
+        geomValue: 4,
+        neonColor: const Color(0xFFBB66FF),
+        size: Vector2(22, 22),
+      );
 
   @override
   void updateBehavior(double dt) {
@@ -69,7 +69,8 @@ class SirenEnemy extends EnemyBase {
       EnemyBase.detailPaint.style = PaintingStyle.stroke;
       EnemyBase.detailPaint.strokeWidth = 1;
       for (int i = 0; i < 3; i++) {
-        final waveR = ((_wavePhase + i * 1.5) % 4) / 4 * _interferenceRadius * 0.5;
+        final waveR =
+            ((_wavePhase + i * 1.5) % 4) / 4 * _interferenceRadius * 0.5;
         final waveAlpha = (1 - waveR / (_interferenceRadius * 0.5)) * 0.2;
         if (waveAlpha > 0) {
           EnemyBase.detailPaint.color = neonColor.withValues(alpha: waveAlpha);
@@ -130,8 +131,20 @@ class SirenEnemy extends EnemyBase {
       EnemyBase.detailPaint.color = paint.color.withValues(alpha: 0.2);
       EnemyBase.detailPaint.strokeWidth = 0.7;
       final arcRect = Rect.fromCircle(center: Offset.zero, radius: r * 0.7);
-      canvas.drawArc(arcRect, _wavePhase, math.pi * 0.6, false, EnemyBase.detailPaint);
-      canvas.drawArc(arcRect, _wavePhase + math.pi, math.pi * 0.6, false, EnemyBase.detailPaint);
+      canvas.drawArc(
+        arcRect,
+        _wavePhase,
+        math.pi * 0.6,
+        false,
+        EnemyBase.detailPaint,
+      );
+      canvas.drawArc(
+        arcRect,
+        _wavePhase + math.pi,
+        math.pi * 0.6,
+        false,
+        EnemyBase.detailPaint,
+      );
       EnemyBase.detailPaint.style = PaintingStyle.fill;
 
       // 5 nodi frequenza sui vertici (pulsano con la wave)
@@ -146,7 +159,9 @@ class SirenEnemy extends EnemyBase {
 
       // Nucleo pulsante con anello
       final pulse = 0.5 + math.sin(_wavePhase * 2) * 0.3;
-      EnemyBase.detailPaint.color = const Color(0xFFFFFFFF).withValues(alpha: pulse);
+      EnemyBase.detailPaint.color = const Color(
+        0xFFFFFFFF,
+      ).withValues(alpha: pulse);
       canvas.drawCircle(Offset.zero, r * 0.15, EnemyBase.detailPaint);
     }
     canvas.restore();

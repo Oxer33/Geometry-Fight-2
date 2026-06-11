@@ -16,14 +16,14 @@ class SpawnerEnemy extends EnemyBase {
     ..strokeWidth = 2;
 
   SpawnerEnemy()
-      : super(
-          hp: 15,
-          speed: 60,
-          pointValue: 18,
-          geomValue: 5,
-          neonColor: NeonColors.orange,
-          size: Vector2(30, 30),
-        );
+    : super(
+        hp: 15,
+        speed: 60,
+        pointValue: 18,
+        geomValue: 5,
+        neonColor: NeonColors.orange,
+        size: Vector2(30, 30),
+      );
 
   @override
   void updateBehavior(double dt) {
@@ -82,10 +82,15 @@ class SpawnerEnemy extends EnemyBase {
       // Indicatore spawn (cerchio che si riempie)
       final spawnProgress = 1.0 - (_spawnTimer / 3.0).clamp(0.0, 1.0);
       if (spawnProgress > 0.1) {
-        _spawnPaint.color = NeonColors.orange.withValues(alpha: spawnProgress * 0.4);
+        _spawnPaint.color = NeonColors.orange.withValues(
+          alpha: spawnProgress * 0.4,
+        );
         canvas.drawArc(
           Rect.fromCircle(center: Offset(cx, cy), radius: r * 1.2),
-          -math.pi / 2, math.pi * 2 * spawnProgress, false, _spawnPaint,
+          -math.pi / 2,
+          math.pi * 2 * spawnProgress,
+          false,
+          _spawnPaint,
         );
       }
 

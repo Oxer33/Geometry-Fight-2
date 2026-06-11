@@ -18,7 +18,8 @@ const double playerSpeed = 400;
 const double playerHurtboxRadius = 8;
 const int playerStartLives = 3;
 const int playerStartBombs = 1;
-const double playerInvincibilityDuration = 5.0; // 5 secondi di invincibilità dopo perdita vita
+const double playerInvincibilityDuration =
+    5.0; // 5 secondi di invincibilità dopo perdita vita
 
 // Projectiles
 const double bulletSpeed = 700;
@@ -29,8 +30,10 @@ const int maxBounces = 2;
 const double bulletLifetime = 2.0;
 
 // Weapon tuning
-const double homingTrackRadius = 150.0;  // Raggio inseguimento missili (era 70, +114% richiesta utente)
-const double laserBeamLength = 1200.0;   // Lunghezza raggio laser (50% più lungo del vecchio 800)
+const double homingTrackRadius =
+    150.0; // Raggio inseguimento missili (era 70, +114% richiesta utente)
+const double laserBeamLength =
+    1200.0; // Lunghezza raggio laser (50% più lungo del vecchio 800)
 const double overdriveBeamLength = 1200.0;
 const double overdriveBeamWidth = 40.0;
 const double plasmaExplosionRadius = 80.0;
@@ -38,7 +41,8 @@ const double plasmaExplosionRadius = 80.0;
 // Boss fight tuning — caps aumentati per supportare wave classic + boss
 // big-wave senza throttle (richiesta utente "più mob"; baseCount poi
 // dimezzato in fase 2 di balance, ma cap mantenuto per testa di buffer).
-const int bossMinionEnemyCap = 45;          // Max nemici attivi prima di skippare spawn minion (era 15)
+const int bossMinionEnemyCap =
+    45; // Max nemici attivi prima di skippare spawn minion (era 15)
 // Cap big wave color-matched (era 60, ora 150) per accomodare baseCount
 // 15/45/75 + buffer per archetype-driven spawn paralleli.
 const int bossBigWaveCap = 150;
@@ -65,8 +69,10 @@ const double classicWaveTimeoutSeconds = 20.0;
 // Grid
 const int gridCols = 50;
 const int gridRows = 50;
-const double gridSpringStiffness = 12.0; // Più rigida = ritorno più veloce (era 3.0)
-const double gridDamping = 0.85; // Meno damping = più rimbalzo elastico (era 0.92)
+const double gridSpringStiffness =
+    12.0; // Più rigida = ritorno più veloce (era 3.0)
+const double gridDamping =
+    0.85; // Meno damping = più rimbalzo elastico (era 0.92)
 
 // Particles
 const int maxParticles = 300;

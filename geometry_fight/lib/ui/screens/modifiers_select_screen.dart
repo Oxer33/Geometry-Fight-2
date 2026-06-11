@@ -89,12 +89,12 @@ bool _modIncompatibleWithMode(String modId, GameMode mode) {
       // tiny_arena, giant_mode, chaos (mixed random), fog_of_war, magnet_king
       // (geom magnet — geom droppano ancora dalle kill via trail).
       return const {
-        'glass_cannon',     // no damage da moltiplicare (no spari)
-        'one_shot',         // no proiettili (no spari) + 1 vita brutale
-        'ricochet_world',   // no proiettili (no spari)
-        'infinite_bombs',   // bombe inutili (no targets a distanza)
-        'bullet_hell',      // no spari player, nemici sparano N/A snake-flow
-        'no_powerups',      // powerup già OFF in snake mode → ridondante
+        'glass_cannon', // no damage da moltiplicare (no spari)
+        'one_shot', // no proiettili (no spari) + 1 vita brutale
+        'ricochet_world', // no proiettili (no spari)
+        'infinite_bombs', // bombe inutili (no targets a distanza)
+        'bullet_hell', // no spari player, nemici sparano N/A snake-flow
+        'no_powerups', // powerup già OFF in snake mode → ridondante
       }.contains(modId);
     case GameMode.waves:
       // Kamikaze non sparano → bullet_hell N/A.
@@ -112,6 +112,7 @@ bool _modIncompatibleWithMode(String modId, GameMode mode) {
     case GameMode.timeAttack:
     case GameMode.tunnel:
     case GameMode.dailyChallenge:
+    case GameMode.arenaShrink:
       return false;
   }
 }
@@ -173,8 +174,7 @@ class _ModifiersSelectScreenState extends State<ModifiersSelectScreen> {
     // Pulisci modifiers iniziali che non sono più compatibili (utente
     // potrebbe avere mods sticky da partita precedente).
     _active = widget.initial
-        .where((id) =>
-            _availableModifiers.any((m) => m.id == id))
+        .where((id) => _availableModifiers.any((m) => m.id == id))
         .toList();
   }
 
@@ -194,16 +194,21 @@ class _ModifiersSelectScreenState extends State<ModifiersSelectScreen> {
       final l10n = AppLocalizations.of(context)!;
       ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
-        ..showSnackBar(SnackBar(
-          duration: const Duration(milliseconds: 1100),
-          backgroundColor: const Color(0xFF0A0A1A),
-          behavior: SnackBarBehavior.floating,
-          content: Text(l10n.modifiersMaxActive(_maxActive),
+        ..showSnackBar(
+          SnackBar(
+            duration: const Duration(milliseconds: 1100),
+            backgroundColor: const Color(0xFF0A0A1A),
+            behavior: SnackBarBehavior.floating,
+            content: Text(
+              l10n.modifiersMaxActive(_maxActive),
               style: const TextStyle(
-                  color: Colors.amber,
-                  fontFamily: 'monospace',
-                  fontWeight: FontWeight.w900)),
-        ));
+                color: Colors.amber,
+                fontFamily: 'monospace',
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ),
+        );
       return;
     }
     setState(() => _active = [..._active, id]);
@@ -248,19 +253,20 @@ class _ModifiersSelectScreenState extends State<ModifiersSelectScreen> {
                   ),
                   Container(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 10, vertical: 4),
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(
-                          color: NeonColors.cyan.withValues(alpha: 0.5)),
+                        color: NeonColors.cyan.withValues(alpha: 0.5),
+                      ),
                     ),
                     // Step indicator dinamico: pacifist/snake skippano
                     // difficulty + loadout → questo screen è step 2 di 3.
                     // Altre modalità è 3 di 6 (full wizard).
                     child: Text(
-                      _isShortWizard
-                          ? '2/3'
-                          : '3/6',
+                      _isShortWizard ? '2/3' : '3/6',
                       style: const TextStyle(
                         color: NeonColors.cyan,
                         fontSize: 12,
@@ -288,7 +294,8 @@ class _ModifiersSelectScreenState extends State<ModifiersSelectScreen> {
                   const Spacer(),
                   Text(
                     l10n.modifiersScoreLabel(
-                        combinedScoreMultiplier(_active).toStringAsFixed(2)),
+                      combinedScoreMultiplier(_active).toStringAsFixed(2),
+                    ),
                     style: const TextStyle(
                       color: NeonColors.gold,
                       fontSize: 11,
@@ -311,83 +318,83 @@ class _ModifiersSelectScreenState extends State<ModifiersSelectScreen> {
                 trackColor: const Color(0x3300FFFF),
                 trackBorderColor: const Color(0x8800FFFF),
                 child: ListView.builder(
-                controller: _scrollCtrl,
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                itemCount: itemCount,
-                itemBuilder: (_, i) {
-                  // First slot: confirm/summary card (NO MODIFIERS quando
-                  // vuoto, altrimenti nomi mod attivi + moltiplicatore totale).
-                  if (i == 0) return _buildConfirmCard(l10n);
-                  final m = _availableModifiers[i - 1];
-                  final on = _active.contains(m.id);
-                  final color = m.isChallenge
-                      ? const Color(0xFFFF4466)
-                      : const Color(0xFF44CCFF);
-                  return GestureDetector(
-                    onTap: () => _tapMod(m.id),
-                    child: Container(
-                      margin: const EdgeInsets.only(bottom: 8),
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(8),
-                        color: on
-                            ? color.withValues(alpha: 0.15)
-                            : color.withValues(alpha: 0.04),
-                        border: Border.all(
-                            color: color.withValues(
-                                alpha: on ? 0.95 : 0.3),
-                            width: on ? 2 : 1),
-                      ),
-                      child: Row(
-                        children: [
-                          Text(m.icon,
-                              style: const TextStyle(fontSize: 22)),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  _modifierName(m.id, l10n),
-                                  style: TextStyle(
-                                    color: color,
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w900,
-                                    fontFamily: 'monospace',
-                                    letterSpacing: 2,
-                                  ),
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  _modifierDesc(m.id, l10n),
-                                  style: TextStyle(
-                                    color:
-                                        Colors.white.withValues(alpha: 0.7),
-                                    fontSize: 10,
-                                    fontFamily: 'monospace',
-                                    height: 1.2,
-                                  ),
-                                ),
-                              ],
-                            ),
+                  controller: _scrollCtrl,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  itemCount: itemCount,
+                  itemBuilder: (_, i) {
+                    // First slot: confirm/summary card (NO MODIFIERS quando
+                    // vuoto, altrimenti nomi mod attivi + moltiplicatore totale).
+                    if (i == 0) return _buildConfirmCard(l10n);
+                    final m = _availableModifiers[i - 1];
+                    final on = _active.contains(m.id);
+                    final color = m.isChallenge
+                        ? const Color(0xFFFF4466)
+                        : const Color(0xFF44CCFF);
+                    return GestureDetector(
+                      onTap: () => _tapMod(m.id),
+                      child: Container(
+                        margin: const EdgeInsets.only(bottom: 8),
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(8),
+                          color: on
+                              ? color.withValues(alpha: 0.15)
+                              : color.withValues(alpha: 0.04),
+                          border: Border.all(
+                            color: color.withValues(alpha: on ? 0.95 : 0.3),
+                            width: on ? 2 : 1,
                           ),
-                          Text(
-                            '×${m.scoreMultiplier.toStringAsFixed(1)}',
-                            style: TextStyle(
-                              color: m.scoreMultiplier > 1.0
-                                  ? NeonColors.green
-                                  : Colors.amber,
-                              fontSize: 11,
-                              fontFamily: 'monospace',
-                              fontWeight: FontWeight.w900,
+                        ),
+                        child: Row(
+                          children: [
+                            Text(m.icon, style: const TextStyle(fontSize: 22)),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    _modifierName(m.id, l10n),
+                                    style: TextStyle(
+                                      color: color,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w900,
+                                      fontFamily: 'monospace',
+                                      letterSpacing: 2,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    _modifierDesc(m.id, l10n),
+                                    style: TextStyle(
+                                      color: Colors.white.withValues(
+                                        alpha: 0.7,
+                                      ),
+                                      fontSize: 10,
+                                      fontFamily: 'monospace',
+                                      height: 1.2,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
-                          ),
-                        ],
+                            Text(
+                              '×${m.scoreMultiplier.toStringAsFixed(1)}',
+                              style: TextStyle(
+                                color: m.scoreMultiplier > 1.0
+                                    ? NeonColors.green
+                                    : Colors.amber,
+                                fontSize: 11,
+                                fontFamily: 'monospace',
+                                fontWeight: FontWeight.w900,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                  );
-                },
-              ),
+                    );
+                  },
+                ),
               ),
             ),
             // Iter 19 (utente: "auto-advance on tap"): rimosso bottone
@@ -507,8 +514,11 @@ class _ModifiersSelectScreenState extends State<ModifiersSelectScreen> {
                 border: Border.all(color: NeonColors.gold, width: 1.6),
               ),
               alignment: Alignment.center,
-              child: const Icon(Icons.play_arrow_rounded,
-                  color: NeonColors.gold, size: 20),
+              child: const Icon(
+                Icons.play_arrow_rounded,
+                color: NeonColors.gold,
+                size: 20,
+              ),
             ),
             const SizedBox(width: 10),
             Expanded(

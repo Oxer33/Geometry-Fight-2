@@ -8,15 +8,24 @@ class ScoreSystem {
   int score = 0;
   int geoms = 0;
   double multiplier = 1.0;
-  double geomValueMultiplier = 1.0; // +Nx per geom (1.0 easy/normal, 1.25 hard, 1.5 nightmare)
-  double scoreMultiplier = 1.0; // Moltiplicatore punti per difficoltà (0.5x easy → 4x nightmare)
-  double modifierMultiplier = 1.0; // Moltiplicatore da modifier attivi (glass_cannon 3×, bullet_hell 2×, ecc.)
+  double geomValueMultiplier =
+      1.0; // +Nx per geom (1.0 easy/normal, 1.25 hard, 1.5 nightmare)
+  double scoreMultiplier =
+      1.0; // Moltiplicatore punti per difficoltà (0.5x easy → 4x nightmare)
+  double modifierMultiplier =
+      1.0; // Moltiplicatore da modifier attivi (glass_cannon 3×, bullet_hell 2×, ecc.)
 
-  static const double _maxMultiplier = 9999; // Cap ragionevole per evitare overflow
+  static const double _maxMultiplier =
+      9999; // Cap ragionevole per evitare overflow
 
   // Soglie vite extra (potenze di 10 da 10K)
   final List<int> _extraLifeThresholds = [
-    10000, 100000, 1000000, 10000000, 100000000, 1000000000,
+    10000,
+    100000,
+    1000000,
+    10000000,
+    100000000,
+    1000000000,
   ];
   int _nextLifeIndex = 0;
   int _extraLivesThisFrame = 0;
@@ -49,7 +58,8 @@ class ScoreSystem {
     // Punti = base × multiplier geom × scoreMultiplier difficoltà × modifierMultiplier.
     // Param position riservato a futuri floaty-text/combo emitter; placeholder
     // `_` silenzia lint unused_element senza rompere callsite esistenti.
-    final earnedPoints = (points * multiplier * scoreMultiplier * modifierMultiplier).round();
+    final earnedPoints =
+        (points * multiplier * scoreMultiplier * modifierMultiplier).round();
     score += earnedPoints;
   }
 

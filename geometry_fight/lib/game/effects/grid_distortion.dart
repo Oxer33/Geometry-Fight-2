@@ -9,8 +9,8 @@ class _GridNode {
   Vector2 velocity;
 
   _GridNode(this.restPosition)
-      : position = restPosition.clone(),
-        velocity = Vector2.zero();
+    : position = restPosition.clone(),
+      velocity = Vector2.zero();
 }
 
 class GridDistortion extends PositionComponent {
@@ -26,7 +26,8 @@ class GridDistortion extends PositionComponent {
 
   // Paint cache — 1 allocazione anziché ogni frame
   static final _gridPaint = Paint()
-    ..color = const Color(0x26AADDFF) // ~0.15 alpha
+    ..color =
+        const Color(0x26AADDFF) // ~0.15 alpha
     ..style = PaintingStyle.stroke
     ..strokeWidth = 0.5;
 

@@ -24,14 +24,14 @@ class HealerEnemy extends EnemyBase {
     ..strokeWidth = 0.5;
 
   HealerEnemy()
-      : super(
-          hp: 4,
-          speed: 130,
-          pointValue: 18,
-          geomValue: 5,
-          neonColor: const Color(0xFF00FF88),
-          size: Vector2(22, 22),
-        );
+    : super(
+        hp: 4,
+        speed: 130,
+        pointValue: 18,
+        geomValue: 5,
+        neonColor: const Color(0xFF00FF88),
+        size: Vector2(22, 22),
+      );
 
   @override
   void updateBehavior(double dt) {
@@ -50,9 +50,14 @@ class HealerEnemy extends EnemyBase {
         position += velocity * dt;
       } else {
         // Orbita lentamente attorno al player
-        final angle = math.atan2(position.y - playerPosition.y, position.x - playerPosition.x);
+        final angle = math.atan2(
+          position.y - playerPosition.y,
+          position.x - playerPosition.x,
+        );
         final orbitAngle = angle + dt * 0.5;
-        position = playerPosition + Vector2(math.cos(orbitAngle), math.sin(orbitAngle)) * dist;
+        position =
+            playerPosition +
+            Vector2(math.cos(orbitAngle), math.sin(orbitAngle)) * dist;
       }
     }
 
@@ -103,7 +108,11 @@ class HealerEnemy extends EnemyBase {
       EnemyBase.detailPaint.color = neonColor.withValues(alpha: alpha);
       EnemyBase.detailPaint.style = PaintingStyle.stroke;
       EnemyBase.detailPaint.strokeWidth = 2;
-      canvas.drawCircle(Offset(cx, cy), _healPulseRadius, EnemyBase.detailPaint);
+      canvas.drawCircle(
+        Offset(cx, cy),
+        _healPulseRadius,
+        EnemyBase.detailPaint,
+      );
     }
     // Always reset shared detailPaint style to fill so subsequent renderShape
     // calls on other enemies receive a consistent fill state.
@@ -127,7 +136,9 @@ class HealerEnemy extends EnemyBase {
     if (scale <= 1.01) {
       // Nucleo pulsante (no blur)
       final pulse = 0.5 + math.sin(idlePhase * 4) * 0.3;
-      EnemyBase.detailPaint.color = const Color(0xFFFFFFFF).withValues(alpha: pulse);
+      EnemyBase.detailPaint.color = const Color(
+        0xFFFFFFFF,
+      ).withValues(alpha: pulse);
       canvas.drawCircle(Offset(cx, cy), s * 0.2, EnemyBase.detailPaint);
 
       // Cerchio indicatore raggio cura

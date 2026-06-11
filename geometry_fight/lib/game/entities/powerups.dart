@@ -22,9 +22,9 @@ enum PowerUpType {
 
 /// Rarità dei power-up: influenza probabilità di spawn e visual
 enum PowerUpRarity {
-  common,   // bordo singolo, spawna spesso
-  rare,     // bordo doppio + glow, spawna meno
-  epic,     // bordo triplo + particelle, spawna raramente
+  common, // bordo singolo, spawna spesso
+  rare, // bordo doppio + glow, spawna meno
+  epic, // bordo triplo + particelle, spawna raramente
   legendary, // aura dorata + pulsazione forte, estremamente raro
 }
 
@@ -86,7 +86,7 @@ class PowerUp extends PositionComponent
   double _pulsePhase = 0;
 
   PowerUp({required this.type})
-      : super(size: Vector2(24, 24), anchor: Anchor.center) {
+    : super(size: Vector2(24, 24), anchor: Anchor.center) {
     rarity = PowerUpRarityConfig.rarityOf(type);
   }
 
@@ -117,8 +117,7 @@ class PowerUp extends PositionComponent
 
   @override
   Future<void> onLoad() async {
-    add(CircleHitbox(radius: 15, anchor: Anchor.center)
-      ..position = size / 2);
+    add(CircleHitbox(radius: 15, anchor: Anchor.center)..position = size / 2);
   }
 
   static const double _attractionRange = 120.0;
@@ -138,7 +137,10 @@ class PowerUp extends PositionComponent
     }
     // Tunnel mode: despawn power-up dietro la camera
     if (game.isTunnelMode) {
-      final cameraLeft = game.camera.viewfinder.position.x - (game.size.x > 0 ? game.size.x / 2 : 400) - 100;
+      final cameraLeft =
+          game.camera.viewfinder.position.x -
+          (game.size.x > 0 ? game.size.x / 2 : 400) -
+          100;
       if (position.x < cameraLeft) {
         removeFromParent();
         return;
@@ -152,8 +154,7 @@ class PowerUp extends PositionComponent
       final dir = (player.position - position);
       if (dir.length2 > 1e-6) {
         dir.normalize();
-        final attractSpeed =
-            300.0 + (1.0 - dist / _attractionRange) * 200;
+        final attractSpeed = 300.0 + (1.0 - dist / _attractionRange) * 200;
         position += dir * attractSpeed * realDt;
       }
     }
@@ -217,12 +218,16 @@ class PowerUp extends PositionComponent
       case PowerUpRarity.legendary:
         final legendPulse = 1.0 + math.sin(_pulsePhase * 1.5) * 0.3;
         // Aura dorata — cerchio grande, no blur
-        _puPaint.color = const Color(0xFFFFD700).withValues(alpha: alpha * 0.12);
+        _puPaint.color = const Color(
+          0xFFFFD700,
+        ).withValues(alpha: alpha * 0.12);
         _puPaint.maskFilter = null;
         _puPaint.style = PaintingStyle.fill;
         canvas.drawCircle(Offset(cx, cy), 30 * legendPulse, _puPaint);
         // Anello esterno dorato
-        _puBorderPaint.color = const Color(0xFFFFD700).withValues(alpha: alpha * 0.5);
+        _puBorderPaint.color = const Color(
+          0xFFFFD700,
+        ).withValues(alpha: alpha * 0.5);
         _puBorderPaint.strokeWidth = 1.5;
         canvas.drawCircle(Offset(cx, cy), 18 * legendPulse, _puBorderPaint);
       case PowerUpRarity.epic:
@@ -278,10 +283,12 @@ class PowerUp extends PositionComponent
 
     // Bordo based on rarity
     if (rarity != PowerUpRarity.common) {
-      _puBorderPaint.color = (rarity == PowerUpRarity.legendary
-          ? const Color(0xFFFFD700)
-          : color).withValues(alpha: alpha * 0.7);
-      _puBorderPaint.strokeWidth = rarity == PowerUpRarity.legendary ? 1.5 : 1.0;
+      _puBorderPaint.color =
+          (rarity == PowerUpRarity.legendary ? const Color(0xFFFFD700) : color)
+              .withValues(alpha: alpha * 0.7);
+      _puBorderPaint.strokeWidth = rarity == PowerUpRarity.legendary
+          ? 1.5
+          : 1.0;
       canvas.drawPath(path, _puBorderPaint);
     }
 
@@ -303,7 +310,9 @@ class PowerUp extends PositionComponent
 
   @override
   void onCollisionStart(
-      Set<Vector2> intersectionPoints, PositionComponent other) {
+    Set<Vector2> intersectionPoints,
+    PositionComponent other,
+  ) {
     if (other is Player) {
       applyTo(other);
       // Bump session counter: era morto, achievement totalPowerUps sempre 0.

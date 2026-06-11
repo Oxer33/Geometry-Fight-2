@@ -39,14 +39,14 @@ class NecroEnemy extends EnemyBase {
   }
 
   NecroEnemy()
-      : super(
-          hp: 6,
-          speed: 70,
-          pointValue: 20,
-          geomValue: 6,
-          neonColor: const Color(0xFF8800AA),
-          size: Vector2(24, 24),
-        );
+    : super(
+        hp: 6,
+        speed: 70,
+        pointValue: 20,
+        geomValue: 6,
+        neonColor: const Color(0xFF8800AA),
+        size: Vector2(24, 24),
+      );
 
   @override
   void updateBehavior(double dt) {
@@ -67,8 +67,10 @@ class NecroEnemy extends EnemyBase {
       _pendingRes[i].timer -= dt;
       if (_pendingRes[i].timer <= 0) {
         // Resuscita il nemico — in-game spawn, no warning di 4s
-        final resurrected =
-            game.spawnEnemy(_pendingRes[i].type, _pendingRes[i].position);
+        final resurrected = game.spawnEnemy(
+          _pendingRes[i].type,
+          _pendingRes[i].position,
+        );
         resurrected?.clearSpawnInvulnerability();
         _resurrectingIds.remove(_pendingRes[i].dedupeKey);
         _pendingRes.removeAt(i);
@@ -99,12 +101,14 @@ class NecroEnemy extends EnemyBase {
       final key = _deathKey(type, deathPos);
       if (_resurrectingIds.contains(key)) return; // un altro necro già accodato
       _resurrectingIds.add(key);
-      _pendingRes.add(_PendingResurrection(
-        type: type,
-        position: deathPos,
-        timer: 1.5,
-        dedupeKey: key,
-      ));
+      _pendingRes.add(
+        _PendingResurrection(
+          type: type,
+          position: deathPos,
+          timer: 1.5,
+          dedupeKey: key,
+        ),
+      );
     }
   }
 
@@ -136,9 +140,17 @@ class NecroEnemy extends EnemyBase {
       for (int i = 0; i < _pendingRes.length; i++) {
         final offset = _pendingRes[i].position - position;
         EnemyBase.detailPaint.color = neonColor.withValues(alpha: 0.2);
-        canvas.drawCircle(Offset(cx + offset.x, cy + offset.y), 8, EnemyBase.detailPaint);
+        canvas.drawCircle(
+          Offset(cx + offset.x, cy + offset.y),
+          8,
+          EnemyBase.detailPaint,
+        );
         EnemyBase.detailPaint.color = neonColor.withValues(alpha: 0.5);
-        canvas.drawCircle(Offset(cx + offset.x, cy + offset.y), 5, EnemyBase.detailPaint);
+        canvas.drawCircle(
+          Offset(cx + offset.x, cy + offset.y),
+          5,
+          EnemyBase.detailPaint,
+        );
       }
     }
 
@@ -148,15 +160,35 @@ class NecroEnemy extends EnemyBase {
     // Dettagli teschio (solo layer principale)
     if (scale <= 1.01) {
       // Occhi
-      canvas.drawCircle(Offset(cx - r * 0.25, cy - r * 0.1), r * 0.15, _eyePaint);
-      canvas.drawCircle(Offset(cx + r * 0.25, cy - r * 0.1), r * 0.15, _eyePaint);
+      canvas.drawCircle(
+        Offset(cx - r * 0.25, cy - r * 0.1),
+        r * 0.15,
+        _eyePaint,
+      );
+      canvas.drawCircle(
+        Offset(cx + r * 0.25, cy - r * 0.1),
+        r * 0.15,
+        _eyePaint,
+      );
       // Pupille luminose
       final pupilGlow = 0.5 + math.sin(_ritualPhase * 3) * 0.5;
       EnemyBase.detailPaint.color = neonColor.withValues(alpha: pupilGlow);
-      canvas.drawCircle(Offset(cx - r * 0.25, cy - r * 0.1), r * 0.08, EnemyBase.detailPaint);
-      canvas.drawCircle(Offset(cx + r * 0.25, cy - r * 0.1), r * 0.08, EnemyBase.detailPaint);
+      canvas.drawCircle(
+        Offset(cx - r * 0.25, cy - r * 0.1),
+        r * 0.08,
+        EnemyBase.detailPaint,
+      );
+      canvas.drawCircle(
+        Offset(cx + r * 0.25, cy - r * 0.1),
+        r * 0.08,
+        EnemyBase.detailPaint,
+      );
       // Bocca (linea)
-      canvas.drawLine(Offset(cx - r * 0.2, cy + r * 0.25), Offset(cx + r * 0.2, cy + r * 0.25), _mouthPaint);
+      canvas.drawLine(
+        Offset(cx - r * 0.2, cy + r * 0.25),
+        Offset(cx + r * 0.2, cy + r * 0.25),
+        _mouthPaint,
+      );
     }
   }
 }

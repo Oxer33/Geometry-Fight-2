@@ -17,16 +17,15 @@ class PhantomEnemy extends EnemyBase {
   CircleHitbox? _hitbox;
 
   PhantomEnemy()
-      : _flankAngle =
-            (math.Random().nextBool() ? 1.0 : -1.0) * math.pi * 0.6,
-        super(
-          hp: 3,
-          speed: 160,
-          pointValue: 15,
-          geomValue: 5,
-          neonColor: NeonColors.electricBlue,
-          size: Vector2(20, 20),
-        );
+    : _flankAngle = (math.Random().nextBool() ? 1.0 : -1.0) * math.pi * 0.6,
+      super(
+        hp: 3,
+        speed: 160,
+        pointValue: 15,
+        geomValue: 5,
+        neonColor: NeonColors.electricBlue,
+        size: Vector2(20, 20),
+      );
 
   @override
   Future<void> onLoad() async {
@@ -65,8 +64,9 @@ class PhantomEnemy extends EnemyBase {
     // era sempre attiva quindi i proiettili colpivano il nulla (takeDamage
     // bail-out) ma il phantom poteva comunque danneggiare il player.
     // `inactive` = no collisioni né active né passive.
-    _hitbox?.collisionType =
-        _visible ? CollisionType.active : CollisionType.inactive;
+    _hitbox?.collisionType = _visible
+        ? CollisionType.active
+        : CollisionType.inactive;
 
     final toPlayer = playerPosition - position;
     if (toPlayer.length2 < 0.0001) return;
@@ -78,7 +78,8 @@ class PhantomEnemy extends EnemyBase {
       final targetAngle = playerAngle + _flankAngle;
       final targetDist = 80.0; // Vicino al player ma non addosso
 
-      final targetPos = playerPosition -
+      final targetPos =
+          playerPosition -
           Vector2(math.cos(targetAngle), math.sin(targetAngle)) * targetDist;
 
       final toTarget = targetPos - position;

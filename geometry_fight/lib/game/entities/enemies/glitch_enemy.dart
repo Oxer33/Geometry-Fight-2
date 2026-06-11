@@ -7,8 +7,8 @@ import 'enemy_base.dart';
 /// GLITCH - Nemico che si teletrasporta casualmente e corrompe lo schermo.
 /// Forma: quadrato distorto che "sfarfalla" e cambia forma
 /// Colore: ciano elettrico con artefatti (#00EEFF con glitch RGB)
-/// Comportamento: si teletrasporta ogni 2-3 secondi in una posizione 
-/// casuale vicino al player, lasciando una "scia glitch". 
+/// Comportamento: si teletrasporta ogni 2-3 secondi in una posizione
+/// casuale vicino al player, lasciando una "scia glitch".
 /// Quando muore crea un flash di distorsione.
 /// Spawn: dal wave 16, in gruppi di 1-3
 class GlitchEnemy extends EnemyBase {
@@ -30,14 +30,14 @@ class GlitchEnemy extends EnemyBase {
   static final Paint _scanPaint = Paint()..strokeWidth = 0.5;
 
   GlitchEnemy()
-      : super(
-          hp: 3,
-          speed: 100, // Lento normalmente (si teletrasporta)
-          pointValue: 10,
-          geomValue: 4,
-          neonColor: const Color(0xFF00EEFF), // Ciano elettrico
-          size: Vector2(18, 18),
-        );
+    : super(
+        hp: 3,
+        speed: 100, // Lento normalmente (si teletrasporta)
+        pointValue: 10,
+        geomValue: 4,
+        neonColor: const Color(0xFF00EEFF), // Ciano elettrico
+        size: Vector2(18, 18),
+      );
 
   @override
   void updateBehavior(double dt) {
@@ -75,10 +75,9 @@ class GlitchEnemy extends EnemyBase {
     // Teletrasporto in posizione casuale vicino al player
     final angle = _random.nextDouble() * math.pi * 2;
     final dist = 100 + _random.nextDouble() * 200;
-    final newPos = playerPosition + Vector2(
-      math.cos(angle) * dist,
-      math.sin(angle) * dist,
-    );
+    final newPos =
+        playerPosition +
+        Vector2(math.cos(angle) * dist, math.sin(angle) * dist);
 
     // Clamp all'arena
     if (game.isTunnelMode) {
@@ -189,15 +188,13 @@ class GlitchEnemy extends EnemyBase {
     // Linee di "scan" orizzontali (effetto glitch)
     _scanPaint.color = const Color(0xFFFFFFFF).withValues(alpha: 0.15);
     final scanY = cy + ((_glitchPhase * 20) % (r * 2)) - r;
-    canvas.drawLine(
-      Offset(cx - r, scanY),
-      Offset(cx + r, scanY),
-      _scanPaint,
-    );
+    canvas.drawLine(Offset(cx - r, scanY), Offset(cx + r, scanY), _scanPaint);
 
     // Punto centrale luminoso
     if (_isTeleporting) {
-      EnemyBase.detailPaint.color = const Color(0xFFFFFFFF).withValues(alpha: 0.4);
+      EnemyBase.detailPaint.color = const Color(
+        0xFFFFFFFF,
+      ).withValues(alpha: 0.4);
       canvas.drawCircle(Offset(cx, cy), r * 1.2, EnemyBase.detailPaint);
       EnemyBase.detailPaint.color = const Color(0xFFFFFFFF);
       canvas.drawCircle(Offset(cx, cy), r * 0.8, EnemyBase.detailPaint);

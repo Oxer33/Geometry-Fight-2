@@ -41,8 +41,7 @@ class MusicManager {
 
   /// BGM: 93 track (era 40, +53 da Songs 2 — 52 numerati + 1 unnumbered).
   static final List<String> _bgmTracks = [
-    for (int i = 1; i <= 93; i++)
-      'bgm/bgm_${i.toString().padLeft(2, '0')}.mp3',
+    for (int i = 1; i <= 93; i++) 'bgm/bgm_${i.toString().padLeft(2, '0')}.mp3',
   ];
 
   static final List<String> _introBag = [];
@@ -423,13 +422,17 @@ class MusicManager {
       }
       _onTrackCompleteFailures++;
       debugPrint(
-          'MusicManager onTrackComplete giving up after 3 attempts '
-          '(total failures: $_onTrackCompleteFailures)');
+        'MusicManager onTrackComplete giving up after 3 attempts '
+        '(total failures: $_onTrackCompleteFailures)',
+      );
     }
-    unawaited(next().catchError((Object e, StackTrace st) {
-      _onTrackCompleteFailures++;
-      debugPrint('MusicManager onTrackComplete fatal: $e\n$st');
-    }));
+
+    unawaited(
+      next().catchError((Object e, StackTrace st) {
+        _onTrackCompleteFailures++;
+        debugPrint('MusicManager onTrackComplete fatal: $e\n$st');
+      }),
+    );
   }
 
   /// Cleanup risorse. Chiamato a dispose dell'app (raro: app vive in memory).

@@ -40,19 +40,22 @@ class VoidKrakenBoss extends BossBase {
   static final _tentaclePath = Path();
 
   VoidKrakenBoss()
-      : super(
-          // HP +50% (utente: "deve avere 50% in più di vita"). 750 → 1125.
-          hp: 1125,
-          bossName: 'VOID KRAKEN',
-          pointValue: 7500,
-          neonColor: NeonColors.purple,
-          size: Vector2(120, 120),
-        );
+    : super(
+        // HP +50% (utente: "deve avere 50% in più di vita"). 750 → 1125.
+        hp: 1125,
+        bossName: 'VOID KRAKEN',
+        pointValue: 7500,
+        neonColor: NeonColors.purple,
+        size: Vector2(120, 120),
+      );
 
   // VoidKraken è VIOLA ABISSO → mob viola/oscuri (phantom + proton + mirror).
   @override
-  List<EnemyType> get colorMatchedMinions =>
-      const [EnemyType.phantom, EnemyType.proton, EnemyType.mirror];
+  List<EnemyType> get colorMatchedMinions => const [
+    EnemyType.phantom,
+    EnemyType.proton,
+    EnemyType.mirror,
+  ];
 
   @override
   int getPhase() {
@@ -86,11 +89,19 @@ class VoidKrakenBoss extends BossBase {
         if (game.isTunnelMode) {
           final camY = game.camera.viewfinder.position.y;
           final halfH = game.tunnelHeight / 2;
-          game.player.position.y = game.player.position.y
-              .clamp(camY - halfH + 10, camY + halfH - 10);
+          game.player.position.y = game.player.position.y.clamp(
+            camY - halfH + 10,
+            camY + halfH - 10,
+          );
         } else {
-          game.player.position.x = game.player.position.x.clamp(10.0, arenaWidth - 10);
-          game.player.position.y = game.player.position.y.clamp(10.0, arenaHeight - 10);
+          game.player.position.x = game.player.position.x.clamp(
+            10.0,
+            arenaWidth - 10,
+          );
+          game.player.position.y = game.player.position.y.clamp(
+            10.0,
+            arenaHeight - 10,
+          );
         }
       }
     }
@@ -103,9 +114,10 @@ class VoidKrakenBoss extends BossBase {
       for (int i = 0; i < count; i++) {
         final ang = _phase * 0.5 + i * math.pi * 2 / count;
         final bullet = EnemyBullet(
-            direction: Vector2(math.cos(ang), math.sin(ang)),
-            speed: 130,
-            color: NeonColors.purple);
+          direction: Vector2(math.cos(ang), math.sin(ang)),
+          speed: 130,
+          color: NeonColors.purple,
+        );
         bullet.position = position.clone();
         game.world.add(bullet);
       }
@@ -122,8 +134,8 @@ class VoidKrakenBoss extends BossBase {
           final toSpawn = freeSlots.clamp(0, 6);
           for (int i = 0; i < toSpawn; i++) {
             final ang = _phase * 0.8 + i * math.pi * 2 / 6;
-            final tipPos = position +
-                Vector2(math.cos(ang) * 90, math.sin(ang) * 90);
+            final tipPos =
+                position + Vector2(math.cos(ang) * 90, math.sin(ang) * 90);
             game.spawnEnemy(EnemyType.proton, tipPos);
           }
         }
@@ -152,8 +164,9 @@ class VoidKrakenBoss extends BossBase {
         final sy = cy + math.sin(baseAngle) * r + math.sin(perpAng) * wobble;
         _tentaclePath.lineTo(sx, sy);
       }
-      _tentacleGlowPaint.color =
-          NeonColors.purple.withValues(alpha: paint.color.a * 0.35);
+      _tentacleGlowPaint.color = NeonColors.purple.withValues(
+        alpha: paint.color.a * 0.35,
+      );
       _tentacleGlowPaint.strokeWidth = 10 * scale;
       canvas.drawPath(_tentaclePath, _tentacleGlowPaint);
       _tentaclePaint.color = paint.color;
@@ -161,36 +174,48 @@ class VoidKrakenBoss extends BossBase {
       canvas.drawPath(_tentaclePath, _tentaclePaint);
       final tipX = cx + math.cos(baseAngle) * 90 * scale;
       final tipY = cy + math.sin(baseAngle) * 90 * scale;
-      _corePulsePaint.color =
-          const Color(0xFFFFFFFF).withValues(alpha: paint.color.a * 0.8);
+      _corePulsePaint.color = const Color(
+        0xFFFFFFFF,
+      ).withValues(alpha: paint.color.a * 0.8);
       canvas.drawCircle(Offset(tipX, tipY), 3 * scale, _corePulsePaint);
     }
 
     // Corpo centrale
     final corePulse = 0.85 + math.sin(_phase * 4) * 0.15;
-    _corePulsePaint.color = NeonColors.purple
-        .withValues(alpha: paint.color.a * 0.5 * corePulse);
+    _corePulsePaint.color = NeonColors.purple.withValues(
+      alpha: paint.color.a * 0.5 * corePulse,
+    );
     canvas.drawCircle(centerPoint, 35 * scale * corePulse, _corePulsePaint);
     canvas.drawCircle(centerPoint, 28 * scale, paint);
-    _corePulsePaint.color =
-        const Color(0xFF220044).withValues(alpha: paint.color.a);
+    _corePulsePaint.color = const Color(
+      0xFF220044,
+    ).withValues(alpha: paint.color.a);
     canvas.drawCircle(centerPoint, 18 * scale, _corePulsePaint);
-    _corePulsePaint.color = const Color(0xFFFF22FF)
-        .withValues(alpha: paint.color.a * corePulse);
+    _corePulsePaint.color = const Color(
+      0xFFFF22FF,
+    ).withValues(alpha: paint.color.a * corePulse);
     canvas.drawCircle(
-        Offset(cx - 8 * scale, cy - 4 * scale), 3 * scale, _corePulsePaint);
+      Offset(cx - 8 * scale, cy - 4 * scale),
+      3 * scale,
+      _corePulsePaint,
+    );
     canvas.drawCircle(
-        Offset(cx + 8 * scale, cy - 4 * scale), 3 * scale, _corePulsePaint);
+      Offset(cx + 8 * scale, cy - 4 * scale),
+      3 * scale,
+      _corePulsePaint,
+    );
 
     // Vortex danger
     if (currentPhase >= 2) {
       final strobe = 0.3 + math.sin(_phase * 8) * 0.2;
-      _vortexPaint.color =
-          NeonColors.purple.withValues(alpha: strobe * paint.color.a);
+      _vortexPaint.color = NeonColors.purple.withValues(
+        alpha: strobe * paint.color.a,
+      );
       _vortexPaint.strokeWidth = 2 * scale;
       canvas.drawCircle(centerPoint, 70 * scale, _vortexPaint);
-      _vortexPaint.color =
-          NeonColors.red.withValues(alpha: strobe * 0.4 * paint.color.a);
+      _vortexPaint.color = NeonColors.red.withValues(
+        alpha: strobe * 0.4 * paint.color.a,
+      );
       canvas.drawCircle(centerPoint, 90 * scale, _vortexPaint);
     }
   }

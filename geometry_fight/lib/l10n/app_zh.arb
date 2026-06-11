@@ -33,10 +33,10 @@
   "settingsReset": "重置数据",
   "settingsDangerZone": "危险区",
   "settingsTestDebug": "测试 / 调试",
-  "settingsAddCredits": "+1000 点数",
+  "settingsAddCredits": "+100K 点数",
   "settingsResetPurchases": "重置购买",
   "settingsPurchasesReset": "购买已重置!",
-  "settingsCreditsAdded": "+1000 点数!总计:{total}",
+  "settingsCreditsAdded": "+100K 点数!总计:{total}",
   "@settingsCreditsAdded": {
     "placeholders": { "total": { "type": "int" } }
   },
@@ -116,6 +116,7 @@
   "modeWaves": "波次",
   "modeGravityInferno": "引力炼狱",
   "modeSnake": "贪吃蛇",
+  "modeArenaShrink": "竞技场收缩",
 
   "splashSkip": "跳过",
   "splashTapToStart": "点击开始",

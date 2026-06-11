@@ -99,7 +99,7 @@ class AppLocalizationsRu extends AppLocalizations {
   String get settingsTestDebug => 'TEST / DEBUG';
 
   @override
-  String get settingsAddCredits => '+1000 КРЕДИТОВ';
+  String get settingsAddCredits => '+100K КРЕДИТОВ';
 
   @override
   String get settingsResetPurchases => 'СБРОС ПОКУПОК';
@@ -109,7 +109,7 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String settingsCreditsAdded(int total) {
-    return '+1000 кредитов! Всего: $total';
+    return '+100K кредитов! Всего: $total';
   }
 
   @override
@@ -275,6 +275,9 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get modeSnake => 'ЗМЕЙКА';
+
+  @override
+  String get modeArenaShrink => 'СЖАТИЕ АРЕНЫ';
 
   @override
   String get splashSkip => 'ПРОПУСТИТЬ';

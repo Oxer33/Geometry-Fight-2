@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 import 'dart:ui';
-import 'package:flutter/painting.dart' show TextPainter, TextSpan, TextStyle, FontWeight;
+import 'package:flutter/painting.dart'
+    show TextPainter, TextSpan, TextStyle, FontWeight;
 import 'package:flame/components.dart';
 
 class _Particle {
@@ -72,26 +73,32 @@ class ExplosionEffect extends PositionComponent {
         pColor = Color.fromARGB(255, r, g, b);
       }
 
-      _particles.add(_Particle(
-        position: Vector2.zero(),
-        velocity: Vector2(math.cos(angle) * speed, math.sin(angle) * speed),
-        lifetime: 0.3 + _random.nextDouble() * 0.6,
-        size: epic ? 2.5 + _random.nextDouble() * 5 : 2 + _random.nextDouble() * 4,
-        color: pColor,
-      ));
+      _particles.add(
+        _Particle(
+          position: Vector2.zero(),
+          velocity: Vector2(math.cos(angle) * speed, math.sin(angle) * speed),
+          lifetime: 0.3 + _random.nextDouble() * 0.6,
+          size: epic
+              ? 2.5 + _random.nextDouble() * 5
+              : 2 + _random.nextDouble() * 4,
+          color: pColor,
+        ),
+      );
     }
     // Se epic, aggiungi particelle lente per scia persistente
     if (epic) {
       for (int i = 0; i < 8; i++) {
         final angle = _random.nextDouble() * math.pi * 2;
         final speed = 20 + _random.nextDouble() * 40;
-        _particles.add(_Particle(
-          position: Vector2.zero(),
-          velocity: Vector2(math.cos(angle) * speed, math.sin(angle) * speed),
-          lifetime: 0.6 + _random.nextDouble() * 0.4,
-          size: 4 + _random.nextDouble() * 3,
-          color: color,
-        ));
+        _particles.add(
+          _Particle(
+            position: Vector2.zero(),
+            velocity: Vector2(math.cos(angle) * speed, math.sin(angle) * speed),
+            lifetime: 0.6 + _random.nextDouble() * 0.4,
+            size: 4 + _random.nextDouble() * 3,
+            color: color,
+          ),
+        );
       }
     }
   }
@@ -158,7 +165,9 @@ class ExplosionEffect extends PositionComponent {
       canvas.drawCircle(Offset(cx, cy), radius * 1.2, _flashPaint);
       _flashPaint.color = color.withValues(alpha: flashAlpha * 0.5);
       canvas.drawCircle(Offset(cx, cy), radius * 0.8, _flashPaint);
-      _flashPaint.color = const Color(0xFFFFFFFF).withValues(alpha: flashAlpha * 0.8);
+      _flashPaint.color = const Color(
+        0xFFFFFFFF,
+      ).withValues(alpha: flashAlpha * 0.8);
       canvas.drawCircle(Offset(cx, cy), radius * 0.4, _flashPaint);
     }
 
@@ -200,7 +209,7 @@ class FloatingText extends PositionComponent {
   double _lastAlpha = -1;
 
   FloatingText({required this.text, required this.color})
-      : super(anchor: Anchor.center);
+    : super(anchor: Anchor.center);
 
   @override
   void update(double dt) {
@@ -231,7 +240,10 @@ class FloatingText extends PositionComponent {
         textDirection: TextDirection.ltr,
       )..layout();
     }
-    _cachedPainter!.paint(canvas, Offset(-_cachedPainter!.width / 2, -_cachedPainter!.height / 2));
+    _cachedPainter!.paint(
+      canvas,
+      Offset(-_cachedPainter!.width / 2, -_cachedPainter!.height / 2),
+    );
   }
 
   @override

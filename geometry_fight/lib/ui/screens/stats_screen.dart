@@ -117,7 +117,8 @@ class _StatsScreenState extends State<StatsScreen>
           builder: (context, _) {
             final entrance = _entranceController.value;
             final counter = Curves.easeOutCubic.transform(
-                _counterController.value);
+              _counterController.value,
+            );
             final glow = _glowController.value;
 
             return Column(
@@ -137,58 +138,184 @@ class _StatsScreenState extends State<StatsScreen>
                     trackColor: const Color(0x3300FFFF),
                     trackBorderColor: const Color(0x8800FFFF),
                     child: SingleChildScrollView(
-                    controller: _scrollCtrl,
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _buildSection(l10n.statsSectionGeneral, Colors.cyanAccent, entrance, 0.0, [
-                          _StatData(l10n.statsGamesPlayed, '${_animInt(stats['gamesPlayed'] ?? 0, counter)}', Icons.videogame_asset_rounded, Colors.cyanAccent),
-                          _StatData(l10n.statsTotalPlaytime, _formatPlaytime(saveData.totalPlaytime), Icons.timer_rounded, Colors.cyanAccent),
-                          _StatData(l10n.statsTotalGoldEarned, '${_animInt(stats['totalGoldEarned'] ?? saveData.goldGeoms, counter)}', Icons.diamond_rounded, const Color(0xFFFFD700)),
-                          _StatData(l10n.statsCurrentGold, '${_animInt(saveData.goldGeoms, counter)}', Icons.account_balance_wallet_rounded, const Color(0xFFFFD700)),
-                        ], glow),
+                      controller: _scrollCtrl,
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildSection(
+                            l10n.statsSectionGeneral,
+                            Colors.cyanAccent,
+                            entrance,
+                            0.0,
+                            [
+                              _StatData(
+                                l10n.statsGamesPlayed,
+                                '${_animInt(stats['gamesPlayed'] ?? 0, counter)}',
+                                Icons.videogame_asset_rounded,
+                                Colors.cyanAccent,
+                              ),
+                              _StatData(
+                                l10n.statsTotalPlaytime,
+                                _formatPlaytime(saveData.totalPlaytime),
+                                Icons.timer_rounded,
+                                Colors.cyanAccent,
+                              ),
+                              _StatData(
+                                l10n.statsTotalGoldEarned,
+                                '${_animInt(stats['totalGoldEarned'] ?? saveData.goldGeoms, counter)}',
+                                Icons.diamond_rounded,
+                                const Color(0xFFFFD700),
+                              ),
+                              _StatData(
+                                l10n.statsCurrentGold,
+                                '${_animInt(saveData.goldGeoms, counter)}',
+                                Icons.account_balance_wallet_rounded,
+                                const Color(0xFFFFD700),
+                              ),
+                            ],
+                            glow,
+                          ),
 
-                        const SizedBox(height: 16),
-
-                        _buildSection(l10n.statsSectionCombat, const Color(0xFFFF4466), entrance, 0.1, [
-                          _StatData(l10n.statsEnemiesKilled, _animFormatNumber(stats['totalKills'] ?? 0, counter), Icons.local_fire_department_rounded, const Color(0xFFFF4466)),
-                          _StatData(l10n.statsBossesDefeated, '${_animInt(stats['totalBosses'] ?? 0, counter)}', Icons.shield_rounded, const Color(0xFFCC00FF)),
-                          _StatData(l10n.statsBombsUsed, '${_animInt(stats['totalBombs'] ?? 0, counter)}', Icons.flash_on_rounded, Colors.orangeAccent),
-                          _StatData(l10n.statsPowerUpsCollected, '${_animInt(stats['totalPowerUps'] ?? 0, counter)}', Icons.bolt_rounded, Colors.yellowAccent),
-                          _StatData(l10n.statsGeomsCollected, _animFormatNumber(stats['totalGeoms'] ?? 0, counter), Icons.hexagon_rounded, Colors.cyanAccent),
-                        ], glow),
-
-                        const SizedBox(height: 16),
-
-                        _buildSection(l10n.statsSectionRecords, const Color(0xFFFFD700), entrance, 0.2, [
-                          _StatData(l10n.statsBestScore, _animFormatNumber(_bestScore(saveData), counter), Icons.emoji_events_rounded, const Color(0xFFFFD700)),
-                          _StatData(l10n.statsHighestWave, '${_animInt(stats['maxWave'] ?? 0, counter)}', Icons.waves_rounded, Colors.cyanAccent),
-                          _StatData(l10n.statsMaxMultiplier, '${_animInt(stats['maxMultiplier'] ?? 0, counter)}x', Icons.close_fullscreen_rounded, const Color(0xFFCC00FF)),
-                          _StatData(l10n.statsMaxSessionKills, '${_animInt(stats['maxSessionKills'] ?? 0, counter)}', Icons.whatshot_rounded, const Color(0xFFFF4466)),
-                          _StatData(l10n.statsMaxPerfectStreak, '${_animInt(stats['maxPerfectStreak'] ?? 0, counter)}', Icons.auto_awesome_rounded, Colors.greenAccent),
-                        ], glow),
-
-                        const SizedBox(height: 16),
-
-                        _buildSection(l10n.statsSectionAchievements, Colors.greenAccent, entrance, 0.3, [
-                          _StatData(l10n.statsAchievementsUnlocked, '$_achUnlocked / $_achTotal', Icons.military_tech_rounded, Colors.greenAccent,
-                            progress: _achTotal > 0 ? _achUnlocked / _achTotal : 0.0),
-                        ], glow),
-
-                        if (saveData.highscores.isNotEmpty) ...[
                           const SizedBox(height: 16),
-                          _buildSection(l10n.statsSectionScoresByMode, Colors.purpleAccent, entrance, 0.4,
-                            saveData.highscores.entries.map((e) =>
-                              _StatData(_statsModeLabel(e.key, l10n), _animFormatNumber(e.value, counter), Icons.leaderboard_rounded, Colors.purpleAccent),
-                            ).toList(),
-                          glow),
-                        ],
 
-                        const SizedBox(height: 32),
-                      ],
+                          _buildSection(
+                            l10n.statsSectionCombat,
+                            const Color(0xFFFF4466),
+                            entrance,
+                            0.1,
+                            [
+                              _StatData(
+                                l10n.statsEnemiesKilled,
+                                _animFormatNumber(
+                                  stats['totalKills'] ?? 0,
+                                  counter,
+                                ),
+                                Icons.local_fire_department_rounded,
+                                const Color(0xFFFF4466),
+                              ),
+                              _StatData(
+                                l10n.statsBossesDefeated,
+                                '${_animInt(stats['totalBosses'] ?? 0, counter)}',
+                                Icons.shield_rounded,
+                                const Color(0xFFCC00FF),
+                              ),
+                              _StatData(
+                                l10n.statsBombsUsed,
+                                '${_animInt(stats['totalBombs'] ?? 0, counter)}',
+                                Icons.flash_on_rounded,
+                                Colors.orangeAccent,
+                              ),
+                              _StatData(
+                                l10n.statsPowerUpsCollected,
+                                '${_animInt(stats['totalPowerUps'] ?? 0, counter)}',
+                                Icons.bolt_rounded,
+                                Colors.yellowAccent,
+                              ),
+                              _StatData(
+                                l10n.statsGeomsCollected,
+                                _animFormatNumber(
+                                  stats['totalGeoms'] ?? 0,
+                                  counter,
+                                ),
+                                Icons.hexagon_rounded,
+                                Colors.cyanAccent,
+                              ),
+                            ],
+                            glow,
+                          ),
+
+                          const SizedBox(height: 16),
+
+                          _buildSection(
+                            l10n.statsSectionRecords,
+                            const Color(0xFFFFD700),
+                            entrance,
+                            0.2,
+                            [
+                              _StatData(
+                                l10n.statsBestScore,
+                                _animFormatNumber(
+                                  _bestScore(saveData),
+                                  counter,
+                                ),
+                                Icons.emoji_events_rounded,
+                                const Color(0xFFFFD700),
+                              ),
+                              _StatData(
+                                l10n.statsHighestWave,
+                                '${_animInt(stats['maxWave'] ?? 0, counter)}',
+                                Icons.waves_rounded,
+                                Colors.cyanAccent,
+                              ),
+                              _StatData(
+                                l10n.statsMaxMultiplier,
+                                '${_animInt(stats['maxMultiplier'] ?? 0, counter)}x',
+                                Icons.close_fullscreen_rounded,
+                                const Color(0xFFCC00FF),
+                              ),
+                              _StatData(
+                                l10n.statsMaxSessionKills,
+                                '${_animInt(stats['maxSessionKills'] ?? 0, counter)}',
+                                Icons.whatshot_rounded,
+                                const Color(0xFFFF4466),
+                              ),
+                              _StatData(
+                                l10n.statsMaxPerfectStreak,
+                                '${_animInt(stats['maxPerfectStreak'] ?? 0, counter)}',
+                                Icons.auto_awesome_rounded,
+                                Colors.greenAccent,
+                              ),
+                            ],
+                            glow,
+                          ),
+
+                          const SizedBox(height: 16),
+
+                          _buildSection(
+                            l10n.statsSectionAchievements,
+                            Colors.greenAccent,
+                            entrance,
+                            0.3,
+                            [
+                              _StatData(
+                                l10n.statsAchievementsUnlocked,
+                                '$_achUnlocked / $_achTotal',
+                                Icons.military_tech_rounded,
+                                Colors.greenAccent,
+                                progress: _achTotal > 0
+                                    ? _achUnlocked / _achTotal
+                                    : 0.0,
+                              ),
+                            ],
+                            glow,
+                          ),
+
+                          if (saveData.highscores.isNotEmpty) ...[
+                            const SizedBox(height: 16),
+                            _buildSection(
+                              l10n.statsSectionScoresByMode,
+                              Colors.purpleAccent,
+                              entrance,
+                              0.4,
+                              saveData.highscores.entries
+                                  .map(
+                                    (e) => _StatData(
+                                      _statsModeLabel(e.key, l10n),
+                                      _animFormatNumber(e.value, counter),
+                                      Icons.leaderboard_rounded,
+                                      Colors.purpleAccent,
+                                    ),
+                                  )
+                                  .toList(),
+                              glow,
+                            ),
+                          ],
+
+                          const SizedBox(height: 32),
+                        ],
+                      ),
                     ),
-                  ),
                   ),
                 ),
               ],
@@ -228,8 +355,14 @@ class _StatsScreenState extends State<StatsScreen>
     );
   }
 
-  Widget _buildSection(String title, Color color, double entrance, double delay,
-      List<_StatData> stats, double glow) {
+  Widget _buildSection(
+    String title,
+    Color color,
+    double entrance,
+    double delay,
+    List<_StatData> stats,
+    double glow,
+  ) {
     final sectionEntrance = delay >= 1.0
         ? 1.0
         : ((entrance - delay) / (1.0 - delay)).clamp(0.0, 1.0);
@@ -251,7 +384,10 @@ class _StatsScreenState extends State<StatsScreen>
                     color: color,
                     borderRadius: BorderRadius.circular(2),
                     boxShadow: [
-                      BoxShadow(color: color.withValues(alpha: 0.5), blurRadius: 4),
+                      BoxShadow(
+                        color: color.withValues(alpha: 0.5),
+                        blurRadius: 4,
+                      ),
                     ],
                   ),
                 ),
@@ -264,7 +400,12 @@ class _StatsScreenState extends State<StatsScreen>
                     fontWeight: FontWeight.bold,
                     fontFamily: 'monospace',
                     letterSpacing: 4,
-                    shadows: [Shadow(color: color.withValues(alpha: 0.3), blurRadius: 4)],
+                    shadows: [
+                      Shadow(
+                        color: color.withValues(alpha: 0.3),
+                        blurRadius: 4,
+                      ),
+                    ],
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -438,4 +579,3 @@ class _StatData {
 
   _StatData(this.label, this.value, this.icon, this.color, {this.progress});
 }
-

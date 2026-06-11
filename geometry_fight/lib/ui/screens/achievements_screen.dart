@@ -125,12 +125,13 @@ String achievementName(String id, AppLocalizations l10n) {
       final a = allAchievements.firstWhere(
         (x) => x.id == id,
         orElse: () => const AchievementDef(
-            id: '',
-            name: '',
-            description: '',
-            icon: '',
-            category: '',
-            target: 0),
+          id: '',
+          name: '',
+          description: '',
+          icon: '',
+          category: '',
+          target: 0,
+        ),
       );
       return a.name;
   }
@@ -256,12 +257,13 @@ String achievementDesc(String id, AppLocalizations l10n) {
       final a = allAchievements.firstWhere(
         (x) => x.id == id,
         orElse: () => const AchievementDef(
-            id: '',
-            name: '',
-            description: '',
-            icon: '',
-            category: '',
-            target: 0),
+          id: '',
+          name: '',
+          description: '',
+          icon: '',
+          category: '',
+          target: 0,
+        ),
       );
       return a.description;
   }
@@ -298,15 +300,21 @@ class _AchievementsScreenState extends State<AchievementsScreen>
     'special': Icons.star_rounded,
   };
 
-  static const _categories = ['combat', 'score', 'progress', 'mastery', 'special'];
+  static const _categories = [
+    'combat',
+    'score',
+    'progress',
+    'mastery',
+    'special',
+  ];
 
   Map<String, String> _categoryNames(AppLocalizations l10n) => {
-        'combat': l10n.achievementCategoryCombat,
-        'score': l10n.achievementCategoryScore,
-        'progress': l10n.achievementCategoryProgress,
-        'mastery': l10n.achievementCategoryMastery,
-        'special': l10n.achievementCategorySpecial,
-      };
+    'combat': l10n.achievementCategoryCombat,
+    'score': l10n.achievementCategoryScore,
+    'progress': l10n.achievementCategoryProgress,
+    'mastery': l10n.achievementCategoryMastery,
+    'special': l10n.achievementCategorySpecial,
+  };
 
   // Cached per-category lists (avoid rebuilding every frame)
   late final Map<String, List<AchievementDef>> _achievementsByCategory;
@@ -384,7 +392,14 @@ class _AchievementsScreenState extends State<AchievementsScreen>
             return Column(
               children: [
                 // Header
-                _buildHeader(l10n, entrance, _unlockedCount, _totalCount, _completionPct, glow),
+                _buildHeader(
+                  l10n,
+                  entrance,
+                  _unlockedCount,
+                  _totalCount,
+                  _completionPct,
+                  glow,
+                ),
 
                 // Achievement list
                 Expanded(
@@ -398,32 +413,34 @@ class _AchievementsScreenState extends State<AchievementsScreen>
                     trackColor: const Color(0x3300FFFF),
                     trackBorderColor: const Color(0x8800FFFF),
                     child: ListView(
-                    controller: _listCtrl,
-                    padding: const EdgeInsets.all(16),
-                    children: [
-                      for (int ci = 0; ci < _categories.length; ci++) ...[
-                        _buildCategoryHeader(
-                          categoryNames[_categories[ci]]!,
-                          _categoryColors[_categories[ci]]!,
-                          _categoryIcons[_categories[ci]]!,
-                          entrance,
-                          ci * 0.08,
-                          _categories[ci],
-                        ),
-                        ..._achievementsByCategory[_categories[ci]]!
-                            .asMap()
-                            .entries
-                            .map((entry) => _buildAchievementTile(
+                      controller: _listCtrl,
+                      padding: const EdgeInsets.all(16),
+                      children: [
+                        for (int ci = 0; ci < _categories.length; ci++) ...[
+                          _buildCategoryHeader(
+                            categoryNames[_categories[ci]]!,
+                            _categoryColors[_categories[ci]]!,
+                            _categoryIcons[_categories[ci]]!,
+                            entrance,
+                            ci * 0.08,
+                            _categories[ci],
+                          ),
+                          ..._achievementsByCategory[_categories[ci]]!
+                              .asMap()
+                              .entries
+                              .map(
+                                (entry) => _buildAchievementTile(
                                   entry.value,
                                   _categoryColors[_categories[ci]]!,
                                   entrance,
                                   ci * 0.08 + entry.key * 0.02,
                                   glow,
-                                )),
-                        const SizedBox(height: 12),
+                                ),
+                              ),
+                          const SizedBox(height: 12),
+                        ],
                       ],
-                    ],
-                  ),
+                    ),
                   ),
                 ),
               ],
@@ -434,8 +451,14 @@ class _AchievementsScreenState extends State<AchievementsScreen>
     );
   }
 
-  Widget _buildHeader(AppLocalizations l10n, double entrance, int unlocked,
-      int total, double completionPct, double glow) {
+  Widget _buildHeader(
+    AppLocalizations l10n,
+    double entrance,
+    int unlocked,
+    int total,
+    double completionPct,
+    double glow,
+  ) {
     return Opacity(
       opacity: entrance,
       child: Transform.translate(
@@ -460,13 +483,16 @@ class _AchievementsScreenState extends State<AchievementsScreen>
               const Spacer(),
               // Completion indicator
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: Colors.cyanAccent
-                        .withValues(alpha: 0.3 + glow * 0.15),
+                    color: Colors.cyanAccent.withValues(
+                      alpha: 0.3 + glow * 0.15,
+                    ),
                   ),
                   gradient: LinearGradient(
                     colors: [
@@ -516,14 +542,23 @@ class _AchievementsScreenState extends State<AchievementsScreen>
     );
   }
 
-  Widget _buildCategoryHeader(String title, Color color, IconData icon,
-      double entrance, double delay, String category) {
-    final catEntrance = (delay >= 1.0 ? 1.0 : ((entrance - delay) / (1.0 - delay)).clamp(0.0, 1.0));
+  Widget _buildCategoryHeader(
+    String title,
+    Color color,
+    IconData icon,
+    double entrance,
+    double delay,
+    String category,
+  ) {
+    final catEntrance = (delay >= 1.0
+        ? 1.0
+        : ((entrance - delay) / (1.0 - delay)).clamp(0.0, 1.0));
     // Use the pre-built category list from initState to avoid re-filtering
     // allAchievements on every AnimatedBuilder frame.
     final catAchievements = _achievementsByCategory[category]!;
-    final catUnlockedCount =
-        catAchievements.where((a) => _unlockedCache[a.id] == true).length;
+    final catUnlockedCount = catAchievements
+        .where((a) => _unlockedCache[a.id] == true)
+        .length;
     final catPct = catAchievements.isNotEmpty
         ? catUnlockedCount / catAchievements.length
         : 0.0;
@@ -557,7 +592,7 @@ class _AchievementsScreenState extends State<AchievementsScreen>
                   fontFamily: 'monospace',
                   letterSpacing: 4,
                   shadows: [
-                    Shadow(color: color.withValues(alpha: 0.3), blurRadius: 4)
+                    Shadow(color: color.withValues(alpha: 0.3), blurRadius: 4),
                   ],
                 ),
               ),
@@ -582,8 +617,9 @@ class _AchievementsScreenState extends State<AchievementsScreen>
                             ),
                             boxShadow: [
                               BoxShadow(
-                                  color: color.withValues(alpha: 0.3),
-                                  blurRadius: 3),
+                                color: color.withValues(alpha: 0.3),
+                                blurRadius: 3,
+                              ),
                             ],
                           ),
                         ),
@@ -609,10 +645,16 @@ class _AchievementsScreenState extends State<AchievementsScreen>
   }
 
   Widget _buildAchievementTile(
-      AchievementDef achievement, Color categoryColor, double entrance,
-      double delay, double glow) {
+    AchievementDef achievement,
+    Color categoryColor,
+    double entrance,
+    double delay,
+    double glow,
+  ) {
     final l10n = AppLocalizations.of(context)!;
-    final tileEntrance = (delay >= 1.0 ? 1.0 : ((entrance - delay) / (1.0 - delay)).clamp(0.0, 1.0));
+    final tileEntrance = (delay >= 1.0
+        ? 1.0
+        : ((entrance - delay) / (1.0 - delay)).clamp(0.0, 1.0));
     final unlocked = _unlockedCache[achievement.id] ?? false;
     final progress = _progressCache[achievement.id] ?? 0;
     final progressPct = achievement.target > 0
@@ -643,16 +685,14 @@ class _AchievementsScreenState extends State<AchievementsScreen>
                       Colors.greenAccent.withValues(alpha: 0.06 + glow * 0.02),
                       Colors.greenAccent.withValues(alpha: 0.01),
                     ]
-                  : [
-                      Colors.white.withValues(alpha: 0.02),
-                      Colors.transparent,
-                    ],
+                  : [Colors.white.withValues(alpha: 0.02), Colors.transparent],
             ),
             boxShadow: unlocked
                 ? [
                     BoxShadow(
-                      color: Colors.greenAccent
-                          .withValues(alpha: 0.05 + glow * 0.03),
+                      color: Colors.greenAccent.withValues(
+                        alpha: 0.05 + glow * 0.03,
+                      ),
                       blurRadius: 8,
                     ),
                   ]
@@ -719,9 +759,11 @@ class _AchievementsScreenState extends State<AchievementsScreen>
                         shadows: unlocked
                             ? [
                                 Shadow(
-                                    color: Colors.greenAccent
-                                        .withValues(alpha: 0.3),
-                                    blurRadius: 4)
+                                  color: Colors.greenAccent.withValues(
+                                    alpha: 0.3,
+                                  ),
+                                  blurRadius: 4,
+                                ),
                               ]
                             : null,
                       ),
@@ -790,8 +832,10 @@ class _AchievementsScreenState extends State<AchievementsScreen>
               // Reward badge
               if (achievement.reward > 0)
                 Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(6),
                     border: Border.all(
@@ -899,4 +943,3 @@ class _ProgressRingPainter extends CustomPainter {
   bool shouldRepaint(covariant _ProgressRingPainter old) =>
       old.progress != progress || old.glow != glow;
 }
-

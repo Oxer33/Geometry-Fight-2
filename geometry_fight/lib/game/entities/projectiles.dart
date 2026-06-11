@@ -21,6 +21,11 @@ class PlayerBullet extends PositionComponent
   final double sizeMultiplier;
   final WeaponType weaponType;
 
+  /// Range massimo opzionale (px): se impostato, il proiettile si
+  /// autodistrugge dopo aver percorso questa distanza. Usato dallo Shotgun
+  /// (cono a corto raggio).
+  final double? maxRange;
+
   int _bounces = 0;
   double _lifetime = bulletLifetime;
   late Vector2 _velocity;
@@ -53,7 +58,11 @@ class PlayerBullet extends PositionComponent
     this.maxBounces = 2,
     this.pierce = false,
     this.sizeMultiplier = 1.0,
-  }) : super(size: Vector2(6 * sizeMultiplier, 6 * sizeMultiplier), anchor: Anchor.center);
+    this.maxRange,
+  }) : super(
+         size: Vector2(6 * sizeMultiplier, 6 * sizeMultiplier),
+         anchor: Anchor.center,
+       );
 
   @override
   Future<void> onLoad() async {
@@ -71,8 +80,7 @@ class PlayerBullet extends PositionComponent
       hitR *= 2;
     }
     // Hitbox circolare per proiettili rotondi
-    add(CircleHitbox(radius: hitR, anchor: Anchor.center)
-      ..position = size / 2);
+    add(CircleHitbox(radius: hitR, anchor: Anchor.center)..position = size / 2);
   }
 
   @override
@@ -92,10 +100,20 @@ class PlayerBullet extends PositionComponent
     position += _velocity * realDt;
     _distanceTravelled += _velocity.length * realDt;
 
+    // Range cap opzionale (Shotgun): autodistruzione a corto raggio.
+    final mr = maxRange;
+    if (mr != null && _distanceTravelled > mr) {
+      removeFromParent();
+      return;
+    }
+
     // Distruggi / rimbalza quando tocca un muro
     if (game.isTunnelMode) {
       // Tunnel: distruggi se tocca i muri sinusoidali o va dietro la camera
-      final cameraLeft = game.camera.viewfinder.position.x - (game.size.x > 0 ? game.size.x / 2 : 400) - 200;
+      final cameraLeft =
+          game.camera.viewfinder.position.x -
+          (game.size.x > 0 ? game.size.x / 2 : 400) -
+          200;
       if (position.x < cameraLeft) {
         removeFromParent();
         return;
@@ -116,29 +134,50 @@ class PlayerBullet extends PositionComponent
         bool destroyed = false;
         if (position.x <= 0) {
           position.x = 0;
-          if (_bounces < maxBounces) { _velocity.x = _velocity.x.abs(); _bounces++; }
-          else { destroyed = true; }
+          if (_bounces < maxBounces) {
+            _velocity.x = _velocity.x.abs();
+            _bounces++;
+          } else {
+            destroyed = true;
+          }
         } else if (position.x >= arenaWidth) {
           position.x = arenaWidth;
-          if (_bounces < maxBounces) { _velocity.x = -_velocity.x.abs(); _bounces++; }
-          else { destroyed = true; }
+          if (_bounces < maxBounces) {
+            _velocity.x = -_velocity.x.abs();
+            _bounces++;
+          } else {
+            destroyed = true;
+          }
         }
         if (!destroyed) {
           if (position.y <= 0) {
             position.y = 0;
-            if (_bounces < maxBounces) { _velocity.y = _velocity.y.abs(); _bounces++; }
-            else { destroyed = true; }
+            if (_bounces < maxBounces) {
+              _velocity.y = _velocity.y.abs();
+              _bounces++;
+            } else {
+              destroyed = true;
+            }
           } else if (position.y >= arenaHeight) {
             position.y = arenaHeight;
-            if (_bounces < maxBounces) { _velocity.y = -_velocity.y.abs(); _bounces++; }
-            else { destroyed = true; }
+            if (_bounces < maxBounces) {
+              _velocity.y = -_velocity.y.abs();
+              _bounces++;
+            } else {
+              destroyed = true;
+            }
           }
         }
-        if (destroyed) { removeFromParent(); return; }
+        if (destroyed) {
+          removeFromParent();
+          return;
+        }
       } else {
         // Arma normale: distruggi quando tocca i bordi dell'arena o dopo 900px percorsi (anche dopo reflect)
-        if (position.x < 0 || position.x > arenaWidth ||
-            position.y < 0 || position.y > arenaHeight) {
+        if (position.x < 0 ||
+            position.x > arenaWidth ||
+            position.y < 0 ||
+            position.y > arenaHeight) {
           removeFromParent();
           return;
         }
@@ -174,7 +213,8 @@ class PlayerBullet extends PositionComponent
       final offset = _trail[i] - position;
       canvas.drawCircle(
         Offset(cx + offset.x, cy + offset.y),
-        1.5 * sizeMultiplier * _giantK, _trailPaint,
+        1.5 * sizeMultiplier * _giantK,
+        _trailPaint,
       );
     }
 
@@ -187,12 +227,18 @@ class PlayerBullet extends PositionComponent
     canvas.drawCircle(Offset(cx, cy), 3 * sizeMultiplier * _giantK, _bodyPaint);
 
     // Centro luminoso bianco
-    canvas.drawCircle(Offset(cx, cy), 1.2 * sizeMultiplier * _giantK, _corePaint);
+    canvas.drawCircle(
+      Offset(cx, cy),
+      1.2 * sizeMultiplier * _giantK,
+      _corePaint,
+    );
   }
 
   @override
   void onCollisionStart(
-      Set<Vector2> intersectionPoints, PositionComponent other) {
+    Set<Vector2> intersectionPoints,
+    PositionComponent other,
+  ) {
     if (other is EnemyBase) {
       // GW:RE2: proiettili passano ATTRAVERSO nemici in fase di materializzazione
       if (other.isSpawnInvulnerable) return;
@@ -276,8 +322,10 @@ class EnemyBullet extends PositionComponent
     if (game.hasModifier('giant_mode')) {
       size.setValues(size.x * 2, size.y * 2);
     }
-    add(CircleHitbox(radius: size.x / 2, anchor: Anchor.center)
-      ..position = size / 2);
+    add(
+      CircleHitbox(radius: size.x / 2, anchor: Anchor.center)
+        ..position = size / 2,
+    );
   }
 
   @override
@@ -288,12 +336,16 @@ class EnemyBullet extends PositionComponent
     position += _velocity * dt * game.projectileSlowFactor(position);
 
     _lifetime -= dt;
-    if (_lifetime <= 0) { removeFromParent(); return; }
+    if (_lifetime <= 0) {
+      removeFromParent();
+      return;
+    }
 
     if (game.isTunnelMode) {
       // Tunnel: distruggi se tocca i muri dinamici o va fuori range
       final (topWall, bottomWall) = game.tunnelWallsAtX(position.x);
-      if (position.y <= topWall || position.y >= bottomWall ||
+      if (position.y <= topWall ||
+          position.y >= bottomWall ||
           (position - game.player.position).length > 1200) {
         removeFromParent();
         return;
@@ -301,15 +353,21 @@ class EnemyBullet extends PositionComponent
       // Muri rossi tunnel (richiesta utente impenetrabili).
       if (game.hitsTunnelObstacle(position)) {
         // Piccola esplosione rossa per feedback visivo.
-        game.spawnExplosion(position, NeonColors.laserRed,
-            radius: 10, particleCount: 3);
+        game.spawnExplosion(
+          position,
+          NeonColors.laserRed,
+          radius: 10,
+          particleCount: 3,
+        );
         removeFromParent();
         return;
       }
     } else {
       // Arena: distruggi esattamente al bordo (nessuna penetrazione)
-      if (position.x < 0 || position.x > arenaWidth ||
-          position.y < 0 || position.y > arenaHeight) {
+      if (position.x < 0 ||
+          position.x > arenaWidth ||
+          position.y < 0 ||
+          position.y > arenaHeight) {
         removeFromParent();
         return;
       }
@@ -319,7 +377,8 @@ class EnemyBullet extends PositionComponent
   // Paint cache statico — evita 50+ allocazioni/frame con molti proiettili nemici
   static final _ebGlowPaint = Paint();
   static final _ebBodyPaint = Paint();
-  static final _ebCorePaint = Paint()..color = const Color(0xFFFFFFFF).withValues(alpha: 0.6);
+  static final _ebCorePaint = Paint()
+    ..color = const Color(0xFFFFFFFF).withValues(alpha: 0.6);
 
   @override
   void render(Canvas canvas) {
@@ -340,7 +399,9 @@ class EnemyBullet extends PositionComponent
 
   @override
   void onCollisionStart(
-      Set<Vector2> intersectionPoints, PositionComponent other) {
+    Set<Vector2> intersectionPoints,
+    PositionComponent other,
+  ) {
     if (other is Player) {
       other.takeDamage();
       removeFromParent();
@@ -362,8 +423,11 @@ class LaserBeam extends PositionComponent
   // Throttle hit-walk a frame alterni (risolve lag richiesta utente).
   int _walkFrame = 0;
 
-  LaserBeam({required this.direction, this.damage = 1, this.sizeMultiplier = 1.0})
-      : super(size: Vector2(3, laserBeamLength), anchor: Anchor.topCenter);
+  LaserBeam({
+    required this.direction,
+    this.damage = 1,
+    this.sizeMultiplier = 1.0,
+  }) : super(size: Vector2(3, laserBeamLength), anchor: Anchor.topCenter);
 
   @override
   Future<void> onLoad() async {
@@ -427,8 +491,12 @@ class LaserBeam extends PositionComponent
     // Hit particle rosso (richiesta utente). Throttle 80ms per evitare spam.
     if (didHit && hitPoint != null && _hitPartCooldown <= 0) {
       _hitPartCooldown = 0.08;
-      game.spawnExplosion(hitPoint, NeonColors.laserRed,
-          radius: 14, particleCount: 4);
+      game.spawnExplosion(
+        hitPoint,
+        NeonColors.laserRed,
+        radius: 14,
+        particleCount: 4,
+      );
     }
   }
 
@@ -450,9 +518,9 @@ class LaserBeam extends PositionComponent
     const coneLen = 22.0;
     final coneHalfW = 6 * sizeMultiplier;
     _laserConePath.reset();
-    _laserConePath.moveTo(-coneHalfW * 0.15, 0);  // punto stretto al player
+    _laserConePath.moveTo(-coneHalfW * 0.15, 0); // punto stretto al player
     _laserConePath.lineTo(coneHalfW * 0.15, 0);
-    _laserConePath.lineTo(coneHalfW, coneLen);     // si allarga al beam
+    _laserConePath.lineTo(coneHalfW, coneLen); // si allarga al beam
     _laserConePath.lineTo(-coneHalfW, coneLen);
     _laserConePath.close();
 
@@ -473,20 +541,24 @@ class LaserBeam extends PositionComponent
     // ─── BEAM PRINCIPALE 4 STRATI (outer halo → mid → core → nucleus) ───
     _laserGlowPaint.color = const Color(0xFFAA0000).withValues(alpha: 0.25);
     canvas.drawRect(
-        Rect.fromLTWH(-glowW * 0.9, coneLen, glowW * 1.8, pulseLen),
-        _laserGlowPaint);
+      Rect.fromLTWH(-glowW * 0.9, coneLen, glowW * 1.8, pulseLen),
+      _laserGlowPaint,
+    );
     _laserGlowPaint.color = const Color(0xFFFF2244).withValues(alpha: 0.55);
     canvas.drawRect(
-        Rect.fromLTWH(-glowW * 0.5, coneLen, glowW, pulseLen),
-        _laserGlowPaint);
+      Rect.fromLTWH(-glowW * 0.5, coneLen, glowW, pulseLen),
+      _laserGlowPaint,
+    );
     _laserCorePaint.color = const Color(0xFFFF6677);
     canvas.drawRect(
-        Rect.fromLTWH(-coreW * 0.9, coneLen, coreW * 1.8, pulseLen),
-        _laserCorePaint);
+      Rect.fromLTWH(-coreW * 0.9, coneLen, coreW * 1.8, pulseLen),
+      _laserCorePaint,
+    );
     _laserCorePaint.color = const Color(0xFFFFEEDD);
     canvas.drawRect(
-        Rect.fromLTWH(-coreW * 0.4, coneLen, coreW * 0.8, pulseLen),
-        _laserCorePaint);
+      Rect.fromLTWH(-coreW * 0.4, coneLen, coreW * 0.8, pulseLen),
+      _laserCorePaint,
+    );
 
     // ─── DUAL-STREAM PLASMA — copertura continua del fascio ───
     // Iter 4 (fix utente "ancora non è per tutta la linea"):
@@ -515,23 +587,24 @@ class LaserBeam extends PositionComponent
         final trailY = py - t * cometR;
         if (trailY < 0) continue;
         final trailAlpha = 0.55 * (1.0 - t / 6.0);
-        _laserPulsePaint.color =
-            const Color(0xFFFF3322).withValues(alpha: trailAlpha);
+        _laserPulsePaint.color = const Color(
+          0xFFFF3322,
+        ).withValues(alpha: trailAlpha);
         canvas.drawCircle(
-            Offset(0, trailY), cometR * (1.0 - t * 0.16), _laserPulsePaint);
+          Offset(0, trailY),
+          cometR * (1.0 - t * 0.16),
+          _laserPulsePaint,
+        );
       }
 
       // Halo esterno rosso
-      _laserPulsePaint.color =
-          const Color(0xFFFF1100).withValues(alpha: 0.5);
+      _laserPulsePaint.color = const Color(0xFFFF1100).withValues(alpha: 0.5);
       canvas.drawCircle(Offset(0, py), cometR * 1.4, _laserPulsePaint);
       // Mid arancione caldo
-      _laserPulsePaint.color =
-          const Color(0xFFFFAA22).withValues(alpha: 0.85);
+      _laserPulsePaint.color = const Color(0xFFFFAA22).withValues(alpha: 0.85);
       canvas.drawCircle(Offset(0, py), cometR * 0.85, _laserPulsePaint);
       // Nucleus bianco caldo
-      _laserPulsePaint.color =
-          const Color(0xFFFFFFFF).withValues(alpha: 0.95);
+      _laserPulsePaint.color = const Color(0xFFFFFFFF).withValues(alpha: 0.95);
       canvas.drawCircle(Offset(0, py), cometR * 0.45, _laserPulsePaint);
     }
 
@@ -545,11 +618,9 @@ class LaserBeam extends PositionComponent
     for (int i = 0; i < cometCount; i++) {
       final raw = _pulsePhase * cometSpeed + (i + 0.5) * stepLen;
       final py = raw % fullLen;
-      _laserPulsePaint.color =
-          const Color(0xFFFF6633).withValues(alpha: 0.7);
+      _laserPulsePaint.color = const Color(0xFFFF6633).withValues(alpha: 0.7);
       canvas.drawCircle(Offset(0, py), secR * 1.4, _laserPulsePaint);
-      _laserPulsePaint.color =
-          const Color(0xFFFFEEAA).withValues(alpha: 0.95);
+      _laserPulsePaint.color = const Color(0xFFFFEEAA).withValues(alpha: 0.95);
       canvas.drawCircle(Offset(0, py), secR * 0.6, _laserPulsePaint);
     }
 
@@ -559,12 +630,15 @@ class LaserBeam extends PositionComponent
       final crackleSeed = (i * 73 + (_pulsePhase * 12).toInt()) % 100;
       if (crackleSeed > 60) continue;
       final crackleY = coneLen + (crackleSeed / 100.0) * pulseLen;
-      final crackleX = (crackleSeed % 2 == 0 ? 1 : -1) *
+      final crackleX =
+          (crackleSeed % 2 == 0 ? 1 : -1) *
           (glowW * 0.55 + (crackleSeed % 7) * 0.5);
-      _laserPulsePaint.color =
-          const Color(0xFFFFFFFF).withValues(alpha: 0.85);
+      _laserPulsePaint.color = const Color(0xFFFFFFFF).withValues(alpha: 0.85);
       canvas.drawCircle(
-          Offset(crackleX, crackleY), 1.4 * sizeMultiplier, _laserPulsePaint);
+        Offset(crackleX, crackleY),
+        1.4 * sizeMultiplier,
+        _laserPulsePaint,
+      );
     }
 
     canvas.restore();
@@ -585,8 +659,14 @@ class PlasmaBullet extends PositionComponent
   /// prima di removeFromParent → AoE e particelle N volte.
   bool _exploded = false;
 
-  PlasmaBullet({required this.direction, this.damage = 3, this.sizeMultiplier = 1.0})
-      : super(size: Vector2(20 * sizeMultiplier, 20 * sizeMultiplier), anchor: Anchor.center);
+  PlasmaBullet({
+    required this.direction,
+    this.damage = 3,
+    this.sizeMultiplier = 1.0,
+  }) : super(
+         size: Vector2(20 * sizeMultiplier, 20 * sizeMultiplier),
+         anchor: Anchor.center,
+       );
 
   @override
   Future<void> onLoad() async {
@@ -598,10 +678,10 @@ class PlasmaBullet extends PositionComponent
     // Hitbox circolare scalata con sizeMultiplier: con Firepower (x2) il
     // visual cresce ~2.4x e la hitbox default (size/2) tagliava fuori i
     // nemici vicini al bordo visuale.
-    add(CircleHitbox(
-      radius: 10 * sizeMultiplier,
-      anchor: Anchor.center,
-    )..position = size / 2);
+    add(
+      CircleHitbox(radius: 10 * sizeMultiplier, anchor: Anchor.center)
+        ..position = size / 2,
+    );
   }
 
   @override
@@ -612,9 +692,14 @@ class PlasmaBullet extends PositionComponent
     _phase += realDt * 10;
 
     if (game.isTunnelMode) {
-      final cameraLeft = game.camera.viewfinder.position.x - (game.size.x > 0 ? game.size.x / 2 : 400) - 200;
+      final cameraLeft =
+          game.camera.viewfinder.position.x -
+          (game.size.x > 0 ? game.size.x / 2 : 400) -
+          200;
       final (topWall, bottomWall) = game.tunnelWallsAtX(position.x);
-      if (position.x < cameraLeft || position.y <= topWall || position.y >= bottomWall ||
+      if (position.x < cameraLeft ||
+          position.y <= topWall ||
+          position.y >= bottomWall ||
           (position - game.player.position).length > 1200) {
         removeFromParent();
         return;
@@ -627,8 +712,10 @@ class PlasmaBullet extends PositionComponent
       }
     } else {
       // Arena: distruggi al bordo esatto
-      if (position.x < 0 || position.x > arenaWidth ||
-          position.y < 0 || position.y > arenaHeight) {
+      if (position.x < 0 ||
+          position.x > arenaWidth ||
+          position.y < 0 ||
+          position.y > arenaHeight) {
         removeFromParent();
         return;
       }
@@ -651,16 +738,19 @@ class PlasmaBullet extends PositionComponent
     final center = Offset(size.x / 2, size.y / 2);
 
     // 3 strati di glow concentrici per effetto neon fluo intenso
-    _plasmaGlowOuter.color =
-        NeonColors.plasmaViolet.withValues(alpha: 0.25 * pulse);
+    _plasmaGlowOuter.color = NeonColors.plasmaViolet.withValues(
+      alpha: 0.25 * pulse,
+    );
     canvas.drawCircle(center, baseRadius * 2.4, _plasmaGlowOuter);
 
-    _plasmaGlowMid.color =
-        NeonColors.plasmaViolet.withValues(alpha: 0.5 * pulse);
+    _plasmaGlowMid.color = NeonColors.plasmaViolet.withValues(
+      alpha: 0.5 * pulse,
+    );
     canvas.drawCircle(center, baseRadius * 1.8, _plasmaGlowMid);
 
-    _plasmaGlowInner.color =
-        NeonColors.plasmaViolet.withValues(alpha: 0.8 * pulse);
+    _plasmaGlowInner.color = NeonColors.plasmaViolet.withValues(
+      alpha: 0.8 * pulse,
+    );
     canvas.drawCircle(center, baseRadius * 1.3, _plasmaGlowInner);
 
     // Core viola pieno (blink veloce sopra)
@@ -704,13 +794,18 @@ class PlasmaBullet extends PositionComponent
         }
       }
     }
-    game.spawnExplosion(position, NeonColors.plasmaViolet,
-        radius: explosionRadius);
+    game.spawnExplosion(
+      position,
+      NeonColors.plasmaViolet,
+      radius: explosionRadius,
+    );
   }
 
   @override
   void onCollisionStart(
-      Set<Vector2> intersectionPoints, PositionComponent other) {
+    Set<Vector2> intersectionPoints,
+    PositionComponent other,
+  ) {
     // Passa attraverso nemici in materializzazione
     if (other is EnemyBase && other.isSpawnInvulnerable) return;
     if (other is EnemyBase || other is BossBase) {
@@ -718,6 +813,62 @@ class PlasmaBullet extends PositionComponent
       removeFromParent();
     }
     super.onCollisionStart(intersectionPoints, other);
+  }
+}
+
+/// Railgun beam: linea hitscan luminosa, puramente VISIVA (il danno è già
+/// applicato in Player._fireRailgun). Vive ~0.35s con fade: glow ciano largo
+/// + corpo + core bianco incandescente + shockwave ring espandente al muzzle.
+class RailgunBeam extends PositionComponent {
+  final Vector2 origin;
+  final Vector2 direction;
+  final double length;
+  double _life = _maxLife;
+  static const double _maxLife = 0.35;
+
+  RailgunBeam({
+    required this.origin,
+    required this.direction,
+    required this.length,
+  }) : super(priority: 60);
+
+  @override
+  void update(double dt) {
+    super.update(dt);
+    _life -= dt;
+    if (_life <= 0) removeFromParent();
+  }
+
+  static final Paint _glowP = Paint()..strokeCap = StrokeCap.round;
+  static final Paint _bodyP = Paint()..strokeCap = StrokeCap.round;
+  static final Paint _coreP = Paint()..strokeCap = StrokeCap.round;
+  static final Paint _ringP = Paint()..style = PaintingStyle.stroke;
+
+  @override
+  void render(Canvas canvas) {
+    final t = (_life / _maxLife).clamp(0.0, 1.0);
+    const col = Color(0xFF66E0FF);
+    final o = Offset(origin.x, origin.y);
+    final e = Offset(
+      origin.x + direction.x * length,
+      origin.y + direction.y * length,
+    );
+    // Glow esterno largo (si assottiglia mentre svanisce).
+    _glowP.color = col.withValues(alpha: 0.28 * t);
+    _glowP.strokeWidth = 20 * t + 4;
+    canvas.drawLine(o, e, _glowP);
+    // Corpo ciano.
+    _bodyP.color = col.withValues(alpha: 0.85 * t);
+    _bodyP.strokeWidth = 8 * t + 2;
+    canvas.drawLine(o, e, _bodyP);
+    // Core bianco incandescente.
+    _coreP.color = Color.fromRGBO(255, 255, 255, t);
+    _coreP.strokeWidth = 3 * t + 1;
+    canvas.drawLine(o, e, _coreP);
+    // Shockwave ring espandente al muzzle.
+    _ringP.color = col.withValues(alpha: 0.5 * t);
+    _ringP.strokeWidth = 2.5;
+    canvas.drawCircle(o, (1 - t) * 46 + 6, _ringP);
   }
 }
 
@@ -780,8 +931,9 @@ class HomingMissile extends PositionComponent
     this.damage = 1.5,
     this.sizeMultiplier = 1.0,
   }) : super(
-            size: Vector2(8 * sizeMultiplier, 16 * sizeMultiplier),
-            anchor: Anchor.center) {
+         size: Vector2(8 * sizeMultiplier, 16 * sizeMultiplier),
+         anchor: Anchor.center,
+       ) {
     // Increment sincrono (NON in onLoad async): `player._shoot` legge
     // `activeCount` subito dopo la salva prima che `onLoad` completi →
     // con increment async si spawnavano missili oltre il cap.
@@ -803,7 +955,10 @@ class HomingMissile extends PositionComponent
   /// cade in fallback sul più vicino assoluto (comunque danno utile).
   /// Limita la ricerca entro `homingTrackRadius` (150px, vedi constants.dart).
   PositionComponent? _pickDistinctTarget() {
-    final claimed = _volleyTargets.putIfAbsent(volleyId, () => <PositionComponent>{});
+    final claimed = _volleyTargets.putIfAbsent(
+      volleyId,
+      () => <PositionComponent>{},
+    );
     // Pulisci bersagli rimossi dalla memoria della salva
     claimed.removeWhere((c) => c.isRemoved);
 
@@ -850,9 +1005,7 @@ class HomingMissile extends PositionComponent
     // Target search throttled: ogni 5 frame, o se target morto/perso.
     _searchCooldown--;
     final cached = _cachedTarget;
-    if (_searchCooldown <= 0 ||
-        cached == null ||
-        cached.isRemoved) {
+    if (_searchCooldown <= 0 || cached == null || cached.isRemoved) {
       _searchCooldown = 5;
       // Se stiamo switchando bersaglio, libera il vecchio claim così altri
       // missili della salva possono puntarlo. Altrimenti il claimed set
@@ -890,8 +1043,10 @@ class HomingMissile extends PositionComponent
     // Border check: missile contro muri → detonazione (AoE only, no target).
     // Tutte le modalità: arena (4 bordi) + tunnel (muri dinamici + cull sx).
     if (game.isTunnelMode) {
-      final cameraLeft = game.camera.viewfinder.position.x -
-          (game.size.x > 0 ? game.size.x / 2 : 400) - 200;
+      final cameraLeft =
+          game.camera.viewfinder.position.x -
+          (game.size.x > 0 ? game.size.x / 2 : 400) -
+          200;
       final (topWall, bottomWall) = game.tunnelWallsAtX(position.x);
       if (position.x < cameraLeft ||
           position.y <= topWall ||
@@ -965,20 +1120,29 @@ class HomingMissile extends PositionComponent
     final flameLen = bodyH * 0.8 * flicker;
     _homingFlameOuter.color = const Color(0xFFFF2200).withValues(alpha: 0.5);
     canvas.drawOval(
-      Rect.fromCenter(center: Offset(0, bodyH * 0.55 + flameLen * 0.3),
-          width: bodyW * 1.3, height: flameLen * 1.2),
+      Rect.fromCenter(
+        center: Offset(0, bodyH * 0.55 + flameLen * 0.3),
+        width: bodyW * 1.3,
+        height: flameLen * 1.2,
+      ),
       _homingFlameOuter,
     );
     _homingFlameInner.color = const Color(0xFFFF8800).withValues(alpha: 0.85);
     canvas.drawOval(
-      Rect.fromCenter(center: Offset(0, bodyH * 0.52 + flameLen * 0.25),
-          width: bodyW * 0.85, height: flameLen * 0.85),
+      Rect.fromCenter(
+        center: Offset(0, bodyH * 0.52 + flameLen * 0.25),
+        width: bodyW * 0.85,
+        height: flameLen * 0.85,
+      ),
       _homingFlameInner,
     );
     _homingFlameCore.color = const Color(0xFFFFFFDD);
     canvas.drawOval(
-      Rect.fromCenter(center: Offset(0, bodyH * 0.5 + flameLen * 0.2),
-          width: bodyW * 0.5, height: flameLen * 0.5),
+      Rect.fromCenter(
+        center: Offset(0, bodyH * 0.5 + flameLen * 0.2),
+        width: bodyW * 0.5,
+        height: flameLen * 0.5,
+      ),
       _homingFlameCore,
     );
 
@@ -1009,8 +1173,11 @@ class HomingMissile extends PositionComponent
     _homingBodyPaint.color = NeonColors.cyan;
     canvas.drawRRect(
       RRect.fromRectAndRadius(
-        Rect.fromCenter(center: Offset(0, bodyH * 0.05),
-            width: bodyW, height: bodyH * 0.8),
+        Rect.fromCenter(
+          center: Offset(0, bodyH * 0.05),
+          width: bodyW,
+          height: bodyH * 0.8,
+        ),
         Radius.circular(bodyW * 0.25),
       ),
       _homingBodyPaint,
@@ -1025,7 +1192,9 @@ class HomingMissile extends PositionComponent
 
   @override
   void onCollisionStart(
-      Set<Vector2> intersectionPoints, PositionComponent other) {
+    Set<Vector2> intersectionPoints,
+    PositionComponent other,
+  ) {
     if (other is EnemyBase) {
       // Passa attraverso nemici in materializzazione
       if (other.isSpawnInvulnerable) return;
@@ -1073,10 +1242,18 @@ class HomingMissile extends PositionComponent
       }
     }
 
-    game.spawnExplosion(position, NeonColors.cyan,
-        radius: radius, particleCount: 14);
-    game.spawnExplosion(position, const Color(0xFFFF8800),
-        radius: radius * 0.6, particleCount: 8);
+    game.spawnExplosion(
+      position,
+      NeonColors.cyan,
+      radius: radius,
+      particleCount: 14,
+    );
+    game.spawnExplosion(
+      position,
+      const Color(0xFFFF8800),
+      radius: radius * 0.6,
+      particleCount: 8,
+    );
     removeFromParent();
   }
 }
@@ -1124,8 +1301,9 @@ class GaussBullet extends PositionComponent
     this.damage = 4.0,
     this.sizeMultiplier = 1.0,
   }) : super(
-            size: Vector2(24 * sizeMultiplier, 24 * sizeMultiplier),
-            anchor: Anchor.center);
+         size: Vector2(24 * sizeMultiplier, 24 * sizeMultiplier),
+         anchor: Anchor.center,
+       );
 
   @override
   Future<void> onLoad() async {
@@ -1135,8 +1313,10 @@ class GaussBullet extends PositionComponent
       _velocity = direction.normalized() * speed;
     }
     // Hitbox circolare al centro del core swirl.
-    add(CircleHitbox(radius: 6 * sizeMultiplier, anchor: Anchor.center)
-      ..position = size / 2);
+    add(
+      CircleHitbox(radius: 6 * sizeMultiplier, anchor: Anchor.center)
+        ..position = size / 2,
+    );
   }
 
   @override
@@ -1151,8 +1331,10 @@ class GaussBullet extends PositionComponent
     // Border / lifetime / maxDistance: trigger implosion anche se non
     // colpisce nessuno (richiesta utente esplicita).
     if (game.isTunnelMode) {
-      final cameraLeft = game.camera.viewfinder.position.x -
-          (game.size.x > 0 ? game.size.x / 2 : 400) - 200;
+      final cameraLeft =
+          game.camera.viewfinder.position.x -
+          (game.size.x > 0 ? game.size.x / 2 : 400) -
+          200;
       if (position.x < cameraLeft) {
         _explode();
         return;
@@ -1196,10 +1378,9 @@ class GaussBullet extends PositionComponent
     // come fonte di verità invece di leggere `player.hasFirePower` al
     // momento dell'impatto: così il power-up può scadere tra spawn-bullet
     // e impatto senza desync visivo/meccanico.
-    game.world.add(GaussImplosion(
-      epicenter: position.clone(),
-      aoeScale: sizeMultiplier,
-    ));
+    game.world.add(
+      GaussImplosion(epicenter: position.clone(), aoeScale: sizeMultiplier),
+    );
     removeFromParent();
   }
 
@@ -1216,11 +1397,9 @@ class GaussBullet extends PositionComponent
     final s = sizeMultiplier;
 
     // Glow esterno viola.
-    _glowPaint.color =
-        const Color(0xFFCC66FF).withValues(alpha: 0.35);
+    _glowPaint.color = const Color(0xFFCC66FF).withValues(alpha: 0.35);
     canvas.drawCircle(Offset(cx, cy), 11 * s, _glowPaint);
-    _glowPaint.color =
-        const Color(0xFFCC66FF).withValues(alpha: 0.55);
+    _glowPaint.color = const Color(0xFFCC66FF).withValues(alpha: 0.55);
     canvas.drawCircle(Offset(cx, cy), 7 * s, _glowPaint);
 
     // Swirl: 10 piccoli cerchi che orbitano a 2 raggi differenti, ruotando.
@@ -1238,33 +1417,34 @@ class GaussBullet extends PositionComponent
       // Alpha più alta quando vicino al centro (illusione "trascinato dentro").
       final convergedness = 1.0 - (r / (9 * s));
       final alpha = (0.5 + convergedness * 0.45).clamp(0.0, 1.0);
-      _swirlPaint.color =
-          const Color(0xFFCC66FF).withValues(alpha: alpha);
+      _swirlPaint.color = const Color(0xFFCC66FF).withValues(alpha: alpha);
       canvas.drawCircle(Offset(sx, sy), 1.6 * s, _swirlPaint);
 
       // Trail dot leggermente sfasato per dare senso di rotazione fluida.
       final tang = ang - 0.35;
       final tx = cx + math.cos(tang) * r;
       final ty = cy + math.sin(tang) * r;
-      _swirlPaint.color =
-          const Color(0xFFAA44EE).withValues(alpha: alpha * 0.55);
+      _swirlPaint.color = const Color(
+        0xFFAA44EE,
+      ).withValues(alpha: alpha * 0.55);
       canvas.drawCircle(Offset(tx, ty), 1.1 * s, _swirlPaint);
     }
 
     // Core centrale: nucleo viola brillante che pulsa.
-    final corePulse =
-        0.75 + 0.25 * math.sin(_phase * 14);
-    _corePaint.color =
-        const Color(0xFFCC66FF).withValues(alpha: corePulse);
+    final corePulse = 0.75 + 0.25 * math.sin(_phase * 14);
+    _corePaint.color = const Color(0xFFCC66FF).withValues(alpha: corePulse);
     canvas.drawCircle(Offset(cx, cy), 3.2 * s, _corePaint);
-    _corePaint.color =
-        const Color(0xFFFFFFFF).withValues(alpha: corePulse * 0.9);
+    _corePaint.color = const Color(
+      0xFFFFFFFF,
+    ).withValues(alpha: corePulse * 0.9);
     canvas.drawCircle(Offset(cx, cy), 1.6 * s, _corePaint);
   }
 
   @override
   void onCollisionStart(
-      Set<Vector2> intersectionPoints, PositionComponent other) {
+    Set<Vector2> intersectionPoints,
+    PositionComponent other,
+  ) {
     if (_imploded) return;
     if (other is EnemyBase) {
       if (other.isSpawnInvulnerable) return;
@@ -1284,7 +1464,10 @@ class OverdriveBeam extends PositionComponent
   int _walkFrame = 0;
 
   OverdriveBeam({required this.direction})
-      : super(size: Vector2(overdriveBeamWidth, overdriveBeamLength), anchor: Anchor.topCenter);
+    : super(
+        size: Vector2(overdriveBeamWidth, overdriveBeamLength),
+        anchor: Anchor.topCenter,
+      );
 
   @override
   void update(double dt) {
@@ -1353,23 +1536,40 @@ class OverdriveBeam extends PositionComponent
 
     // Rainbow effect
     final hue = (_phase * 30) % 360;
-    final rainbowColor =
-        HSVColor.fromAHSV(1.0, hue, 1.0, 1.0).toColor();
+    final rainbowColor = HSVColor.fromAHSV(1.0, hue, 1.0, 1.0).toColor();
 
     // Glow (no blur — overdrive is rare but still saves GPU)
     _odGlowPaint.color = rainbowColor.withValues(alpha: 0.3);
     canvas.drawRect(
-        Rect.fromCenter(center: Offset.zero, width: 60, height: overdriveBeamLength), _odGlowPaint);
+      Rect.fromCenter(
+        center: Offset.zero,
+        width: 60,
+        height: overdriveBeamLength,
+      ),
+      _odGlowPaint,
+    );
 
     // Core - white
     _odCorePaint.color = const Color(0xFFFFFFFF);
     canvas.drawRect(
-        Rect.fromCenter(center: Offset.zero, width: 20, height: overdriveBeamLength), _odCorePaint);
+      Rect.fromCenter(
+        center: Offset.zero,
+        width: 20,
+        height: overdriveBeamLength,
+      ),
+      _odCorePaint,
+    );
 
     // Colored edge
     _odEdgePaint.color = rainbowColor.withValues(alpha: 0.5);
     canvas.drawRect(
-        Rect.fromCenter(center: Offset.zero, width: overdriveBeamWidth, height: overdriveBeamLength), _odEdgePaint);
+      Rect.fromCenter(
+        center: Offset.zero,
+        width: overdriveBeamWidth,
+        height: overdriveBeamLength,
+      ),
+      _odEdgePaint,
+    );
 
     canvas.restore();
   }

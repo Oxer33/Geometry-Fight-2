@@ -29,18 +29,21 @@ class PhantomKingBoss extends BossBase {
   double _shadowAttackTimer = 2.5;
 
   PhantomKingBoss()
-      : super(
-          hp: 1500,
-          bossName: 'PHANTOM KING',
-          pointValue: 3200,
-          neonColor: const Color(0xFF4466FF),
-          size: Vector2(85, 85),
-        );
+    : super(
+        hp: 1500,
+        bossName: 'PHANTOM KING',
+        pointValue: 3200,
+        neonColor: const Color(0xFF4466FF),
+        size: Vector2(85, 85),
+      );
 
   // PhantomKing è BLU/VIOLA SPETTRO → mob phantom/glitch/decoy.
   @override
-  List<EnemyType> get colorMatchedMinions =>
-      const [EnemyType.phantom, EnemyType.glitch, EnemyType.decoy];
+  List<EnemyType> get colorMatchedMinions => const [
+    EnemyType.phantom,
+    EnemyType.glitch,
+    EnemyType.decoy,
+  ];
 
   @override
   int getPhase() {
@@ -73,7 +76,9 @@ class PhantomKingBoss extends BossBase {
         // Teletrasporto in posizione casuale vicino al player
         final angle = _rng.nextDouble() * math.pi * 2;
         final dist = 150 + _rng.nextDouble() * 200;
-        position = playerPosition + Vector2(math.cos(angle) * dist, math.sin(angle) * dist);
+        position =
+            playerPosition +
+            Vector2(math.cos(angle) * dist, math.sin(angle) * dist);
         if (game.isTunnelMode) {
           final cam = game.camera.viewfinder.position;
           final halfW = game.size.x > 0 ? game.size.x / 2 : 400.0;
@@ -134,7 +139,9 @@ class PhantomKingBoss extends BossBase {
       final ang = base + i * 0.15;
       final bulletDir = Vector2(math.cos(ang), math.sin(ang));
       final bullet = _PhantomBullet(
-          direction: bulletDir, color: const Color(0xFF8877FF));
+        direction: bulletDir,
+        color: const Color(0xFF8877FF),
+      );
       bullet.position = _shadowPos.clone();
       game.world.add(bullet);
     }
@@ -168,10 +175,14 @@ class PhantomKingBoss extends BossBase {
 
   void _spawnClone() {
     // Spawna un nemico drone colorato come il boss
-    game.spawnEnemy(EnemyType.drone, position + Vector2(
-      (_rng.nextDouble() - 0.5) * 100,
-      (_rng.nextDouble() - 0.5) * 100,
-    ));
+    game.spawnEnemy(
+      EnemyType.drone,
+      position +
+          Vector2(
+            (_rng.nextDouble() - 0.5) * 100,
+            (_rng.nextDouble() - 0.5) * 100,
+          ),
+    );
   }
 
   // Signature FX paints
@@ -198,8 +209,9 @@ class PhantomKingBoss extends BossBase {
       // Shimmer etereo visibile anche in invisibilità
       if (scale <= 1.01) {
         final shimmer = (math.sin(_crownPhase * 4) * 0.5 + 0.5);
-        _invisShimmerPaint.color =
-            neonColor.withValues(alpha: 0.08 + shimmer * 0.12);
+        _invisShimmerPaint.color = neonColor.withValues(
+          alpha: 0.08 + shimmer * 0.12,
+        );
         _invisShimmerPaint.strokeWidth = 1;
         canvas.drawCircle(Offset(cx, cy), r * 1.1, _invisShimmerPaint);
       }
@@ -212,11 +224,11 @@ class PhantomKingBoss extends BossBase {
         final wAngle = wp;
         final wDist = r * (1.1 + ((wp * 0.3) % 1.0) * 0.5);
         final wAlpha = (1.0 - ((wp * 0.3) % 1.0)) * 0.55;
-        _ectoplasmPaint.color =
-            const Color(0xFF88AAFF).withValues(alpha: wAlpha);
+        _ectoplasmPaint.color = const Color(
+          0xFF88AAFF,
+        ).withValues(alpha: wAlpha);
         canvas.drawCircle(
-          Offset(cx + math.cos(wAngle) * wDist,
-              cy + math.sin(wAngle) * wDist),
+          Offset(cx + math.cos(wAngle) * wDist, cy + math.sin(wAngle) * wDist),
           2.5 + (i % 3) * 0.6,
           _ectoplasmPaint,
         );
@@ -235,11 +247,20 @@ class PhantomKingBoss extends BossBase {
       final outerR = r * 0.9;
       final innerR = r * 0.55;
       if (i == 0) {
-        crownPath.moveTo(outerR * math.cos(outerAngle), outerR * math.sin(outerAngle));
+        crownPath.moveTo(
+          outerR * math.cos(outerAngle),
+          outerR * math.sin(outerAngle),
+        );
       } else {
-        crownPath.lineTo(outerR * math.cos(outerAngle), outerR * math.sin(outerAngle));
+        crownPath.lineTo(
+          outerR * math.cos(outerAngle),
+          outerR * math.sin(outerAngle),
+        );
       }
-      crownPath.lineTo(innerR * math.cos(innerAngle), innerR * math.sin(innerAngle));
+      crownPath.lineTo(
+        innerR * math.cos(innerAngle),
+        innerR * math.sin(innerAngle),
+      );
     }
     crownPath.close();
     canvas.drawPath(crownPath, paint);
@@ -252,11 +273,13 @@ class PhantomKingBoss extends BossBase {
         final tipX = tipR * math.cos(tipAngle);
         final tipY = tipR * math.sin(tipAngle);
         final jewelPulse = 0.6 + math.sin(_crownPhase * 4 + i * 1.2) * 0.4;
-        _jewelGlowPaint.color =
-            const Color(0xFF00FFFF).withValues(alpha: jewelPulse * 0.4);
+        _jewelGlowPaint.color = const Color(
+          0xFF00FFFF,
+        ).withValues(alpha: jewelPulse * 0.4);
         canvas.drawCircle(Offset(tipX, tipY), 5.5, _jewelGlowPaint);
-        _jewelCorePaint.color =
-            const Color(0xFFFFFFFF).withValues(alpha: jewelPulse);
+        _jewelCorePaint.color = const Color(
+          0xFFFFFFFF,
+        ).withValues(alpha: jewelPulse);
         canvas.drawCircle(Offset(tipX, tipY), 2, _jewelCorePaint);
       }
     }
@@ -268,14 +291,15 @@ class PhantomKingBoss extends BossBase {
       canvas.drawCircle(Offset.zero, r * 0.35, _innerRingPaint);
 
       final eyePulse = 0.6 + math.sin(_crownPhase * 3) * 0.3;
-      _eyeHaloPaint.color =
-          const Color(0xFFFFFFFF).withValues(alpha: 0.25 * eyePulse);
+      _eyeHaloPaint.color = const Color(
+        0xFFFFFFFF,
+      ).withValues(alpha: 0.25 * eyePulse);
       canvas.drawCircle(Offset.zero, r * 0.28, _eyeHaloPaint);
-      _eyeHaloPaint.color =
-          const Color(0xFF4466FF).withValues(alpha: eyePulse);
+      _eyeHaloPaint.color = const Color(0xFF4466FF).withValues(alpha: eyePulse);
       canvas.drawCircle(Offset.zero, r * 0.18, _eyeHaloPaint);
-      _eyePupilPaint.color =
-          const Color(0xFFFFFFFF).withValues(alpha: eyePulse);
+      _eyePupilPaint.color = const Color(
+        0xFFFFFFFF,
+      ).withValues(alpha: eyePulse);
       canvas.drawCircle(Offset.zero, r * 0.08 * eyePulse, _eyePupilPaint);
     }
     canvas.restore();
@@ -300,37 +324,47 @@ class PhantomKingBoss extends BossBase {
         final innerR = sr * 0.55;
         if (i == 0) {
           shadowPath.moveTo(
-              outerR * math.cos(outerAngle), outerR * math.sin(outerAngle));
+            outerR * math.cos(outerAngle),
+            outerR * math.sin(outerAngle),
+          );
         } else {
           shadowPath.lineTo(
-              outerR * math.cos(outerAngle), outerR * math.sin(outerAngle));
+            outerR * math.cos(outerAngle),
+            outerR * math.sin(outerAngle),
+          );
         }
         shadowPath.lineTo(
-            innerR * math.cos(innerAngle), innerR * math.sin(innerAngle));
+          innerR * math.cos(innerAngle),
+          innerR * math.sin(innerAngle),
+        );
       }
       shadowPath.close();
-      _shadowBodyPaint.color =
-          const Color(0xFF6644AA).withValues(alpha: shadowPulse);
+      _shadowBodyPaint.color = const Color(
+        0xFF6644AA,
+      ).withValues(alpha: shadowPulse);
       canvas.drawPath(shadowPath, _shadowBodyPaint);
-      _shadowGlowPaint.color =
-          const Color(0xFF8877FF).withValues(alpha: shadowPulse * 0.5);
+      _shadowGlowPaint.color = const Color(
+        0xFF8877FF,
+      ).withValues(alpha: shadowPulse * 0.5);
       canvas.drawCircle(Offset.zero, sr * 0.5, _shadowGlowPaint);
-      _shadowEyePaint.color = const Color(0xFFFFFFFF)
-          .withValues(alpha: 0.7 + math.sin(_crownPhase * 6) * 0.3);
+      _shadowEyePaint.color = const Color(
+        0xFFFFFFFF,
+      ).withValues(alpha: 0.7 + math.sin(_crownPhase * 6) * 0.3);
       canvas.drawCircle(Offset.zero, sr * 0.1, _shadowEyePaint);
       canvas.restore();
     }
   }
 }
 
-class _PhantomBullet extends PositionComponent with HasGameReference<GeometryFightGame> {
+class _PhantomBullet extends PositionComponent
+    with HasGameReference<GeometryFightGame> {
   final Vector2 direction;
   final Color color;
   late Vector2 _velocity;
   double _lifetime = 3.5;
 
   _PhantomBullet({required this.direction, required this.color})
-      : super(size: Vector2(18, 18), anchor: Anchor.center);
+    : super(size: Vector2(18, 18), anchor: Anchor.center);
 
   @override
   Future<void> onLoad() async {

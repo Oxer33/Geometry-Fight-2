@@ -39,18 +39,18 @@ class SwarmDroneEnemy extends EnemyBase {
   static final math.Random _rng = math.Random();
 
   SwarmDroneEnemy()
-      : super(
-          hp: 1,
-          speed: 120,
-          pointValue: 1,
-          geomValue: 1,
-          neonColor: const Color(0xFFFF3388),
-          size: Vector2(10, 10),
-        ) {
+    : super(
+        hp: 1,
+        speed: 120,
+        pointValue: 1,
+        geomValue: 1,
+        neonColor: const Color(0xFFFF3388),
+        size: Vector2(10, 10),
+      ) {
     // Direzione iniziale casuale: uno dei 4 assi cardinali
     _moveDir = _rng.nextBool()
-        ? Vector2(_rng.nextBool() ? 1 : -1, 0)  // orizzontale
-        : Vector2(0, _rng.nextBool() ? 1 : -1);  // verticale
+        ? Vector2(_rng.nextBool() ? 1 : -1, 0) // orizzontale
+        : Vector2(0, _rng.nextBool() ? 1 : -1); // verticale
   }
 
   /// Setta la direzione di marcia SUBITO (update+render primo frame
@@ -115,6 +115,7 @@ class SwarmDroneEnemy extends EnemyBase {
   static void updateGlobalEnrage(double dt) {
     if (_globalEnrageTimer > 0) _globalEnrageTimer -= dt;
   }
+
   static void resetGlobalEnrage() => _globalEnrageTimer = 0;
   bool get isGloballyEnraged => _globalEnrageTimer > 0;
 
@@ -129,14 +130,14 @@ class SwarmDroneEnemy extends EnemyBase {
     final angle = math.atan2(_moveDir.y, _moveDir.x) + math.pi / 2;
     canvas.rotate(angle);
 
-    final baseColor = isGloballyEnraged
-        ? const Color(0xFFFF0022)
-        : paint.color;
+    final baseColor = isGloballyEnraged ? const Color(0xFFFF0022) : paint.color;
 
     // === HALO ROSSO DIETRO (solo layer principale) ===
     // Glow alone (no blur) che suggerisce il motore incandescente.
     if (scale <= 1.01) {
-      _glowPaint.color = baseColor.withValues(alpha: isGloballyEnraged ? 0.35 : 0.22);
+      _glowPaint.color = baseColor.withValues(
+        alpha: isGloballyEnraged ? 0.35 : 0.22,
+      );
       canvas.drawCircle(Offset(0, s * 0.3), s * 1.1, _glowPaint);
     }
 
@@ -162,11 +163,11 @@ class SwarmDroneEnemy extends EnemyBase {
     // Punta più lunga, ali più ravvicinate → aspetto da "freccia".
     _bodyPaint.color = baseColor;
     final path = Path()
-      ..moveTo(0, -s * 1.15)          // punta affilata in avanti
+      ..moveTo(0, -s * 1.15) // punta affilata in avanti
       ..lineTo(s * 0.55, s * 0.15)
-      ..lineTo(s * 0.65, s * 0.55)    // ala destra
-      ..lineTo(0, s * 0.3)            // notch posteriore
-      ..lineTo(-s * 0.65, s * 0.55)   // ala sinistra
+      ..lineTo(s * 0.65, s * 0.55) // ala destra
+      ..lineTo(0, s * 0.3) // notch posteriore
+      ..lineTo(-s * 0.65, s * 0.55) // ala sinistra
       ..lineTo(-s * 0.55, s * 0.15)
       ..close();
     canvas.drawPath(path, _bodyPaint);
@@ -174,8 +175,16 @@ class SwarmDroneEnemy extends EnemyBase {
     if (scale <= 1.01) {
       // === BORDO LUMINOSO sul profilo leader ===
       _edgePaint.color = const Color(0xFFFFFFFF).withValues(alpha: 0.55);
-      canvas.drawLine(Offset(0, -s * 1.15), Offset(s * 0.55, s * 0.15), _edgePaint);
-      canvas.drawLine(Offset(0, -s * 1.15), Offset(-s * 0.55, s * 0.15), _edgePaint);
+      canvas.drawLine(
+        Offset(0, -s * 1.15),
+        Offset(s * 0.55, s * 0.15),
+        _edgePaint,
+      );
+      canvas.drawLine(
+        Offset(0, -s * 1.15),
+        Offset(-s * 0.55, s * 0.15),
+        _edgePaint,
+      );
 
       // === NUCLEO / OCCHIO rosso minaccioso ===
       final corePulse = isGloballyEnraged

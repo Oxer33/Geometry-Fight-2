@@ -42,18 +42,21 @@ class NexusPrimeBoss extends BossBase {
   double _convergentWindUp = 0;
 
   NexusPrimeBoss()
-      : super(
-          hp: 1600,
-          bossName: 'NEXUS PRIME',
-          pointValue: 3000,
-          neonColor: const Color(0xFF00EEFF),
-          size: Vector2(90, 90),
-        );
+    : super(
+        hp: 1600,
+        bossName: 'NEXUS PRIME',
+        pointValue: 3000,
+        neonColor: const Color(0xFF00EEFF),
+        size: Vector2(90, 90),
+      );
 
   // NexusPrime è CIANO → mob cyan (drone + orbiter + decoy).
   @override
-  List<EnemyType> get colorMatchedMinions =>
-      const [EnemyType.drone, EnemyType.orbiter, EnemyType.decoy];
+  List<EnemyType> get colorMatchedMinions => const [
+    EnemyType.drone,
+    EnemyType.orbiter,
+    EnemyType.decoy,
+  ];
 
   @override
   int getPhase() {
@@ -79,11 +82,13 @@ class NexusPrimeBoss extends BossBase {
     _satellites.clear();
     for (int i = 0; i < 4; i++) {
       final ang = i * math.pi / 2;
-      _satellites.add(_NexusSatellite()
-        ..offset = Vector2(
-          math.cos(ang) * _satelliteRadius,
-          math.sin(ang) * _satelliteRadius,
-        ));
+      _satellites.add(
+        _NexusSatellite()
+          ..offset = Vector2(
+            math.cos(ang) * _satelliteRadius,
+            math.sin(ang) * _satelliteRadius,
+          ),
+      );
     }
   }
 
@@ -132,17 +137,21 @@ class NexusPrimeBoss extends BossBase {
       final halfW = game.size.x > 0 ? game.size.x / 2 : 400.0;
       final halfH = game.size.y > 0 ? game.size.y / 2 : 300.0;
       for (int i = 0; i < count; i++) {
-        _portalPositions.add(Vector2(
-          cam.x - halfW + 100 + random.nextDouble() * (halfW * 2 - 200),
-          cam.y - halfH + 100 + random.nextDouble() * (halfH * 2 - 200),
-        ));
+        _portalPositions.add(
+          Vector2(
+            cam.x - halfW + 100 + random.nextDouble() * (halfW * 2 - 200),
+            cam.y - halfH + 100 + random.nextDouble() * (halfH * 2 - 200),
+          ),
+        );
       }
     } else {
       for (int i = 0; i < count; i++) {
-        _portalPositions.add(Vector2(
-          300 + random.nextDouble() * (arenaWidth - 600),
-          300 + random.nextDouble() * (arenaHeight - 600),
-        ));
+        _portalPositions.add(
+          Vector2(
+            300 + random.nextDouble() * (arenaWidth - 600),
+            300 + random.nextDouble() * (arenaHeight - 600),
+          ),
+        );
       }
     }
   }
@@ -179,8 +188,7 @@ class NexusPrimeBoss extends BossBase {
     // BUG FIX: iterare game.world.children mentre si chiama removeFromParent
     // può causare ConcurrentModificationError (Flame rimuove fine frame ma la
     // collection interna può mutare). Snapshot + isRemoved guard.
-    final nexusBullets =
-        game.world.children.whereType<PlayerBullet>().toList();
+    final nexusBullets = game.world.children.whereType<PlayerBullet>().toList();
     for (final child in nexusBullets) {
       if (child.isRemoved) continue;
       for (final s in _satellites) {
@@ -249,7 +257,9 @@ class NexusPrimeBoss extends BossBase {
       final dir = (pPos - worldPos);
       if (dir.length < 0.001) continue;
       final bullet = _BossBullet(
-          direction: dir.normalized(), color: const Color(0xFFFF44FF));
+        direction: dir.normalized(),
+        color: const Color(0xFFFF44FF),
+      );
       bullet.position = worldPos.clone();
       game.world.add(bullet);
     }
@@ -291,18 +301,21 @@ class NexusPrimeBoss extends BossBase {
         final isActive = i == _currentPortal;
         final portalPulse = 0.6 + math.sin(_portalPhase + i * 2) * 0.4;
 
-        _portalOuterPaint.color = neonColor
-            .withValues(alpha: (isActive ? 0.7 : 0.35) * portalPulse);
+        _portalOuterPaint.color = neonColor.withValues(
+          alpha: (isActive ? 0.7 : 0.35) * portalPulse,
+        );
         _portalOuterPaint.strokeWidth = isActive ? 3 : 2;
         canvas.drawCircle(Offset(pCx, pCy), 24, _portalOuterPaint);
 
-        _portalInnerPaint.color = const Color(0xFFFFFFFF)
-            .withValues(alpha: (isActive ? 0.55 : 0.25) * portalPulse);
+        _portalInnerPaint.color = const Color(
+          0xFFFFFFFF,
+        ).withValues(alpha: (isActive ? 0.55 : 0.25) * portalPulse);
         _portalInnerPaint.strokeWidth = 1.2;
         canvas.drawCircle(Offset(pCx, pCy), 14, _portalInnerPaint);
 
-        _portalSwirlPaint.color =
-            neonColor.withValues(alpha: 0.45 * portalPulse);
+        _portalSwirlPaint.color = neonColor.withValues(
+          alpha: 0.45 * portalPulse,
+        );
         _portalSwirlPaint.strokeWidth = 1.2;
         canvas.save();
         canvas.translate(pCx, pCy);
@@ -310,19 +323,24 @@ class NexusPrimeBoss extends BossBase {
         for (int a = 0; a < 3; a++) {
           canvas.drawArc(
             Rect.fromCircle(center: Offset.zero, radius: 18),
-            a * math.pi * 2 / 3, math.pi * 0.5, false, _portalSwirlPaint,
+            a * math.pi * 2 / 3,
+            math.pi * 0.5,
+            false,
+            _portalSwirlPaint,
           );
         }
         canvas.restore();
 
-        _portalCorePaint.color =
-            const Color(0xFFFFFFFF).withValues(alpha: portalPulse);
+        _portalCorePaint.color = const Color(
+          0xFFFFFFFF,
+        ).withValues(alpha: portalPulse);
         canvas.drawCircle(Offset(pCx, pCy), 3, _portalCorePaint);
 
         // Warp line dal boss al portale attivo
         if (isActive) {
-          _warpLinePaint.color = neonColor
-              .withValues(alpha: 0.3 + math.sin(_portalPhase * 4) * 0.2);
+          _warpLinePaint.color = neonColor.withValues(
+            alpha: 0.3 + math.sin(_portalPhase * 4) * 0.2,
+          );
           _warpLinePaint.strokeWidth = 0.8;
           canvas.drawLine(Offset(cx, cy), Offset(pCx, pCy), _warpLinePaint);
         }
@@ -361,19 +379,18 @@ class NexusPrimeBoss extends BossBase {
       final pulse = 0.6 + math.sin(_portalPhase * 2) * 0.4;
       _coreHaloPaint.color = neonColor.withValues(alpha: pulse * 0.5);
       canvas.drawCircle(Offset(cx, cy), r * 0.45, _coreHaloPaint);
-      _corePaint.color =
-          const Color(0xFFFFFFFF).withValues(alpha: pulse * 0.7);
+      _corePaint.color = const Color(0xFFFFFFFF).withValues(alpha: pulse * 0.7);
       canvas.drawCircle(Offset(cx, cy), r * 0.28, _corePaint);
-      _corePaint.color =
-          const Color(0xFFFFFFFF).withValues(alpha: pulse);
+      _corePaint.color = const Color(0xFFFFFFFF).withValues(alpha: pulse);
       canvas.drawCircle(Offset(cx, cy), r * 0.12 * pulse, _corePaint);
     }
 
     // ─── SHIELD RING (se almeno 1 satellite vivo) ─────────────────
     if (scale <= 1.01 && _aliveSatellites > 0) {
       final shieldAlpha = 0.10 + _aliveSatellites * 0.05;
-      _portalOuterPaint.color =
-          const Color(0xFF00FFFF).withValues(alpha: shieldAlpha);
+      _portalOuterPaint.color = const Color(
+        0xFF00FFFF,
+      ).withValues(alpha: shieldAlpha);
       _portalOuterPaint.strokeWidth = 1.5;
       canvas.drawCircle(Offset(cx, cy), _satelliteRadius, _portalOuterPaint);
     }
@@ -386,8 +403,9 @@ class NexusPrimeBoss extends BossBase {
         final sy = cy + s.offset.y;
         if (s.alive) {
           final satPulse = 0.7 + math.sin(_portalPhase * 3 + i) * 0.3;
-          _coreHaloPaint.color = const Color(0xFF00FFFF)
-              .withValues(alpha: 0.45 * satPulse);
+          _coreHaloPaint.color = const Color(
+            0xFF00FFFF,
+          ).withValues(alpha: 0.45 * satPulse);
           canvas.drawCircle(Offset(sx, sy), 14, _coreHaloPaint);
           _corePaint.color = const Color(0xFFFFFFFF).withValues(alpha: 0.9);
           canvas.drawCircle(Offset(sx, sy), 8, _corePaint);
@@ -396,10 +414,14 @@ class NexusPrimeBoss extends BossBase {
         } else if (s.deathPulse > 0) {
           // Afterglow esplosione
           final a = s.deathPulse / 0.6;
-          _coreHaloPaint.color =
-              const Color(0xFFFF4400).withValues(alpha: a * 0.5);
-          canvas.drawCircle(Offset(sx, sy), 18 * (1 + (1 - a) * 0.5),
-              _coreHaloPaint);
+          _coreHaloPaint.color = const Color(
+            0xFFFF4400,
+          ).withValues(alpha: a * 0.5);
+          canvas.drawCircle(
+            Offset(sx, sy),
+            18 * (1 + (1 - a) * 0.5),
+            _coreHaloPaint,
+          );
         }
       }
     }
@@ -408,8 +430,9 @@ class NexusPrimeBoss extends BossBase {
     if (scale <= 1.01 && _convergentWindUp > 0) {
       final blinkPhase = (_convergentWindUp * 4) % 1.0;
       final blinkAlpha = blinkPhase < 0.5 ? 0.7 : 0.25;
-      _warpLinePaint.color =
-          const Color(0xFFFF44FF).withValues(alpha: blinkAlpha);
+      _warpLinePaint.color = const Color(
+        0xFFFF44FF,
+      ).withValues(alpha: blinkAlpha);
       _warpLinePaint.strokeWidth = 1.2;
       final pPos = playerPosition - position;
       for (final s in _satellites) {
@@ -449,7 +472,7 @@ class _BossBullet extends PositionComponent
   double _lifetime = 4.0;
 
   _BossBullet({required this.direction, required this.color})
-      : super(size: Vector2(18, 18), anchor: Anchor.center);
+    : super(size: Vector2(18, 18), anchor: Anchor.center);
 
   @override
   Future<void> onLoad() async {

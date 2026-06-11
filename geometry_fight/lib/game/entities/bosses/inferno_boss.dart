@@ -22,18 +22,21 @@ class InfernoBoss extends BossBase {
   double _anyTrailHitTimer = 0;
 
   InfernoBoss()
-      : super(
-          hp: 1900,
-          bossName: 'INFERNO',
-          pointValue: 3800,
-          neonColor: const Color(0xFFFF4400),
-          size: Vector2(90, 90),
-        );
+    : super(
+        hp: 1900,
+        bossName: 'INFERNO',
+        pointValue: 3800,
+        neonColor: const Color(0xFFFF4400),
+        size: Vector2(90, 90),
+      );
 
   // Inferno è ROSSO FUOCO → mob rossi/fuoco (kamikaze + timeBomb + proton).
   @override
-  List<EnemyType> get colorMatchedMinions =>
-      const [EnemyType.kamikaze, EnemyType.timeBomb, EnemyType.proton];
+  List<EnemyType> get colorMatchedMinions => const [
+    EnemyType.kamikaze,
+    EnemyType.timeBomb,
+    EnemyType.proton,
+  ];
 
   @override
   int getPhase() {
@@ -49,10 +52,12 @@ class InfernoBoss extends BossBase {
 
     // Movimento veloce in pattern circolare
     final speed = 120.0 + currentPhase * 40;
-    final targetPos = playerPosition + Vector2(
-      math.cos(_moveAngle) * (200 - currentPhase * 30),
-      math.sin(_moveAngle) * (200 - currentPhase * 30),
-    );
+    final targetPos =
+        playerPosition +
+        Vector2(
+          math.cos(_moveAngle) * (200 - currentPhase * 30),
+          math.sin(_moveAngle) * (200 - currentPhase * 30),
+        );
     final toTarget = targetPos - position;
     if (toTarget.length > 5) {
       position += toTarget.normalized() * speed * dt;
@@ -127,8 +132,9 @@ class InfernoBoss extends BossBase {
         final centerOff = Offset(cx + offset.x, cy + offset.y);
         _trailOuterPaint.color = neonColor.withValues(alpha: lifeT * 0.35);
         canvas.drawCircle(centerOff, trailR * 1.4, _trailOuterPaint);
-        _trailCorePaint.color =
-            const Color(0xFFFFDD00).withValues(alpha: lifeT * 0.65);
+        _trailCorePaint.color = const Color(
+          0xFFFFDD00,
+        ).withValues(alpha: lifeT * 0.65);
         canvas.drawCircle(centerOff, trailR * 0.7, _trailCorePaint);
       }
     }
@@ -138,8 +144,9 @@ class InfernoBoss extends BossBase {
       final heatPulse = 0.5 + math.sin(_flamePhase * 0.4) * 0.5;
       for (int i = 0; i < 3; i++) {
         final ringR = r * (1.3 + i * 0.3 + heatPulse * 0.15);
-        _heatRingPaint.color = const Color(0xFFFF6600)
-            .withValues(alpha: (0.18 - i * 0.05) * heatPulse);
+        _heatRingPaint.color = const Color(
+          0xFFFF6600,
+        ).withValues(alpha: (0.18 - i * 0.05) * heatPulse);
         _heatRingPaint.strokeWidth = 1.5;
         canvas.drawCircle(Offset(cx, cy), ringR, _heatRingPaint);
       }
@@ -154,8 +161,7 @@ class InfernoBoss extends BossBase {
         final eAlpha = (1.0 - ((ePhase * 0.3) % 1.0)) * 0.9;
         _emberPaint.color = const Color(0xFFFFAA00).withValues(alpha: eAlpha);
         canvas.drawCircle(
-          Offset(cx + math.cos(eAngle) * eDist,
-              cy + math.sin(eAngle) * eDist),
+          Offset(cx + math.cos(eAngle) * eDist, cy + math.sin(eAngle) * eDist),
           1.5 + (i % 3) * 0.5,
           _emberPaint,
         );
@@ -186,13 +192,15 @@ class InfernoBoss extends BossBase {
     if (scale <= 1.01) {
       // Nucleo incandescente a 3 strati (fuoco vero)
       final pulse = 0.7 + math.sin(_flamePhase * 0.5) * 0.3;
-      _coreGlowPaint.color =
-          const Color(0xFFFF8800).withValues(alpha: pulse * 0.6);
+      _coreGlowPaint.color = const Color(
+        0xFFFF8800,
+      ).withValues(alpha: pulse * 0.6);
       canvas.drawCircle(Offset.zero, r * 0.38, _coreGlowPaint);
       _corePaint.color = const Color(0xFFFFDD00).withValues(alpha: pulse);
       canvas.drawCircle(Offset.zero, r * 0.25, _corePaint);
-      _coreWhitePaint.color =
-          const Color(0xFFFFFFFF).withValues(alpha: 0.85 * pulse);
+      _coreWhitePaint.color = const Color(
+        0xFFFFFFFF,
+      ).withValues(alpha: 0.85 * pulse);
       canvas.drawCircle(Offset.zero, r * 0.11, _coreWhitePaint);
     }
     canvas.restore();
@@ -205,16 +213,19 @@ class _FlameTrail {
   _FlameTrail({required this.position, required this.lifetime});
 }
 
-class _FireBullet extends PositionComponent with HasGameReference<GeometryFightGame> {
+class _FireBullet extends PositionComponent
+    with HasGameReference<GeometryFightGame> {
   final Vector2 direction;
   late Vector2 _velocity;
   double _lifetime = 3.0;
 
   _FireBullet({required this.direction})
-      : super(size: Vector2(18, 18), anchor: Anchor.center);
+    : super(size: Vector2(18, 18), anchor: Anchor.center);
 
   @override
-  Future<void> onLoad() async { _velocity = direction.normalized() * 200; }
+  Future<void> onLoad() async {
+    _velocity = direction.normalized() * 200;
+  }
 
   @override
   void update(double dt) {

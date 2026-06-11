@@ -18,14 +18,14 @@ class DroneEnemy extends EnemyBase {
   static final Paint _corePaint = Paint();
 
   DroneEnemy()
-      : super(
-          hp: 1,
-          speed: 80, // Parte lento come GW (80 px/s)
-          pointValue: 2,
-          geomValue: 1,
-          neonColor: const Color(0xFF4488FF), // Blu brillante come GW
-          size: Vector2(18, 18),
-        );
+    : super(
+        hp: 1,
+        speed: 80, // Parte lento come GW (80 px/s)
+        pointValue: 2,
+        geomValue: 1,
+        neonColor: const Color(0xFF4488FF), // Blu brillante come GW
+        size: Vector2(18, 18),
+      );
 
   @override
   void updateBehavior(double dt) {
@@ -69,10 +69,26 @@ class DroneEnemy extends EnemyBase {
 
       // Circuiti: linee dai vertici interni a quelli esterni
       _circuitPaint.color = paint.color.withValues(alpha: 0.25);
-      canvas.drawLine(Offset(0, -innerS), Offset(innerS * 0.7, -innerS * 0.7), _circuitPaint);
-      canvas.drawLine(Offset(innerS, 0), Offset(innerS * 0.7, innerS * 0.7), _circuitPaint);
-      canvas.drawLine(Offset(0, innerS), Offset(-innerS * 0.7, innerS * 0.7), _circuitPaint);
-      canvas.drawLine(Offset(-innerS, 0), Offset(-innerS * 0.7, -innerS * 0.7), _circuitPaint);
+      canvas.drawLine(
+        Offset(0, -innerS),
+        Offset(innerS * 0.7, -innerS * 0.7),
+        _circuitPaint,
+      );
+      canvas.drawLine(
+        Offset(innerS, 0),
+        Offset(innerS * 0.7, innerS * 0.7),
+        _circuitPaint,
+      );
+      canvas.drawLine(
+        Offset(0, innerS),
+        Offset(-innerS * 0.7, innerS * 0.7),
+        _circuitPaint,
+      );
+      canvas.drawLine(
+        Offset(-innerS, 0),
+        Offset(-innerS * 0.7, -innerS * 0.7),
+        _circuitPaint,
+      );
 
       // 4 nodi energetici sui vertici (pulsanti sfasati)
       for (int i = 0; i < 4; i++) {

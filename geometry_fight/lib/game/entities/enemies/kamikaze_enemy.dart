@@ -29,14 +29,14 @@ class KamikazeEnemy extends EnemyBase {
   static final Paint _eyePaint = Paint();
 
   KamikazeEnemy()
-      : super(
-          hp: 1,
-          speed: 500,
-          pointValue: 4,
-          geomValue: 2,
-          neonColor: NeonColors.red,
-          size: Vector2(16, 22),
-        );
+    : super(
+        hp: 1,
+        speed: 500,
+        pointValue: 4,
+        geomValue: 2,
+        neonColor: NeonColors.red,
+        size: Vector2(16, 22),
+      );
 
   @override
   void updateBehavior(double dt) {
@@ -72,8 +72,10 @@ class KamikazeEnemy extends EnemyBase {
         // handles tunnel Y clamping after updateBehavior.
         final hx = size.x / 2;
         final hy = size.y / 2;
-        if (position.x <= hx || position.x >= arenaWidth - hx ||
-            position.y <= hy || position.y >= arenaHeight - hy) {
+        if (position.x <= hx ||
+            position.x >= arenaWidth - hx ||
+            position.y <= hy ||
+            position.y >= arenaHeight - hy) {
           _state = KamikazeState.recovering;
           _stateTimer = 0.8;
         }
@@ -97,7 +99,8 @@ class KamikazeEnemy extends EnemyBase {
   Vector2 _pickCardinalDirection() {
     if (forcedRushDirection != null) {
       final dir = forcedRushDirection!.clone();
-      forcedRushDirection = null; // consume: i rush successivi targettano il player
+      forcedRushDirection =
+          null; // consume: i rush successivi targettano il player
       return dir;
     }
     final diff = playerPosition - position;
@@ -121,9 +124,11 @@ class KamikazeEnemy extends EnemyBase {
     // Direzione di puntamento
     final angle = _rushDirection != null
         ? math.atan2(_rushDirection!.y, _rushDirection!.x) + math.pi / 2
-        : math.atan2(playerPosition.y - position.y,
-                playerPosition.x - position.x) +
-            math.pi / 2;
+        : math.atan2(
+                playerPosition.y - position.y,
+                playerPosition.x - position.x,
+              ) +
+              math.pi / 2;
 
     // === EFFETTI SPECIALI PER STATO (solo layer principale) ===
     if (scale <= 1.01) {
@@ -134,7 +139,9 @@ class KamikazeEnemy extends EnemyBase {
           final ringR = 20 - chargeProgress * 12 + i * 8;
           final ringAlpha = chargeProgress * 0.4 - i * 0.1;
           if (ringAlpha > 0) {
-            _ringPaint.color = const Color(0xFFFF4400).withValues(alpha: ringAlpha);
+            _ringPaint.color = const Color(
+              0xFFFF4400,
+            ).withValues(alpha: ringAlpha);
             canvas.drawCircle(Offset(cx, cy), ringR, _ringPaint);
           }
         }
@@ -147,10 +154,13 @@ class KamikazeEnemy extends EnemyBase {
           final trailAlpha = 0.4 - i * 0.09;
           final trailSize = 3.0 - i * 0.55;
           if (trailAlpha > 0 && trailSize > 0) {
-            _trailPaint.color = const Color(0xFFFF6600).withValues(alpha: trailAlpha);
+            _trailPaint.color = const Color(
+              0xFFFF6600,
+            ).withValues(alpha: trailAlpha);
             canvas.drawCircle(
               Offset(cx + trailDir.x * i * 7, cy + trailDir.y * i * 7),
-              trailSize, _trailPaint,
+              trailSize,
+              _trailPaint,
             );
           }
         }
@@ -174,14 +184,14 @@ class KamikazeEnemy extends EnemyBase {
 
     // === CORPO PRINCIPALE — freccia slanciata più aggressiva ===
     final path = Path()
-      ..moveTo(0, -h * 1.15)                  // punta affilata più lunga
+      ..moveTo(0, -h * 1.15) // punta affilata più lunga
       ..lineTo(w * 0.55, -h * 0.35)
-      ..lineTo(w, h * 0.55)                   // ala destra
+      ..lineTo(w, h * 0.55) // ala destra
       ..lineTo(w * 0.45, h * 0.35)
       ..lineTo(w * 0.25, h * 0.2)
       ..lineTo(-w * 0.25, h * 0.2)
       ..lineTo(-w * 0.45, h * 0.35)
-      ..lineTo(-w, h * 0.55)                  // ala sinistra
+      ..lineTo(-w, h * 0.55) // ala sinistra
       ..lineTo(-w * 0.55, -h * 0.35)
       ..close();
     canvas.drawPath(path, paint);
@@ -213,8 +223,16 @@ class KamikazeEnemy extends EnemyBase {
       // Linea centrale di rinforzo (chiglia) + dettagli ala
       _linePaint.color = paint.color.withValues(alpha: 0.35);
       canvas.drawLine(Offset(0, -h * 0.9), Offset(0, h * 0.35), _linePaint);
-      canvas.drawLine(Offset(w * 0.35, h * 0.1), Offset(w * 0.75, h * 0.35), _linePaint);
-      canvas.drawLine(Offset(-w * 0.35, h * 0.1), Offset(-w * 0.75, h * 0.35), _linePaint);
+      canvas.drawLine(
+        Offset(w * 0.35, h * 0.1),
+        Offset(w * 0.75, h * 0.35),
+        _linePaint,
+      );
+      canvas.drawLine(
+        Offset(-w * 0.35, h * 0.1),
+        Offset(-w * 0.75, h * 0.35),
+        _linePaint,
+      );
 
       // Nucleo pulsante — più evidente durante charging/rushing
       if (_state == KamikazeState.charging || _state == KamikazeState.rushing) {
@@ -222,10 +240,22 @@ class KamikazeEnemy extends EnemyBase {
         final pulseScale = _state == KamikazeState.charging
             ? 1.0 + math.sin(idlePhase * _flashRate * 2) * 0.25
             : 1.0;
-        _coreOuterPaint.color = const Color(0xFFFF4400).withValues(alpha: glowAlpha * 0.5);
-        canvas.drawCircle(Offset(0, -h * 0.15), 4 * pulseScale, _coreOuterPaint);
-        _coreInnerPaint.color = const Color(0xFFFFAA00).withValues(alpha: glowAlpha);
-        canvas.drawCircle(Offset(0, -h * 0.15), 2 * pulseScale, _coreInnerPaint);
+        _coreOuterPaint.color = const Color(
+          0xFFFF4400,
+        ).withValues(alpha: glowAlpha * 0.5);
+        canvas.drawCircle(
+          Offset(0, -h * 0.15),
+          4 * pulseScale,
+          _coreOuterPaint,
+        );
+        _coreInnerPaint.color = const Color(
+          0xFFFFAA00,
+        ).withValues(alpha: glowAlpha);
+        canvas.drawCircle(
+          Offset(0, -h * 0.15),
+          2 * pulseScale,
+          _coreInnerPaint,
+        );
       } else {
         // Occhio rosso minaccioso in idle
         _eyePaint.color = const Color(0xFFFF2200).withValues(alpha: 0.7);

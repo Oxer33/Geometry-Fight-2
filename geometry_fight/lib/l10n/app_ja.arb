@@ -33,10 +33,10 @@
   "settingsReset": "データリセット",
   "settingsDangerZone": "危険ゾーン",
   "settingsTestDebug": "TEST / DEBUG",
-  "settingsAddCredits": "+1000 クレジット",
+  "settingsAddCredits": "+100K クレジット",
   "settingsResetPurchases": "購入リセット",
   "settingsPurchasesReset": "購入がリセットされました!",
-  "settingsCreditsAdded": "+1000クレジット!合計: {total}",
+  "settingsCreditsAdded": "+100Kクレジット!合計: {total}",
   "@settingsCreditsAdded": {
     "placeholders": { "total": { "type": "int" } }
   },
@@ -116,6 +116,7 @@
   "modeWaves": "ウェーブ",
   "modeGravityInferno": "重力インフェルノ",
   "modeSnake": "スネーク",
+  "modeArenaShrink": "アリーナ収縮",
 
   "splashSkip": "スキップ",
   "splashTapToStart": "タップしてスタート",

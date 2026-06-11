@@ -9,8 +9,7 @@ import 'enemy_base.dart';
 final Paint _titanWavePaint = Paint()
   ..style = PaintingStyle.stroke
   ..strokeWidth = 3;
-final Paint _titanArmorBorderPaint = Paint()
-  ..style = PaintingStyle.stroke;
+final Paint _titanArmorBorderPaint = Paint()..style = PaintingStyle.stroke;
 final Paint _titanFillPaint = Paint();
 final Paint _titanCrossPaint = Paint()
   ..strokeWidth = 1.5
@@ -19,7 +18,7 @@ final Paint _titanCrossPaint = Paint()
 /// TITAN - Nemico corazzato enorme, lento ma devastante.
 /// Forma: grande esagono con armatura a strati e nucleo pulsante
 /// Colore: bronzo/rame (#CC8844)
-/// Comportamento: si muove lentamente verso il player, immune ai proiettili 
+/// Comportamento: si muove lentamente verso il player, immune ai proiettili
 /// frontali (solo danno da dietro o area), emette onde d'urto periodiche
 /// che spingono via il player e i proiettili.
 /// Spawn: dal wave 14, massimo 2 per ondata
@@ -31,14 +30,14 @@ class TitanEnemy extends EnemyBase {
   double _armorPhase = 0;
 
   TitanEnemy()
-      : super(
-          hp: 25, // Molto resistente!
-          speed: 60, // Molto lento
-          pointValue: 25,
-          geomValue: 8,
-          neonColor: const Color(0xFFCC8844), // Bronzo/rame
-          size: Vector2(40, 40), // Grande
-        );
+    : super(
+        hp: 25, // Molto resistente!
+        speed: 60, // Molto lento
+        pointValue: 25,
+        geomValue: 8,
+        neonColor: const Color(0xFFCC8844), // Bronzo/rame
+        size: Vector2(40, 40), // Grande
+      );
 
   @override
   void updateBehavior(double dt) {
@@ -77,11 +76,19 @@ class TitanEnemy extends EnemyBase {
         if (game.isTunnelMode) {
           final camY = game.camera.viewfinder.position.y;
           final halfH = game.tunnelHeight / 2;
-          game.player.position.y = game.player.position.y
-              .clamp(camY - halfH + 10, camY + halfH - 10);
+          game.player.position.y = game.player.position.y.clamp(
+            camY - halfH + 10,
+            camY + halfH - 10,
+          );
         } else {
-          game.player.position.x = game.player.position.x.clamp(10.0, arenaWidth - 10);
-          game.player.position.y = game.player.position.y.clamp(10.0, arenaHeight - 10);
+          game.player.position.x = game.player.position.x.clamp(
+            10.0,
+            arenaWidth - 10,
+          );
+          game.player.position.y = game.player.position.y.clamp(
+            10.0,
+            arenaHeight - 10,
+          );
         }
       }
     }
@@ -133,16 +140,26 @@ class TitanEnemy extends EnemyBase {
 
     // Nucleo interno pulsante
     final pulseR = r * 0.4 + math.sin(_armorPhase * 3) * 2;
-    EnemyBase.detailPaint.color = const Color(0xFFFFAA00).withValues(alpha: 0.35);
+    EnemyBase.detailPaint.color = const Color(
+      0xFFFFAA00,
+    ).withValues(alpha: 0.35);
     canvas.drawCircle(Offset(cx, cy), pulseR * 1.5, EnemyBase.detailPaint);
-    EnemyBase.detailPaint.color = const Color(0xFFFFAA00).withValues(alpha: 0.8);
+    EnemyBase.detailPaint.color = const Color(
+      0xFFFFAA00,
+    ).withValues(alpha: 0.8);
     canvas.drawCircle(Offset(cx, cy), pulseR, EnemyBase.detailPaint);
 
     // Croce interna (indicatore armatura)
     _titanCrossPaint.color = paint.color.withValues(alpha: 0.5);
     canvas.drawLine(
-      Offset(cx - r * 0.3, cy), Offset(cx + r * 0.3, cy), _titanCrossPaint);
+      Offset(cx - r * 0.3, cy),
+      Offset(cx + r * 0.3, cy),
+      _titanCrossPaint,
+    );
     canvas.drawLine(
-      Offset(cx, cy - r * 0.3), Offset(cx, cy + r * 0.3), _titanCrossPaint);
+      Offset(cx, cy - r * 0.3),
+      Offset(cx, cy + r * 0.3),
+      _titanCrossPaint,
+    );
   }
 }

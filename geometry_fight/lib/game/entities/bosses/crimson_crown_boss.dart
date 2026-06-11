@@ -32,20 +32,23 @@ class CrimsonCrownBoss extends BossBase {
   static final _lavaRingPaint = Paint()..style = PaintingStyle.stroke;
 
   CrimsonCrownBoss()
-      : super(
-          // +50% HP (era 400, ora 600) — richiesta utente:
-          // "crimson crown deve avere il 50% in piu degli hp".
-          hp: 600,
-          bossName: 'CRIMSON CROWN',
-          pointValue: 5000,
-          neonColor: NeonColors.orange,
-          size: Vector2(100, 100),
-        );
+    : super(
+        // +50% HP (era 400, ora 600) — richiesta utente:
+        // "crimson crown deve avere il 50% in piu degli hp".
+        hp: 600,
+        bossName: 'CRIMSON CROWN',
+        pointValue: 5000,
+        neonColor: NeonColors.orange,
+        size: Vector2(100, 100),
+      );
 
   // CrimsonCrown è ARANCIONE/ROSSO → mob fuoco (kamikaze + swarmDrone + splitter).
   @override
-  List<EnemyType> get colorMatchedMinions =>
-      const [EnemyType.kamikaze, EnemyType.swarmDrone, EnemyType.splitter];
+  List<EnemyType> get colorMatchedMinions => const [
+    EnemyType.kamikaze,
+    EnemyType.swarmDrone,
+    EnemyType.splitter,
+  ];
 
   // CrimsonCrown ha orbi orbitanti che estendono il visivo verso il bordo
   // bbox (size 100). Override 0.7 → 0.85 → bullet ricochet/homing
@@ -77,7 +80,8 @@ class CrimsonCrownBoss extends BossBase {
       _orbShootTimer = currentPhase >= 1 ? 1.8 : 2.5;
       for (int i = 0; i < 6; i++) {
         final orbAngle = _phase * 0.8 + i * math.pi * 2 / 6;
-        final orbPos = position +
+        final orbPos =
+            position +
             Vector2(math.cos(orbAngle) * 60, math.sin(orbAngle) * 60);
         // Homing (fase 1+): guard NaN se player esattamente su orb.
         Vector2 bdir;
@@ -90,7 +94,10 @@ class CrimsonCrownBoss extends BossBase {
           bdir = Vector2(math.cos(orbAngle), math.sin(orbAngle));
         }
         final bullet = EnemyBullet(
-            direction: bdir, speed: 260, color: NeonColors.orange);
+          direction: bdir,
+          speed: 260,
+          color: NeonColors.orange,
+        );
         bullet.position = orbPos.clone();
         game.world.add(bullet);
       }
@@ -106,8 +113,12 @@ class CrimsonCrownBoss extends BossBase {
           _lavaMineTarget = playerPosition.clone();
           _lavaMineWindUp = 0.6;
           // FX warning (piccolo — non danneggia).
-          game.spawnExplosion(_lavaMineTarget!, NeonColors.red,
-              radius: 20, particleCount: 5);
+          game.spawnExplosion(
+            _lavaMineTarget!,
+            NeonColors.red,
+            radius: 20,
+            particleCount: 5,
+          );
         }
       } else {
         _lavaMineWindUp -= dt;
@@ -116,9 +127,10 @@ class CrimsonCrownBoss extends BossBase {
           for (int i = 0; i < 8; i++) {
             final ang = i * math.pi / 4;
             final bullet = EnemyBullet(
-                direction: Vector2(math.cos(ang), math.sin(ang)),
-                speed: 90, // un po' più veloce visto il warning dato
-                color: NeonColors.red);
+              direction: Vector2(math.cos(ang), math.sin(ang)),
+              speed: 90, // un po' più veloce visto il warning dato
+              color: NeonColors.red,
+            );
             bullet.position = minePos.clone();
             game.world.add(bullet);
           }
@@ -135,15 +147,18 @@ class CrimsonCrownBoss extends BossBase {
     final cy = size.y / 2;
 
     final corePulse = 0.85 + math.sin(_phase * 4) * 0.15;
-    _corePulsePaint.color = NeonColors.red
-        .withValues(alpha: paint.color.a * 0.45 * corePulse);
+    _corePulsePaint.color = NeonColors.red.withValues(
+      alpha: paint.color.a * 0.45 * corePulse,
+    );
     canvas.drawCircle(Offset(cx, cy), 35 * scale * corePulse, _corePulsePaint);
     canvas.drawCircle(Offset(cx, cy), 25 * scale, paint);
-    _corePulsePaint.color = const Color(0xFFFFDD22)
-        .withValues(alpha: paint.color.a * corePulse);
+    _corePulsePaint.color = const Color(
+      0xFFFFDD22,
+    ).withValues(alpha: paint.color.a * corePulse);
     canvas.drawCircle(Offset(cx, cy), 12 * scale * corePulse, _corePulsePaint);
-    _corePulsePaint.color =
-        const Color(0xFFFFFFFF).withValues(alpha: paint.color.a * 0.9);
+    _corePulsePaint.color = const Color(
+      0xFFFFFFFF,
+    ).withValues(alpha: paint.color.a * 0.9);
     canvas.drawCircle(Offset(cx, cy), 4 * scale, _corePulsePaint);
 
     // Corona 5 spike sopra il corpo
@@ -162,11 +177,13 @@ class CrimsonCrownBoss extends BossBase {
         ..lineTo(tx, ty)
         ..lineTo(bx2, by2)
         ..close();
-      _crownSpikePaint.color =
-          const Color(0xFFFFAA22).withValues(alpha: paint.color.a);
+      _crownSpikePaint.color = const Color(
+        0xFFFFAA22,
+      ).withValues(alpha: paint.color.a);
       canvas.drawPath(path, _crownSpikePaint);
-      _crownSpikePaint.color =
-          const Color(0xFFFFFFFF).withValues(alpha: paint.color.a * 0.8);
+      _crownSpikePaint.color = const Color(
+        0xFFFFFFFF,
+      ).withValues(alpha: paint.color.a * 0.8);
       canvas.drawCircle(Offset(tx, ty), 2 * scale, _crownSpikePaint);
     }
 
@@ -176,26 +193,31 @@ class CrimsonCrownBoss extends BossBase {
       final ox = cx + math.cos(orbAngle) * 60 * scale;
       final oy = cy + math.sin(orbAngle) * 60 * scale;
       final orbPulse = 0.6 + math.sin(_phase * 5 + i) * 0.4;
-      _orbGlowPaint.color = NeonColors.orange
-          .withValues(alpha: paint.color.a * 0.4 * orbPulse);
+      _orbGlowPaint.color = NeonColors.orange.withValues(
+        alpha: paint.color.a * 0.4 * orbPulse,
+      );
       canvas.drawCircle(Offset(ox, oy), 10 * scale * orbPulse, _orbGlowPaint);
-      _orbPaint.color =
-          const Color(0xFFFF5522).withValues(alpha: paint.color.a);
+      _orbPaint.color = const Color(
+        0xFFFF5522,
+      ).withValues(alpha: paint.color.a);
       canvas.drawCircle(Offset(ox, oy), 5 * scale, _orbPaint);
-      _orbPaint.color =
-          const Color(0xFFFFFFFF).withValues(alpha: paint.color.a * orbPulse);
+      _orbPaint.color = const Color(
+        0xFFFFFFFF,
+      ).withValues(alpha: paint.color.a * orbPulse);
       canvas.drawCircle(Offset(ox, oy), 2 * scale, _orbPaint);
     }
 
     // Lava ring danger (fase 3)
     if (currentPhase >= 2) {
       final strobe = 0.4 + math.sin(_phase * 10) * 0.3;
-      _lavaRingPaint.color =
-          NeonColors.red.withValues(alpha: strobe * paint.color.a);
+      _lavaRingPaint.color = NeonColors.red.withValues(
+        alpha: strobe * paint.color.a,
+      );
       _lavaRingPaint.strokeWidth = 2.5;
       canvas.drawCircle(Offset(cx, cy), 55 * scale, _lavaRingPaint);
-      _lavaRingPaint.color = const Color(0xFFFFAA00)
-          .withValues(alpha: strobe * 0.5 * paint.color.a);
+      _lavaRingPaint.color = const Color(
+        0xFFFFAA00,
+      ).withValues(alpha: strobe * 0.5 * paint.color.a);
       canvas.drawCircle(Offset(cx, cy), 70 * scale, _lavaRingPaint);
     }
   }

@@ -9,7 +9,8 @@ import '../projectiles.dart';
 /// Stati: APPROACH (lento) → LOCK_ON (pausa, mira) → CHARGE (dash veloce con scudo)
 /// Lo scudo assorbe danni frontali. Vulnerabile dal retro e durante recovery.
 class ShieldEnemy extends EnemyBase {
-  double shieldHp = 10; // 2× scudo (richiesta utente: support più efficaci). Era 5.
+  double shieldHp =
+      10; // 2× scudo (richiesta utente: support più efficaci). Era 5.
   double _shieldRegenTimer = 0;
   final double _shieldRegenDelay = 4.0;
 
@@ -17,8 +18,7 @@ class ShieldEnemy extends EnemyBase {
   static final Paint _ringPaint = Paint()
     ..style = PaintingStyle.stroke
     ..strokeWidth = 0.8;
-  static final Paint _shieldPaint = Paint()
-    ..style = PaintingStyle.stroke;
+  static final Paint _shieldPaint = Paint()..style = PaintingStyle.stroke;
   static final Paint _segPaint = Paint();
   static final Paint _regenPaint = Paint()
     ..style = PaintingStyle.stroke
@@ -44,14 +44,14 @@ class ShieldEnemy extends EnemyBase {
   static const double _chargeRange = 200; // Distanza per iniziare lock-on
 
   ShieldEnemy()
-      : super(
-          hp: 3,
-          speed: 100,
-          pointValue: 12,
-          geomValue: 4,
-          neonColor: NeonColors.purple,
-          size: Vector2(24, 24),
-        );
+    : super(
+        hp: 3,
+        speed: 100,
+        pointValue: 12,
+        geomValue: 4,
+        neonColor: NeonColors.purple,
+        size: Vector2(24, 24),
+      );
 
   @override
   void updateBehavior(double dt) {
@@ -70,7 +70,9 @@ class ShieldEnemy extends EnemyBase {
 
     // GW Repulsor mechanic: respingi proiettili frontali attivamente (throttled: ogni 3 frame)
     _repelFrameCounter++;
-    if (_repelFrameCounter >= 3 && shieldHp > 0 && _state != _ShieldState.recovering) {
+    if (_repelFrameCounter >= 3 &&
+        shieldHp > 0 &&
+        _state != _ShieldState.recovering) {
       _repelFrameCounter = 0;
       _repelNearbyBullets();
     }
@@ -96,7 +98,10 @@ class ShieldEnemy extends EnemyBase {
           if (delta.length2 > 1e-6) {
             _chargeDir = delta.normalized();
           } else {
-            _chargeDir = Vector2(1, 0); // default rightward if player is exactly on top
+            _chargeDir = Vector2(
+              1,
+              0,
+            ); // default rightward if player is exactly on top
           }
         }
         if (_stateTimer >= _lockOnDuration) {
@@ -157,7 +162,12 @@ class ShieldEnemy extends EnemyBase {
       if (delta.length2 < 1e-6) continue;
       final pushDir = delta.normalized();
       bullet.position += pushDir * 30;
-      game.spawnExplosion(bullet.position, NeonColors.purple, radius: 8, particleCount: 3);
+      game.spawnExplosion(
+        bullet.position,
+        NeonColors.purple,
+        radius: 8,
+        particleCount: 3,
+      );
       bullet.removeFromParent();
       shieldHp -= 0.5;
       if (shieldHp < 0) shieldHp = 0;
@@ -193,12 +203,16 @@ class ShieldEnemy extends EnemyBase {
       // Nucleo pulsante (più veloce durante lock-on, no blur)
       final pulseSpeed = _state == _ShieldState.lockOn ? 12.0 : 4.0;
       final pulse = 0.4 + math.sin(idlePhase * pulseSpeed) * 0.3;
-      EnemyBase.detailPaint.color = const Color(0xFFFFFFFF).withValues(alpha: pulse);
+      EnemyBase.detailPaint.color = const Color(
+        0xFFFFFFFF,
+      ).withValues(alpha: pulse);
       canvas.drawCircle(Offset(cx, cy), r * 0.25, EnemyBase.detailPaint);
 
       // Indicatore stato (flash durante charging, no blur)
       if (_state == _ShieldState.charging) {
-        EnemyBase.detailPaint.color = const Color(0xFFFFFFFF).withValues(alpha: 0.4);
+        EnemyBase.detailPaint.color = const Color(
+          0xFFFFFFFF,
+        ).withValues(alpha: 0.4);
         canvas.drawCircle(Offset(cx, cy), r * 1.3, EnemyBase.detailPaint);
       }
     }
@@ -216,7 +230,9 @@ class ShieldEnemy extends EnemyBase {
       canvas.rotate(angle);
 
       // Glow dello scudo (no blur per performance)
-      EnemyBase.detailPaint.color = NeonColors.purple.withValues(alpha: shieldAlpha * 0.3);
+      EnemyBase.detailPaint.color = NeonColors.purple.withValues(
+        alpha: shieldAlpha * 0.3,
+      );
       EnemyBase.detailPaint.strokeWidth = 5;
       EnemyBase.detailPaint.style = PaintingStyle.stroke;
       canvas.drawArc(
@@ -229,9 +245,12 @@ class ShieldEnemy extends EnemyBase {
       EnemyBase.detailPaint.style = PaintingStyle.fill;
 
       // Scudo principale (più largo durante charge)
-      final shieldArc =
-          _state == _ShieldState.charging ? math.pi * 0.9 : math.pi * 2 / 3;
-      _shieldPaint.color = NeonColors.purple.withValues(alpha: shieldAlpha * 0.7);
+      final shieldArc = _state == _ShieldState.charging
+          ? math.pi * 0.9
+          : math.pi * 2 / 3;
+      _shieldPaint.color = NeonColors.purple.withValues(
+        alpha: shieldAlpha * 0.7,
+      );
       _shieldPaint.strokeWidth = 2.5 * scale;
       canvas.drawArc(
         Rect.fromCircle(center: Offset.zero, radius: 14 * scale),
@@ -261,10 +280,14 @@ class ShieldEnemy extends EnemyBase {
       canvas.restore();
     } else if (scale <= 1.01) {
       // Indicatore rigenerazione (cerchio tratteggiato debole)
-      final regenProgress =
-          (_shieldRegenTimer / _shieldRegenDelay).clamp(0.0, 1.0);
+      final regenProgress = (_shieldRegenTimer / _shieldRegenDelay).clamp(
+        0.0,
+        1.0,
+      );
       if (regenProgress > 0) {
-        _regenPaint.color = NeonColors.purple.withValues(alpha: regenProgress * 0.2);
+        _regenPaint.color = NeonColors.purple.withValues(
+          alpha: regenProgress * 0.2,
+        );
         canvas.drawCircle(Offset(cx, cy), 14 * scale, _regenPaint);
       }
     }

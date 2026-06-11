@@ -72,60 +72,94 @@ class _MainMenuScreenState extends State<MainMenuScreen>
     unawaited(MusicManager.playIntro());
 
     _bgController = AnimationController(
-      vsync: this, duration: const Duration(seconds: 20),
+      vsync: this,
+      duration: const Duration(seconds: 20),
     )..repeat();
 
     _particleController = AnimationController(
-      vsync: this, duration: const Duration(seconds: 30),
+      vsync: this,
+      duration: const Duration(seconds: 30),
     )..repeat();
 
     _pulseController = AnimationController(
-      vsync: this, duration: const Duration(milliseconds: 1800),
+      vsync: this,
+      duration: const Duration(milliseconds: 1800),
     )..repeat(reverse: true);
 
     _scanlineController = AnimationController(
-      vsync: this, duration: const Duration(seconds: 4),
+      vsync: this,
+      duration: const Duration(seconds: 4),
     )..repeat();
 
     _borderController = AnimationController(
-      vsync: this, duration: const Duration(seconds: 3),
+      vsync: this,
+      duration: const Duration(seconds: 3),
     )..repeat();
 
     _glitchController = AnimationController(
-      vsync: this, duration: const Duration(milliseconds: 4000),
+      vsync: this,
+      duration: const Duration(milliseconds: 4000),
     )..repeat();
 
     _entranceController = AnimationController(
-      vsync: this, duration: const Duration(milliseconds: 2200),
+      vsync: this,
+      duration: const Duration(milliseconds: 2200),
     );
 
     // Stagger con timing cinematografico
     _titleFade = Tween(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _entranceController, curve: const Interval(0.0, 0.3, curve: Curves.easeOut)),
+      CurvedAnimation(
+        parent: _entranceController,
+        curve: const Interval(0.0, 0.3, curve: Curves.easeOut),
+      ),
     );
     _titleSlide = Tween(begin: const Offset(0, -0.5), end: Offset.zero).animate(
-      CurvedAnimation(parent: _entranceController, curve: const Interval(0.0, 0.35, curve: Curves.easeOutBack)),
+      CurvedAnimation(
+        parent: _entranceController,
+        curve: const Interval(0.0, 0.35, curve: Curves.easeOutBack),
+      ),
     );
     _titleScale = Tween(begin: 0.7, end: 1.0).animate(
-      CurvedAnimation(parent: _entranceController, curve: const Interval(0.0, 0.35, curve: Curves.easeOutBack)),
+      CurvedAnimation(
+        parent: _entranceController,
+        curve: const Interval(0.0, 0.35, curve: Curves.easeOutBack),
+      ),
     );
     _statsFade = Tween(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _entranceController, curve: const Interval(0.2, 0.5, curve: Curves.easeOut)),
+      CurvedAnimation(
+        parent: _entranceController,
+        curve: const Interval(0.2, 0.5, curve: Curves.easeOut),
+      ),
     );
     _playFade = Tween(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _entranceController, curve: const Interval(0.35, 0.65, curve: Curves.easeOut)),
+      CurvedAnimation(
+        parent: _entranceController,
+        curve: const Interval(0.35, 0.65, curve: Curves.easeOut),
+      ),
     );
     _playSlide = Tween(begin: const Offset(0.4, 0), end: Offset.zero).animate(
-      CurvedAnimation(parent: _entranceController, curve: const Interval(0.35, 0.65, curve: Curves.easeOutCubic)),
+      CurvedAnimation(
+        parent: _entranceController,
+        curve: const Interval(0.35, 0.65, curve: Curves.easeOutCubic),
+      ),
     );
     _gridFade = Tween(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _entranceController, curve: const Interval(0.5, 0.8, curve: Curves.easeOut)),
+      CurvedAnimation(
+        parent: _entranceController,
+        curve: const Interval(0.5, 0.8, curve: Curves.easeOut),
+      ),
     );
     _gridSlide = Tween(begin: const Offset(0.3, 0), end: Offset.zero).animate(
-      CurvedAnimation(parent: _entranceController, curve: const Interval(0.5, 0.8, curve: Curves.easeOutCubic)),
+      CurvedAnimation(
+        parent: _entranceController,
+        curve: const Interval(0.5, 0.8, curve: Curves.easeOutCubic),
+      ),
     );
     _settingsFade = Tween(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _entranceController, curve: const Interval(0.7, 1.0, curve: Curves.easeOut)),
+      CurvedAnimation(
+        parent: _entranceController,
+        curve: const Interval(0.7, 1.0, curve: Curves.easeOut),
+      ),
     );
 
     _entranceController.forward();
@@ -161,81 +195,91 @@ class _MainMenuScreenState extends State<MainMenuScreen>
     AchievementManager.updateProgress('daily_streak_7', streak);
     AchievementManager.updateProgress('daily_streak_30', streak);
     final l10n = AppLocalizations.of(context)!;
-    unawaited(showDialog<void>(
-      context: context,
-      barrierDismissible: false,
-      builder: (ctx) => AlertDialog(
-        backgroundColor: const Color(0xFF0A0A14),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(14),
-          side: const BorderSide(color: Color(0xFFFFD700), width: 2),
-        ),
-        title: Text(
-          l10n.dailyRewardTitle,
-          textAlign: TextAlign.center,
-          style: const TextStyle(
-            color: Color(0xFFFFD700),
-            fontWeight: FontWeight.w900,
-            fontFamily: 'monospace',
-            letterSpacing: 4,
+    unawaited(
+      showDialog<void>(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx) => AlertDialog(
+          backgroundColor: const Color(0xFF0A0A14),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+            side: const BorderSide(color: Color(0xFFFFD700), width: 2),
           ),
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.diamond, color: Color(0xFFFFD700), size: 48),
-            const SizedBox(height: 12),
-            Text(
-              l10n.dailyRewardGeoms(reward),
-              style: const TextStyle(
-                color: Color(0xFFFFD700),
-                fontSize: 28,
-                fontWeight: FontWeight.w900,
-                fontFamily: 'monospace',
-              ),
+          title: Text(
+            l10n.dailyRewardTitle,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: Color(0xFFFFD700),
+              fontWeight: FontWeight.w900,
+              fontFamily: 'monospace',
+              letterSpacing: 4,
             ),
-            const SizedBox(height: 8),
-            Text(
-              streak == 1
-                  ? l10n.dailyRewardStreakOne(streak)
-                  : l10n.dailyRewardStreakMany(streak),
-              style: TextStyle(
-                color: Colors.white.withValues(alpha: 0.7),
-                fontSize: 12,
-                fontFamily: 'monospace',
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.diamond, color: Color(0xFFFFD700), size: 48),
+              const SizedBox(height: 12),
+              Text(
+                l10n.dailyRewardGeoms(reward),
+                style: const TextStyle(
+                  color: Color(0xFFFFD700),
+                  fontSize: 28,
+                  fontWeight: FontWeight.w900,
+                  fontFamily: 'monospace',
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                streak == 1
+                    ? l10n.dailyRewardStreakOne(streak)
+                    : l10n.dailyRewardStreakMany(streak),
+                style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.7),
+                  fontSize: 12,
+                  fontFamily: 'monospace',
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: Text(
+                l10n.continueAction,
+                style: const TextStyle(
+                  color: Color(0xFFFFD700),
+                  fontWeight: FontWeight.w900,
+                  fontFamily: 'monospace',
+                  letterSpacing: 2,
+                ),
               ),
             ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: Text(
-              l10n.continueAction,
-              style: const TextStyle(
-                color: Color(0xFFFFD700),
-                fontWeight: FontWeight.w900,
-                fontFamily: 'monospace',
-                letterSpacing: 2,
-              ),
-            ),
-          ),
-        ],
       ),
-    ));
+    );
   }
 
   String _formatNumber(int n) {
-    if (n >= 1000000000) { return '${(n / 1000000000).toStringAsFixed(1)}B'; }
-    if (n >= 1000000) { return '${(n / 1000000).toStringAsFixed(1)}M'; }
-    if (n >= 1000) { return '${(n / 1000).toStringAsFixed(1)}K'; }
+    if (n >= 1000000000) {
+      return '${(n / 1000000000).toStringAsFixed(1)}B';
+    }
+    if (n >= 1000000) {
+      return '${(n / 1000000).toStringAsFixed(1)}M';
+    }
+    if (n >= 1000) {
+      return '${(n / 1000).toStringAsFixed(1)}K';
+    }
     return n.toString();
   }
 
   String _formatTime(int seconds) {
     final h = seconds ~/ 3600;
     final m = (seconds % 3600) ~/ 60;
-    if (h > 0) { return '${h}h ${m}m'; }
+    if (h > 0) {
+      return '${h}h ${m}m';
+    }
     return '${m}m';
   }
 
@@ -305,14 +349,16 @@ class _MainMenuScreenState extends State<MainMenuScreen>
 
           // === VERSIONE ===
           Positioned(
-            bottom: 8, right: 12,
+            bottom: 8,
+            right: 12,
             child: FadeTransition(
               opacity: _settingsFade,
               child: Text(
                 'v2.0',
                 style: TextStyle(
                   color: Colors.white.withValues(alpha: 0.12),
-                  fontSize: 10, fontFamily: 'monospace',
+                  fontSize: 10,
+                  fontFamily: 'monospace',
                 ),
               ),
             ),
@@ -343,17 +389,11 @@ class _MainMenuScreenState extends State<MainMenuScreen>
                 ),
               ),
               const SizedBox(height: 28),
-              FadeTransition(
-                opacity: _statsFade,
-                child: _buildStatsBar(),
-              ),
+              FadeTransition(opacity: _statsFade, child: _buildStatsBar()),
             ],
           ),
         ),
-        Expanded(
-          flex: 4,
-          child: _buildRightPanel(),
-        ),
+        Expanded(flex: 4, child: _buildRightPanel()),
       ],
     );
   }
@@ -398,7 +438,9 @@ class _MainMenuScreenState extends State<MainMenuScreen>
         // Micro glitch: shift orizzontale per 2 frame ogni ~4s
         final glitchPhase = _glitchController.value;
         final isGlitch = glitchPhase > 0.92 && glitchPhase < 0.94;
-        final glitchOffset = isGlitch ? (_glitchRandom.nextDouble() - 0.5) * 4 : 0.0;
+        final glitchOffset = isGlitch
+            ? (_glitchRandom.nextDouble() - 0.5) * 4
+            : 0.0;
 
         return Transform.translate(
           offset: Offset(glitchOffset, 0),
@@ -440,7 +482,12 @@ class _MainMenuScreenState extends State<MainMenuScreen>
                           end: Alignment.bottomRight,
                           colors: [
                             HSVColor.fromAHSV(1, hue % 360, 0.8, 1).toColor(),
-                            HSVColor.fromAHSV(1, (hue + 120) % 360, 0.9, 1).toColor(),
+                            HSVColor.fromAHSV(
+                              1,
+                              (hue + 120) % 360,
+                              0.9,
+                              1,
+                            ).toColor(),
                           ],
                         ).createShader(bounds),
                         child: Text(
@@ -452,7 +499,12 @@ class _MainMenuScreenState extends State<MainMenuScreen>
                             fontFamily: 'monospace',
                             shadows: [
                               Shadow(
-                                color: HSVColor.fromAHSV(0.6, hue % 360, 1, 1).toColor(),
+                                color: HSVColor.fromAHSV(
+                                  0.6,
+                                  hue % 360,
+                                  1,
+                                  1,
+                                ).toColor(),
                                 blurRadius: glow * 2,
                               ),
                               Shadow(
@@ -492,7 +544,8 @@ class _MainMenuScreenState extends State<MainMenuScreen>
     );
   }
 
-  Widget _glitchText(String text, {
+  Widget _glitchText(
+    String text, {
     required double fontSize,
     required double letterSpacing,
     required double glow,
@@ -506,7 +559,10 @@ class _MainMenuScreenState extends State<MainMenuScreen>
       letterSpacing: letterSpacing,
       shadows: [
         Shadow(color: Colors.cyanAccent, blurRadius: glow),
-        Shadow(color: Colors.cyanAccent.withValues(alpha: 0.4), blurRadius: glow * 2.5),
+        Shadow(
+          color: Colors.cyanAccent.withValues(alpha: 0.4),
+          blurRadius: glow * 2.5,
+        ),
       ],
     );
 
@@ -521,7 +577,8 @@ class _MainMenuScreenState extends State<MainMenuScreen>
         Transform.translate(
           offset: const Offset(-2, 0),
           child: Text(
-            text, textAlign: TextAlign.center,
+            text,
+            textAlign: TextAlign.center,
             style: baseStyle.copyWith(
               color: Colors.redAccent.withValues(alpha: 0.7),
               shadows: [],
@@ -532,7 +589,8 @@ class _MainMenuScreenState extends State<MainMenuScreen>
         Transform.translate(
           offset: const Offset(2, 0),
           child: Text(
-            text, textAlign: TextAlign.center,
+            text,
+            textAlign: TextAlign.center,
             style: baseStyle.copyWith(
               color: Colors.blueAccent.withValues(alpha: 0.7),
               shadows: [],
@@ -550,7 +608,10 @@ class _MainMenuScreenState extends State<MainMenuScreen>
   Widget _buildStatsBar() {
     final l10n = AppLocalizations.of(context)!;
     final totalKills = _saveData.stats['totalKills'] ?? 0;
-    final bestScore = _saveData.highscores.values.fold<int>(0, (a, b) => a > b ? a : b);
+    final bestScore = _saveData.highscores.values.fold<int>(
+      0,
+      (a, b) => a > b ? a : b,
+    );
     final gold = _saveData.goldGeoms;
     final playtime = _saveData.totalPlaytime;
 
@@ -571,24 +632,41 @@ class _MainMenuScreenState extends State<MainMenuScreen>
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          _StatChip(icon: Icons.hexagon_outlined, value: _formatNumber(gold),
-              color: const Color(0xFFFFD700), label: l10n.geoms),
+          _StatChip(
+            icon: Icons.hexagon_outlined,
+            value: _formatNumber(gold),
+            color: const Color(0xFFFFD700),
+            label: l10n.geoms,
+          ),
           _statDivider(),
-          _StatChip(icon: Icons.emoji_events_outlined, value: _formatNumber(bestScore),
-              color: Colors.cyanAccent, label: l10n.best),
+          _StatChip(
+            icon: Icons.emoji_events_outlined,
+            value: _formatNumber(bestScore),
+            color: Colors.cyanAccent,
+            label: l10n.best,
+          ),
           _statDivider(),
-          _StatChip(icon: Icons.track_changes, value: _formatNumber(totalKills),
-              color: const Color(0xFFFF4466), label: l10n.kills),
+          _StatChip(
+            icon: Icons.track_changes,
+            value: _formatNumber(totalKills),
+            color: const Color(0xFFFF4466),
+            label: l10n.kills,
+          ),
           _statDivider(),
-          _StatChip(icon: Icons.timer_outlined, value: _formatTime(playtime),
-              color: const Color(0xFF00FF88), label: l10n.timeLabel),
+          _StatChip(
+            icon: Icons.timer_outlined,
+            value: _formatTime(playtime),
+            color: const Color(0xFF00FF88),
+            label: l10n.timeLabel,
+          ),
         ],
       ),
     );
   }
 
   Widget _statDivider() => Container(
-    width: 1, height: 28,
+    width: 1,
+    height: 28,
     margin: const EdgeInsets.symmetric(horizontal: 10),
     decoration: BoxDecoration(
       gradient: LinearGradient(
@@ -614,20 +692,14 @@ class _MainMenuScreenState extends State<MainMenuScreen>
         // === BOTTONE GIOCA ===
         SlideTransition(
           position: _playSlide,
-          child: FadeTransition(
-            opacity: _playFade,
-            child: _buildPlayButton(),
-          ),
+          child: FadeTransition(opacity: _playFade, child: _buildPlayButton()),
         ),
         const SizedBox(height: 22),
 
         // === GRIGLIA BOTTONI ===
         SlideTransition(
           position: _gridSlide,
-          child: FadeTransition(
-            opacity: _gridFade,
-            child: _buildButtonGrid(),
-          ),
+          child: FadeTransition(opacity: _gridFade, child: _buildButtonGrid()),
         ),
 
         const SizedBox(height: 16),
@@ -659,78 +731,94 @@ class _MainMenuScreenState extends State<MainMenuScreen>
           child: Transform.scale(
             scale: scale,
             child: // === ANIMATED BORDER (rotating gradient) ===
-                NeonAnimatedBuilder(
-                  animation: _borderController,
-                  builder: (context, _) {
-                    return CustomPaint(
-                      painter: _AnimatedBorderPainter(
-                        progress: _borderController.value,
-                        borderRadius: 14,
-                        strokeWidth: 2,
-                        glowIntensity: pulse,
+            NeonAnimatedBuilder(
+              animation: _borderController,
+              builder: (context, _) {
+                return CustomPaint(
+                  painter: _AnimatedBorderPainter(
+                    progress: _borderController.value,
+                    borderRadius: 14,
+                    strokeWidth: 2,
+                    glowIntensity: pulse,
+                  ),
+                  child: Container(
+                    width: 240,
+                    padding: const EdgeInsets.symmetric(
+                      vertical: 18,
+                      horizontal: 24,
+                    ),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(14),
+                      gradient: LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        colors: [
+                          Colors.cyanAccent.withValues(
+                            alpha: 0.06 + pulse * 0.04,
+                          ),
+                          const Color(
+                            0xFFFF00AA,
+                          ).withValues(alpha: 0.02 + pulse * 0.02),
+                          Colors.cyanAccent.withValues(
+                            alpha: 0.04 + pulse * 0.03,
+                          ),
+                        ],
                       ),
-                      child: Container(
-                        width: 240,
-                        padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 24),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(14),
-                          gradient: LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [
-                              Colors.cyanAccent.withValues(alpha: 0.06 + pulse * 0.04),
-                              const Color(0xFFFF00AA).withValues(alpha: 0.02 + pulse * 0.02),
-                              Colors.cyanAccent.withValues(alpha: 0.04 + pulse * 0.03),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.cyanAccent.withValues(
+                            alpha: 0.1 + pulse * 0.12,
+                          ),
+                          blurRadius: 20 + pulse * 15,
+                          spreadRadius: 2,
+                        ),
+                        BoxShadow(
+                          color: const Color(
+                            0xFFFF00AA,
+                          ).withValues(alpha: 0.04 + pulse * 0.04),
+                          blurRadius: 30 + pulse * 10,
+                          spreadRadius: 1,
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(
+                          Icons.play_arrow_rounded,
+                          color: Colors.cyanAccent,
+                          size: 30,
+                          shadows: [
+                            Shadow(color: Colors.cyanAccent, blurRadius: 10),
+                          ],
+                        ),
+                        const SizedBox(width: 10),
+                        Text(
+                          l10n.menuPlay,
+                          style: TextStyle(
+                            color: Colors.cyanAccent,
+                            fontSize: 24,
+                            fontWeight: FontWeight.w900,
+                            fontFamily: 'monospace',
+                            letterSpacing: 8,
+                            shadows: [
+                              const Shadow(
+                                color: Colors.cyanAccent,
+                                blurRadius: 10,
+                              ),
+                              Shadow(
+                                color: Colors.cyanAccent.withValues(alpha: 0.5),
+                                blurRadius: 20,
+                              ),
                             ],
                           ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.cyanAccent.withValues(alpha: 0.1 + pulse * 0.12),
-                              blurRadius: 20 + pulse * 15,
-                              spreadRadius: 2,
-                            ),
-                            BoxShadow(
-                              color: const Color(0xFFFF00AA).withValues(alpha: 0.04 + pulse * 0.04),
-                              blurRadius: 30 + pulse * 10,
-                              spreadRadius: 1,
-                            ),
-                          ],
                         ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(
-                              Icons.play_arrow_rounded,
-                              color: Colors.cyanAccent,
-                              size: 30,
-                              shadows: [
-                                Shadow(color: Colors.cyanAccent, blurRadius: 10),
-                              ],
-                            ),
-                            const SizedBox(width: 10),
-                            Text(
-                              l10n.menuPlay,
-                              style: TextStyle(
-                                color: Colors.cyanAccent,
-                                fontSize: 24,
-                                fontWeight: FontWeight.w900,
-                                fontFamily: 'monospace',
-                                letterSpacing: 8,
-                                shadows: [
-                                  const Shadow(color: Colors.cyanAccent, blurRadius: 10),
-                                  Shadow(
-                                    color: Colors.cyanAccent.withValues(alpha: 0.5),
-                                    blurRadius: 20,
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
-                ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
           ),
         );
       },
@@ -745,7 +833,9 @@ class _MainMenuScreenState extends State<MainMenuScreen>
         icon: Icons.storefront_outlined,
         color: const Color(0xFFFFD700),
         onTap: widget.onShop,
-        badge: _saveData.goldGeoms > 0 ? _formatNumber(_saveData.goldGeoms) : null,
+        badge: _saveData.goldGeoms > 0
+            ? _formatNumber(_saveData.goldGeoms)
+            : null,
       ),
       if (widget.onLeaderboard != null)
         _NeonMenuButton(
@@ -772,16 +862,18 @@ class _MainMenuScreenState extends State<MainMenuScreen>
 
     final rows = <Widget>[];
     for (int i = 0; i < buttons.length; i += 2) {
-      rows.add(Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          buttons[i],
-          if (i + 1 < buttons.length) ...[
-            const SizedBox(width: 10),
-            buttons[i + 1],
+      rows.add(
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            buttons[i],
+            if (i + 1 < buttons.length) ...[
+              const SizedBox(width: 10),
+              buttons[i + 1],
+            ],
           ],
-        ],
-      ));
+        ),
+      );
       if (i + 2 < buttons.length) {
         rows.add(const SizedBox(height: 10));
       }
@@ -800,8 +892,10 @@ class _StatChip extends StatelessWidget {
   final String label;
 
   const _StatChip({
-    required this.icon, required this.value,
-    required this.color, required this.label,
+    required this.icon,
+    required this.value,
+    required this.color,
+    required this.label,
   });
 
   @override
@@ -814,17 +908,27 @@ class _StatChip extends StatelessWidget {
           children: [
             Icon(icon, color: color, size: 13),
             const SizedBox(width: 4),
-            Text(value, style: TextStyle(
-              color: color, fontSize: 13,
-              fontWeight: FontWeight.bold, fontFamily: 'monospace',
-            )),
+            Text(
+              value,
+              style: TextStyle(
+                color: color,
+                fontSize: 13,
+                fontWeight: FontWeight.bold,
+                fontFamily: 'monospace',
+              ),
+            ),
           ],
         ),
         const SizedBox(height: 2),
-        Text(label, style: TextStyle(
-          color: Colors.white.withValues(alpha: 0.18),
-          fontSize: 7, fontFamily: 'monospace', letterSpacing: 1,
-        )),
+        Text(
+          label,
+          style: TextStyle(
+            color: Colors.white.withValues(alpha: 0.18),
+            fontSize: 7,
+            fontFamily: 'monospace',
+            letterSpacing: 1,
+          ),
+        ),
       ],
     );
   }
@@ -840,8 +944,11 @@ class _NeonMenuButton extends StatefulWidget {
   final String? badge;
 
   const _NeonMenuButton({
-    required this.text, required this.icon,
-    required this.color, required this.onTap, this.badge,
+    required this.text,
+    required this.icon,
+    required this.color,
+    required this.onTap,
+    this.badge,
   });
 
   @override
@@ -857,7 +964,8 @@ class _NeonMenuButtonState extends State<_NeonMenuButton>
   void initState() {
     super.initState();
     _hoverGlow = AnimationController(
-      vsync: this, duration: const Duration(milliseconds: 200),
+      vsync: this,
+      duration: const Duration(milliseconds: 200),
     );
   }
 
@@ -931,9 +1039,13 @@ class _NeonMenuButtonState extends State<_NeonMenuButton>
                       ),
                       if (widget.badge != null)
                         Positioned(
-                          top: -7, right: -16,
+                          top: -7,
+                          right: -16,
                           child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 4,
+                              vertical: 1,
+                            ),
                             decoration: BoxDecoration(
                               color: widget.color.withValues(alpha: 0.15),
                               borderRadius: BorderRadius.circular(6),
@@ -945,8 +1057,10 @@ class _NeonMenuButtonState extends State<_NeonMenuButton>
                             child: Text(
                               widget.badge!,
                               style: TextStyle(
-                                color: widget.color, fontSize: 7,
-                                fontWeight: FontWeight.bold, fontFamily: 'monospace',
+                                color: widget.color,
+                                fontSize: 7,
+                                fontWeight: FontWeight.bold,
+                                fontFamily: 'monospace',
                               ),
                             ),
                           ),
@@ -959,8 +1073,10 @@ class _NeonMenuButtonState extends State<_NeonMenuButton>
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       color: widget.color.withValues(alpha: 0.7 + glow * 0.3),
-                      fontSize: 10, fontWeight: FontWeight.w900,
-                      fontFamily: 'monospace', letterSpacing: 1,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w900,
+                      fontFamily: 'monospace',
+                      letterSpacing: 1,
                     ),
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -983,8 +1099,10 @@ class _NeonSmallButton extends StatefulWidget {
   final VoidCallback onTap;
 
   const _NeonSmallButton({
-    required this.text, required this.icon,
-    required this.color, required this.onTap,
+    required this.text,
+    required this.icon,
+    required this.color,
+    required this.onTap,
   });
 
   @override
@@ -998,7 +1116,10 @@ class _NeonSmallButtonState extends State<_NeonSmallButton> {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTapDown: (_) => setState(() => _pressed = true),
-      onTapUp: (_) { setState(() => _pressed = false); widget.onTap(); },
+      onTapUp: (_) {
+        setState(() => _pressed = false);
+        widget.onTap();
+      },
       onTapCancel: () => setState(() => _pressed = false),
       child: AnimatedScale(
         scale: _pressed ? 0.95 : 1.0,
@@ -1021,11 +1142,16 @@ class _NeonSmallButtonState extends State<_NeonSmallButton> {
               children: [
                 Icon(widget.icon, color: widget.color, size: 16),
                 const SizedBox(width: 6),
-                Text(widget.text, style: TextStyle(
-                  color: widget.color, fontSize: 11,
-                  fontWeight: FontWeight.w900,
-                  fontFamily: 'monospace', letterSpacing: 2,
-                )),
+                Text(
+                  widget.text,
+                  style: TextStyle(
+                    color: widget.color,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w900,
+                    fontFamily: 'monospace',
+                    letterSpacing: 2,
+                  ),
+                ),
               ],
             ),
           ),
@@ -1111,21 +1237,29 @@ class _AnimatedLinePainter extends CustomPainter {
     // Punto luminoso che scorre
     final spotX = progress * size.width;
     final spotPaint = Paint()
-      ..shader = RadialGradient(
-        colors: [
-          color.withValues(alpha: 0.6),
-          color.withValues(alpha: 0.0),
-        ],
-      ).createShader(Rect.fromCircle(center: Offset(spotX, size.height / 2), radius: 30));
+      ..shader =
+          RadialGradient(
+            colors: [
+              color.withValues(alpha: 0.6),
+              color.withValues(alpha: 0.0),
+            ],
+          ).createShader(
+            Rect.fromCircle(center: Offset(spotX, size.height / 2), radius: 30),
+          );
 
     canvas.drawRect(
-      Rect.fromCenter(center: Offset(spotX, size.height / 2), width: 60, height: 4),
+      Rect.fromCenter(
+        center: Offset(spotX, size.height / 2),
+        width: 60,
+        height: 4,
+      ),
       spotPaint,
     );
   }
 
   @override
-  bool shouldRepaint(covariant _AnimatedLinePainter old) => old.progress != progress;
+  bool shouldRepaint(covariant _AnimatedLinePainter old) =>
+      old.progress != progress;
 }
 
 // ==================== DEEP SPACE BACKGROUND ====================
@@ -1157,19 +1291,28 @@ class _DeepSpaceBackgroundPainter extends CustomPainter {
     final t = progress * math.pi * 2;
 
     // Nebulosa animata (2 blob colorati sottili)
-    _drawNebula(canvas, size, t,
+    _drawNebula(
+      canvas,
+      size,
+      t,
       center: Offset(size.width * 0.2, size.height * 0.3),
       color: const Color(0xFF00AAFF),
       radius: 200,
       alpha: 0.015,
     );
-    _drawNebula(canvas, size, t + 1.5,
+    _drawNebula(
+      canvas,
+      size,
+      t + 1.5,
       center: Offset(size.width * 0.75, size.height * 0.7),
       color: const Color(0xFFFF00AA),
       radius: 180,
       alpha: 0.012,
     );
-    _drawNebula(canvas, size, t + 3.0,
+    _drawNebula(
+      canvas,
+      size,
+      t + 3.0,
       center: Offset(size.width * 0.5, size.height * 0.5),
       color: const Color(0xFF00FF88),
       radius: 150,
@@ -1201,7 +1344,9 @@ class _DeepSpaceBackgroundPainter extends CustomPainter {
     }
 
     // Forme geometriche lente
-    final shapePaint = Paint()..style = PaintingStyle.stroke..strokeWidth = 1.2;
+    final shapePaint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.2;
     final random = math.Random(42);
 
     for (int i = 0; i < 6; i++) {
@@ -1213,7 +1358,12 @@ class _DeepSpaceBackgroundPainter extends CustomPainter {
       final y = by + math.sin(angle * 0.6) * 45;
       final r = 25 + random.nextDouble() * 45;
 
-      final colors = [Colors.cyanAccent, const Color(0xFFFF00AA), const Color(0xFFFFD700), const Color(0xFF00FF88)];
+      final colors = [
+        Colors.cyanAccent,
+        const Color(0xFFFF00AA),
+        const Color(0xFFFFD700),
+        const Color(0xFF00FF88),
+      ];
       shapePaint.color = colors[i % colors.length].withValues(alpha: 0.035);
 
       switch (i % 4) {
@@ -1224,7 +1374,14 @@ class _DeepSpaceBackgroundPainter extends CustomPainter {
           canvas.save();
           canvas.translate(x, y);
           canvas.rotate(angle * 0.1);
-          canvas.drawRect(Rect.fromCenter(center: Offset.zero, width: r * 1.6, height: r * 1.6), shapePaint);
+          canvas.drawRect(
+            Rect.fromCenter(
+              center: Offset.zero,
+              width: r * 1.6,
+              height: r * 1.6,
+            ),
+            shapePaint,
+          );
           canvas.restore();
           break;
         case 2:
@@ -1233,7 +1390,11 @@ class _DeepSpaceBackgroundPainter extends CustomPainter {
             final a = j * math.pi * 2 / 3 - math.pi / 2 + angle * 0.08;
             final px = x + r * math.cos(a);
             final py = y + r * math.sin(a);
-            if (j == 0) { path.moveTo(px, py); } else { path.lineTo(px, py); }
+            if (j == 0) {
+              path.moveTo(px, py);
+            } else {
+              path.lineTo(px, py);
+            }
           }
           path.close();
           canvas.drawPath(path, shapePaint);
@@ -1244,7 +1405,11 @@ class _DeepSpaceBackgroundPainter extends CustomPainter {
             final a = j * math.pi / 3 + angle * 0.06;
             final px = x + r * math.cos(a);
             final py = y + r * math.sin(a);
-            if (j == 0) { path.moveTo(px, py); } else { path.lineTo(px, py); }
+            if (j == 0) {
+              path.moveTo(px, py);
+            } else {
+              path.lineTo(px, py);
+            }
           }
           path.close();
           canvas.drawPath(path, shapePaint);
@@ -1253,7 +1418,10 @@ class _DeepSpaceBackgroundPainter extends CustomPainter {
     }
   }
 
-  void _drawNebula(Canvas canvas, Size size, double t, {
+  void _drawNebula(
+    Canvas canvas,
+    Size size,
+    double t, {
     required Offset center,
     required Color color,
     required double radius,
@@ -1320,12 +1488,19 @@ class _NeonParticlesPainter extends CustomPainter {
       final speed = s.speed;
       final phase = s.phase;
 
-      final x = baseX + math.cos(t * speed + phase) * 35 +
+      final x =
+          baseX +
+          math.cos(t * speed + phase) * 35 +
           math.sin(t * speed * 0.6 + phase * 2.3) * 18;
-      final y = baseY + math.sin(t * speed * 0.7 + phase) * 28 +
+      final y =
+          baseY +
+          math.sin(t * speed * 0.7 + phase) * 28 +
           math.cos(t * speed * 0.4 + phase * 1.7) * 12;
 
-      final alpha = (0.05 + math.sin(t * speed * 2 + phase) * 0.04).clamp(0.01, 0.12);
+      final alpha = (0.05 + math.sin(t * speed * 2 + phase) * 0.04).clamp(
+        0.01,
+        0.12,
+      );
       final radius = s.radius;
       final color = _particleColors[i % _particleColors.length];
 
@@ -1403,5 +1578,6 @@ class _ScanlinePainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant _ScanlinePainter old) => old.progress != progress;
+  bool shouldRepaint(covariant _ScanlinePainter old) =>
+      old.progress != progress;
 }

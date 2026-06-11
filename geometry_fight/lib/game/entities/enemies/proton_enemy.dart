@@ -21,13 +21,13 @@ class ProtonEnemy extends EnemyBase {
   static final math.Random _rng = math.Random();
 
   ProtonEnemy({Vector2? direction, super.speed = 280})
-      : super(
-          hp: 1,
-          pointValue: 2,
-          geomValue: 1,
-          neonColor: const Color(0xFFFF2200),
-          size: Vector2(8, 8),
-        ) {
+    : super(
+        hp: 1,
+        pointValue: 2,
+        geomValue: 1,
+        neonColor: const Color(0xFFFF2200),
+        size: Vector2(8, 8),
+      ) {
     if (direction != null) {
       _moveDir = direction.normalized();
     } else {
@@ -99,7 +99,8 @@ class ProtonEnemy extends EnemyBase {
           EnemyBase.detailPaint.color = neonColor.withValues(alpha: trailAlpha);
           canvas.drawCircle(
             Offset(cx - _moveDir.x * i * 3.5, cy - _moveDir.y * i * 3.5),
-            trailR, EnemyBase.detailPaint,
+            trailR,
+            EnemyBase.detailPaint,
           );
         }
       }
@@ -129,12 +130,17 @@ class ProtonEnemy extends EnemyBase {
       canvas.save();
       canvas.translate(cx, cy);
       canvas.rotate(idlePhase * 8);
-      canvas.drawOval(Rect.fromCenter(center: Offset.zero, width: r * 2.2, height: r * 1.0), _ringPaint);
+      canvas.drawOval(
+        Rect.fromCenter(center: Offset.zero, width: r * 2.2, height: r * 1.0),
+        _ringPaint,
+      );
       canvas.restore();
 
       // Nucleo bianco brillante
       final pulse = 0.5 + math.sin(idlePhase * 8) * 0.3;
-      EnemyBase.detailPaint.color = const Color(0xFFFFFFFF).withValues(alpha: pulse);
+      EnemyBase.detailPaint.color = const Color(
+        0xFFFFFFFF,
+      ).withValues(alpha: pulse);
       canvas.drawCircle(Offset(cx, cy), r * 0.35, EnemyBase.detailPaint);
     }
   }

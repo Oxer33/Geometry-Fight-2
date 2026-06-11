@@ -33,10 +33,10 @@
   "settingsReset": "СБРОС ДАННЫХ",
   "settingsDangerZone": "ОПАСНАЯ ЗОНА",
   "settingsTestDebug": "TEST / DEBUG",
-  "settingsAddCredits": "+1000 КРЕДИТОВ",
+  "settingsAddCredits": "+100K КРЕДИТОВ",
   "settingsResetPurchases": "СБРОС ПОКУПОК",
   "settingsPurchasesReset": "Покупки сброшены!",
-  "settingsCreditsAdded": "+1000 кредитов! Всего: {total}",
+  "settingsCreditsAdded": "+100K кредитов! Всего: {total}",
   "@settingsCreditsAdded": {
     "placeholders": { "total": { "type": "int" } }
   },
@@ -116,6 +116,7 @@
   "modeWaves": "ВОЛНЫ",
   "modeGravityInferno": "ГРАВИТАЦИОННЫЙ АД",
   "modeSnake": "ЗМЕЙКА",
+  "modeArenaShrink": "СЖАТИЕ АРЕНЫ",
 
   "splashSkip": "ПРОПУСТИТЬ",
   "splashTapToStart": "НАЖМИТЕ, ЧТОБЫ НАЧАТЬ",

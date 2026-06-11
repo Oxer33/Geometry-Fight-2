@@ -22,16 +22,16 @@ class MineEnemy extends EnemyBase {
   bool _exploded = false;
 
   MineEnemy()
-      : super(
-          hp: 2,
-          speed: 0,
-          pointValue: 3,
-          geomValue: 2,
-          neonColor: NeonColors.gray,
-          // Size -30% dal precedente 40x40 (richiesta utente: "enormi").
-          // 40 × 0.7 = 28 → mantiene ~1.4x rispetto all'originale 20x20.
-          size: Vector2(28, 28),
-        );
+    : super(
+        hp: 2,
+        speed: 0,
+        pointValue: 3,
+        geomValue: 2,
+        neonColor: NeonColors.gray,
+        // Size -30% dal precedente 40x40 (richiesta utente: "enormi").
+        // 40 × 0.7 = 28 → mantiene ~1.4x rispetto all'originale 20x20.
+        size: Vector2(28, 28),
+      );
 
   @override
   void updateBehavior(double dt) {
@@ -43,7 +43,8 @@ class MineEnemy extends EnemyBase {
 
     if (_detonating) {
       _detonateTimer -= dt;
-      if (_detonateTimer <= 0 && !_exploded) { // FIX C2: evita double-death se già esplosa
+      if (_detonateTimer <= 0 && !_exploded) {
+        // FIX C2: evita double-death se già esplosa
         onDeath(); // onDeath chiama _explode + super.onDeath
         return;
       }
@@ -64,7 +65,12 @@ class MineEnemy extends EnemyBase {
     if (distanceToPlayer < 100) {
       game.player.takeDamage();
     }
-    game.spawnExplosion(position, NeonColors.gray, radius: 100, particleCount: 25);
+    game.spawnExplosion(
+      position,
+      NeonColors.gray,
+      radius: 100,
+      particleCount: 25,
+    );
     if (!game.isTunnelMode) {
       game.grid.applyForce(position, 150, 800);
     }
@@ -94,8 +100,9 @@ class MineEnemy extends EnemyBase {
         // Scalati anch'essi con size (base 15 era tarato per size 20).
         final ringR = (15 + ring * 12.0 + progress * 20) * (size.x / 20);
         final ringAlpha = (0.3 - ring * 0.08) * (1 - progress);
-        _mineRingPaint.color =
-            const Color(0xFFFF0000).withValues(alpha: ringAlpha);
+        _mineRingPaint.color = const Color(
+          0xFFFF0000,
+        ).withValues(alpha: ringAlpha);
         canvas.drawCircle(Offset(cx, cy), ringR, _mineRingPaint);
       }
     }
@@ -133,10 +140,10 @@ class MineEnemy extends EnemyBase {
 
     if (scale <= 1.01) {
       // Archi rotanti di pericolo (2 archi opposti)
-      _mineArcPaint.color = (_detonating
-              ? const Color(0xFFFF4400)
-              : paint.color)
-          .withValues(alpha: 0.25);
+      _mineArcPaint.color =
+          (_detonating ? const Color(0xFFFF4400) : paint.color).withValues(
+            alpha: 0.25,
+          );
       canvas.save();
       canvas.translate(cx, cy);
       canvas.rotate(idlePhase * 1.5);
@@ -151,7 +158,10 @@ class MineEnemy extends EnemyBase {
         final angle = i * math.pi / 2 + idlePhase * 0.5;
         canvas.drawLine(
           Offset(cx, cy),
-          Offset(cx + math.cos(angle) * r * 0.6, cy + math.sin(angle) * r * 0.6),
+          Offset(
+            cx + math.cos(angle) * r * 0.6,
+            cy + math.sin(angle) * r * 0.6,
+          ),
           _mineCircuitPaint,
         );
       }
@@ -177,8 +187,12 @@ class MineEnemy extends EnemyBase {
         final tipColor = _detonating ? const Color(0xFFFF4400) : paint.color;
         EnemyBase.detailPaint.color = tipColor.withValues(alpha: tipPulse);
         canvas.drawCircle(
-          Offset(cx + math.cos(tipAngle) * r * 0.9, cy + math.sin(tipAngle) * r * 0.9),
-          0.8, EnemyBase.detailPaint,
+          Offset(
+            cx + math.cos(tipAngle) * r * 0.9,
+            cy + math.sin(tipAngle) * r * 0.9,
+          ),
+          0.8,
+          EnemyBase.detailPaint,
         );
       }
     }

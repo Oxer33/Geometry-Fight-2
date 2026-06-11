@@ -23,15 +23,15 @@ class TeslaEnemy extends EnemyBase {
   static const double _soloOrbitSpeed = 1.5; // rad/s quando solo
 
   TeslaEnemy()
-      : _flankAngle = math.Random().nextDouble() * math.pi * 2,
-        super(
-          hp: 3,
-          speed: 110,
-          pointValue: 12,
-          geomValue: 4,
-          neonColor: const Color(0xFFFFEE44),
-          size: Vector2(20, 20),
-        );
+    : _flankAngle = math.Random().nextDouble() * math.pi * 2,
+      super(
+        hp: 3,
+        speed: 110,
+        pointValue: 12,
+        geomValue: 4,
+        neonColor: const Color(0xFFFFEE44),
+        size: Vector2(20, 20),
+      );
 
   @override
   void updateBehavior(double dt) {
@@ -54,7 +54,8 @@ class TeslaEnemy extends EnemyBase {
     if (otherTeslas.isEmpty) {
       // SOLO: orbita attorno al player
       _flankAngle += _soloOrbitSpeed * dt;
-      final targetPos = playerPosition +
+      final targetPos =
+          playerPosition +
           Vector2(math.cos(_flankAngle), math.sin(_flankAngle)) *
               _orbitDistance;
       final toTarget = targetPos - position;
@@ -79,7 +80,8 @@ class TeslaEnemy extends EnemyBase {
       final targetAngle =
           avgAngle + math.pi + (myIndex - otherTeslas.length / 2) * spreadAngle;
 
-      final targetPos = playerPosition +
+      final targetPos =
+          playerPosition +
           Vector2(math.cos(targetAngle), math.sin(targetAngle)) *
               _orbitDistance;
       final toTarget = targetPos - position;
@@ -165,7 +167,9 @@ class TeslaEnemy extends EnemyBase {
     if (scale <= 1.01) {
       // Nucleo elettrico pulsante (no blur per performance)
       final spark = 0.4 + math.sin(_sparkPhase) * 0.4;
-      EnemyBase.detailPaint.color = const Color(0xFFFFFFFF).withValues(alpha: spark);
+      EnemyBase.detailPaint.color = const Color(
+        0xFFFFFFFF,
+      ).withValues(alpha: spark);
       canvas.drawCircle(Offset.zero, r * 0.3, EnemyBase.detailPaint);
 
       // Mini scariche dal centro ai vertici
@@ -201,7 +205,12 @@ class TeslaEnemy extends EnemyBase {
 
   /// Disegna un arco elettrico tra due punti
   void _drawLightning(
-      Canvas canvas, double x1, double y1, double x2, double y2) {
+    Canvas canvas,
+    double x1,
+    double y1,
+    double x2,
+    double y2,
+  ) {
     final dx = x2 - x1;
     final dy = y2 - y1;
     const steps = 6;

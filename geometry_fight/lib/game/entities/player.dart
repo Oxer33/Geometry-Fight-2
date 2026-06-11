@@ -20,21 +20,32 @@ enum WeaponType {
   laser,
   plasma,
   ricochet,
-  homing,
   triple,
   overdrive,
+
   /// Iter 13 (utente): Gauss Cannon — colpo lento+forte + aspirazione
   /// nemici a corto raggio per 1s ad ogni colpo. Fire interval 0.7s.
   gauss,
+
   /// Iter 13 (utente): Chain Lightning — bolt rimbalza tra fino a 5
   /// nemici. Damage decade per jump. Shop-unlock.
   chainLightning,
+
+  /// Shotgun — raffica a cono ravvicinata (8 pellet arancioni, corto raggio).
+  shotgun,
+
+  /// Railgun — colpo hitscan che perfora tutti i nemici in linea retta.
+  railgun,
+
+  /// Homing — DEVE restare ultima in elenco (richiesta utente).
+  homing,
 }
 
 // Plasma: colpo lento con danni base * 3.9 (era 3.0, +30% richiesta utente).
 const double kPlasmaDamageMultiplier = 3.9;
 
-class Player extends PositionComponent with HasGameReference<GeometryFightGame>, CollisionCallbacks {
+class Player extends PositionComponent
+    with HasGameReference<GeometryFightGame>, CollisionCallbacks {
   int lives = playerStartLives;
   int bombs = playerStartBombs;
   double speed = playerSpeed;
@@ -65,12 +76,25 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
   static const double _shakeThreshold = 3.0; // ~2 inversioni nette del joystick
   bool get isShaking => _shakeMeter >= _shakeThreshold;
 
+  // CRIT talent: rng per il roll del colpo critico (per-salva).
+  static final math.Random _critRng = math.Random();
+
+  // DASH talent: scatto rapido con i-frame. `_dashTimer` attivo durante lo
+  // scatto, `_dashCd` cooldown residuo, `_dashDir` direzione bloccata.
+  double _dashTimer = 0;
+  double _dashCd = 0;
+  Vector2 _dashDir = Vector2(1, 0);
+  static const double _dashDuration = 0.18;
+  static const double _dashSpeed = 1400.0;
+  bool get isDashing => _dashTimer > 0;
+
   // Power-up states
   double rapidFireTimer = 0;
   double overdriveTimer = 0;
   double magnetTimer = 0;
   double timeSlowTimer = 0;
   double firePowerTimer = 0;
+
   /// Iter 14: Gauss Cannon pull rifattorizzato. Il pull non è più
   /// player-centric: ogni proiettile Gauss spawna una `GaussImplosion` sul
   /// punto di impatto che gestisce pull + tick damage. Campo conservato
@@ -149,8 +173,10 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
 
   @override
   Future<void> onLoad() async {
-    add(CircleHitbox(radius: playerHurtboxRadius, anchor: Anchor.center)
-      ..position = size / 2);
+    add(
+      CircleHitbox(radius: playerHurtboxRadius, anchor: Anchor.center)
+        ..position = size / 2,
+    );
   }
 
   /// Imposta l'arma equipaggiata a partire dall'id salvato (shop).
@@ -173,6 +199,10 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
         currentWeapon = WeaponType.gauss;
       case 'chain':
         currentWeapon = WeaponType.chainLightning;
+      case 'shotgun':
+        currentWeapon = WeaponType.shotgun;
+      case 'railgun':
+        currentWeapon = WeaponType.railgun;
       case 'basic':
       default:
         currentWeapon = WeaponType.basic;
@@ -201,13 +231,27 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
     // i controlli (meccanica GW). Flag resettato a fine tick.
     final moveDir = controlsInverted ? -game.moveInput : game.moveInput;
     if (moveDir.length2 > 0) {
-      final actualSpeed = speed * (hasOverdrive ? 1.15 : 1.0) *
-          game.saveData.speedMultiplier;
+      final actualSpeed =
+          speed * (hasOverdrive ? 1.15 : 1.0) * game.saveData.speedMultiplier;
       position += moveDir * actualSpeed * realDt;
     }
     // Reset flag ad ogni tick — i GravityWell lo rialzano in updateBehavior
     // se il player resta nel raggio, altrimenti i controlli tornano normali.
     controlsInverted = false;
+
+    // ── DASH (talent) ───────────────────────────────────────────────────
+    // Trigger via game.dashPressed (bottone HUD). Scatto rapido in direzione
+    // di movimento (o orientamento nave) con i-frame; cooldown da
+    // saveData.dashCooldown. Integrato qui PRIMA del clamp → resta in arena.
+    if (game.dashPressed) {
+      game.dashPressed = false;
+      _tryDash();
+    }
+    if (_dashCd > 0) _dashCd -= realDt;
+    if (_dashTimer > 0) {
+      _dashTimer -= realDt;
+      position += _dashDir * _dashSpeed * realDt;
+    }
 
     // ── KNOCKBACK time-based (es. esplosione black hole) ────────────────
     // Decadimento lineare velocità v(t) = v0 * (1 - t/T) → integrale =
@@ -258,7 +302,8 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
     //  - In idle (no input) → mantiene rotazione corrente.
     // Snake mode: non si spara mai → rotazione sempre verso il movimento.
     final aimDir = game.aimInput;
-    final wantsToShoot = !game.isPacifistMode &&
+    final wantsToShoot =
+        !game.isPacifistMode &&
         game.gameMode != GameMode.snake &&
         (game.isShooting || aimDir.length > 0.3);
     if (wantsToShoot && aimDir.length > 0) {
@@ -273,11 +318,13 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
     // Pacifism mode: shooting completamente bloccato (regola GW2 Pacifism).
     // Modifier infinite_bombs (BOMBER): "niente armi" → spari disabilitati,
     // resta solo la bomba infinita (richiesta utente: modifier non funzionava).
-    final canShoot = !game.isPacifistMode &&
+    final canShoot =
+        !game.isPacifistMode &&
         game.gameMode != GameMode.snake &&
         !game.hasModifier('infinite_bombs');
     if (canShoot &&
-        (game.isShooting || aimDir.length > 0.3) && _fireTimer <= 0) {
+        (game.isShooting || aimDir.length > 0.3) &&
+        _fireTimer <= 0) {
       // Direction default: se il giocatore preme fire senza mirare, usa
       // l'orientamento della nave (_rotation) invece di hardcoded "su".
       // Prima: ship che guardava est sparava sempre a nord → disconnect
@@ -395,8 +442,7 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
         // Prune stale refs OGNI frame (non solo allo spawn): i segmenti
         // self-remove a 4s, se prune solo allo spawn potremmo trattenere
         // refs morti fino al prossimo tick → memoria + cap conta zombie.
-        _snakeTrailSegments
-            .removeWhere((s) => s.isRemoved || !s.isMounted);
+        _snakeTrailSegments.removeWhere((s) => s.isRemoved || !s.isMounted);
 
         _snakeTrailTick += realDt;
         // Interpolazione anti-microlag: se realDt è grande (frame drop),
@@ -417,8 +463,8 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
             // Fermo: usa la rotazione corrente (la prua è -π/2 dal _rotation)
             // → back = +cos/sin direction da _rotation - π/2 inverted.
             final ang = _rotation - math.pi / 2;
-            backVec = Vector2(-math.cos(ang), -math.sin(ang)) *
-                _snakeTrailBackOffset;
+            backVec =
+                Vector2(-math.cos(ang), -math.sin(ang)) * _snakeTrailBackOffset;
           }
         }
         while (_snakeTrailTick >= _snakeTrailInterval) {
@@ -463,9 +509,11 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
     // Clamp a 0.01 min per evitare divisione per zero se un shop mult arriva
     // a 0 (bug upgrade tier o save file corrotto) → fire interval infinito,
     // il player non spara più per tutto il run. Safety net.
-    final fireRateMultiplier = (game.saveData.fireRateMultiplier *
-            (hasRapidFire ? 2.5 : 1.0))
-        .clamp(0.01, double.infinity);
+    final fireRateMultiplier =
+        (game.saveData.fireRateMultiplier * (hasRapidFire ? 2.5 : 1.0)).clamp(
+          0.01,
+          double.infinity,
+        );
 
     final double fireInterval = 1.0 / (baseFireRate * fireRateMultiplier);
     _fireTimer = fireInterval;
@@ -476,28 +524,78 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
     // Modifier glass_cannon: 3× danno (e 1 sola vita, applicata in
     // _applyModifiers). Wired qui per ogni weapon type.
     if (game.hasModifier('glass_cannon')) damageMultiplier *= 3.0;
+    // CRIT talent: roll per-salva. Su critico moltiplica il danno (×2.2, vedi
+    // SaveData.kCritMultiplier) e spawna una scintilla gialla di feedback.
+    if (game.saveData.critChance > 0 &&
+        _critRng.nextDouble() < game.saveData.critChance) {
+      damageMultiplier *= 2.2;
+      game.spawnExplosion(
+        position,
+        const Color(0xFFFFEE66),
+        radius: 16,
+        particleCount: 6,
+      );
+    }
     const pierce = false;
-    final basicColor = hasFirePower ? const Color(0xFFFF3300) : NeonColors.bulletYellow;
+    final basicColor = hasFirePower
+        ? const Color(0xFFFF3300)
+        : NeonColors.bulletYellow;
 
     switch (weapon) {
       case WeaponType.basic:
         // Due file parallele di proiettili
         final perp = Vector2(-dir.y, dir.x) * 6; // 6px di distanza
-        _spawnBullet(dir, damageMultiplier, basicColor, offset: perp, pierce: pierce, weaponType: WeaponType.basic);
-        _spawnBullet(dir, damageMultiplier, basicColor, offset: -perp, pierce: pierce, weaponType: WeaponType.basic);
+        _spawnBullet(
+          dir,
+          damageMultiplier,
+          basicColor,
+          offset: perp,
+          pierce: pierce,
+          weaponType: WeaponType.basic,
+        );
+        _spawnBullet(
+          dir,
+          damageMultiplier,
+          basicColor,
+          offset: -perp,
+          pierce: pierce,
+          weaponType: WeaponType.basic,
+        );
       case WeaponType.spread:
         // 5 proiettili a ventaglio (shop weapon)
         for (final angle in [-0.12, -0.06, 0.0, 0.06, 0.12]) {
           final rotDir = _rotateVector(dir, angle);
-          _spawnBullet(rotDir, damageMultiplier * 0.85, NeonColors.spreadOrange,
-              speed: bulletSpeed * 1.1, pierce: pierce, weaponType: WeaponType.spread);
+          _spawnBullet(
+            rotDir,
+            damageMultiplier * 0.85,
+            NeonColors.spreadOrange,
+            speed: bulletSpeed * 1.1,
+            pierce: pierce,
+            weaponType: WeaponType.spread,
+          );
         }
       case WeaponType.spreadFan:
         // 9 proiettili con angolo totale 20° (±10°) — powerup drop
-        for (final angle in [-0.175, -0.13125, -0.0875, -0.04375, 0.0, 0.04375, 0.0875, 0.13125, 0.175]) {
+        for (final angle in [
+          -0.175,
+          -0.13125,
+          -0.0875,
+          -0.04375,
+          0.0,
+          0.04375,
+          0.0875,
+          0.13125,
+          0.175,
+        ]) {
           final rotDir = _rotateVector(dir, angle);
-          _spawnBullet(rotDir, damageMultiplier * 0.7, NeonColors.spreadOrange,
-              speed: bulletSpeed * 1.2, pierce: pierce, weaponType: WeaponType.spreadFan);
+          _spawnBullet(
+            rotDir,
+            damageMultiplier * 0.7,
+            NeonColors.spreadOrange,
+            speed: bulletSpeed * 1.2,
+            pierce: pierce,
+            weaponType: WeaponType.spreadFan,
+          );
         }
       case WeaponType.laser:
         _spawnLaser(dir, damageMultiplier);
@@ -517,9 +615,14 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
         //   → meno distanza totale prima del despawn.
         for (final angle in [-0.20, 0.0, 0.20]) {
           final rotDir = _rotateVector(dir, angle);
-          _spawnBullet(rotDir, damageMultiplier * 0.825,
-              NeonColors.ricochetGreen,
-              maxBounces: 2, pierce: pierce, weaponType: WeaponType.ricochet);
+          _spawnBullet(
+            rotDir,
+            damageMultiplier * 0.825,
+            NeonColors.ricochetGreen,
+            maxBounces: 2,
+            pierce: pierce,
+            weaponType: WeaponType.ricochet,
+          );
         }
       case WeaponType.homing:
         // Base 5 missili. Ventaglio di angoli per coprire più bersagli.
@@ -561,14 +664,20 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
         // Overdrive powerup NON accelera il fire rate (solo movimento).
         // Calcolo custom: bypassa `fireRateMultiplier` che ha già 2.5x per
         // rapidFire, e applica 1.75x qui. Senza rapidFire usa il solo shop mult.
-        final homingMult = game.saveData.fireRateMultiplier *
-            (hasRapidFire ? 1.75 : 1.0);
+        final homingMult =
+            game.saveData.fireRateMultiplier * (hasRapidFire ? 1.75 : 1.0);
         _fireTimer = 0.5 / homingMult;
       case WeaponType.triple:
         // Sparo triplo con angolo ristretto (~12° totali)
         for (final angle in [-0.105, 0.0, 0.105]) {
           final rotDir = _rotateVector(dir, angle);
-          _spawnBullet(rotDir, damageMultiplier, NeonColors.white, pierce: pierce, weaponType: WeaponType.triple);
+          _spawnBullet(
+            rotDir,
+            damageMultiplier,
+            NeonColors.white,
+            pierce: pierce,
+            weaponType: WeaponType.triple,
+          );
         }
         _fireTimer = fireInterval * 0.5;
       case WeaponType.overdrive:
@@ -587,6 +696,14 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
         _castChainLightning(damageMultiplier);
         // Fire rate 0.55s base (più rapido di gauss ma più lento di basic).
         _fireTimer = (0.55 / fireRateMultiplier).clamp(0.05, 5.0);
+      case WeaponType.shotgun:
+        _spawnShotgun(dir, damageMultiplier);
+        // Cadenza media 0.5s, scalata dagli upgrade fire-rate.
+        _fireTimer = (0.5 / fireRateMultiplier).clamp(0.05, 5.0);
+      case WeaponType.railgun:
+        _fireRailgun(dir, damageMultiplier);
+        // Colpo pesante hitscan → cadenza lenta 1.1s.
+        _fireTimer = (1.1 / fireRateMultiplier).clamp(0.05, 5.0);
     }
   }
 
@@ -652,16 +769,85 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
     }
   }
 
-  void _spawnBullet(Vector2 dir, double damage, Color color,
-      {double speed = bulletSpeed,
-      int maxBounces = 0,
-      Vector2? offset,
-      bool pierce = false,
-      WeaponType weaponType = WeaponType.basic}) {
+  /// Shotgun: cono ravvicinato di 8 pellet arancioni. Spread ampio, velocità
+  /// alta, range corto (`maxRange` 260px) → devastante da vicino, inutile da
+  /// lontano. Muzzle-flash arancione per feedback "boom".
+  void _spawnShotgun(Vector2 dir, double damageMultiplier) {
+    const pelletCount = 8;
+    final base = dir.normalized();
+    for (int i = 0; i < pelletCount; i++) {
+      final spread = (i - (pelletCount - 1) / 2) * 0.085;
+      final rotDir = _rotateVector(base, spread);
+      final pellet = PlayerBullet(
+        direction: rotDir,
+        weaponType: WeaponType.shotgun,
+        speed: bulletSpeed * 1.35,
+        damage: damageMultiplier * 0.6,
+        color: NeonColors.spreadOrange,
+        sizeMultiplier: hasFirePower ? 2.0 : 1.0,
+        maxRange: 260,
+      );
+      pellet.position = position + base * 18;
+      game.world.add(pellet);
+    }
+    game.spawnExplosion(
+      position + base * 22,
+      NeonColors.spreadOrange,
+      radius: 26,
+      particleCount: 6,
+    );
+  }
+
+  /// Railgun: colpo hitscan istantaneo che perfora TUTTI i nemici/boss lungo
+  /// la linea di tiro (corridoio 28px, fino a 1200px). Danno alto (pierce
+  /// totale). Spawna `RailgunBeam` come visual world-space + screenshake.
+  void _fireRailgun(Vector2 dir, double damageMultiplier) {
+    final d = dir.normalized();
+    const maxLen = 1200.0;
+    const corridor = 28.0;
+    final origin = position + d * 20;
+    final dmg = damageMultiplier * 6.0;
+    // Snapshot: takeDamage→onDeath può mutare world.children durante il loop.
+    for (final child in game.world.children.toList()) {
+      Vector2 cpos;
+      if (child is EnemyBase) {
+        if (child.isSpawnInvulnerable) continue;
+        cpos = child.position;
+      } else if (child is BossBase) {
+        cpos = child.position;
+      } else {
+        continue;
+      }
+      final rel = cpos - origin;
+      final along = rel.dot(d);
+      if (along < 0 || along > maxLen) continue;
+      final perp = (rel - d * along).length;
+      if (perp > corridor) continue;
+      if (child is EnemyBase) {
+        child.takeDamage(dmg);
+      } else if (child is BossBase) {
+        child.takeDamage(dmg);
+      }
+    }
+    game.world.add(
+      RailgunBeam(origin: origin.clone(), direction: d, length: maxLen),
+    );
+    game.triggerScreenShake(5, 0.18);
+  }
+
+  void _spawnBullet(
+    Vector2 dir,
+    double damage,
+    Color color, {
+    double speed = bulletSpeed,
+    int maxBounces = 0,
+    Vector2? offset,
+    bool pierce = false,
+    WeaponType weaponType = WeaponType.basic,
+  }) {
     // Modifier ricochet_world: tutti i bullet rimbalzano 5 volte (era 0-2).
     // Override `maxBounces` se attivo, indipendentemente dal weapon type.
-    final effBounces =
-        game.hasModifier('ricochet_world') ? 5 : maxBounces;
+    final effBounces = game.hasModifier('ricochet_world') ? 5 : maxBounces;
     final bullet = PlayerBullet(
       direction: dir,
       weaponType: weaponType,
@@ -747,6 +933,29 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
     // Questo metodo è mantenuto come hook per eventuali effetti visivi futuri
   }
 
+  /// DASH talent: avvia lo scatto se sbloccato e fuori cooldown. Direzione =
+  /// movimento corrente, fallback all'orientamento della nave. Concede i-frame
+  /// per la durata dello scatto + un piccolo buffer (0.12s).
+  void _tryDash() {
+    if (!game.saveData.dashUnlocked) return;
+    if (_dashCd > 0 || _dashTimer > 0) return;
+    Vector2 dir = game.moveInput.clone();
+    if (dir.length2 < 0.04) {
+      final a = _rotation - math.pi / 2;
+      dir = Vector2(math.cos(a), math.sin(a));
+    }
+    _dashDir = dir.normalized();
+    _dashTimer = _dashDuration;
+    _dashCd = game.saveData.dashCooldown;
+    _invincibleTimer = math.max(_invincibleTimer, _dashDuration + 0.12);
+    game.spawnExplosion(
+      position,
+      NeonColors.cyan,
+      radius: 22,
+      particleCount: 8,
+    );
+  }
+
   void takeDamage() {
     if (isInvincible) return;
 
@@ -798,12 +1007,17 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
           !game.isTimeAttackMode &&
           pet is PhoenixPet &&
           pet.tryConsumeRevive()) {
-        lives = game.diffConfig.startingLives +
-            (game.saveData.startingLives - 3);
+        lives =
+            game.diffConfig.startingLives + (game.saveData.startingLives - 3);
         if (lives < 1) lives = 1;
         _invincibleTimer = 2.0;
-        game.spawnExplosion(position, NeonColors.orange,
-            radius: 120, particleCount: 30, epic: true);
+        game.spawnExplosion(
+          position,
+          NeonColors.orange,
+          radius: 120,
+          particleCount: 30,
+          epic: true,
+        );
         return;
       }
       game.onPlayerDeath();
@@ -835,9 +1049,7 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
     // prevale con arcobaleno animato. `skinId` letto una volta e condiviso.
     final skinId = game.saveData.activeSkin;
     final skinColor = _getSkinColor();
-    final baseColor = hasOverdrive
-        ? _getRainbowColor(_energyPhase)
-        : skinColor;
+    final baseColor = hasOverdrive ? _getRainbowColor(_energyPhase) : skinColor;
     final ghost = skinId == 'ghost';
     final glowAlpha = ghost ? 0.06 : 0.12;
     paint.color = baseColor.withValues(alpha: glowAlpha);
@@ -860,7 +1072,8 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
       // Tint cromatico leggero che cicla lento. `Color.lerp` su due non-null
       // è garantito non-null ma evitiamo il bang per robustezza.
       final hue = (_energyPhase * 10) % 360;
-      bodyColor = Color.lerp(
+      bodyColor =
+          Color.lerp(
             const Color(0xFFE8F8FF),
             HSVColor.fromAHSV(1, hue, 0.4, 1).toColor(),
             0.3,
@@ -875,11 +1088,13 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
     } else if (skinId == 'prism') {
       // Cristallo bianco-trasparente con tint colorato leggero.
       final hue = (_energyPhase * 30) % 360;
-      bodyColor = Color.lerp(
+      bodyColor =
+          Color.lerp(
             const Color(0xFFFFFFFF),
             HSVColor.fromAHSV(1, hue, 0.5, 1).toColor(),
             0.25,
-          ) ?? const Color(0xFFFFFFFF);
+          ) ??
+          const Color(0xFFFFFFFF);
     } else if (skinId == 'aurora') {
       // Aurora: corpo brillante ma più chiaro del glow per leggibilità.
       bodyColor = baseColor.withValues(alpha: 0.85);
@@ -978,8 +1193,9 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
       canvas.drawCircle(Offset(tx, ty), trailSize * 1.1, _trailPaint);
       // Layer 3: nucleo bianco (solo testa scia, fade rapido).
       if (t < 0.5) {
-        _trailPaint.color =
-            const Color(0xFFFFFFFF).withValues(alpha: alpha * (0.6 - t));
+        _trailPaint.color = const Color(
+          0xFFFFFFFF,
+        ).withValues(alpha: alpha * (0.6 - t));
         canvas.drawCircle(Offset(tx, ty), trailSize * 0.45, _trailPaint);
       }
       // Sparkle: dot offset deterministico via `_energyPhase` (monotonic
@@ -989,8 +1205,9 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
         final sparkAng = _energyPhase * 4 + i * 1.3;
         final sx = tx + math.cos(sparkAng) * trailSize * 0.8;
         final sy = ty + math.sin(sparkAng) * trailSize * 0.8;
-        _trailPaint.color =
-            const Color(0xFFFFFFFF).withValues(alpha: alpha * 0.7);
+        _trailPaint.color = const Color(
+          0xFFFFFFFF,
+        ).withValues(alpha: alpha * 0.7);
         canvas.drawCircle(Offset(sx, sy), 1.2, _trailPaint);
       }
     }
@@ -1010,8 +1227,12 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
         }
         if (_crystalHueStep != step || _crystalColorCache == null) {
           _crystalHueStep = step;
-          _crystalColorCache =
-              HSVColor.fromAHSV(1, step * 5.0, 0.5, 1).toColor();
+          _crystalColorCache = HSVColor.fromAHSV(
+            1,
+            step * 5.0,
+            0.5,
+            1,
+          ).toColor();
           _crystalCachedSkin = 'crystal';
         }
         return _crystalColorCache!;
@@ -1033,8 +1254,12 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
         }
         if (_crystalHueStep != step || _crystalColorCache == null) {
           _crystalHueStep = step;
-          _crystalColorCache =
-              HSVColor.fromAHSV(1, (step * 5.0 + 120) % 360, 0.7, 1).toColor();
+          _crystalColorCache = HSVColor.fromAHSV(
+            1,
+            (step * 5.0 + 120) % 360,
+            0.7,
+            1,
+          ).toColor();
           _crystalCachedSkin = 'aurora';
         }
         return _crystalColorCache!;
@@ -1067,8 +1292,12 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
         }
         if (_crystalHueStep != step || _crystalColorCache == null) {
           _crystalHueStep = step;
-          _crystalColorCache =
-              HSVColor.fromAHSV(1, step * 5.0, 0.6, 1).toColor();
+          _crystalColorCache = HSVColor.fromAHSV(
+            1,
+            step * 5.0,
+            0.6,
+            1,
+          ).toColor();
           _crystalCachedSkin = 'prism';
         }
         return _crystalColorCache!;
@@ -1091,8 +1320,11 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
         return const Color(0xFFCC00FF);
       case 'rainbow':
         return HSVColor.fromAHSV(
-                1, ((_energyPhase * 60) + index * 25) % 360, 1, 1)
-            .toColor();
+          1,
+          ((_energyPhase * 60) + index * 25) % 360,
+          1,
+          1,
+        ).toColor();
       case 'comet':
         // Testa bianca (vicino nave), coda arancio → nero.
         if (index < 3) return const Color(0xFFFFFFFF);
@@ -1124,7 +1356,10 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
         // Cloud cyan/magenta blend morbido — modulazione sinusoidale.
         final tn = (math.sin(_energyPhase * 1.5 + index * 0.4) * 0.5 + 0.5);
         return Color.lerp(
-            const Color(0xFF00DDFF), const Color(0xFFFF44CC), tn)!;
+          const Color(0xFF00DDFF),
+          const Color(0xFFFF44CC),
+          tn,
+        )!;
       case 'prism':
         // Spettro completo lento, colori saturi ben separati.
         final phue = ((_energyPhase * 30) + index * 18) % 360;
@@ -1139,13 +1374,20 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
         // Bioluminescenza: ciano/verde con pulse.
         final pulse = (math.sin(_energyPhase * 3 + index * 0.6) * 0.4 + 0.6)
             .clamp(0.4, 1.0);
-        return HSVColor.fromAHSV(pulse, 160 + (index % 3) * 10.0, 0.9, 1)
-            .toColor();
+        return HSVColor.fromAHSV(
+          pulse,
+          160 + (index % 3) * 10.0,
+          0.9,
+          1,
+        ).toColor();
       case 'neonpulse':
         // Anelli neon expanding: cyan-bianco con pulse rapido.
         final tp = (math.sin(_energyPhase * 5 + index * 0.5) * 0.5 + 0.5);
         return Color.lerp(
-            const Color(0xFF00FFFF), const Color(0xFFFFFFFF), tp)!;
+          const Color(0xFF00FFFF),
+          const Color(0xFFFFFFFF),
+          tp,
+        )!;
       case 'normal':
       default:
         return NeonColors.cyan;
@@ -1169,7 +1411,9 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
   void _renderThrusters(Canvas canvas, double cx, double cy) {
     final moveDir = game.moveInput;
     final isMoving = moveDir.length2 > 0.01;
-    final flameLength = isMoving ? 10 + math.sin(_thrusterPhase) * 4 : 4 + math.sin(_thrusterPhase * 0.5) * 1;
+    final flameLength = isMoving
+        ? 10 + math.sin(_thrusterPhase) * 4
+        : 4 + math.sin(_thrusterPhase * 0.5) * 1;
     final flameWidth = isMoving ? 4.0 : 2.0;
 
     canvas.save();
@@ -1189,12 +1433,22 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
   static final _flameOuterPaint = Paint();
 
   /// Disegna una fiamma singola del thruster — senza blur
-  void _drawFlame(Canvas canvas, double x, double y, double length, double width) {
+  void _drawFlame(
+    Canvas canvas,
+    double x,
+    double y,
+    double length,
+    double width,
+  ) {
     // Fiamma esterna (rosso/viola glow) — cerchio più grande, no blur
     _flameOuterPaint.color = const Color(0xFFFF2200).withValues(alpha: 0.15);
     _flameOuterPaint.maskFilter = null;
     canvas.drawOval(
-      Rect.fromCenter(center: Offset(x, y + length * 0.6), width: width * 2.2, height: length * 1.3),
+      Rect.fromCenter(
+        center: Offset(x, y + length * 0.6),
+        width: width * 2.2,
+        height: length * 1.3,
+      ),
       _flameOuterPaint,
     );
 
@@ -1202,7 +1456,11 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
     _flameInnerPaint.color = const Color(0xFFFF6600).withValues(alpha: 0.7);
     _flameInnerPaint.maskFilter = null;
     canvas.drawOval(
-      Rect.fromCenter(center: Offset(x, y + length * 0.5), width: width, height: length * 0.7),
+      Rect.fromCenter(
+        center: Offset(x, y + length * 0.5),
+        width: width,
+        height: length * 0.7,
+      ),
       _flameInnerPaint,
     );
 
@@ -1210,20 +1468,31 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
     _flameCorePaint.color = const Color(0xFFFFFFFF).withValues(alpha: 0.9);
     _flameCorePaint.maskFilter = null;
     canvas.drawOval(
-      Rect.fromCenter(center: Offset(x, y + length * 0.3), width: width * 0.6, height: length * 0.5),
+      Rect.fromCenter(
+        center: Offset(x, y + length * 0.3),
+        width: width * 0.6,
+        height: length * 0.5,
+      ),
       _flameCorePaint,
     );
   }
 
   /// Dettagli interni della nave: cockpit luminoso e linee strutturali
-  void _renderShipDetails(Canvas canvas, double cx, double cy, Color baseColor) {
+  void _renderShipDetails(
+    Canvas canvas,
+    double cx,
+    double cy,
+    Color baseColor,
+  ) {
     canvas.save();
     canvas.translate(cx, cy);
     canvas.rotate(_rotation);
 
     // Cockpit (cerchio luminoso al centro-alto della nave) — senza blur
     final cockpitGlow = 0.6 + math.sin(_energyPhase * 2) * 0.2;
-    _detailPaint.color = const Color(0xFFFFFFFF).withValues(alpha: cockpitGlow * 0.5);
+    _detailPaint.color = const Color(
+      0xFFFFFFFF,
+    ).withValues(alpha: cockpitGlow * 0.5);
     _detailPaint.maskFilter = null;
     _detailPaint.style = PaintingStyle.fill;
     canvas.drawCircle(const Offset(0, -4), 5, _detailPaint);
@@ -1350,16 +1619,13 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
     for (final side in [-1.0, 1.0]) {
       final wing = Path()
         ..moveTo(0, -10)
-        ..quadraticBezierTo(
-            side * 18 * wingPhase, -8, side * 22 * wingPhase, 4)
+        ..quadraticBezierTo(side * 18 * wingPhase, -8, side * 22 * wingPhase, 4)
         ..quadraticBezierTo(side * 16 * wingPhase, 6, side * 8, 8)
         ..lineTo(0, 4)
         ..close();
-      _phoenixWingFill.color =
-          const Color(0xFFFF2200).withValues(alpha: 0.7);
+      _phoenixWingFill.color = const Color(0xFFFF2200).withValues(alpha: 0.7);
       canvas.drawPath(wing, _phoenixWingFill);
-      _phoenixWingStroke.color =
-          const Color(0xFFFF8800).withValues(alpha: 0.5);
+      _phoenixWingStroke.color = const Color(0xFFFF8800).withValues(alpha: 0.5);
       canvas.drawPath(wing, _phoenixWingStroke);
     }
 
@@ -1374,8 +1640,7 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
       ..close();
     _phoenixWingFill.color = const Color(0xFFFF5500);
     canvas.drawPath(body, _phoenixWingFill);
-    _phoenixWingStroke.color =
-        const Color(0xFFFFDD00).withValues(alpha: 0.8);
+    _phoenixWingStroke.color = const Color(0xFFFFDD00).withValues(alpha: 0.8);
     canvas.drawPath(body, _phoenixWingStroke);
 
     // Embers orbitanti
@@ -1384,10 +1649,13 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
       final dist = 18 + math.sin(_energyPhase * 2 + i) * 4;
       final ex = math.cos(ang) * dist;
       final ey = math.sin(ang) * dist;
-      final emberPulse =
-          (math.sin(_energyPhase * 4 + i) * 0.3 + 0.7).clamp(0.2, 1.0);
-      _phoenixEmber.color =
-          const Color(0xFFFFCC44).withValues(alpha: emberPulse);
+      final emberPulse = (math.sin(_energyPhase * 4 + i) * 0.3 + 0.7).clamp(
+        0.2,
+        1.0,
+      );
+      _phoenixEmber.color = const Color(
+        0xFFFFCC44,
+      ).withValues(alpha: emberPulse);
       canvas.drawCircle(Offset(ex, ey), 1.4, _phoenixEmber);
     }
 
@@ -1434,7 +1702,9 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
       final glitchY = (_energyPhase * 40) % 26 - 13;
       _glitchPaint.color = const Color(0xFFFFFFFF).withValues(alpha: 0.6);
       canvas.drawRect(
-          Rect.fromLTWH(cx - 12, cy + glitchY, 24, 1.5), _glitchPaint);
+        Rect.fromLTWH(cx - 12, cy + glitchY, 24, 1.5),
+        _glitchPaint,
+      );
     }
   }
 
@@ -1495,7 +1765,13 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
   final Map<double, Path> _hexPathCache = {};
 
   /// Esagono a posizione arbitraria
-  void _drawHexagonAt(Canvas canvas, double cx, double cy, double radius, Paint paint) {
+  void _drawHexagonAt(
+    Canvas canvas,
+    double cx,
+    double cy,
+    double radius,
+    Paint paint,
+  ) {
     Path? path = _hexPathCache[radius];
     if (path == null) {
       path = Path();
@@ -1524,7 +1800,9 @@ class Player extends PositionComponent with HasGameReference<GeometryFightGame>,
 
   @override
   void onCollisionStart(
-      Set<Vector2> intersectionPoints, PositionComponent other) {
+    Set<Vector2> intersectionPoints,
+    PositionComponent other,
+  ) {
     if (other is EnemyBase) {
       // GW:RE2: nemici in materializzazione sono incorporei — non danneggiano il player
       if (other.isSpawnInvulnerable) return;

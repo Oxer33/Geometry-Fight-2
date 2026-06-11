@@ -107,28 +107,32 @@ class SpaceBackground extends PositionComponent
 
     // Genera nebulose
     for (int i = 0; i < _nebulaCount; i++) {
-      _nebulae.add(_Nebula(
-        x: _random.nextDouble() * arenaWidth,
-        y: _random.nextDouble() * arenaHeight,
-        radius: 200 + _random.nextDouble() * 400,
-        color: _nebulaColors[_random.nextInt(_nebulaColors.length)],
-        alpha: 0.15 + _random.nextDouble() * 0.2,
-        rotationSpeed: (_random.nextDouble() - 0.5) * 0.1,
-        phase: _random.nextDouble() * math.pi * 2,
-      ));
+      _nebulae.add(
+        _Nebula(
+          x: _random.nextDouble() * arenaWidth,
+          y: _random.nextDouble() * arenaHeight,
+          radius: 200 + _random.nextDouble() * 400,
+          color: _nebulaColors[_random.nextInt(_nebulaColors.length)],
+          alpha: 0.15 + _random.nextDouble() * 0.2,
+          rotationSpeed: (_random.nextDouble() - 0.5) * 0.1,
+          phase: _random.nextDouble() * math.pi * 2,
+        ),
+      );
     }
 
     // Genera particelle di polvere cosmica
     for (int i = 0; i < _dustCount; i++) {
-      _dust.add(_DustParticle(
-        x: _random.nextDouble() * arenaWidth,
-        y: _random.nextDouble() * arenaHeight,
-        size: 1 + _random.nextDouble() * 2,
-        speed: 5 + _random.nextDouble() * 15,
-        angle: _random.nextDouble() * math.pi * 2,
-        alpha: 0.1 + _random.nextDouble() * 0.2,
-        color: _starColors[_random.nextInt(_starColors.length)],
-      ));
+      _dust.add(
+        _DustParticle(
+          x: _random.nextDouble() * arenaWidth,
+          y: _random.nextDouble() * arenaHeight,
+          size: 1 + _random.nextDouble() * 2,
+          speed: 5 + _random.nextDouble() * 15,
+          angle: _random.nextDouble() * math.pi * 2,
+          alpha: 0.1 + _random.nextDouble() * 0.2,
+          color: _starColors[_random.nextInt(_starColors.length)],
+        ),
+      );
     }
   }
 
@@ -238,8 +242,8 @@ class SpaceBackground extends PositionComponent
       // Pulsazione lenta della nebulosa
       final pulse = 1.0 + math.sin(_time * 0.3 + nebula.phase) * 0.1;
       final currentRadius = nebula.radius * pulse;
-      final currentAlpha = nebula.alpha *
-          (0.8 + math.sin(_time * 0.2 + nebula.phase * 2) * 0.2);
+      final currentAlpha =
+          nebula.alpha * (0.8 + math.sin(_time * 0.2 + nebula.phase * 2) * 0.2);
 
       final nebulaRect = Rect.fromCircle(
         center: Offset(nebula.x, nebula.y),
@@ -276,7 +280,11 @@ class SpaceBackground extends PositionComponent
       }
 
       _nebulaPaint.shader = shader;
-      canvas.drawCircle(Offset(nebula.x, nebula.y), currentRadius, _nebulaPaint);
+      canvas.drawCircle(
+        Offset(nebula.x, nebula.y),
+        currentRadius,
+        _nebulaPaint,
+      );
     }
   }
 
@@ -285,8 +293,8 @@ class SpaceBackground extends PositionComponent
   void _renderStars(Canvas canvas) {
     for (final star in _stars) {
       // Calcola twinkle (scintillio)
-      final twinkle = 0.5 +
-          0.5 * math.sin(_time * star.twinkleSpeed + star.twinklePhase);
+      final twinkle =
+          0.5 + 0.5 * math.sin(_time * star.twinkleSpeed + star.twinklePhase);
       final alpha = star.brightness * twinkle;
 
       // Glow esterno (solo stelle grandi) — senza blur, cerchio più grande con alpha bassa
@@ -302,7 +310,9 @@ class SpaceBackground extends PositionComponent
 
       // Centro luminoso per stelle grandi
       if (star.size > 2.0) {
-        _starPaint.color = const Color(0xFFFFFFFF).withValues(alpha: alpha * 0.8);
+        _starPaint.color = const Color(
+          0xFFFFFFFF,
+        ).withValues(alpha: alpha * 0.8);
         canvas.drawCircle(Offset(star.x, star.y), star.size * 0.4, _starPaint);
       }
     }
@@ -382,7 +392,11 @@ class ArenaBorder extends PositionComponent
     if (game.isTunnelMode) return;
     // Modifier tiny_arena: bordo dell'arena effettiva centrata (non più full).
     final rect = Rect.fromLTRB(
-        game.arenaMinX, game.arenaMinY, game.arenaMaxX, game.arenaMaxY);
+      game.arenaMinX,
+      game.arenaMinY,
+      game.arenaMaxX,
+      game.arenaMaxY,
+    );
     canvas.drawRect(rect, _borderGlowPaint);
     canvas.drawRect(rect, _borderMainPaint);
     canvas.drawRect(rect, _borderInnerPaint);

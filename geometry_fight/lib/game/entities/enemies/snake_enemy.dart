@@ -30,14 +30,14 @@ class SnakeEnemy extends EnemyBase {
   static const Color _headColor = Color(0xFFFF2030);
 
   SnakeEnemy({this.segmentCount = 8, this.isFragment = false})
-      : super(
-          hp: 1,
-          speed: 120,
-          pointValue: 5,
-          geomValue: 2,
-          neonColor: NeonColors.green,
-          size: Vector2(12, 12),
-        ) {
+    : super(
+        hp: 1,
+        speed: 120,
+        pointValue: 5,
+        geomValue: 2,
+        neonColor: NeonColors.green,
+        size: Vector2(12, 12),
+      ) {
     hp = segmentCount.toDouble();
   }
 
@@ -117,8 +117,7 @@ class SnakeEnemy extends EnemyBase {
         final lenSq = toTarget.length2;
         if (lenSq > kSegmentSpacingSq) {
           final len = math.sqrt(lenSq);
-          _segments[i] =
-              current + toTarget * ((len - kSegmentSpacing) / len);
+          _segments[i] = current + toTarget * ((len - kSegmentSpacing) / len);
         }
       }
     }
@@ -180,7 +179,8 @@ class SnakeEnemy extends EnemyBase {
       if (isHead) {
         segColor = _headColor;
       } else {
-        segColor = Color.lerp(
+        segColor =
+            Color.lerp(
               paint.color,
               paint.color.withValues(alpha: 0.4),
               progress,
@@ -194,16 +194,24 @@ class SnakeEnemy extends EnemyBase {
       if (scale <= 1.01) {
         if (isHead) {
           final pulse = 0.6 + math.sin(idlePhase * 8) * 0.3;
-          _snakeCorePaint.color =
-              const Color(0xFFFFFFFF).withValues(alpha: pulse);
+          _snakeCorePaint.color = const Color(
+            0xFFFFFFFF,
+          ).withValues(alpha: pulse);
           canvas.drawCircle(
-              Offset(cx + seg.x, cy + seg.y), radius * 0.5, _snakeCorePaint);
+            Offset(cx + seg.x, cy + seg.y),
+            radius * 0.5,
+            _snakeCorePaint,
+          );
         } else if (i % 2 == 0) {
           final pulse = 0.3 + math.sin(idlePhase * 4 + i * 0.5) * 0.2;
-          _snakeCorePaint.color =
-              const Color(0xFFFFFFFF).withValues(alpha: pulse);
+          _snakeCorePaint.color = const Color(
+            0xFFFFFFFF,
+          ).withValues(alpha: pulse);
           canvas.drawCircle(
-              Offset(cx + seg.x, cy + seg.y), radius * 0.35, _snakeCorePaint);
+            Offset(cx + seg.x, cy + seg.y),
+            radius * 0.35,
+            _snakeCorePaint,
+          );
         }
       }
     }
@@ -212,7 +220,9 @@ class SnakeEnemy extends EnemyBase {
     if (scale <= 1.01 && _segments.isNotEmpty) {
       final head = _segments[0] - position;
       // Occhi (nella direzione di movimento)
-      final rawDir = _segments.length > 1 ? (_segments[0] - _segments[1]) : null;
+      final rawDir = _segments.length > 1
+          ? (_segments[0] - _segments[1])
+          : null;
       final moveDir = (rawDir != null && rawDir.length2 > 1e-6)
           ? rawDir.normalized()
           : Vector2(0, -1);
@@ -240,7 +250,7 @@ class _SnakeBody extends PositionComponent with CollisionCallbacks {
   final int segmentIndex;
 
   _SnakeBody(this.snake, this.segmentIndex)
-      : super(size: Vector2(12, 12), anchor: Anchor.center);
+    : super(size: Vector2(12, 12), anchor: Anchor.center);
 
   @override
   Future<void> onLoad() async {
@@ -259,12 +269,16 @@ class _SnakeBody extends PositionComponent with CollisionCallbacks {
     // usano il TOP-LEFT come origine → serve + snake.size/2 per allineare
     // la hitbox al segmento visualmente renderizzato.
     if (segmentIndex < snake._segments.length) {
-      position = snake._segments[segmentIndex] - snake.position + snake.size / 2;
+      position =
+          snake._segments[segmentIndex] - snake.position + snake.size / 2;
     }
   }
 
   @override
-  void onCollisionStart(Set<Vector2> intersectionPoints, PositionComponent other) {
+  void onCollisionStart(
+    Set<Vector2> intersectionPoints,
+    PositionComponent other,
+  ) {
     super.onCollisionStart(intersectionPoints, other);
     if (other is PlayerBullet) {
       // Blocca il proiettile senza infliggere danno al serpente

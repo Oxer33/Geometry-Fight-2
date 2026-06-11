@@ -172,8 +172,10 @@ class TunnelRenderer extends PositionComponent
     // Jitter ±3% per variazione; cap hard a 45% span per non chiudere tunnel.
     final baseScale = game.tunnelObstacleScale;
     final obsHeight =
-        (tunnelSpan * (baseScale + (_random.nextDouble() - 0.5) * 0.06))
-            .clamp(25.0, tunnelSpan * 0.45);
+        (tunnelSpan * (baseScale + (_random.nextDouble() - 0.5) * 0.06)).clamp(
+          25.0,
+          tunnelSpan * 0.45,
+        );
     // Se un ostacolo esiste già a X ravvicinato, forza stesso lato:
     // garantisce un passaggio libero sul lato opposto.
     const sameSideRange = 160.0;
@@ -192,18 +194,23 @@ class TunnelRenderer extends PositionComponent
       // Centro random nel tunnel, lasciando passaggi sopra/sotto di almeno 40px.
       final mid = (bounds.top + bounds.bottom) / 2;
       finalHeight = (obsHeight * 0.7).clamp(30.0, tunnelSpan * 0.35);
-      final jitterRange = (tunnelSpan / 2 - finalHeight / 2 - 40).clamp(0.0, tunnelSpan);
+      final jitterRange = (tunnelSpan / 2 - finalHeight / 2 - 40).clamp(
+        0.0,
+        tunnelSpan,
+      );
       yCenter = mid + (_random.nextDouble() - 0.5) * 2 * jitterRange;
     }
-    _obstacles.add(_TunnelObstacle(
-      x: aheadX,
-      isTop: forcedSide ?? _random.nextBool(),
-      width: 30 + _random.nextDouble() * 40,
-      height: finalHeight,
-      lifetime: 12.0,
-      isFloating: floating,
-      yCenter: yCenter,
-    ));
+    _obstacles.add(
+      _TunnelObstacle(
+        x: aheadX,
+        isTop: forcedSide ?? _random.nextBool(),
+        width: 30 + _random.nextDouble() * 40,
+        height: finalHeight,
+        lifetime: 12.0,
+        isFloating: floating,
+        yCenter: yCenter,
+      ),
+    );
   }
 
   // Scrolling particle bg (stile splash screen): parallax + strie.
@@ -255,18 +262,20 @@ class TunnelRenderer extends PositionComponent
     final strieRng = math.Random(77);
     final strieList = List.generate(20, (_) {
       return <double>[
-        strieRng.nextDouble(),               // yOffsetFrac
-        15.0 + strieRng.nextDouble() * 60,   // baseLen
-        0.8 + strieRng.nextDouble() * 2.0,   // speedMul
-        strieRng.nextDouble(),               // baseWorldXFrac
+        strieRng.nextDouble(), // yOffsetFrac
+        15.0 + strieRng.nextDouble() * 60, // baseLen
+        0.8 + strieRng.nextDouble() * 2.0, // speedMul
+        strieRng.nextDouble(), // baseWorldXFrac
         0.04 + strieRng.nextDouble() * 0.06, // alpha
-        0.3 + strieRng.nextDouble() * 0.4,   // strokeW
+        0.3 + strieRng.nextDouble() * 0.4, // strokeW
       ];
     });
     _strieParams = strieList;
     // Alpha index [4] is fixed per-stria — precompute Color once.
-    _strieColors = List.generate(20, (i) =>
-        Color.fromRGBO(180, 210, 255, strieList[i][4]));
+    _strieColors = List.generate(
+      20,
+      (i) => Color.fromRGBO(180, 210, 255, strieList[i][4]),
+    );
 
     const layerAlphas = [0.25, 0.45, 0.65];
     final starRng = math.Random(42);
@@ -278,8 +287,10 @@ class TunnelRenderer extends PositionComponent
     });
     _starParams = starList;
     // Layer alpha is constant per-star (i % 3) — precompute Color once.
-    _starColors = List.generate(25, (i) =>
-        Color.fromRGBO(200, 220, 255, layerAlphas[i % 3]));
+    _starColors = List.generate(
+      25,
+      (i) => Color.fromRGBO(200, 220, 255, layerAlphas[i % 3]),
+    );
   }
 
   /// Particelle bg stile splash: strie + stelle parallax scorrevoli.
@@ -301,7 +312,8 @@ class TunnelRenderer extends PositionComponent
       final speedMul = p[2];
       final baseWorldX = p[3] * viewWidth * 3;
       final period = viewWidth * 2 + baseLen;
-      final worldX = ((baseWorldX - cameraX * speedMul) % period + period) % period;
+      final worldX =
+          ((baseWorldX - cameraX * speedMul) % period + period) % period;
       final screenX = cameraX - viewWidth + worldX;
       // Use precomputed Color — no per-frame Color.fromRGBO allocation.
       _bgStriePaint.color = strieColorList[i];
@@ -327,12 +339,17 @@ class TunnelRenderer extends PositionComponent
       final starSize = layerSizes[layer];
 
       final period = viewWidth * 2 + 10;
-      final worldX = ((baseWorldX - cameraX * speedMul) % period + period) % period;
+      final worldX =
+          ((baseWorldX - cameraX * speedMul) % period + period) % period;
       final screenX = cameraX - viewWidth + worldX;
 
       // Use precomputed Color — no per-frame Color.fromRGBO allocation.
       _bgStarPaint.color = starColorList[i];
-      canvas.drawCircle(Offset(screenX, topY + yOffset), starSize, _bgStarPaint);
+      canvas.drawCircle(
+        Offset(screenX, topY + yOffset),
+        starSize,
+        _bgStarPaint,
+      );
     }
   }
 
@@ -343,8 +360,13 @@ class TunnelRenderer extends PositionComponent
   final Path _topInnerPath = Path();
   final Path _bottomInnerPath = Path();
 
-  void _renderTunnelWalls(Canvas canvas, double startX, double endX,
-      double topY, double bottomY) {
+  void _renderTunnelWalls(
+    Canvas canvas,
+    double startX,
+    double endX,
+    double topY,
+    double bottomY,
+  ) {
     final topPath = _topWallPath..reset();
     final bottomPath = _bottomWallPath..reset();
     bool firstTop = true, firstBottom = true;
@@ -356,10 +378,18 @@ class TunnelRenderer extends PositionComponent
       final ty = centerY + offset - halfH;
       final by = centerY + offset + halfH;
 
-      if (firstTop) { topPath.moveTo(x, ty); firstTop = false; }
-      else { topPath.lineTo(x, ty); }
-      if (firstBottom) { bottomPath.moveTo(x, by); firstBottom = false; }
-      else { bottomPath.lineTo(x, by); }
+      if (firstTop) {
+        topPath.moveTo(x, ty);
+        firstTop = false;
+      } else {
+        topPath.lineTo(x, ty);
+      }
+      if (firstBottom) {
+        bottomPath.moveTo(x, by);
+        firstBottom = false;
+      } else {
+        bottomPath.lineTo(x, by);
+      }
     }
 
     // Glow esterno dei muri — bianco fluo spesso
@@ -381,10 +411,18 @@ class TunnelRenderer extends PositionComponent
       final halfH = game.tunnelHalfHeightAt(x);
       final ty = centerY + offset - halfH + 15;
       final by = centerY + offset + halfH - 15;
-      if (ft) { topInner.moveTo(x, ty); ft = false; }
-      else { topInner.lineTo(x, ty); }
-      if (fb) { bottomInner.moveTo(x, by); fb = false; }
-      else { bottomInner.lineTo(x, by); }
+      if (ft) {
+        topInner.moveTo(x, ty);
+        ft = false;
+      } else {
+        topInner.lineTo(x, ty);
+      }
+      if (fb) {
+        bottomInner.moveTo(x, by);
+        fb = false;
+      } else {
+        bottomInner.lineTo(x, by);
+      }
     }
     canvas.drawPath(topInner, _wallInnerPaint);
     canvas.drawPath(bottomInner, _wallInnerPaint);
@@ -439,8 +477,9 @@ class TunnelRenderer extends PositionComponent
       );
 
       // Glow esterno (rosso scuro diffuso).
-      _obsGlowPaint.color =
-          const Color(0xFFFF0022).withValues(alpha: alpha * 0.18 * pulse);
+      _obsGlowPaint.color = const Color(
+        0xFFFF0022,
+      ).withValues(alpha: alpha * 0.18 * pulse);
       _obsGlowPaint.maskFilter = null;
       canvas.drawRect(obsRect.inflate(6), _obsGlowPaint);
 
@@ -476,8 +515,9 @@ class TunnelRenderer extends PositionComponent
       // Highlight cresta onda: striscia bianca che scorre con la phase.
       final crestPos = (obs.phase * 0.25) % 1.0;
       final crestY = rectTop + crestPos * totalH;
-      _obsBorderPaint.color = const Color(0xFFFFFFFF)
-          .withValues(alpha: alpha * 0.45 * pulse);
+      _obsBorderPaint.color = const Color(
+        0xFFFFFFFF,
+      ).withValues(alpha: alpha * 0.45 * pulse);
       _obsBorderPaint.style = PaintingStyle.fill;
       canvas.drawRect(
         Rect.fromLTRB(obsRect.left, crestY - 1, obsRect.right, crestY + 1),
@@ -486,14 +526,20 @@ class TunnelRenderer extends PositionComponent
 
       // Bordo luminoso esterno.
       _obsBorderPaint.style = PaintingStyle.stroke;
-      _obsBorderPaint.color =
-          const Color(0xFFFF2244).withValues(alpha: alpha * 0.85);
+      _obsBorderPaint.color = const Color(
+        0xFFFF2244,
+      ).withValues(alpha: alpha * 0.85);
       canvas.drawRect(obsRect, _obsBorderPaint);
     }
   }
 
-  void _renderSpeedLines(Canvas canvas, double startX, double endX,
-      double topY, double bottomY) {
+  void _renderSpeedLines(
+    Canvas canvas,
+    double startX,
+    double endX,
+    double topY,
+    double bottomY,
+  ) {
     final midY = (topY + bottomY) / 2;
     final halfH = (bottomY - topY) / 2;
     for (int i = 0; i < 8; i++) {

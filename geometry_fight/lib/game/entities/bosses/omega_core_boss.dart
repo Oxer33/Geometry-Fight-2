@@ -31,20 +31,22 @@ class OmegaCoreBoss extends BossBase {
   static const double _kLightningRadius = 200;
 
   OmegaCoreBoss()
-      : super(
-          hp: 3000,
-          bossName: 'OMEGA CORE',
-          pointValue: 10000,
-          neonColor: const Color(0xFFFFFFFF),
-          size: Vector2(120, 120),
-        );
+    : super(
+        hp: 3000,
+        bossName: 'OMEGA CORE',
+        pointValue: 10000,
+        neonColor: const Color(0xFFFFFFFF),
+        size: Vector2(120, 120),
+      );
 
   // OmegaCore è BIANCO/ARCOBALENO → mob bianchi/neutri. NIENTE mob che sparano
   // (richiesta utente: rimosso orbiter, che sparava palline). Solo drone +
   // decoy (entrambi non sparano).
   @override
-  List<EnemyType> get colorMatchedMinions =>
-      const [EnemyType.drone, EnemyType.decoy];
+  List<EnemyType> get colorMatchedMinions => const [
+    EnemyType.drone,
+    EnemyType.decoy,
+  ];
 
   @override
   int getPhase() {
@@ -97,9 +99,12 @@ class OmegaCoreBoss extends BossBase {
     if (_specialTimer <= 0) {
       _specialTimer = currentPhase == 3 ? 3.0 : 5.0;
       switch (currentPhase) {
-        case 0: _spawnMinions();
-        case 1: _createDeathZone();
-        case 2: _lightningStrike();
+        case 0:
+          _spawnMinions();
+        case 1:
+          _createDeathZone();
+        case 2:
+          _lightningStrike();
         case 3: // TUTTO INSIEME
           _spawnMinions();
           _createDeathZone();
@@ -159,21 +164,29 @@ class OmegaCoreBoss extends BossBase {
 
   void _spawnMinions() {
     for (int i = 0; i < 3 + currentPhase; i++) {
-      game.spawnEnemy(EnemyType.drone, position + Vector2(
-        (_rng.nextDouble() - 0.5) * 200,
-        (_rng.nextDouble() - 0.5) * 200,
-      ));
+      game.spawnEnemy(
+        EnemyType.drone,
+        position +
+            Vector2(
+              (_rng.nextDouble() - 0.5) * 200,
+              (_rng.nextDouble() - 0.5) * 200,
+            ),
+      );
     }
   }
 
   void _createDeathZone() {
-    _deathZones.add(_DeathZone(
-      position: playerPosition + Vector2(
-        (_rng.nextDouble() - 0.5) * 200,
-        (_rng.nextDouble() - 0.5) * 200,
+    _deathZones.add(
+      _DeathZone(
+        position:
+            playerPosition +
+            Vector2(
+              (_rng.nextDouble() - 0.5) * 200,
+              (_rng.nextDouble() - 0.5) * 200,
+            ),
+        lifetime: 8.0,
       ),
-      lifetime: 8.0,
-    ));
+    );
     if (_deathZones.length > 5) _deathZones.removeAt(0);
   }
 
@@ -217,20 +230,26 @@ class OmegaCoreBoss extends BossBase {
       for (final zone in _deathZones) {
         final offset = zone.position - position;
         final isGrace = zone.activationDelay > 0;
-        final fillColor =
-            isGrace ? const Color(0xFFFFAA00) : const Color(0xFFFF2200);
+        final fillColor = isGrace
+            ? const Color(0xFFFFAA00)
+            : const Color(0xFFFF2200);
         // Pulse più forte durante grace per attirare l'attenzione.
-        final pulse = isGrace
-            ? 0.35 + math.sin(_phase * 14) * 0.2
-            : 0.2;
+        final pulse = isGrace ? 0.35 + math.sin(_phase * 14) * 0.2 : 0.2;
         _zoneFillPaint.color = fillColor.withValues(alpha: pulse);
         canvas.drawCircle(
-            Offset(cx + offset.x, cy + offset.y), 50, _zoneFillPaint);
-        _zoneBorderPaint.color =
-            fillColor.withValues(alpha: isGrace ? 0.7 : 0.4);
+          Offset(cx + offset.x, cy + offset.y),
+          50,
+          _zoneFillPaint,
+        );
+        _zoneBorderPaint.color = fillColor.withValues(
+          alpha: isGrace ? 0.7 : 0.4,
+        );
         _zoneBorderPaint.strokeWidth = isGrace ? 2.0 : 1.2;
         canvas.drawCircle(
-            Offset(cx + offset.x, cy + offset.y), 50, _zoneBorderPaint);
+          Offset(cx + offset.x, cy + offset.y),
+          50,
+          _zoneBorderPaint,
+        );
       }
     }
 
@@ -239,17 +258,21 @@ class OmegaCoreBoss extends BossBase {
     if (_lightningWindUp > 0 && scale <= 1.01 && _lightningTarget != null) {
       final offset = _lightningTarget! - position;
       final warnCenter = Offset(cx + offset.x, cy + offset.y);
-      final tFrac = 1.0 - (_lightningWindUp / _kLightningWindUp).clamp(0.0, 1.0);
+      final tFrac =
+          1.0 - (_lightningWindUp / _kLightningWindUp).clamp(0.0, 1.0);
       final pulse = 0.4 + math.sin(_phase * 18) * 0.3;
-      _zoneBorderPaint.color =
-          const Color(0xFFFFEE00).withValues(alpha: pulse);
+      _zoneBorderPaint.color = const Color(0xFFFFEE00).withValues(alpha: pulse);
       _zoneBorderPaint.strokeWidth = 2.5 + tFrac * 2;
       canvas.drawCircle(warnCenter, _kLightningRadius, _zoneBorderPaint);
       // Anello interno che si contrae (indica imminente impatto).
-      _zoneBorderPaint.color =
-          const Color(0xFFFF4400).withValues(alpha: pulse * 0.8);
+      _zoneBorderPaint.color = const Color(
+        0xFFFF4400,
+      ).withValues(alpha: pulse * 0.8);
       canvas.drawCircle(
-          warnCenter, _kLightningRadius * (1.0 - tFrac), _zoneBorderPaint);
+        warnCenter,
+        _kLightningRadius * (1.0 - tFrac),
+        _zoneBorderPaint,
+      );
     }
 
     // ─── PRISM BEAM SPIKES: 8 raggi cromatici dal centro (signature) ───
@@ -259,12 +282,10 @@ class OmegaCoreBoss extends BossBase {
         final bAngle = _phase * 0.7 + i * math.pi / 4;
         final bLen = r * (1.1 + math.sin(_phase * 2 + i) * 0.2);
         final hue = ((_phase * 30) + i * 45) % 360;
-        _prismBeamPaint.color =
-            HSVColor.fromAHSV(0.55, hue, 0.8, 1).toColor();
+        _prismBeamPaint.color = HSVColor.fromAHSV(0.55, hue, 0.8, 1).toColor();
         canvas.drawLine(
           Offset(cx, cy),
-          Offset(cx + math.cos(bAngle) * bLen,
-              cy + math.sin(bAngle) * bLen),
+          Offset(cx + math.cos(bAngle) * bLen, cy + math.sin(bAngle) * bLen),
           _prismBeamPaint,
         );
       }
@@ -274,8 +295,7 @@ class OmegaCoreBoss extends BossBase {
     canvas.save();
     canvas.translate(cx, cy);
     canvas.rotate(_phase * 0.3);
-    _ring1Paint.color =
-        cur.withValues(alpha: scale <= 1.01 ? 0.4 : 0.2);
+    _ring1Paint.color = cur.withValues(alpha: scale <= 1.01 ? 0.4 : 0.2);
     _ring1Paint.strokeWidth = 3 * scale;
     canvas.drawCircle(Offset.zero, r * 0.85, _ring1Paint);
     canvas.restore();
@@ -284,8 +304,7 @@ class OmegaCoreBoss extends BossBase {
     canvas.save();
     canvas.translate(cx, cy);
     canvas.rotate(-_phase * 0.2);
-    _ring2Paint.color =
-        cur.withValues(alpha: scale <= 1.01 ? 0.3 : 0.15);
+    _ring2Paint.color = cur.withValues(alpha: scale <= 1.01 ? 0.3 : 0.15);
     _ring2Paint.strokeWidth = 2 * scale;
     canvas.drawCircle(Offset.zero, r * 0.7, _ring2Paint);
     canvas.restore();
@@ -297,15 +316,19 @@ class OmegaCoreBoss extends BossBase {
     // Dettagli interni + core multi-strato
     if (scale <= 1.01) {
       final pulse = 0.5 + math.sin(_phase * 2) * 0.4;
-      _coreHaloPaint.color =
-          const Color(0xFFFFFFFF).withValues(alpha: pulse * 0.35);
+      _coreHaloPaint.color = const Color(
+        0xFFFFFFFF,
+      ).withValues(alpha: pulse * 0.35);
       canvas.drawCircle(Offset(cx, cy), r * 0.42, _coreHaloPaint);
-      _coreWhitePaint.color =
-          const Color(0xFFFFFFFF).withValues(alpha: pulse);
+      _coreWhitePaint.color = const Color(0xFFFFFFFF).withValues(alpha: pulse);
       canvas.drawCircle(
-          Offset(cx, cy), r * 0.25 * (0.9 + pulse * 0.2), _coreWhitePaint);
-      _coreWhitePaint.color =
-          const Color(0xFFFFFFFF).withValues(alpha: (pulse * 1.2).clamp(0, 1));
+        Offset(cx, cy),
+        r * 0.25 * (0.9 + pulse * 0.2),
+        _coreWhitePaint,
+      );
+      _coreWhitePaint.color = const Color(
+        0xFFFFFFFF,
+      ).withValues(alpha: (pulse * 1.2).clamp(0, 1));
       canvas.drawCircle(Offset(cx, cy), r * 0.08, _coreWhitePaint);
 
       // Particelle orbitanti con core bianco
@@ -331,18 +354,21 @@ class OmegaCoreBoss extends BossBase {
   }
 }
 
-class _OmegaBullet extends PositionComponent with HasGameReference<GeometryFightGame> {
+class _OmegaBullet extends PositionComponent
+    with HasGameReference<GeometryFightGame> {
   final Vector2 direction;
   final Color color;
   late Vector2 _velocity;
   double _lifetime = 4.0;
 
   _OmegaBullet({required this.direction, required this.color})
-      : super(size: Vector2(18, 18), anchor: Anchor.center);
+    : super(size: Vector2(18, 18), anchor: Anchor.center);
 
   @override
   Future<void> onLoad() async {
-    _velocity = (direction.length2 < 1e-6 ? Vector2(1, 0) : direction.normalized()) * 180;
+    _velocity =
+        (direction.length2 < 1e-6 ? Vector2(1, 0) : direction.normalized()) *
+        180;
   }
 
   @override
@@ -351,7 +377,10 @@ class _OmegaBullet extends PositionComponent with HasGameReference<GeometryFight
     // SLOWER pet: rallenta dentro al campo (richiesta utente).
     position += _velocity * dt * game.projectileSlowFactor(position);
     _lifetime -= dt;
-    if (_lifetime <= 0) { removeFromParent(); return; }
+    if (_lifetime <= 0) {
+      removeFromParent();
+      return;
+    }
     if (position.distanceTo(game.player.position) < 14) {
       game.player.takeDamage();
       removeFromParent();

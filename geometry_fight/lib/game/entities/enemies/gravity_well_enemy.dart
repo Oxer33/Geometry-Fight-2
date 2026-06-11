@@ -25,14 +25,14 @@ class GravityWellEnemy extends EnemyBase {
   final _spiralPath = Path();
 
   GravityWellEnemy()
-      : super(
-          hp: 8,
-          speed: 40,
-          pointValue: 15,
-          geomValue: 5,
-          neonColor: const Color(0xFF4400CC),
-          size: Vector2(28, 28),
-        );
+    : super(
+        hp: 8,
+        speed: 40,
+        pointValue: 15,
+        geomValue: 5,
+        neonColor: const Color(0xFF4400CC),
+        size: Vector2(28, 28),
+      );
 
   @override
   void updateBehavior(double dt) {
@@ -107,17 +107,23 @@ class GravityWellEnemy extends EnemyBase {
         final py = cy + pDist * math.sin(pAngle);
         final pAlpha = 0.4 + math.sin(_spiralPhase * 2 + i) * 0.3;
         // Outer soft glow — larger radius, half alpha, no blur
-        _particlePaint.color = const Color(0xFF8844FF).withValues(alpha: pAlpha * 0.5);
+        _particlePaint.color = const Color(
+          0xFF8844FF,
+        ).withValues(alpha: pAlpha * 0.5);
         _particlePaint.maskFilter = null;
         canvas.drawCircle(Offset(px, py), 3.5, _particlePaint);
         // Inner bright core
-        _particlePaint.color = const Color(0xFF8844FF).withValues(alpha: pAlpha);
+        _particlePaint.color = const Color(
+          0xFF8844FF,
+        ).withValues(alpha: pAlpha);
         canvas.drawCircle(Offset(px, py), 1.5, _particlePaint);
       }
 
       // Nucleo luminoso — outer soft glow, no blur
       final coreAlpha = 0.6 + math.sin(_pulsePhase * 3) * 0.2;
-      _corePaint.color = const Color(0xFFAA66FF).withValues(alpha: coreAlpha * 0.35);
+      _corePaint.color = const Color(
+        0xFFAA66FF,
+      ).withValues(alpha: coreAlpha * 0.35);
       _corePaint.maskFilter = null;
       canvas.drawCircle(Offset(cx, cy), r * 0.45, _corePaint);
       // Inner bright core

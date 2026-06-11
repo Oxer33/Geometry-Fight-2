@@ -16,19 +16,22 @@ class TheArchitectBoss extends BossBase {
   static final math.Random _rng = math.Random();
 
   TheArchitectBoss()
-      : super(
-          hp: 1500,
-          bossName: 'THE ARCHITECT',
-          pointValue: 15000,
-          neonColor: NeonColors.electricBlue,
-          size: Vector2(160, 160),
-        );
+    : super(
+        hp: 1500,
+        bossName: 'THE ARCHITECT',
+        pointValue: 15000,
+        neonColor: NeonColors.electricBlue,
+        size: Vector2(160, 160),
+      );
 
   // TheArchitect è BLU ELETTRICO → mob blu/azzurri (tesla + glitch + laserTurret).
   // Esempio esplicitamente menzionato dall'utente.
   @override
-  List<EnemyType> get colorMatchedMinions =>
-      const [EnemyType.tesla, EnemyType.glitch, EnemyType.laserTurret];
+  List<EnemyType> get colorMatchedMinions => const [
+    EnemyType.tesla,
+    EnemyType.glitch,
+    EnemyType.laserTurret,
+  ];
 
   // TheArchitect struttura modulare 160×160 con appendici → visivo ~80%
   // della bbox. Override 0.7 → 0.8.
@@ -88,7 +91,10 @@ class TheArchitectBoss extends BossBase {
         if (delta.length >= 0.001) {
           final dir = delta.normalized();
           final bullet = EnemyBullet(
-              direction: dir, speed: 220, color: NeonColors.electricBlue);
+            direction: dir,
+            speed: 220,
+            color: NeonColors.electricBlue,
+          );
           bullet.position = structure.position.clone();
           game.world.add(bullet);
         }
@@ -111,7 +117,10 @@ class TheArchitectBoss extends BossBase {
         if (delta.length >= 0.001) {
           final dir = delta.normalized();
           final bullet = EnemyBullet(
-              direction: dir, speed: 280, color: NeonColors.white);
+            direction: dir,
+            speed: 280,
+            color: NeonColors.white,
+          );
           bullet.position = position.clone();
           game.world.add(bullet);
         }
@@ -122,13 +131,16 @@ class TheArchitectBoss extends BossBase {
   void _buildStructure() {
     final angle = _rng.nextDouble() * math.pi * 2;
     final dist = 150 + _rng.nextDouble() * 200;
-    final pos = position + Vector2(math.cos(angle) * dist, math.sin(angle) * dist);
+    final pos =
+        position + Vector2(math.cos(angle) * dist, math.sin(angle) * dist);
 
-    _structures.add(_Structure(
-      position: pos,
-      lifetime: 10.0 + currentPhase * 5,
-      attackTimer: 1.5,
-    ));
+    _structures.add(
+      _Structure(
+        position: pos,
+        lifetime: 10.0 + currentPhase * 5,
+        attackTimer: 1.5,
+      ),
+    );
 
     // Spawn a mine near the structure
     if (currentPhase >= 1) {
@@ -166,13 +178,16 @@ class TheArchitectBoss extends BossBase {
     if (scale <= 1.01) {
       for (final structure in _structures) {
         final sPos = structure.position - position;
-        final beamAlpha =
-            (structure.lifetime / 15).clamp(0.0, 1.0) * 0.5;
+        final beamAlpha = (structure.lifetime / 15).clamp(0.0, 1.0) * 0.5;
         _beamPaint.color = NeonColors.electricBlue.withValues(
-            alpha: beamAlpha * (0.6 + math.sin(_phase * 4) * 0.4));
+          alpha: beamAlpha * (0.6 + math.sin(_phase * 4) * 0.4),
+        );
         _beamPaint.strokeWidth = 1.2;
         canvas.drawLine(
-            Offset(cx, cy), Offset(cx + sPos.x, cy + sPos.y), _beamPaint);
+          Offset(cx, cy),
+          Offset(cx + sPos.x, cy + sPos.y),
+          _beamPaint,
+        );
       }
     }
 
@@ -185,8 +200,9 @@ class TheArchitectBoss extends BossBase {
 
     // Blueprint grid (4 righe orizzontali + verticali)
     if (scale <= 1.01) {
-      _blueprintPaint.color = NeonColors.electricBlue
-          .withValues(alpha: 0.22 + math.sin(_phase * 1.5) * 0.1);
+      _blueprintPaint.color = NeonColors.electricBlue.withValues(
+        alpha: 0.22 + math.sin(_phase * 1.5) * 0.1,
+      );
       _blueprintPaint.strokeWidth = 0.6;
       const gridN = 4;
       for (int i = 1; i < gridN; i++) {
@@ -201,30 +217,38 @@ class TheArchitectBoss extends BossBase {
     _bodyPaint.style = PaintingStyle.stroke;
     _bodyPaint.strokeWidth = 3;
     canvas.drawRect(
-        Rect.fromCenter(center: Offset.zero, width: r * 2, height: r * 2),
-        _bodyPaint);
+      Rect.fromCenter(center: Offset.zero, width: r * 2, height: r * 2),
+      _bodyPaint,
+    );
 
     // Square interno ruotato
     canvas.rotate(math.pi / 4);
     canvas.drawRect(
-        Rect.fromCenter(
-            center: Offset.zero, width: r * 1.4, height: r * 1.4),
-        _bodyPaint);
+      Rect.fromCenter(center: Offset.zero, width: r * 1.4, height: r * 1.4),
+      _bodyPaint,
+    );
     canvas.rotate(-math.pi / 4);
 
     // Construction ring contro-rotante
     if (scale <= 1.01) {
       final ringPulse = 0.3 + math.sin(_phase * 2) * 0.2;
-      _constructionRingPaint.color =
-          NeonColors.electricBlue.withValues(alpha: ringPulse);
+      _constructionRingPaint.color = NeonColors.electricBlue.withValues(
+        alpha: ringPulse,
+      );
       _constructionRingPaint.strokeWidth = 1.2;
       canvas.drawArc(
         Rect.fromCircle(center: Offset.zero, radius: r * 1.15),
-        _phase * -1.2, math.pi * 0.8, false, _constructionRingPaint,
+        _phase * -1.2,
+        math.pi * 0.8,
+        false,
+        _constructionRingPaint,
       );
       canvas.drawArc(
         Rect.fromCircle(center: Offset.zero, radius: r * 1.15),
-        _phase * -1.2 + math.pi, math.pi * 0.8, false, _constructionRingPaint,
+        _phase * -1.2 + math.pi,
+        math.pi * 0.8,
+        false,
+        _constructionRingPaint,
       );
     }
 
@@ -249,10 +273,14 @@ class TheArchitectBoss extends BossBase {
       final lifeT = (structure.lifetime / 15).clamp(0.0, 1.0);
       final pulse = 0.7 + math.sin(_phase * 3 + structure.position.x) * 0.3;
 
-      _structureGlowPaint.color =
-          NeonColors.electricBlue.withValues(alpha: 0.25 * lifeT * pulse);
+      _structureGlowPaint.color = NeonColors.electricBlue.withValues(
+        alpha: 0.25 * lifeT * pulse,
+      );
       canvas.drawCircle(
-          Offset(cx + sPos.x, cy + sPos.y), 18, _structureGlowPaint);
+        Offset(cx + sPos.x, cy + sPos.y),
+        18,
+        _structureGlowPaint,
+      );
 
       _structurePath.reset();
       for (int i = 0; i < 6; i++) {
@@ -267,17 +295,21 @@ class TheArchitectBoss extends BossBase {
       }
       _structurePath.close();
 
-      _structureFillPaint.color =
-          NeonColors.electricBlue.withValues(alpha: 0.25 * lifeT);
+      _structureFillPaint.color = NeonColors.electricBlue.withValues(
+        alpha: 0.25 * lifeT,
+      );
       canvas.drawPath(_structurePath, _structureFillPaint);
-      _structurePaint.color =
-          NeonColors.electricBlue.withValues(alpha: lifeT);
+      _structurePaint.color = NeonColors.electricBlue.withValues(alpha: lifeT);
       canvas.drawPath(_structurePath, _structurePaint);
 
-      _structureFillPaint.color =
-          const Color(0xFFFFFFFF).withValues(alpha: 0.8 * lifeT * pulse);
+      _structureFillPaint.color = const Color(
+        0xFFFFFFFF,
+      ).withValues(alpha: 0.8 * lifeT * pulse);
       canvas.drawCircle(
-          Offset(cx + sPos.x, cy + sPos.y), 2.5, _structureFillPaint);
+        Offset(cx + sPos.x, cy + sPos.y),
+        2.5,
+        _structureFillPaint,
+      );
     }
   }
 }

@@ -25,10 +25,13 @@ class SnakeTrailSegment extends PositionComponent
     with HasGameReference<GeometryFightGame>, CollisionCallbacks {
   /// Lifetime in seconds before the segment auto-removes.
   static const double _maxLife = 4.0;
+
   /// Fade window in the last [_fadeWindow] seconds — alpha 1 → 0 linearly.
   static const double _fadeWindow = 0.5;
+
   /// Visual core radius in px. -50% (richiesta utente: scia più piccola).
   static const double _radius = 3.0;
+
   /// Collision radius (slightly larger than visual for forgiving hits).
   /// -50% in linea col raggio visivo.
   static const double _hitboxRadius = 4.0;
@@ -45,19 +48,19 @@ class SnakeTrailSegment extends PositionComponent
   static final Paint _innerPaint = Paint();
 
   SnakeTrailSegment({required Vector2 spawnAt, double phase = 0})
-      : _phase = phase,
-        super(
-          position: spawnAt.clone(),
-          size: Vector2(_radius * 2, _radius * 2),
-          anchor: Anchor.center,
-        );
+    : _phase = phase,
+      super(
+        position: spawnAt.clone(),
+        size: Vector2(_radius * 2, _radius * 2),
+        anchor: Anchor.center,
+      );
 
   @override
   Future<void> onLoad() async {
-    add(CircleHitbox(
-      radius: _hitboxRadius,
-      anchor: Anchor.center,
-    )..position = size / 2);
+    add(
+      CircleHitbox(radius: _hitboxRadius, anchor: Anchor.center)
+        ..position = size / 2,
+    );
   }
 
   @override
@@ -111,7 +114,9 @@ class SnakeTrailSegment extends PositionComponent
 
   @override
   void onCollisionStart(
-      Set<Vector2> intersectionPoints, PositionComponent other) {
+    Set<Vector2> intersectionPoints,
+    PositionComponent other,
+  ) {
     // Guard: segment già rimosso (auto-cleanup a fine vita oppure recycle FIFO).
     // Flame può emettere un onCollisionStart per il frame finale → senza guard
     // potremmo applicare damage da un fantasma.

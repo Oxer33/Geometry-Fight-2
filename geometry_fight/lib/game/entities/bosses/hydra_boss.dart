@@ -34,9 +34,9 @@ class _HydraHead {
   int attackType;
 
   _HydraHead()
-      : position = Vector2.zero(),
-        attackTimer = _kHeadAttackInterval,
-        attackType = _hydraRng.nextInt(4);
+    : position = Vector2.zero(),
+      attackTimer = _kHeadAttackInterval,
+      attackType = _hydraRng.nextInt(4);
 }
 
 /// HYDRA (rework richiesta utente):
@@ -71,15 +71,15 @@ class HydraBoss extends BossBase {
   static final _tentaclePath = Path();
 
   HydraBoss()
-      : super(
-          // HP unificato 1000 — tutti gli hit (teste o corpo) convergono qui.
-          // Fight lineare, niente HP separato per testa.
-          hp: 1000,
-          bossName: 'HYDRA',
-          pointValue: 8000,
-          neonColor: NeonColors.green,
-          size: Vector2(120, 120),
-        );
+    : super(
+        // HP unificato 1000 — tutti gli hit (teste o corpo) convergono qui.
+        // Fight lineare, niente HP separato per testa.
+        hp: 1000,
+        bossName: 'HYDRA',
+        pointValue: 8000,
+        neonColor: NeonColors.green,
+        size: Vector2(120, 120),
+      );
 
   @override
   Future<void> onLoad() async {
@@ -87,9 +87,13 @@ class HydraBoss extends BossBase {
     // di BossBase.onLoad, poi rimuovo l'hitbox standard e ne aggiungo uno
     // più grande che copre anche l'orbita delle teste.
     await super.onLoad();
-    children.whereType<CircleHitbox>().toList().forEach((h) => h.removeFromParent());
-    add(CircleHitbox(radius: _kHitboxRadius, anchor: Anchor.center)
-      ..position = size / 2);
+    children.whereType<CircleHitbox>().toList().forEach(
+      (h) => h.removeFromParent(),
+    );
+    add(
+      CircleHitbox(radius: _kHitboxRadius, anchor: Anchor.center)
+        ..position = size / 2,
+    );
     // Parte con 1 testa.
     _syncHeads();
   }
@@ -101,8 +105,11 @@ class HydraBoss extends BossBase {
 
   // Hydra è VERDE → mob verdi (snake + weaver + pulsar).
   @override
-  List<EnemyType> get colorMatchedMinions =>
-      const [EnemyType.snake, EnemyType.weaver, EnemyType.pulsar];
+  List<EnemyType> get colorMatchedMinions => const [
+    EnemyType.snake,
+    EnemyType.weaver,
+    EnemyType.pulsar,
+  ];
 
   /// Allinea il numero di teste concrete a `_headCount`.
   /// Pre-posiziona ogni testa al proprio angolo orbita così da essere
@@ -155,8 +162,12 @@ class HydraBoss extends BossBase {
       if (targetCount == 0) {
         // Transizione a rage: esplodi le teste rimaste con FX drammatico.
         for (final h in _heads) {
-          game.spawnExplosion(position + h.position, NeonColors.red,
-              radius: 50, particleCount: 12);
+          game.spawnExplosion(
+            position + h.position,
+            NeonColors.red,
+            radius: 50,
+            particleCount: 12,
+          );
         }
         _heads.clear();
         _headCount = 0;
@@ -166,8 +177,12 @@ class HydraBoss extends BossBase {
         // Nuova testa: FX di materializzazione.
         _headCount = targetCount;
         _syncHeads();
-        game.spawnExplosion(position, NeonColors.green,
-            radius: 70, particleCount: 15);
+        game.spawnExplosion(
+          position,
+          NeonColors.green,
+          radius: 70,
+          particleCount: 15,
+        );
         game.triggerScreenShake(5, 0.25);
       }
       // Caso "diminuzione non-rage" omesso: HP è monotono decrescente,
@@ -206,11 +221,14 @@ class HydraBoss extends BossBase {
       if (_rageShootTimer <= 0) {
         _rageShootTimer = _kRageShootInterval;
         for (int i = 0; i < _kRageBulletsPerBurst; i++) {
-          final angle = _ragePhase * 5 +
-              i * (math.pi * 2 / _kRageBulletsPerBurst);
+          final angle =
+              _ragePhase * 5 + i * (math.pi * 2 / _kRageBulletsPerBurst);
           final bdir = Vector2(math.cos(angle), math.sin(angle));
           final bullet = EnemyBullet(
-              direction: bdir, speed: 340, color: NeonColors.red);
+            direction: bdir,
+            speed: 340,
+            color: NeonColors.red,
+          );
           bullet.position = position.clone();
           game.world.add(bullet);
         }
@@ -220,15 +238,19 @@ class HydraBoss extends BossBase {
       if (_rageSecondaryTimer <= 0) {
         _rageSecondaryTimer = _kRageSecondaryInterval;
         final baseAngle = math.atan2(
-            playerPosition.y - position.y,
-            playerPosition.x - position.x);
+          playerPosition.y - position.y,
+          playerPosition.x - position.x,
+        );
         // Burst ridotto a _kRageSecondaryBullets (era 8, ora 3 → -62%).
         final half = (_kRageSecondaryBullets - 1) / 2;
         for (int i = 0; i < _kRageSecondaryBullets; i++) {
           final ang = baseAngle + (i - half) * 0.15;
           final bdir = Vector2(math.cos(ang), math.sin(ang));
           final bullet = EnemyBullet(
-              direction: bdir, speed: 420, color: const Color(0xFFFF6600));
+            direction: bdir,
+            speed: 420,
+            color: const Color(0xFFFF6600),
+          );
           bullet.position = position.clone();
           game.world.add(bullet);
         }
@@ -245,7 +267,10 @@ class HydraBoss extends BossBase {
     if (toPlayer.length < 0.001) return;
     final color = head.attackType == 3 ? NeonColors.cyan : NeonColors.green;
     final bullet = EnemyBullet(
-        direction: toPlayer.normalized(), speed: 300, color: color);
+      direction: toPlayer.normalized(),
+      speed: 300,
+      color: color,
+    );
     bullet.position = headWorldPos.clone();
     game.world.add(bullet);
   }
@@ -265,20 +290,23 @@ class HydraBoss extends BossBase {
 
       final endPoint = Offset(cx + head.position.x, cy + head.position.y);
       final controlPoint = Offset(
-        (centerPoint.dx + endPoint.dx) / 2 +
-            math.sin(_ragePhase * 3 + i) * 20,
-        (centerPoint.dy + endPoint.dy) / 2 +
-            math.cos(_ragePhase * 3 + i) * 20,
+        (centerPoint.dx + endPoint.dx) / 2 + math.sin(_ragePhase * 3 + i) * 20,
+        (centerPoint.dy + endPoint.dy) / 2 + math.cos(_ragePhase * 3 + i) * 20,
       );
 
       _tentaclePath.reset();
       _tentaclePath.moveTo(centerPoint.dx, centerPoint.dy);
       _tentaclePath.quadraticBezierTo(
-          controlPoint.dx, controlPoint.dy, endPoint.dx, endPoint.dy);
+        controlPoint.dx,
+        controlPoint.dy,
+        endPoint.dx,
+        endPoint.dy,
+      );
 
       // Glow esterno tentacolo
-      _tentacleGlowPaint.color =
-          neonColor.withValues(alpha: paint.color.a * 0.35);
+      _tentacleGlowPaint.color = neonColor.withValues(
+        alpha: paint.color.a * 0.35,
+      );
       _tentacleGlowPaint.strokeWidth = 9 * scale;
       canvas.drawPath(_tentaclePath, _tentacleGlowPaint);
 
@@ -290,61 +318,77 @@ class HydraBoss extends BossBase {
       // Shimmer bianco che viaggia lungo il tentacolo.
       final shimmerT = (_ragePhase * 1.8 + i * 0.4) % 1.0;
       final shimmerPoint = _pointOnQuadBezier(
-          centerPoint, controlPoint, endPoint, shimmerT);
-      _tentacleShimmerPaint.color =
-          const Color(0xFFFFFFFF).withValues(alpha: 0.7 * paint.color.a);
+        centerPoint,
+        controlPoint,
+        endPoint,
+        shimmerT,
+      );
+      _tentacleShimmerPaint.color = const Color(
+        0xFFFFFFFF,
+      ).withValues(alpha: 0.7 * paint.color.a);
       canvas.drawCircle(shimmerPoint, 3 * scale, _tentacleShimmerPaint);
 
       // ─── TESTA ──────────────────────────────────────────────────
       final headPulse = 0.7 + math.sin(_ragePhase * 4 + i * 1.3) * 0.3;
-      _headGlowPaint.color =
-          neonColor.withValues(alpha: paint.color.a * 0.35 * headPulse);
+      _headGlowPaint.color = neonColor.withValues(
+        alpha: paint.color.a * 0.35 * headPulse,
+      );
       canvas.drawCircle(endPoint, 20 * scale, _headGlowPaint);
       canvas.drawCircle(endPoint, 12 * scale, paint);
-      _headIrisPaint.color = const Color(0xFFFF6622)
-          .withValues(alpha: paint.color.a * 0.85);
+      _headIrisPaint.color = const Color(
+        0xFFFF6622,
+      ).withValues(alpha: paint.color.a * 0.85);
       canvas.drawCircle(endPoint, 5 * scale * headPulse, _headIrisPaint);
-      _headIrisPaint.color =
-          const Color(0xFFFFFFFF).withValues(alpha: paint.color.a);
+      _headIrisPaint.color = const Color(
+        0xFFFFFFFF,
+      ).withValues(alpha: paint.color.a);
       canvas.drawCircle(endPoint, 2 * scale, _headIrisPaint);
 
       _headFangPaint.color = paint.color;
       _headFangPaint.strokeWidth = 1.2 * scale;
       final fangBase = endPoint.dy + 10 * scale;
       canvas.drawLine(
-          Offset(endPoint.dx - 4 * scale, fangBase),
-          Offset(endPoint.dx - 2 * scale, fangBase + 6 * scale),
-          _headFangPaint);
+        Offset(endPoint.dx - 4 * scale, fangBase),
+        Offset(endPoint.dx - 2 * scale, fangBase + 6 * scale),
+        _headFangPaint,
+      );
       canvas.drawLine(
-          Offset(endPoint.dx + 4 * scale, fangBase),
-          Offset(endPoint.dx + 2 * scale, fangBase + 6 * scale),
-          _headFangPaint);
+        Offset(endPoint.dx + 4 * scale, fangBase),
+        Offset(endPoint.dx + 2 * scale, fangBase + 6 * scale),
+        _headFangPaint,
+      );
     }
 
     // ─── NUCLEO CENTRALE ─────────────────────────────────────────────
     final corePulse = 0.85 + math.sin(_ragePhase * 5) * 0.15;
-    _corePulsePaint.color =
-        neonColor.withValues(alpha: paint.color.a * 0.4 * corePulse);
+    _corePulsePaint.color = neonColor.withValues(
+      alpha: paint.color.a * 0.4 * corePulse,
+    );
     canvas.drawCircle(centerPoint, 35 * scale * corePulse, _corePulsePaint);
     canvas.drawCircle(centerPoint, 25 * scale, paint);
-    _corePulsePaint.color =
-        const Color(0xFFFFFFFF).withValues(alpha: paint.color.a * corePulse);
+    _corePulsePaint.color = const Color(
+      0xFFFFFFFF,
+    ).withValues(alpha: paint.color.a * corePulse);
     canvas.drawCircle(centerPoint, 10 * scale * corePulse, _corePulsePaint);
 
     // ─── RAGE MODE: corona rossa + spike pulsanti ────────────────────
     if (_rageMode) {
       final rageStrobe = 0.25 + math.sin(_ragePhase * 12) * 0.15;
-      _ragePaint.color =
-          NeonColors.red.withValues(alpha: rageStrobe * paint.color.a);
+      _ragePaint.color = NeonColors.red.withValues(
+        alpha: rageStrobe * paint.color.a,
+      );
       canvas.drawCircle(centerPoint, 50 * scale, _ragePaint);
       for (int s = 0; s < 8; s++) {
         final angle = s * math.pi / 4 + _ragePhase * 0.5;
         final len = 48 * scale + math.sin(_ragePhase * 6 + s) * 8 * scale;
-        _ragePaint.color = NeonColors.red
-            .withValues(alpha: (0.4 + rageStrobe) * paint.color.a);
+        _ragePaint.color = NeonColors.red.withValues(
+          alpha: (0.4 + rageStrobe) * paint.color.a,
+        );
         canvas.drawCircle(
-          Offset(centerPoint.dx + math.cos(angle) * len,
-              centerPoint.dy + math.sin(angle) * len),
+          Offset(
+            centerPoint.dx + math.cos(angle) * len,
+            centerPoint.dy + math.sin(angle) * len,
+          ),
           2.5 * scale,
           _ragePaint,
         );

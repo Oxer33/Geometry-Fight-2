@@ -11,33 +11,54 @@ import '../widgets/neon_back_button.dart';
 /// back to the catalog English when an id is unknown (defensive).
 String _weaponName(AppLocalizations l10n, String id, String fallback) {
   switch (id) {
-    case 'basic': return l10n.weaponNameBasic;
-    case 'triple': return l10n.weaponNameTriple;
-    case 'spread': return l10n.weaponNameSpread;
-    case 'ricochet': return l10n.weaponNameRicochet;
-    case 'homing': return l10n.weaponNameHoming;
-    case 'plasma': return l10n.weaponNamePlasma;
-    case 'laser': return l10n.weaponNameLaser;
-    case 'gauss': return l10n.weaponNameGauss;
-    case 'chain': return l10n.weaponNameChain;
-    default: return fallback;
+    case 'basic':
+      return l10n.weaponNameBasic;
+    case 'triple':
+      return l10n.weaponNameTriple;
+    case 'spread':
+      return l10n.weaponNameSpread;
+    case 'ricochet':
+      return l10n.weaponNameRicochet;
+    case 'homing':
+      return l10n.weaponNameHoming;
+    case 'plasma':
+      return l10n.weaponNamePlasma;
+    case 'laser':
+      return l10n.weaponNameLaser;
+    case 'gauss':
+      return l10n.weaponNameGauss;
+    case 'chain':
+      return l10n.weaponNameChain;
+    default:
+      return fallback;
   }
 }
 
 /// Localized pet label by id (mirrors shop_screen `_petName`).
 String _petName(AppLocalizations l10n, String id, String fallback) {
   switch (id) {
-    case 'attack': return l10n.petNameAttack;
-    case 'collect': return l10n.petNameCollect;
-    case 'sweep': return l10n.petNameSweep;
-    case 'defend': return l10n.petNameDefend;
-    case 'snipe': return l10n.petNameSnipe;
-    case 'ram': return l10n.petNameRam;
-    case 'phoenix': return l10n.petNamePhoenix;
-    case 'black_hole_pet': return l10n.petNameBlackHole;
-    case 'emp_drone': return l10n.petNameEmpDrone;
-    case 'tactical_spotter': return l10n.petNameTacticalSpotter;
-    default: return fallback;
+    case 'attack':
+      return l10n.petNameAttack;
+    case 'collect':
+      return l10n.petNameCollect;
+    case 'sweep':
+      return l10n.petNameSweep;
+    case 'defend':
+      return l10n.petNameDefend;
+    case 'snipe':
+      return l10n.petNameSnipe;
+    case 'ram':
+      return l10n.petNameRam;
+    case 'phoenix':
+      return l10n.petNamePhoenix;
+    case 'black_hole_pet':
+      return l10n.petNameBlackHole;
+    case 'emp_drone':
+      return l10n.petNameEmpDrone;
+    case 'tactical_spotter':
+      return l10n.petNameTacticalSpotter;
+    default:
+      return fallback;
   }
 }
 
@@ -101,11 +122,13 @@ class _LoadoutScreenState extends State<LoadoutScreen> {
     _WeaponEntry('triple', 'TRIPLE'),
     _WeaponEntry('spread', 'SPREAD'),
     _WeaponEntry('ricochet', 'RICOCH.'),
-    _WeaponEntry('homing', 'HOMING'),
     _WeaponEntry('plasma', 'PLASMA'),
     _WeaponEntry('laser', 'LASER'),
     _WeaponEntry('gauss', 'GAUSS'),
     _WeaponEntry('chain', 'CHAIN'),
+    _WeaponEntry('shotgun', 'SHOTGUN'),
+    _WeaponEntry('railgun', 'RAILGUN'),
+    _WeaponEntry('homing', 'HOMING'),
   ];
 
   // Iter 19 (utente: "tap auto-advance pre-game"). Weapon tap:
@@ -145,10 +168,7 @@ class _LoadoutScreenState extends State<LoadoutScreen> {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(
-          msg,
-          style: const TextStyle(fontFamily: 'monospace'),
-        ),
+        content: Text(msg, style: const TextStyle(fontFamily: 'monospace')),
         backgroundColor: Colors.amber.shade800,
         duration: const Duration(milliseconds: 900),
       ),
@@ -201,11 +221,14 @@ class _LoadoutScreenState extends State<LoadoutScreen> {
                   // Step indicator (1/2 o 2/2)
                   Container(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 10, vertical: 4),
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(8),
                       border: Border.all(
-                          color: NeonColors.cyan.withValues(alpha: 0.5)),
+                        color: NeonColors.cyan.withValues(alpha: 0.5),
+                      ),
                     ),
                     child: Text(
                       // Wizard a 6 step: mode(1)→diff(2)→mods(3)→arma(4)→
@@ -227,8 +250,7 @@ class _LoadoutScreenState extends State<LoadoutScreen> {
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 12),
-                child:
-                    isWeaponsStep ? _buildWeaponsGrid() : _buildPetsGrid(),
+                child: isWeaponsStep ? _buildWeaponsGrid() : _buildPetsGrid(),
               ),
             ),
             // Iter 19 (utente: "auto-advance on tap"): rimosso bottone
@@ -284,15 +306,17 @@ class _LoadoutScreenState extends State<LoadoutScreen> {
             iconLetter: '–',
             onTap: () => _selectPet('none'),
           ),
-          ...kPetCatalog.map((p) => _NeonLoadoutCard(
-                title: _petName(l10n, p.id, p.displayName),
-                isSelected: _saveData.activePet == p.id,
-                isUnlocked: _saveData.unlockedPets.contains(p.id),
-                color: p.color,
-                iconLetter: p.iconCode,
-                petType: p.type,
-                onTap: () => _selectPet(p.id),
-              )),
+          ...kPetCatalog.map(
+            (p) => _NeonLoadoutCard(
+              title: _petName(l10n, p.id, p.displayName),
+              isSelected: _saveData.activePet == p.id,
+              isUnlocked: _saveData.unlockedPets.contains(p.id),
+              color: p.color,
+              iconLetter: p.iconCode,
+              petType: p.type,
+              onTap: () => _selectPet(p.id),
+            ),
+          ),
         ],
       ),
     );
@@ -371,9 +395,10 @@ class _NeonLoadoutCard extends StatelessWidget {
           boxShadow: isSelected
               ? [
                   BoxShadow(
-                      color: eff.withValues(alpha: 0.45),
-                      blurRadius: 14,
-                      spreadRadius: -2)
+                    color: eff.withValues(alpha: 0.45),
+                    blurRadius: 14,
+                    spreadRadius: -2,
+                  ),
                 ]
               : null,
         ),
@@ -390,8 +415,9 @@ class _NeonLoadoutCard extends StatelessWidget {
                 boxShadow: isSelected
                     ? [
                         BoxShadow(
-                            color: eff.withValues(alpha: 0.5),
-                            blurRadius: 8)
+                          color: eff.withValues(alpha: 0.5),
+                          blurRadius: 8,
+                        ),
                       ]
                     : null,
               ),
@@ -399,10 +425,7 @@ class _NeonLoadoutCard extends StatelessWidget {
               child: petType != null
                   ? CustomPaint(
                       size: const Size(28, 28),
-                      painter: _PetIconPainter(
-                        type: petType!,
-                        color: eff,
-                      ),
+                      painter: _PetIconPainter(type: petType!, color: eff),
                     )
                   : Text(
                       iconLetter,
@@ -433,8 +456,9 @@ class _NeonLoadoutCard extends StatelessWidget {
                       shadows: isSelected
                           ? [
                               Shadow(
-                                  color: eff.withValues(alpha: 0.5),
-                                  blurRadius: 4)
+                                color: eff.withValues(alpha: 0.5),
+                                blurRadius: 4,
+                              ),
                             ]
                           : null,
                     ),
@@ -444,16 +468,16 @@ class _NeonLoadoutCard extends StatelessWidget {
                       padding: const EdgeInsets.only(top: 3),
                       child: Row(
                         children: [
-                          Icon(Icons.lock,
-                              size: 9,
-                              color:
-                                  Colors.amber.withValues(alpha: 0.7)),
+                          Icon(
+                            Icons.lock,
+                            size: 9,
+                            color: Colors.amber.withValues(alpha: 0.7),
+                          ),
                           const SizedBox(width: 3),
                           Text(
                             l10n.menuShop,
                             style: TextStyle(
-                              color:
-                                  Colors.amber.withValues(alpha: 0.7),
+                              color: Colors.amber.withValues(alpha: 0.7),
                               fontSize: 8,
                               fontFamily: 'monospace',
                             ),
@@ -517,7 +541,11 @@ class _PetIconPainter extends CustomPainter {
         canvas.drawPath(path, _fill);
         // Mini canna (entro canvas)
         _stroke.strokeWidth = 1.6;
-        canvas.drawLine(Offset(cx, cy - r * 0.7), Offset(cx, cy - r * 0.88), _stroke);
+        canvas.drawLine(
+          Offset(cx, cy - r * 0.7),
+          Offset(cx, cy - r * 0.88),
+          _stroke,
+        );
         // Bullet pre-spara (iter 13 fix: ridotto da 0.95→0.85 per stare
         // completamente dentro canvas — radius 1.4 + cy-r*0.95 era half-clipped).
         _fill.color = const Color(0xFFFFFFFF);
@@ -580,8 +608,16 @@ class _PetIconPainter extends CustomPainter {
         _stroke
           ..color = const Color(0xFFFFFFFF)
           ..strokeWidth = 1.6;
-        canvas.drawLine(Offset(cx - r * 0.35, cy), Offset(cx + r * 0.35, cy), _stroke);
-        canvas.drawLine(Offset(cx, cy - r * 0.35), Offset(cx, cy + r * 0.1), _stroke);
+        canvas.drawLine(
+          Offset(cx - r * 0.35, cy),
+          Offset(cx + r * 0.35, cy),
+          _stroke,
+        );
+        canvas.drawLine(
+          Offset(cx, cy - r * 0.35),
+          Offset(cx, cy + r * 0.1),
+          _stroke,
+        );
       case PetType.snipe:
         // Diamond con crosshair.
         final path = Path()
@@ -593,8 +629,16 @@ class _PetIconPainter extends CustomPainter {
         canvas.drawPath(path, _stroke);
         // Crosshair lines
         _stroke.strokeWidth = 1.0;
-        canvas.drawLine(Offset(cx - r * 0.95, cy), Offset(cx + r * 0.95, cy), _stroke);
-        canvas.drawLine(Offset(cx, cy - r * 0.95), Offset(cx, cy + r * 0.95), _stroke);
+        canvas.drawLine(
+          Offset(cx - r * 0.95, cy),
+          Offset(cx + r * 0.95, cy),
+          _stroke,
+        );
+        canvas.drawLine(
+          Offset(cx, cy - r * 0.95),
+          Offset(cx, cy + r * 0.95),
+          _stroke,
+        );
         _fill.color = color;
         canvas.drawCircle(Offset(cx, cy), 2.0, _fill);
       case PetType.ram:
@@ -664,14 +708,26 @@ class _PetIconPainter extends CustomPainter {
         _stroke
           ..color = const Color(0xFFFFFFFF)
           ..strokeWidth = 1.6;
-        canvas.drawLine(Offset(cx, cy - r * 0.6),
-            Offset(cx, cy - r * 0.95), _stroke);
-        canvas.drawLine(Offset(cx, cy + r * 0.6),
-            Offset(cx, cy + r * 0.95), _stroke);
-        canvas.drawLine(Offset(cx - r * 0.6, cy),
-            Offset(cx - r * 0.95, cy), _stroke);
-        canvas.drawLine(Offset(cx + r * 0.6, cy),
-            Offset(cx + r * 0.95, cy), _stroke);
+        canvas.drawLine(
+          Offset(cx, cy - r * 0.6),
+          Offset(cx, cy - r * 0.95),
+          _stroke,
+        );
+        canvas.drawLine(
+          Offset(cx, cy + r * 0.6),
+          Offset(cx, cy + r * 0.95),
+          _stroke,
+        );
+        canvas.drawLine(
+          Offset(cx - r * 0.6, cy),
+          Offset(cx - r * 0.95, cy),
+          _stroke,
+        );
+        canvas.drawLine(
+          Offset(cx + r * 0.6, cy),
+          Offset(cx + r * 0.95, cy),
+          _stroke,
+        );
       case PetType.tacticalSpotter:
         // Scope: cerchio + crosshair + dot centrale.
         _stroke
@@ -681,10 +737,16 @@ class _PetIconPainter extends CustomPainter {
         _stroke
           ..color = const Color(0xFFFFFFFF)
           ..strokeWidth = 1.0;
-        canvas.drawLine(Offset(cx - r * 0.95, cy),
-            Offset(cx + r * 0.95, cy), _stroke);
-        canvas.drawLine(Offset(cx, cy - r * 0.95),
-            Offset(cx, cy + r * 0.95), _stroke);
+        canvas.drawLine(
+          Offset(cx - r * 0.95, cy),
+          Offset(cx + r * 0.95, cy),
+          _stroke,
+        );
+        canvas.drawLine(
+          Offset(cx, cy - r * 0.95),
+          Offset(cx, cy + r * 0.95),
+          _stroke,
+        );
         _fill.color = color;
         canvas.drawCircle(Offset(cx, cy), r * 0.18, _fill);
       case PetType.slower:
@@ -698,6 +760,41 @@ class _PetIconPainter extends CustomPainter {
           ..strokeWidth = 1.4;
         canvas.drawLine(Offset(cx, cy), Offset(cx, cy - r * 0.42), _stroke);
         canvas.drawLine(Offset(cx, cy), Offset(cx + r * 0.6, cy), _stroke);
+        _fill.color = color;
+        canvas.drawCircle(Offset(cx, cy), r * 0.16, _fill);
+      case PetType.bomber:
+        // Mina: disco + 6 spuntoni d'allarme + miccia bianca.
+        _fill.color = color;
+        canvas.drawCircle(Offset(cx, cy), r * 0.5, _fill);
+        _stroke
+          ..color = const Color(0xFFFFFFFF)
+          ..strokeWidth = 1.4;
+        for (int i = 0; i < 6; i++) {
+          final a = i * math.pi / 3;
+          canvas.drawLine(
+            Offset(cx + math.cos(a) * r * 0.5, cy + math.sin(a) * r * 0.5),
+            Offset(cx + math.cos(a) * r * 0.92, cy + math.sin(a) * r * 0.92),
+            _stroke,
+          );
+        }
+        _fill.color = const Color(0xFFFFFFFF);
+        canvas.drawCircle(Offset(cx, cy), r * 0.16, _fill);
+      case PetType.repulsor:
+        // Campo di forza: 2 anelli concentrici + 4 frecce uscenti.
+        _stroke
+          ..color = color
+          ..strokeWidth = 1.6;
+        canvas.drawCircle(Offset(cx, cy), r * 0.42, _stroke);
+        canvas.drawCircle(Offset(cx, cy), r * 0.85, _stroke);
+        _stroke.strokeWidth = 1.4;
+        for (int i = 0; i < 4; i++) {
+          final a = i * math.pi / 2;
+          canvas.drawLine(
+            Offset(cx + math.cos(a) * r * 0.5, cy + math.sin(a) * r * 0.5),
+            Offset(cx + math.cos(a) * r * 0.95, cy + math.sin(a) * r * 0.95),
+            _stroke,
+          );
+        }
         _fill.color = color;
         canvas.drawCircle(Offset(cx, cy), r * 0.16, _fill);
     }

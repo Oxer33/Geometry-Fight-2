@@ -90,18 +90,19 @@ class GateEnemy extends PositionComponent
   @override
   Future<void> onLoad() async {
     // Hitbox sphere allineato a visual+2 buffer (vedi _sphereHitboxR doc).
-    _sphereHitbox1 =
-        CircleHitbox(radius: _sphereHitboxR, anchor: Anchor.center)
-          ..position = size / 2;
-    _sphereHitbox2 =
-        CircleHitbox(radius: _sphereHitboxR, anchor: Anchor.center)
-          ..position = size / 2;
+    _sphereHitbox1 = CircleHitbox(radius: _sphereHitboxR, anchor: Anchor.center)
+      ..position = size / 2;
+    _sphereHitbox2 = CircleHitbox(radius: _sphereHitboxR, anchor: Anchor.center)
+      ..position = size / 2;
     add(_sphereHitbox1);
     add(_sphereHitbox2);
   }
 
   @override
-  void onCollisionStart(Set<Vector2> intersectionPoints, PositionComponent other) {
+  void onCollisionStart(
+    Set<Vector2> intersectionPoints,
+    PositionComponent other,
+  ) {
     super.onCollisionStart(intersectionPoints, other);
     if (other is PlayerBullet) {
       other.reflect();
@@ -146,11 +147,14 @@ class GateEnemy extends PositionComponent
       // continuo mentre gate ancora dentro buffer durante turn).
       if (position.y <= camY - halfH + kBounceBuffer && _targetDir.y < 0) {
         _targetDir.y = -_targetDir.y;
-      } else if (position.y >= camY + halfH - kBounceBuffer && _targetDir.y > 0) {
+      } else if (position.y >= camY + halfH - kBounceBuffer &&
+          _targetDir.y > 0) {
         _targetDir.y = -_targetDir.y;
       }
       position.y = position.y.clamp(
-          camY - halfH + kBounceBuffer, camY + halfH - kBounceBuffer);
+        camY - halfH + kBounceBuffer,
+        camY + halfH - kBounceBuffer,
+      );
       // Despawn se dietro la camera
       final cameraLeft =
           game.camera.viewfinder.position.x - game.size.x / 2 - 200;
@@ -168,7 +172,8 @@ class GateEnemy extends PositionComponent
 
       if (position.y <= kBounceBuffer && _targetDir.y < 0) {
         _targetDir.y = -_targetDir.y;
-      } else if (position.y >= arenaHeight - kBounceBuffer && _targetDir.y > 0) {
+      } else if (position.y >= arenaHeight - kBounceBuffer &&
+          _targetDir.y > 0) {
         _targetDir.y = -_targetDir.y;
       }
       position.y = position.y.clamp(kBounceBuffer, arenaHeight - kBounceBuffer);
@@ -188,7 +193,10 @@ class GateEnemy extends PositionComponent
     // in funzione del moveDir).
     final perpAngle = math.atan2(_moveDir.y, _moveDir.x) + math.pi / 2;
     final halfW = _gateWidth / 2;
-    final sphereOffset1 = Vector2(math.cos(perpAngle) * halfW, math.sin(perpAngle) * halfW);
+    final sphereOffset1 = Vector2(
+      math.cos(perpAngle) * halfW,
+      math.sin(perpAngle) * halfW,
+    );
     _sphereHitbox1.position = size / 2 + sphereOffset1;
     _sphereHitbox2.position = size / 2 - sphereOffset1;
 
@@ -261,7 +269,10 @@ class GateEnemy extends PositionComponent
     // Calcola posizioni assolute delle due sfere endpoint (epicentri esplosioni).
     final perpAngle = math.atan2(_moveDir.y, _moveDir.x) + math.pi / 2;
     final halfW = _gateWidth / 2;
-    final sphereOffset = Vector2(math.cos(perpAngle) * halfW, math.sin(perpAngle) * halfW);
+    final sphereOffset = Vector2(
+      math.cos(perpAngle) * halfW,
+      math.sin(perpAngle) * halfW,
+    );
     final sphere1 = position + sphereOffset;
     final sphere2 = position - sphereOffset;
 
@@ -279,7 +290,10 @@ class GateEnemy extends PositionComponent
       final d1 = enemy.position.distanceTo(sphere1);
       final d2 = enemy.position.distanceTo(sphere2);
       if (d1 < killRadius || d2 < killRadius) {
-        enemy.takeDamage(999, isArea: true); // Gate explosion = danno area → splitter immuni
+        enemy.takeDamage(
+          999,
+          isArea: true,
+        ); // Gate explosion = danno area → splitter immuni
         killCount++;
       }
     }
@@ -297,9 +311,24 @@ class GateEnemy extends PositionComponent
     // Due esplosioni con epicentri sulle sfere endpoint (una per sponda).
     // Ciascuna è composta da 3 layer di colore per l'effetto "blooming".
     for (final epicenter in [sphere1, sphere2]) {
-      game.spawnExplosion(epicenter, const Color(0xFFFFFFFF), radius: _explosionRadius * 2.2, particleCount: 30);
-      game.spawnExplosion(epicenter, neonColor,              radius: _explosionRadius * 1.6, particleCount: 20);
-      game.spawnExplosion(epicenter, const Color(0xFFFF3030), radius: _explosionRadius * 1.1, particleCount: 14);
+      game.spawnExplosion(
+        epicenter,
+        const Color(0xFFFFFFFF),
+        radius: _explosionRadius * 2.2,
+        particleCount: 30,
+      );
+      game.spawnExplosion(
+        epicenter,
+        neonColor,
+        radius: _explosionRadius * 1.6,
+        particleCount: 20,
+      );
+      game.spawnExplosion(
+        epicenter,
+        const Color(0xFFFF3030),
+        radius: _explosionRadius * 1.1,
+        particleCount: 14,
+      );
     }
 
     // Shake ridotto (esplosione più piccola)
@@ -358,7 +387,9 @@ class GateEnemy extends PositionComponent
     canvas.drawCircle(sphere2, _sphereVisualR * 2.4, _haloPaint);
 
     // ── 2. WIRE GLOW (bianco soft sotto la linea principale) ──
-    _glowPaint.color = const Color(0xFFFFFFFF).withValues(alpha: 0.25 + pulse * 0.15);
+    _glowPaint.color = const Color(
+      0xFFFFFFFF,
+    ).withValues(alpha: 0.25 + pulse * 0.15);
     _glowPaint.strokeWidth = 16.0;
     _glowPaint.style = PaintingStyle.stroke;
     canvas.drawLine(sphere1, sphere2, _glowPaint);
@@ -384,11 +415,15 @@ class GateEnemy extends PositionComponent
       final orbitR = _sphereVisualR * 1.5;
       final rect = Rect.fromCircle(center: centerPt, radius: orbitR);
       // Arco 1
-      canvas.drawArc(
-          rect, _phase * 1.5, math.pi * 0.6, false, _arcPaint);
+      canvas.drawArc(rect, _phase * 1.5, math.pi * 0.6, false, _arcPaint);
       // Arco 2 contro-rotante
       canvas.drawArc(
-          rect, -_phase * 2 + math.pi, math.pi * 0.5, false, _arcPaint);
+        rect,
+        -_phase * 2 + math.pi,
+        math.pi * 0.5,
+        false,
+        _arcPaint,
+      );
     }
 
     // ── 5. SFERE arancioni con pulsing ──
@@ -403,8 +438,9 @@ class GateEnemy extends PositionComponent
     canvas.drawCircle(sphere2, 5.6, _spherePaint);
 
     // ── 7. SPARK CRACKLES (microsparks animati attorno endpoint) ──
-    _sparkPaint.color =
-        const Color(0xFFFFFFFF).withValues(alpha: fastPulse * 0.7);
+    _sparkPaint.color = const Color(
+      0xFFFFFFFF,
+    ).withValues(alpha: fastPulse * 0.7);
     for (int i = 0; i < 4; i++) {
       final sparkAng = _phase * 3 + i * math.pi / 2;
       final sparkDist = _sphereVisualR + 4 + math.sin(_phase * 5 + i) * 2;
@@ -422,12 +458,10 @@ class GateEnemy extends PositionComponent
       final pX = cx + s1x * (1 - 2 * t);
       final pY = cy + s1y * (1 - 2 * t);
       // Glow soft particella
-      _spherePaint.color =
-          const Color(0xFF66FFFF).withValues(alpha: 0.4);
+      _spherePaint.color = const Color(0xFF66FFFF).withValues(alpha: 0.4);
       canvas.drawCircle(Offset(pX, pY), 5.5, _spherePaint);
       // Core bianca brillante
-      _spherePaint.color =
-          const Color(0xFFFFFFFF).withValues(alpha: 0.9);
+      _spherePaint.color = const Color(0xFFFFFFFF).withValues(alpha: 0.9);
       canvas.drawCircle(Offset(pX, pY), 2.5, _spherePaint);
     }
   }

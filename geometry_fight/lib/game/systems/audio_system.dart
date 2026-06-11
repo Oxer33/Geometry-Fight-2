@@ -26,7 +26,7 @@ class _Mp3Pool {
   bool get isReady => _ready;
 
   _Mp3Pool(this.assetRelPath, {int size = 4})
-      : _players = List.generate(size, (_) => AudioPlayer());
+    : _players = List.generate(size, (_) => AudioPlayer());
 
   Future<void> load() async {
     // `_ready = true` solo se almeno un player ha caricato con successo.
@@ -51,10 +51,7 @@ class _Mp3Pool {
       // Parallelize setVolume + seek (indipendenti) → ~halved latency.
       // Su megaswarm 100+ kill/s con 50ms cooldown → 20 play/s → ~6ms vs
       // 12ms per call. Risparmio ~120ms/sec di event-loop blocking.
-      await Future.wait([
-        p.setVolume(volume),
-        p.seek(Duration.zero),
-      ]);
+      await Future.wait([p.setVolume(volume), p.seek(Duration.zero)]);
       await p.resume();
     } catch (e) {
       debugPrint('_Mp3Pool play error ($assetRelPath): $e');
@@ -148,7 +145,8 @@ class AudioSystem {
   // Cooldown: impedisce lo stesso suono di suonare troppo spesso.
   // Map has fixed keys (sound IDs) — bounded growth: one entry per sfx key.
   static final _lastPlayTime = <String, int>{};
-  static const _minIntervalMs = 50; // ms minimo tra due riproduzioni dello stesso suono
+  static const _minIntervalMs =
+      50; // ms minimo tra due riproduzioni dello stesso suono
 
   // Haptic ha il proprio throttle più lento (~8 Hz): HapticFeedback fa platform
   // channel call che su Android può causare frame hitch. Limitare riduce lag.
@@ -164,9 +162,9 @@ class AudioSystem {
   // O(1) ring counter: reset quando finestra scade, no list/scan.
   static int _enemyDeathBurstCount = 0;
   static int _enemyDeathBurstStartMs = 0;
-  static const _enemyDeathBurstWindowMs = 250;   // finestra rolling
-  static const _enemyDeathBurstThreshold = 6;    // >6 in 250ms = burst
-  static const _burstHapticMinIntervalMs = 300;  // ~3 Hz durante burst
+  static const _enemyDeathBurstWindowMs = 250; // finestra rolling
+  static const _enemyDeathBurstThreshold = 6; // >6 in 250ms = burst
+  static const _burstHapticMinIntervalMs = 300; // ~3 Hz durante burst
   // Const cooldown key per playEnemyDeath — evita string-literal sparso
   // (review caveman-pass: "magic string in _canPlay").
   static const _enemyDeathCooldownKey = 'enemy_death';
@@ -192,7 +190,9 @@ class AudioSystem {
     // Attendi la dispose dei vecchi player (se `stopAll()` è stato chiamato
     // poco prima) per evitare contention sul handle MediaPlayer nativo.
     if (_disposeInFlight != null) {
-      try { await _disposeInFlight; } catch (_) {}
+      try {
+        await _disposeInFlight;
+      } catch (_) {}
       _disposeInFlight = null;
     }
     // Double-check post-await: se init() concurrente ha già finito,
@@ -294,15 +294,21 @@ class AudioSystem {
       FlameAudio.play(asset, volume: volume).then<void>((player) {
         if (!_initialized) {
           // stopAll() chiamato durante FlameAudio.play in flight → kill subito.
-          try { player.stop(); } catch (_) {}
-          try { player.dispose(); } catch (_) {}
+          try {
+            player.stop();
+          } catch (_) {}
+          try {
+            player.dispose();
+          } catch (_) {}
           return;
         }
         _trackedRarePlayers.add(player);
         // Auto-cleanup quando il track finisce naturalmente.
-        player.onPlayerComplete.first.then((_) {
-          _trackedRarePlayers.remove(player);
-        }).catchError((Object _) {});
+        player.onPlayerComplete.first
+            .then((_) {
+              _trackedRarePlayers.remove(player);
+            })
+            .catchError((Object _) {});
       }, onError: (Object _, StackTrace _) {});
     } catch (_) {}
   }
@@ -353,7 +359,9 @@ class AudioSystem {
     // Haptic: throttle adattivo via helper centralizzato. Idle=120ms (8Hz),
     // burst=300ms (3Hz). `_canHapticAt` aggiorna `_lastHapticMs` solo se
     // passa il gate → resta source-of-truth per chiunque legga lo state.
-    final hapticMinMs = inBurst ? _burstHapticMinIntervalMs : _hapticMinIntervalMs;
+    final hapticMinMs = inBurst
+        ? _burstHapticMinIntervalMs
+        : _hapticMinIntervalMs;
     if (_canHapticAt(hapticMinMs)) HapticFeedback.lightImpact();
   }
 
@@ -416,25 +424,35 @@ class AudioSystem {
   /// su alcuni device. Ora `.then` con `onError` consuma l'errore senza
   /// propagarlo.
   static void _tryDirectThenPool(
-      String asset, double volume, _Mp3Pool? fallbackPool) {
+    String asset,
+    double volume,
+    _Mp3Pool? fallbackPool,
+  ) {
     void poolFallback() {
       if (_initialized && fallbackPool != null) {
         fallbackPool.play(volume: volume);
       }
     }
+
     try {
       FlameAudio.play(asset, volume: volume).then<void>(
         (player) {
           // Race-safe: stopAll() durante FlameAudio.play in flight → kill.
           if (!_initialized) {
-            try { player.stop(); } catch (_) {}
-            try { player.dispose(); } catch (_) {}
+            try {
+              player.stop();
+            } catch (_) {}
+            try {
+              player.dispose();
+            } catch (_) {}
             return;
           }
           _trackedRarePlayers.add(player);
-          player.onPlayerComplete.first.then((_) {
-            _trackedRarePlayers.remove(player);
-          }).catchError((Object _) {});
+          player.onPlayerComplete.first
+              .then((_) {
+                _trackedRarePlayers.remove(player);
+              })
+              .catchError((Object _) {});
         },
         onError: (Object _, StackTrace _) {
           poolFallback();
@@ -455,8 +473,12 @@ class AudioSystem {
   /// preparare un MediaPlayer nuovo via `FlameAudio.play` accoda diverse call
   /// pesanti sul platform channel → il suono arriva in ritardo. Il pool fa una
   /// sola call leggera (resume) → boom immediato.
-  static void _tryPoolThenDirect(String asset, double volume, _Mp3Pool? pool,
-      {bool immediate = false}) {
+  static void _tryPoolThenDirect(
+    String asset,
+    double volume,
+    _Mp3Pool? pool, {
+    bool immediate = false,
+  }) {
     if (pool != null && pool.isReady) {
       // `immediate`: dispatch senza await reply (vedi `playImmediate`) → boom
       // non affogato dalla congestione event-loop del frame di morte.
@@ -479,8 +501,12 @@ class AudioSystem {
       // Pool-first + immediate per la stessa ragione di playerDeath: il game
       // over arriva su un frame pesantissimo (mega esplosione finale) → niente
       // latenza, dispatch senza await reply.
-      _tryPoolThenDirect(_fxGameOverExplosion, boosted,
-          _gameOverExplosionMp3Pool, immediate: true);
+      _tryPoolThenDirect(
+        _fxGameOverExplosion,
+        boosted,
+        _gameOverExplosionMp3Pool,
+        immediate: true,
+      );
     }
     _playRare(_fxGameOver, volumeScale: 0.6);
     if (_canHapticAt(200)) HapticFeedback.heavyImpact();
@@ -495,8 +521,12 @@ class AudioSystem {
       // "arriva in ritardo se c'è troppa roba sullo schermo"). `immediate`
       // dispatcha seek+resume senza attendere le reply → nessun ritardo
       // event-loop Dart-side.
-      _tryPoolThenDirect(_fxPlayerDeath, _sfxVolume, _playerDeathMp3Pool,
-          immediate: true);
+      _tryPoolThenDirect(
+        _fxPlayerDeath,
+        _sfxVolume,
+        _playerDeathMp3Pool,
+        immediate: true,
+      );
     }
     if (_canHapticAt(200)) HapticFeedback.heavyImpact();
   }
@@ -537,8 +567,12 @@ class AudioSystem {
     final rareSnapshot = List<AudioPlayer>.from(_trackedRarePlayers);
     _trackedRarePlayers.clear();
     for (final p in rareSnapshot) {
-      try { p.stop(); } catch (_) {}
-      try { p.dispose(); } catch (_) {}
+      try {
+        p.stop();
+      } catch (_) {}
+      try {
+        p.dispose();
+      } catch (_) {}
     }
 
     final toDispose = <Future<void>>[];

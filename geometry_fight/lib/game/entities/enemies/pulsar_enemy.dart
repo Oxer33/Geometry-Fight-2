@@ -28,14 +28,14 @@ class PulsarEnemy extends EnemyBase {
   static final Paint _linePaint = Paint()..strokeWidth = 0.5;
 
   PulsarEnemy()
-      : super(
-          hp: 4,
-          speed: 80,
-          pointValue: 8,
-          geomValue: 3,
-          neonColor: NeonColors.teal,
-          size: Vector2(22, 22),
-        );
+    : super(
+        hp: 4,
+        speed: 80,
+        pointValue: 8,
+        geomValue: 3,
+        neonColor: NeonColors.teal,
+        size: Vector2(22, 22),
+      );
 
   @override
   void updateBehavior(double dt) {
@@ -115,24 +115,35 @@ class PulsarEnemy extends EnemyBase {
       final vertices = <Offset>[];
       for (int i = 0; i < 5; i++) {
         final angle = i * math.pi * 2 / 5 - math.pi / 2 + idlePhase * 0.5;
-        vertices.add(Offset(cx + r * math.cos(angle), cy + r * math.sin(angle)));
+        vertices.add(
+          Offset(cx + r * math.cos(angle), cy + r * math.sin(angle)),
+        );
       }
       // Indicatore di carica (cerchio che si riempie prima del pulse)
       final chargeProgress = 1.0 - (_pulseTimer / 2.5).clamp(0.0, 1.0);
       if (chargeProgress > 0.1) {
-        _chargePaint.color = NeonColors.teal.withValues(alpha: chargeProgress * 0.4);
+        _chargePaint.color = NeonColors.teal.withValues(
+          alpha: chargeProgress * 0.4,
+        );
         canvas.drawArc(
           Rect.fromCircle(center: Offset(cx, cy), radius: r * 1.3),
-          -math.pi / 2, math.pi * 2 * chargeProgress, false, _chargePaint,
+          -math.pi / 2,
+          math.pi * 2 * chargeProgress,
+          false,
+          _chargePaint,
         );
       }
 
       // Nucleo pulsante teal (brilla di più prima del pulse)
       final coreIntensity = 0.4 + chargeProgress * 0.4;
       // Core — senza blur, glow simulato
-      EnemyBase.detailPaint.color = const Color(0xFFFFFFFF).withValues(alpha: coreIntensity * 0.4);
+      EnemyBase.detailPaint.color = const Color(
+        0xFFFFFFFF,
+      ).withValues(alpha: coreIntensity * 0.4);
       canvas.drawCircle(Offset(cx, cy), r * 0.5, EnemyBase.detailPaint);
-      EnemyBase.detailPaint.color = const Color(0xFFFFFFFF).withValues(alpha: coreIntensity);
+      EnemyBase.detailPaint.color = const Color(
+        0xFFFFFFFF,
+      ).withValues(alpha: coreIntensity);
       canvas.drawCircle(Offset(cx, cy), r * 0.3, EnemyBase.detailPaint);
 
       // Particelle luminose sui vertici — senza blur

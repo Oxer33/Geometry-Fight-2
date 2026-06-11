@@ -169,6 +169,9 @@ class GeometryFightGame extends FlameGame
   Vector2 moveInput = Vector2.zero();
   Vector2 aimInput = Vector2.zero();
   bool bombPressed = false;
+
+  /// DASH talent: settato dal bottone HUD, consumato in Player.update().
+  bool dashPressed = false;
   bool isShooting = false;
 
   // Keyboard state
@@ -1233,6 +1236,7 @@ class GeometryFightGame extends FlameGame
   // Boss Rush: usato dall'HUD per mostrare SEMPRE "BOSS WAVE" anche tra un
   // boss e l'altro (bossCount==0 con mob residui) — richiesta utente.
   bool get isBossRushMode => gameMode == GameMode.bossRush;
+  bool get isArenaShrinkMode => gameMode == GameMode.arenaShrink;
 
   bool _sessionSaved = false;
 
@@ -1456,10 +1460,26 @@ class GeometryFightGame extends FlameGame
   // Arena effettiva (con modificatore tiny_arena). Quando tiny_arena è attivo
   // l'area giocabile è un rettangolo CENTRATO grande la metà: il centro resta
   // (arenaWidth/2, arenaHeight/2) → player start e orbita boss restano corretti.
+  // Arena Shrink mode: l'arena effettiva si restringe da 1.0× fino a
+  // `_arenaShrinkMin` nell'arco di `_arenaShrinkDuration` secondi di gioco.
+  // Derivato da `_sessionTimeSec` (azzerato ad ogni run) → nessuno stato
+  // mutabile da resettare. Ritorna 1.0 fuori da arenaShrink mode → invariato
+  // per tutte le altre modalità.
+  static const double _arenaShrinkMin = 0.42;
+  static const double _arenaShrinkDuration = 120.0;
+  double get _arenaShrinkFactor => isArenaShrinkMode
+      ? (1.0 - _sessionTimeSec / _arenaShrinkDuration).clamp(
+          _arenaShrinkMin,
+          1.0,
+        )
+      : 1.0;
+
   double get effectiveArenaWidth =>
-      hasModifier('tiny_arena') ? arenaWidth * 0.5 : arenaWidth;
+      (hasModifier('tiny_arena') ? arenaWidth * 0.5 : arenaWidth) *
+      _arenaShrinkFactor;
   double get effectiveArenaHeight =>
-      hasModifier('tiny_arena') ? arenaHeight * 0.5 : arenaHeight;
+      (hasModifier('tiny_arena') ? arenaHeight * 0.5 : arenaHeight) *
+      _arenaShrinkFactor;
   // Inset per centrare l'arena ridotta (0 in modalità normale).
   double get _arenaInsetX => (arenaWidth - effectiveArenaWidth) / 2;
   double get _arenaInsetY => (arenaHeight - effectiveArenaHeight) / 2;
@@ -1473,9 +1493,9 @@ class GeometryFightGame extends FlameGame
   /// Clampa [p] dentro l'arena effettiva con un [margin] dai bordi (rispetta
   /// tiny_arena). Usato dagli spawn per non far apparire mob fuori dal box.
   Vector2 clampInArena(Vector2 p, double margin) => Vector2(
-        p.x.clamp(arenaMinX + margin, arenaMaxX - margin),
-        p.y.clamp(arenaMinY + margin, arenaMaxY - margin),
-      );
+    p.x.clamp(arenaMinX + margin, arenaMaxX - margin),
+    p.y.clamp(arenaMinY + margin, arenaMaxY - margin),
+  );
 
   // ══════════════════════════════════════════════════════════════
   // TUNNEL GEOMETRY — usata da nemici, proiettili e TunnelRenderer

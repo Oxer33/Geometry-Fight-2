@@ -29,30 +29,72 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
   final ScrollController _entriesCtrl = ScrollController();
 
   void _refreshEntries() {
-    _cachedEntries =
-        LeaderboardManager.getEntries(_selectedMode, _selectedDifficulty);
+    _cachedEntries = LeaderboardManager.getEntries(
+      _selectedMode,
+      _selectedDifficulty,
+    );
   }
 
   List<(String, String, IconData, Color)> _modes(AppLocalizations l10n) => [
-        ('classic', l10n.modeClassic, Icons.bolt_rounded, const Color(0xFF00FFFF)),
-        ('bossRush', l10n.modeBossRush, Icons.shield_rounded, const Color(0xFFCC00FF)),
-        ('survival', l10n.modeSurvival, Icons.all_inclusive_rounded, const Color(0xFFFF4466)),
-        ('timeAttack', l10n.modeTimeAttack, Icons.timer_rounded, const Color(0xFFFF8800)),
-        ('zenMode', l10n.modeZen, Icons.self_improvement_rounded, const Color(0xFF44FF44)),
-        ('tunnel', l10n.modeTunnel, Icons.rotate_90_degrees_ccw_rounded, const Color(0xFF4488FF)),
-        ('dailyChallenge', l10n.modeDailyChallenge, Icons.calendar_today_rounded, const Color(0xFFFFD700)),
-        ('pacifist', l10n.modePacifist, Icons.spa_outlined, const Color(0xFF77FFD4)),
-        ('waves', l10n.modeWaves, Icons.change_history, const Color(0xFFFF3344)),
-        ('gravityInferno', l10n.modeGravityInferno, Icons.blur_circular, const Color(0xFF9933FF)),
-        ('snake', l10n.modeSnake, Icons.timeline_rounded, const Color(0xFF66FF66)),
-      ];
+    ('classic', l10n.modeClassic, Icons.bolt_rounded, const Color(0xFF00FFFF)),
+    (
+      'bossRush',
+      l10n.modeBossRush,
+      Icons.shield_rounded,
+      const Color(0xFFCC00FF),
+    ),
+    (
+      'survival',
+      l10n.modeSurvival,
+      Icons.all_inclusive_rounded,
+      const Color(0xFFFF4466),
+    ),
+    (
+      'timeAttack',
+      l10n.modeTimeAttack,
+      Icons.timer_rounded,
+      const Color(0xFFFF8800),
+    ),
+    (
+      'zenMode',
+      l10n.modeZen,
+      Icons.self_improvement_rounded,
+      const Color(0xFF44FF44),
+    ),
+    (
+      'tunnel',
+      l10n.modeTunnel,
+      Icons.rotate_90_degrees_ccw_rounded,
+      const Color(0xFF4488FF),
+    ),
+    (
+      'dailyChallenge',
+      l10n.modeDailyChallenge,
+      Icons.calendar_today_rounded,
+      const Color(0xFFFFD700),
+    ),
+    (
+      'pacifist',
+      l10n.modePacifist,
+      Icons.spa_outlined,
+      const Color(0xFF77FFD4),
+    ),
+    ('waves', l10n.modeWaves, Icons.change_history, const Color(0xFFFF3344)),
+    (
+      'gravityInferno',
+      l10n.modeGravityInferno,
+      Icons.blur_circular,
+      const Color(0xFF9933FF),
+    ),
+    ('snake', l10n.modeSnake, Icons.timeline_rounded, const Color(0xFF66FF66)),
+  ];
 
   List<(String, String, Color)> _difficulties(AppLocalizations l10n) => [
-        ('easy', l10n.diffEasy, const Color(0xFF44FF44)),
-        ('normal', l10n.diffNormal, const Color(0xFF4488FF)),
-        ('hard', l10n.diffHard, const Color(0xFFFF8800)),
-        ('nightmare', l10n.diffNightmare, const Color(0xFFFF2244)),
-      ];
+    ('easy', l10n.diffEasy, const Color(0xFF44FF44)),
+    ('normal', l10n.diffNormal, const Color(0xFF4488FF)),
+    ('hard', l10n.diffHard, const Color(0xFFFF8800)),
+    ('nightmare', l10n.diffNightmare, const Color(0xFFFF2244)),
+  ];
 
   @override
   void initState() {
@@ -112,8 +154,10 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
 
                 // ── Divider ──
                 Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 2,
+                  ),
                   child: Opacity(
                     opacity: entrance,
                     child: Container(
@@ -164,7 +208,9 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
                   shape: BoxShape.circle,
                   gradient: RadialGradient(
                     colors: [
-                      const Color(0xFFFFD700).withValues(alpha: 0.2 + glow * 0.1),
+                      const Color(
+                        0xFFFFD700,
+                      ).withValues(alpha: 0.2 + glow * 0.1),
                       const Color(0xFFFFD700).withValues(alpha: 0.02),
                     ],
                   ),
@@ -173,13 +219,18 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
                   ),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFFFFD700).withValues(alpha: 0.15 + glow * 0.1),
+                      color: const Color(
+                        0xFFFFD700,
+                      ).withValues(alpha: 0.15 + glow * 0.1),
                       blurRadius: 8,
                     ),
                   ],
                 ),
-                child: const Icon(Icons.emoji_events_rounded,
-                    color: Color(0xFFFFD700), size: 16),
+                child: const Icon(
+                  Icons.emoji_events_rounded,
+                  color: Color(0xFFFFD700),
+                  size: 16,
+                ),
               ),
               const SizedBox(width: 10),
               Text(
@@ -196,8 +247,10 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
               const Spacer(),
               // Total entries counter
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 4,
+                ),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(10),
                   border: Border.all(
@@ -260,7 +313,10 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
   }
 
   Widget _buildDifficultyFilter(
-      AppLocalizations l10n, double entrance, double glow) {
+    AppLocalizations l10n,
+    double entrance,
+    double glow,
+  ) {
     final e = ((entrance - 0.15) / 0.85).clamp(0.0, 1.0);
     return Opacity(
       opacity: e,
@@ -303,7 +359,10 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
             Expanded(flex: 4, child: Text(l10n.score, style: _headerStyle)),
             Expanded(flex: 2, child: Text(l10n.wave, style: _headerStyle)),
             Expanded(flex: 2, child: Text(l10n.kills, style: _headerStyle)),
-            SizedBox(width: 50, child: Text(l10n.columnDate, style: _headerStyle)),
+            SizedBox(
+              width: 50,
+              child: Text(l10n.columnDate, style: _headerStyle),
+            ),
           ],
         ),
       ),
@@ -366,7 +425,10 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
   }
 
   Widget _buildEntryList(
-      List<LeaderboardEntry> entries, double entrance, double glow) {
+    List<LeaderboardEntry> entries,
+    double entrance,
+    double glow,
+  ) {
     return RawScrollbar(
       controller: _entriesCtrl,
       thumbVisibility: true,
@@ -377,42 +439,46 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
       trackColor: const Color(0x3300FFFF),
       trackBorderColor: const Color(0x8800FFFF),
       child: ListView.builder(
-      controller: _entriesCtrl,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-      itemCount: entries.length,
-      itemBuilder: (context, index) {
-        // Stagger each row slightly
-        final rowDelay = 0.25 + index * 0.03;
-        final rowEntrance = rowDelay >= 1.0
-            ? 1.0
-            : ((entrance - rowDelay) / (1.0 - rowDelay)).clamp(0.0, 1.0);
+        controller: _entriesCtrl,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        itemCount: entries.length,
+        itemBuilder: (context, index) {
+          // Stagger each row slightly
+          final rowDelay = 0.25 + index * 0.03;
+          final rowEntrance = rowDelay >= 1.0
+              ? 1.0
+              : ((entrance - rowDelay) / (1.0 - rowDelay)).clamp(0.0, 1.0);
 
-        final entry = entries[index];
-        return Opacity(
-          key: ValueKey('lb-${entry.date.millisecondsSinceEpoch}-${entry.score}-$index'),
-          opacity: rowEntrance,
-          child: Transform.translate(
-            offset: Offset(0, 15 * (1 - rowEntrance)),
-            child: _NeonLeaderboardRow(
-              rank: index + 1,
-              entry: entry,
-              glow: glow,
+          final entry = entries[index];
+          return Opacity(
+            key: ValueKey(
+              'lb-${entry.date.millisecondsSinceEpoch}-${entry.score}-$index',
             ),
-          ),
-        );
-      },
-    ),
+            opacity: rowEntrance,
+            child: Transform.translate(
+              offset: Offset(0, 15 * (1 - rowEntrance)),
+              child: _NeonLeaderboardRow(
+                rank: index + 1,
+                entry: entry,
+                glow: glow,
+              ),
+            ),
+          );
+        },
+      ),
     );
   }
 
   // Static const avoids allocating a new TextStyle on every AnimatedBuilder frame.
   static const TextStyle _headerStyle = TextStyle(
-        color: Color(0x4DFFFFFF), // equivalent to Colors.white.withValues(alpha: 0.3)
-        fontSize: 9,
-        fontWeight: FontWeight.bold,
-        fontFamily: 'monospace',
-        letterSpacing: 1,
-      );
+    color: Color(
+      0x4DFFFFFF,
+    ), // equivalent to Colors.white.withValues(alpha: 0.3)
+    fontSize: 9,
+    fontWeight: FontWeight.bold,
+    fontFamily: 'monospace',
+    letterSpacing: 1,
+  );
 }
 
 // ==================== NEON MODE CHIP ====================
@@ -459,22 +525,13 @@ class _NeonModeChip extends StatelessWidget {
               : null,
           color: isSelected ? null : Colors.transparent,
           boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: color.withValues(alpha: 0.15),
-                    blurRadius: 8,
-                  ),
-                ]
+              ? [BoxShadow(color: color.withValues(alpha: 0.15), blurRadius: 8)]
               : null,
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              icon,
-              color: isSelected ? color : Colors.white24,
-              size: 12,
-            ),
+            Icon(icon, color: isSelected ? color : Colors.white24, size: 12),
             const SizedBox(width: 5),
             Text(
               label,
@@ -485,7 +542,12 @@ class _NeonModeChip extends StatelessWidget {
                 fontFamily: 'monospace',
                 letterSpacing: 0.5,
                 shadows: isSelected
-                    ? [Shadow(color: color.withValues(alpha: 0.3), blurRadius: 4)]
+                    ? [
+                        Shadow(
+                          color: color.withValues(alpha: 0.3),
+                          blurRadius: 4,
+                        ),
+                      ]
                     : null,
               ),
             ),
@@ -560,7 +622,12 @@ class _NeonDifficultyTab extends StatelessWidget {
                 fontFamily: 'monospace',
                 letterSpacing: 0.5,
                 shadows: isSelected
-                    ? [Shadow(color: color.withValues(alpha: 0.4), blurRadius: 3)]
+                    ? [
+                        Shadow(
+                          color: color.withValues(alpha: 0.4),
+                          blurRadius: 3,
+                        ),
+                      ]
                     : null,
               ),
             ),
@@ -673,8 +740,8 @@ class _NeonLeaderboardRow extends StatelessWidget {
                       rank == 1
                           ? Icons.looks_one_rounded
                           : rank == 2
-                              ? Icons.looks_two_rounded
-                              : Icons.looks_3_rounded,
+                          ? Icons.looks_two_rounded
+                          : Icons.looks_3_rounded,
                       color: _rankColor,
                       size: 16,
                     )
@@ -718,8 +785,11 @@ class _NeonLeaderboardRow extends StatelessWidget {
             flex: 2,
             child: Row(
               children: [
-                Icon(Icons.waves_rounded,
-                    color: Colors.cyanAccent.withValues(alpha: 0.4), size: 10),
+                Icon(
+                  Icons.waves_rounded,
+                  color: Colors.cyanAccent.withValues(alpha: 0.4),
+                  size: 10,
+                ),
                 const SizedBox(width: 3),
                 Text(
                   '${entry.wave}',
@@ -738,9 +808,11 @@ class _NeonLeaderboardRow extends StatelessWidget {
             flex: 2,
             child: Row(
               children: [
-                Icon(Icons.local_fire_department_rounded,
-                    color: const Color(0xFFFF4466).withValues(alpha: 0.4),
-                    size: 10),
+                Icon(
+                  Icons.local_fire_department_rounded,
+                  color: const Color(0xFFFF4466).withValues(alpha: 0.4),
+                  size: 10,
+                ),
                 const SizedBox(width: 3),
                 Text(
                   '${entry.kills}',

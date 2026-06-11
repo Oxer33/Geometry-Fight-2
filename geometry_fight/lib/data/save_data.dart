@@ -17,9 +17,11 @@ class SaveData {
   String activeSkin;
   String activeTrail;
   String startingWeapon;
+
   /// Pet companion id attivo (loadout). 'none' = nessun pet equipaggiato
   /// (default per save vecchi). Vedi `pet_types.dart` per id validi.
   String activePet;
+
   /// Lista dei pet sbloccati nello shop. Default `['none']` (sempre disponibile
   /// l'opzione "no pet"). Pet acquistati aggiunti tramite shop_screen.
   List<String> unlockedPets;
@@ -55,16 +57,16 @@ class SaveData {
     this.lastDailyClaim = '',
     this.dailyStreak = 0,
     this.languageCode = 'it',
-  })  : upgrades = upgrades ?? {},
-        unlockedSkins = unlockedSkins ?? ['classic'],
-        unlockedTrails = unlockedTrails ?? ['normal'],
-        unlockedModes = unlockedModes ?? ['classic'],
-        unlockedWeapons = unlockedWeapons ?? ['basic'],
-        highscores = highscores ?? {},
-        stats = stats ?? {},
-        playedModes = playedModes ?? [],
-        activeModifiers = activeModifiers ?? [],
-        unlockedPets = unlockedPets ?? ['none'];
+  }) : upgrades = upgrades ?? {},
+       unlockedSkins = unlockedSkins ?? ['classic'],
+       unlockedTrails = unlockedTrails ?? ['normal'],
+       unlockedModes = unlockedModes ?? ['classic'],
+       unlockedWeapons = unlockedWeapons ?? ['basic'],
+       highscores = highscores ?? {},
+       stats = stats ?? {},
+       playedModes = playedModes ?? [],
+       activeModifiers = activeModifiers ?? [],
+       unlockedPets = unlockedPets ?? ['none'];
 
   /// Restituisce il livello di un upgrade, clamped a `[0, kMaxUpgradeLevel]`
   /// per difendersi da save corrotti o tampered (es. utenti che editano la
@@ -129,6 +131,27 @@ class SaveData {
     return 1.0 + level * 0.05; // +5% per livello (max +50% al L10)
   }
 
+  /// CRIT talent: probabilità di colpo critico per salva. +3% per livello
+  /// (max +30% al L10). Il danno critico è moltiplicato per [kCritMultiplier].
+  double get critChance {
+    final level = getUpgradeLevel('crit');
+    return level * 0.03;
+  }
+
+  /// Moltiplicatore danno su colpo critico.
+  static const double kCritMultiplier = 2.2;
+
+  /// DASH talent: sbloccato dal livello 1. Scatto rapido con i-frame.
+  bool get dashUnlocked => getUpgradeLevel('dash') > 0;
+
+  /// Cooldown dello scatto in secondi: 3.0s a L1 → 1.0s a L10 (0 se non
+  /// sbloccato).
+  double get dashCooldown {
+    final level = getUpgradeLevel('dash');
+    if (level <= 0) return 0;
+    return (3.0 - (level - 1) * (2.0 / 9.0)).clamp(1.0, 3.0);
+  }
+
   // ─── DAILY REWARD ─────────────────────────────────────────────────────
   /// Helper: oggi in formato `YYYY-MM-DD`.
   static String _today() {
@@ -164,7 +187,9 @@ class SaveData {
         }
       } catch (e) {
         // Iter 13 (caveman-review): no più silent swallow — log invece.
-        debugPrint('claimDailyReward parse error: $e (lastClaim=$lastDailyClaim)');
+        debugPrint(
+          'claimDailyReward parse error: $e (lastClaim=$lastDailyClaim)',
+        );
         dailyStreak = 1;
       }
     }
@@ -205,64 +230,70 @@ class SaveData {
   }
 
   Map<String, dynamic> toJson() => {
-        'goldGeoms': goldGeoms,
-        'upgrades': upgrades,
-        'unlockedSkins': unlockedSkins,
-        'unlockedTrails': unlockedTrails,
-        'unlockedModes': unlockedModes,
-        'unlockedWeapons': unlockedWeapons,
-        'highscores': highscores,
-        'totalPlaytime': totalPlaytime,
-        'stats': stats,
-        'playedModes': playedModes,
-        'activeModifiers': activeModifiers,
-        'activeSkin': activeSkin,
-        'activeTrail': activeTrail,
-        'startingWeapon': startingWeapon,
-        'activePet': activePet,
-        'unlockedPets': unlockedPets,
-        'lastDailyClaim': lastDailyClaim,
-        'dailyStreak': dailyStreak,
-        'languageCode': languageCode,
-      };
+    'goldGeoms': goldGeoms,
+    'upgrades': upgrades,
+    'unlockedSkins': unlockedSkins,
+    'unlockedTrails': unlockedTrails,
+    'unlockedModes': unlockedModes,
+    'unlockedWeapons': unlockedWeapons,
+    'highscores': highscores,
+    'totalPlaytime': totalPlaytime,
+    'stats': stats,
+    'playedModes': playedModes,
+    'activeModifiers': activeModifiers,
+    'activeSkin': activeSkin,
+    'activeTrail': activeTrail,
+    'startingWeapon': startingWeapon,
+    'activePet': activePet,
+    'unlockedPets': unlockedPets,
+    'lastDailyClaim': lastDailyClaim,
+    'dailyStreak': dailyStreak,
+    'languageCode': languageCode,
+  };
 
   factory SaveData.fromJson(Map<String, dynamic> json) => SaveData(
-        goldGeoms: (json['goldGeoms'] as num?)?.toInt() ?? 0,
-        // FIX C7: conversione robusta per i valori numerici (evita cast int/double da Hive)
-        upgrades: Map<String, int>.from(
-            ((json['upgrades'] ?? {}) as Map).map((k, v) =>
-                MapEntry(k.toString(), (v as num?)?.toInt() ?? 0))),
-        unlockedSkins: List<String>.from(json['unlockedSkins'] ?? ['classic']),
-        unlockedTrails: List<String>.from(json['unlockedTrails'] ?? ['normal']),
-        unlockedModes: List<String>.from(json['unlockedModes'] ?? ['classic']),
-        unlockedWeapons:
-            List<String>.from(json['unlockedWeapons'] ?? ['basic']),
-        highscores: Map<String, int>.from(
-            ((json['highscores'] ?? {}) as Map).map((k, v) =>
-                MapEntry(k.toString(), (v as num?)?.toInt() ?? 0))),
-        totalPlaytime: (json['totalPlaytime'] as num?)?.toInt() ?? 0,
-        stats: Map<String, int>.from(
-            ((json['stats'] ?? {}) as Map).map((k, v) =>
-                MapEntry(k.toString(), (v as num?)?.toInt() ?? 0))),
-        playedModes: List<String>.from(json['playedModes'] ?? []),
-        activeModifiers: List<String>.from(json['activeModifiers'] ?? []),
-        activeSkin: json['activeSkin'] ?? 'classic',
-        activeTrail: json['activeTrail'] ?? 'normal',
-        startingWeapon: json['startingWeapon'] ?? 'basic',
-        // Pet fields: default 'none' / ['none'] per back-compat con save vecchi.
-        activePet: json['activePet'] ?? 'none',
-        unlockedPets: List<String>.from(json['unlockedPets'] ?? ['none']),
-        lastDailyClaim: json['lastDailyClaim'] ?? '',
-        dailyStreak: (json['dailyStreak'] as num?)?.toInt() ?? 0,
-        // Default 'it' per back-compat: save vecchi senza il campo prendono
-        // la lingua di sviluppo originale.
-        languageCode: (json['languageCode'] as String?) ?? 'it',
-      );
+    goldGeoms: (json['goldGeoms'] as num?)?.toInt() ?? 0,
+    // FIX C7: conversione robusta per i valori numerici (evita cast int/double da Hive)
+    upgrades: Map<String, int>.from(
+      ((json['upgrades'] ?? {}) as Map).map(
+        (k, v) => MapEntry(k.toString(), (v as num?)?.toInt() ?? 0),
+      ),
+    ),
+    unlockedSkins: List<String>.from(json['unlockedSkins'] ?? ['classic']),
+    unlockedTrails: List<String>.from(json['unlockedTrails'] ?? ['normal']),
+    unlockedModes: List<String>.from(json['unlockedModes'] ?? ['classic']),
+    unlockedWeapons: List<String>.from(json['unlockedWeapons'] ?? ['basic']),
+    highscores: Map<String, int>.from(
+      ((json['highscores'] ?? {}) as Map).map(
+        (k, v) => MapEntry(k.toString(), (v as num?)?.toInt() ?? 0),
+      ),
+    ),
+    totalPlaytime: (json['totalPlaytime'] as num?)?.toInt() ?? 0,
+    stats: Map<String, int>.from(
+      ((json['stats'] ?? {}) as Map).map(
+        (k, v) => MapEntry(k.toString(), (v as num?)?.toInt() ?? 0),
+      ),
+    ),
+    playedModes: List<String>.from(json['playedModes'] ?? []),
+    activeModifiers: List<String>.from(json['activeModifiers'] ?? []),
+    activeSkin: json['activeSkin'] ?? 'classic',
+    activeTrail: json['activeTrail'] ?? 'normal',
+    startingWeapon: json['startingWeapon'] ?? 'basic',
+    // Pet fields: default 'none' / ['none'] per back-compat con save vecchi.
+    activePet: json['activePet'] ?? 'none',
+    unlockedPets: List<String>.from(json['unlockedPets'] ?? ['none']),
+    lastDailyClaim: json['lastDailyClaim'] ?? '',
+    dailyStreak: (json['dailyStreak'] as num?)?.toInt() ?? 0,
+    // Default 'it' per back-compat: save vecchi senza il campo prendono
+    // la lingua di sviluppo originale.
+    languageCode: (json['languageCode'] as String?) ?? 'it',
+  );
 }
 
 class SaveManager {
   static late Box _box;
-  static bool _initialized = false; // FIX C6: guard contro LateInitializationError
+  static bool _initialized =
+      false; // FIX C6: guard contro LateInitializationError
 
   static Future<void> init() async {
     _box = await Hive.openBox('geometry_fight_save');
@@ -270,13 +301,17 @@ class SaveManager {
   }
 
   static SaveData load() {
-    if (!_initialized) return SaveData(); // FIX C6: guard se init() non è stato chiamato
+    if (!_initialized) {
+      return SaveData(); // FIX C6: guard se init() non è stato chiamato
+    }
     try {
       final json = _box.get('save');
       if (json == null) return SaveData();
       return SaveData.fromJson(Map<String, dynamic>.from(json));
     } catch (e) {
-      debugPrint('SaveManager.load() error: $e'); // FIX C6: log invece di silenzio
+      debugPrint(
+        'SaveManager.load() error: $e',
+      ); // FIX C6: log invece di silenzio
       return SaveData();
     }
   }

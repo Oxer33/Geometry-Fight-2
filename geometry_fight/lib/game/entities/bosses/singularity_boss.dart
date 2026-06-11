@@ -22,30 +22,42 @@ class SingularityBoss extends BossBase {
     if (game.isTunnelMode) {
       final camY = game.camera.viewfinder.position.y;
       final halfH = game.tunnelHeight / 2;
-      game.player.position.y = game.player.position.y
-          .clamp(camY - halfH + 10, camY + halfH - 10);
+      game.player.position.y = game.player.position.y.clamp(
+        camY - halfH + 10,
+        camY + halfH - 10,
+      );
     } else {
-      game.player.position.x = game.player.position.x.clamp(10.0, arenaWidth - 10);
-      game.player.position.y = game.player.position.y.clamp(10.0, arenaHeight - 10);
+      game.player.position.x = game.player.position.x.clamp(
+        10.0,
+        arenaWidth - 10,
+      );
+      game.player.position.y = game.player.position.y.clamp(
+        10.0,
+        arenaHeight - 10,
+      );
     }
   }
+
   double _pullDuration = 0;
   double _phase = 0;
   final List<Vector2> _vortexPositions = [];
 
   SingularityBoss()
-      : super(
-          hp: 1800, // +50% (era 1200, richiesta utente)
-          bossName: 'SINGULARITY',
-          pointValue: 12000,
-          neonColor: NeonColors.green,
-          size: Vector2(140, 140),
-        );
+    : super(
+        hp: 1800, // +50% (era 1200, richiesta utente)
+        bossName: 'SINGULARITY',
+        pointValue: 12000,
+        neonColor: NeonColors.green,
+        size: Vector2(140, 140),
+      );
 
   // Singularity è VERDE → mob verdi (snake + pulsar + weaver).
   @override
-  List<EnemyType> get colorMatchedMinions =>
-      const [EnemyType.snake, EnemyType.pulsar, EnemyType.weaver];
+  List<EnemyType> get colorMatchedMinions => const [
+    EnemyType.snake,
+    EnemyType.pulsar,
+    EnemyType.weaver,
+  ];
 
   @override
   int getPhase() {
@@ -117,7 +129,6 @@ class SingularityBoss extends BossBase {
         _vortexTimer = 12.0;
         _createVortex();
       }
-
     }
 
     // Black rain RIMOSSA (utente: "spawna pioggia di pallini rossi che vanno
@@ -130,7 +141,11 @@ class SingularityBoss extends BossBase {
     for (int i = 0; i < 16; i++) {
       final angle = i * math.pi * 2 / 16;
       final dir = Vector2(math.cos(angle), math.sin(angle));
-      final bullet = EnemyBullet(direction: dir, speed: 200, color: NeonColors.green);
+      final bullet = EnemyBullet(
+        direction: dir,
+        speed: 200,
+        color: NeonColors.green,
+      );
       bullet.position = position.clone();
       game.world.add(bullet);
     }
@@ -153,7 +168,9 @@ class SingularityBoss extends BossBase {
     _vortexPositions.clear();
     for (int i = 0; i < 4; i++) {
       final angle = i * math.pi / 2;
-      _vortexPositions.add(Vector2(math.cos(angle) * 200, math.sin(angle) * 200));
+      _vortexPositions.add(
+        Vector2(math.cos(angle) * 200, math.sin(angle) * 200),
+      );
     }
     // Spawn black holes
     for (final vPos in _vortexPositions) {
@@ -178,8 +195,7 @@ class SingularityBoss extends BossBase {
 
     // ─── GREEN RADIOACTIVE GLOW (alone esterno pulsante) ───
     final glowIntensity = 0.4 + math.sin(_phase * 2) * 0.15;
-    _greenGlowPaint.color =
-        NeonColors.green.withValues(alpha: glowIntensity);
+    _greenGlowPaint.color = NeonColors.green.withValues(alpha: glowIntensity);
     canvas.drawCircle(Offset(cx, cy), r * 1.7, _greenGlowPaint);
 
     // ─── LENSING RINGS (distorsione gravitazionale — 4 stroke) ───
@@ -187,8 +203,9 @@ class SingularityBoss extends BossBase {
       for (int i = 0; i < 4; i++) {
         final ringR = r * (1.25 + i * 0.18);
         final ringAlpha = 0.25 - i * 0.05;
-        _lensingPaint.color = const Color(0xFF88FFBB)
-            .withValues(alpha: ringAlpha);
+        _lensingPaint.color = const Color(
+          0xFF88FFBB,
+        ).withValues(alpha: ringAlpha);
         _lensingPaint.strokeWidth = 1.0;
         canvas.drawCircle(Offset(cx, cy), ringR, _lensingPaint);
       }
@@ -206,8 +223,7 @@ class SingularityBoss extends BossBase {
         for (int s = 0; s <= segCount; s++) {
           final t = s / segCount;
           final spiralR = r * (0.9 + t * 0.9);
-          final spiralAngle =
-              armOffset + t * math.pi * 3.5 + _phase * 0.4;
+          final spiralAngle = armOffset + t * math.pi * 3.5 + _phase * 0.4;
           final sx = spiralR * math.cos(spiralAngle);
           final sy = spiralR * math.sin(spiralAngle);
           if (s == 0) {
@@ -216,8 +232,9 @@ class SingularityBoss extends BossBase {
             armPath.lineTo(sx, sy);
           }
         }
-        _accretionPaint.color = const Color(0xFF00FF88)
-            .withValues(alpha: 0.35 + math.sin(_phase * 2 + arm) * 0.15);
+        _accretionPaint.color = const Color(
+          0xFF00FF88,
+        ).withValues(alpha: 0.35 + math.sin(_phase * 2 + arm) * 0.15);
         _accretionPaint.strokeWidth = 2;
         canvas.drawPath(armPath, _accretionPaint);
       }
@@ -235,11 +252,13 @@ class SingularityBoss extends BossBase {
     // ─── INNER CORE (occhio verde pulsante) ───
     if (scale <= 1.01) {
       final corePulse = 0.4 + math.sin(_phase * 5) * 0.3;
-      _innerCorePaint.color =
-          const Color(0xFF00FF88).withValues(alpha: corePulse);
+      _innerCorePaint.color = const Color(
+        0xFF00FF88,
+      ).withValues(alpha: corePulse);
       canvas.drawCircle(Offset(cx, cy), r * 0.25 * corePulse, _innerCorePaint);
-      _innerCorePaint.color =
-          const Color(0xFFFFFFFF).withValues(alpha: corePulse);
+      _innerCorePaint.color = const Color(
+        0xFFFFFFFF,
+      ).withValues(alpha: corePulse);
       canvas.drawCircle(Offset(cx, cy), r * 0.08, _innerCorePaint);
     }
 
@@ -247,8 +266,9 @@ class SingularityBoss extends BossBase {
     if (_pulling) {
       for (int ring = 0; ring < 3; ring++) {
         final ringR = r + 20 + ring * 30 + ((3.0 - _pullDuration) * 50);
-        _pullPaint.color =
-            NeonColors.purple.withValues(alpha: 0.35 - ring * 0.1);
+        _pullPaint.color = NeonColors.purple.withValues(
+          alpha: 0.35 - ring * 0.1,
+        );
         _pullPaint.strokeWidth = 2;
         canvas.drawCircle(Offset(cx, cy), ringR, _pullPaint);
       }

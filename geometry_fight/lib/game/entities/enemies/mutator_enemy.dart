@@ -21,14 +21,14 @@ class MutatorEnemy extends EnemyBase {
   static const int _maxMutations = 16;
 
   MutatorEnemy()
-      : super(
-          hp: 3,
-          speed: 90,
-          pointValue: 15,
-          geomValue: 4,
-          neonColor: const Color(0xFFFFAA00),
-          size: Vector2(22, 22),
-        );
+    : super(
+        hp: 3,
+        speed: 90,
+        pointValue: 15,
+        geomValue: 4,
+        neonColor: const Color(0xFFFFAA00),
+        size: Vector2(22, 22),
+      );
 
   @override
   void updateBehavior(double dt) {
@@ -108,7 +108,12 @@ class MutatorEnemy extends EnemyBase {
     enemy.neonColor = const Color(0xFFFFDD44);
 
     // Effetto visivo esplosione piccola
-    game.spawnExplosion(enemy.position, neonColor, radius: 20, particleCount: 6);
+    game.spawnExplosion(
+      enemy.position,
+      neonColor,
+      radius: 20,
+      particleCount: 6,
+    );
 
     _mutationsCount++;
   }
@@ -129,7 +134,13 @@ class MutatorEnemy extends EnemyBase {
       final auraRect = Rect.fromCircle(center: Offset(cx, cy), radius: r * 2.5);
       for (int i = 0; i < 3; i++) {
         final arcStart = _pulsePhase * 0.8 + i * math.pi * 2 / 3;
-        canvas.drawArc(auraRect, arcStart, math.pi * 0.5, false, EnemyBase.detailPaint);
+        canvas.drawArc(
+          auraRect,
+          arcStart,
+          math.pi * 0.5,
+          false,
+          EnemyBase.detailPaint,
+        );
       }
       EnemyBase.detailPaint.style = PaintingStyle.fill;
     }
@@ -188,7 +199,9 @@ class MutatorEnemy extends EnemyBase {
 
       // Nucleo pulsante
       final corePulse = 0.5 + math.sin(_pulsePhase * 2) * 0.3;
-      EnemyBase.detailPaint.color = const Color(0xFFFFFFFF).withValues(alpha: corePulse);
+      EnemyBase.detailPaint.color = const Color(
+        0xFFFFFFFF,
+      ).withValues(alpha: corePulse);
       canvas.drawCircle(Offset.zero, r * 0.18, EnemyBase.detailPaint);
 
       // Counter mutazioni (puntini orbitanti con glow progressivo)
@@ -197,7 +210,9 @@ class MutatorEnemy extends EnemyBase {
         final dx = r * 0.5 * math.cos(dotAngle);
         final dy = r * 0.5 * math.sin(dotAngle);
         final dotPulse = 0.5 + math.sin(_pulsePhase * 3 + i) * 0.3;
-        EnemyBase.detailPaint.color = const Color(0xFFFFDD44).withValues(alpha: dotPulse);
+        EnemyBase.detailPaint.color = const Color(
+          0xFFFFDD44,
+        ).withValues(alpha: dotPulse);
         canvas.drawCircle(Offset(dx, dy), 1.5, EnemyBase.detailPaint);
       }
 

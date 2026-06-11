@@ -222,6 +222,7 @@ class WaveSystem {
         // Snake non passa mai per startWave (early-return sopra). Branch
         // qui solo per exhaustiveness del switch.
         _currentConfig = WaveConfig(waveNumber: wave, spawns: const []);
+      case GameMode.arenaShrink:
       case GameMode.classic:
         _currentConfig = _configs.firstWhere(
           (c) => c.waveNumber == wave,
@@ -1179,9 +1180,9 @@ class WaveSystem {
     const minDist2 = _dailyMinPlayerSpawnDist * _dailyMinPlayerSpawnDist;
     const maxPosAttempts = 30;
     Vector2 samplePos() => Vector2(
-          game.arenaMinX + margin + posRng.nextDouble() * (eW - margin * 2),
-          game.arenaMinY + margin + posRng.nextDouble() * (eH - margin * 2),
-        );
+      game.arenaMinX + margin + posRng.nextDouble() * (eW - margin * 2),
+      game.arenaMinY + margin + posRng.nextDouble() * (eH - margin * 2),
+    );
     for (int i = 0; i < mobCount; i++) {
       var pos = samplePos();
       var bestD2 = pos.distanceToSquared(playerPos);

@@ -95,7 +95,9 @@ class LeaderboardManager {
     final entries = <LeaderboardEntry>[];
     for (final e in rawList) {
       try {
-        entries.add(LeaderboardEntry.fromJson(Map<String, dynamic>.from(e as Map)));
+        entries.add(
+          LeaderboardEntry.fromJson(Map<String, dynamic>.from(e as Map)),
+        );
       } catch (_) {
         // skip malformed entry
       }

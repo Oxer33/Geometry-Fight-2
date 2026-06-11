@@ -295,7 +295,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsAddCredits.
   ///
   /// In it, this message translates to:
-  /// **'+1000 CREDITI'**
+  /// **'+100K CREDITI'**
   String get settingsAddCredits;
 
   /// No description provided for @settingsResetPurchases.
@@ -313,7 +313,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsCreditsAdded.
   ///
   /// In it, this message translates to:
-  /// **'+1000 crediti! Totale: {total}'**
+  /// **'+100K crediti! Totale: {total}'**
   String settingsCreditsAdded(int total);
 
   /// No description provided for @settingsCrashLogsTitle.
@@ -621,6 +621,12 @@ abstract class AppLocalizations {
   /// In it, this message translates to:
   /// **'SNAKE'**
   String get modeSnake;
+
+  /// No description provided for @modeArenaShrink.
+  ///
+  /// In it, this message translates to:
+  /// **'ARENA RIDOTTA'**
+  String get modeArenaShrink;
 
   /// No description provided for @splashSkip.
   ///

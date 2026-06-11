@@ -242,9 +242,15 @@ class _SummaryScreenState extends State<SummaryScreen> {
                     // arma+pet (non si spara, no pet) → riga a 2 card.
                     _cardRow([
                       _section(
-                          l10n.modeTitle, _modeName(mode), NeonColors.cyan),
-                      _section(l10n.diffTitle, _diffName(l10n, difficulty),
-                          _diffColor(difficulty)),
+                        l10n.modeTitle,
+                        _modeName(mode),
+                        NeonColors.cyan,
+                      ),
+                      _section(
+                        l10n.diffTitle,
+                        _diffName(l10n, difficulty),
+                        _diffColor(difficulty),
+                      ),
                       if (mode != GameMode.pacifist &&
                           mode != GameMode.snake) ...[
                         // Daily Challenge: arma + pet auto-assegnati dalla data
@@ -349,6 +355,8 @@ class _SummaryScreenState extends State<SummaryScreen> {
         return l10n.modeGravityInferno;
       case GameMode.snake:
         return l10n.modeSnake;
+      case GameMode.arenaShrink:
+        return l10n.modeArenaShrink;
     }
   }
 
@@ -507,7 +515,9 @@ class _SummaryScreenState extends State<SummaryScreen> {
             ...activeModifiers.map((id) {
               final mul = getModifier(id)?.scoreMultiplier ?? 1.0;
               return _row(
-                  _modifierLabel(l10n, id), '×${mul.toStringAsFixed(2)}');
+                _modifierLabel(l10n, id),
+                '×${mul.toStringAsFixed(2)}',
+              );
             }),
           const Divider(color: Colors.white24),
           _row(l10n.summaryTotal, '×${total.toStringAsFixed(2)}', big: true),

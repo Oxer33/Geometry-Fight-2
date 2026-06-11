@@ -319,6 +319,8 @@ class _ModeSelectScreenState extends State<ModeSelectScreen>
         return l10n.modeGravityInferno;
       case GameMode.snake:
         return l10n.modeSnake;
+      case GameMode.arenaShrink:
+        return l10n.modeArenaShrink;
     }
   }
 
@@ -361,6 +363,8 @@ Color _modeColor(GameMode m) {
       return const Color(0xFF9933FF); // viola gravity
     case GameMode.snake:
       return const Color(0xFF66FF66); // verde lime
+    case GameMode.arenaShrink:
+      return const Color(0xFF00E5FF); // ciano-acqua
   }
 }
 

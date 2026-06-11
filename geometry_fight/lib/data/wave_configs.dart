@@ -27,9 +27,9 @@ enum EnemyType {
   timeBomb,
   decoy,
   // GW:RE2 mechanics
-  gate,     // Gate: due sfere + linea, player ci passa attraverso → esplosione
-  proton,   // Proton: mini nemico veloce da esplosione buco nero
-  mutator,  // Mutator: potenzia altri nemici al contatto
+  gate, // Gate: due sfere + linea, player ci passa attraverso → esplosione
+  proton, // Proton: mini nemico veloce da esplosione buco nero
+  mutator, // Mutator: potenzia altri nemici al contatto
 }
 
 enum BossType {
@@ -54,10 +54,10 @@ enum BossType {
   // Batch 4 — 4 nuovi boss (richiesta utente: "aggiungere 4 nuovi boss con
   // meccaniche uniche, FX spettacolari"). In classic compaiono a multipli di
   // 10 insieme agli altri 16 (20 boss → 200 wave).
-  crimsonCrown,    // wave 5   — orbi fuoco + lava mines
-  prismHunter,     // wave 15  — laser sweeping + rainbow bullet hell
-  voidKraken,      // wave 25  — gravity pull + ink cloud + proton spawn
-  astralSentinel,  // wave 35  — poligono laser + star constellation gate
+  crimsonCrown, // wave 5   — orbi fuoco + lava mines
+  prismHunter, // wave 15  — laser sweeping + rainbow bullet hell
+  voidKraken, // wave 25  — gravity pull + ink cloud + proton spawn
+  astralSentinel, // wave 35  — poligono laser + star constellation gate
 }
 
 /// Formazione spawn per un gruppo di nemici. Mirror pubblico di `_Formation`
@@ -94,9 +94,9 @@ enum SpawnFormation {
   arc,
   zigzag,
   borderLine,
-  playerRing,        // ring centrato sul player
-  playerDoubleRing,  // 2 ring concentrici sul player
-  playerEncircle,    // encircle 360° con offset
+  playerRing, // ring centrato sul player
+  playerDoubleRing, // 2 ring concentrici sul player
+  playerEncircle, // encircle 360° con offset
 }
 
 class WaveSpawn {
@@ -156,44 +156,71 @@ enum WaveModifier {
 extension WaveModifierUi on WaveModifier {
   String get displayName {
     switch (this) {
-      case WaveModifier.none: return '';
-      case WaveModifier.frenzy: return 'FRENZY';
-      case WaveModifier.tank: return 'TANK';
-      case WaveModifier.glass: return 'GLASS';
-      case WaveModifier.loot: return 'LOOT';
-      case WaveModifier.blitz: return 'BLITZ';
-      case WaveModifier.haste: return 'HASTE';
-      case WaveModifier.magnetic: return 'MAGNETIC';
-      case WaveModifier.iron: return 'IRON';
+      case WaveModifier.none:
+        return '';
+      case WaveModifier.frenzy:
+        return 'FRENZY';
+      case WaveModifier.tank:
+        return 'TANK';
+      case WaveModifier.glass:
+        return 'GLASS';
+      case WaveModifier.loot:
+        return 'LOOT';
+      case WaveModifier.blitz:
+        return 'BLITZ';
+      case WaveModifier.haste:
+        return 'HASTE';
+      case WaveModifier.magnetic:
+        return 'MAGNETIC';
+      case WaveModifier.iron:
+        return 'IRON';
     }
   }
 
   String get tagline {
     switch (this) {
-      case WaveModifier.none: return '';
-      case WaveModifier.frenzy: return 'mob +35% velocità';
-      case WaveModifier.tank: return 'mob ×1.6 HP';
-      case WaveModifier.glass: return 'mob ×0.4 HP, punti ×1.6';
-      case WaveModifier.loot: return 'doppi geom drop';
-      case WaveModifier.blitz: return '+50% nemici';
-      case WaveModifier.haste: return 'ondate ravvicinate';
-      case WaveModifier.magnetic: return 'magnete geom ×2';
-      case WaveModifier.iron: return 'tank lenti';
+      case WaveModifier.none:
+        return '';
+      case WaveModifier.frenzy:
+        return 'mob +35% velocità';
+      case WaveModifier.tank:
+        return 'mob ×1.6 HP';
+      case WaveModifier.glass:
+        return 'mob ×0.4 HP, punti ×1.6';
+      case WaveModifier.loot:
+        return 'doppi geom drop';
+      case WaveModifier.blitz:
+        return '+50% nemici';
+      case WaveModifier.haste:
+        return 'ondate ravvicinate';
+      case WaveModifier.magnetic:
+        return 'magnete geom ×2';
+      case WaveModifier.iron:
+        return 'tank lenti';
     }
   }
 
   /// Hex color per banner (ARGB 0xAARRGGBB).
   int get tagColorArgb {
     switch (this) {
-      case WaveModifier.none: return 0xFFFFFFFF;
-      case WaveModifier.frenzy: return 0xFFFF6633;
-      case WaveModifier.tank: return 0xFF3388FF;
-      case WaveModifier.glass: return 0xFFFF00AA;
-      case WaveModifier.loot: return 0xFFFFD700;
-      case WaveModifier.blitz: return 0xFFFFAA00;
-      case WaveModifier.haste: return 0xFF00FFCC;
-      case WaveModifier.magnetic: return 0xFF00FFFF;
-      case WaveModifier.iron: return 0xFF888888;
+      case WaveModifier.none:
+        return 0xFFFFFFFF;
+      case WaveModifier.frenzy:
+        return 0xFFFF6633;
+      case WaveModifier.tank:
+        return 0xFF3388FF;
+      case WaveModifier.glass:
+        return 0xFFFF00AA;
+      case WaveModifier.loot:
+        return 0xFFFFD700;
+      case WaveModifier.blitz:
+        return 0xFFFFAA00;
+      case WaveModifier.haste:
+        return 0xFF00FFCC;
+      case WaveModifier.magnetic:
+        return 0xFF00FFFF;
+      case WaveModifier.iron:
+        return 0xFF888888;
     }
   }
 }
@@ -202,6 +229,7 @@ class WaveConfig {
   final int waveNumber;
   final List<WaveSpawn> spawns;
   final BossType? boss;
+
   /// Modificatore globale (solo classic mode, non-boss). Default `none`.
   final WaveModifier modifier;
 
@@ -271,11 +299,13 @@ List<WaveConfig> generateWaveConfigs() {
     // Boss wave: ogni wave multipla di 10 (classic + zen).
     final bossType = _classicBossSchedule[wave];
     if (bossType != null) {
-      configs.add(WaveConfig(
-        waveNumber: wave,
-        spawns: _bossEntourage(wave),
-        boss: bossType,
-      ));
+      configs.add(
+        WaveConfig(
+          waveNumber: wave,
+          spawns: _bossEntourage(wave),
+          boss: bossType,
+        ),
+      );
       continue;
     }
 
@@ -317,17 +347,20 @@ List<WaveConfig> generateWaveConfigs() {
     // Cap a 300/spawn-group per evitare flood GC su MEGASWARM tier 3
     // (clamp pre-mult arrivava a 220 → ×2 = 440 in single batch).
     // Gate (1 unità) escluso dal moltiplicatore (aggiunto dopo).
-    final spawns = archetype.generator(wave)
-        .map((s) => WaveSpawn(
-              s.type,
-              // Gate is not multiplied: spawning more than the archetype
-              // intended causes mechanics issues (the comment above says
-              // "Gate escluso dal moltiplicatore").
-              s.type == EnemyType.gate
-                  ? s.count.clamp(1, 300)
-                  : (s.count * 2).clamp(1, 300),
-              delay: s.delay,
-            ))
+    final spawns = archetype
+        .generator(wave)
+        .map(
+          (s) => WaveSpawn(
+            s.type,
+            // Gate is not multiplied: spawning more than the archetype
+            // intended causes mechanics issues (the comment above says
+            // "Gate escluso dal moltiplicatore").
+            s.type == EnemyType.gate
+                ? s.count.clamp(1, 300)
+                : (s.count * 2).clamp(1, 300),
+            delay: s.delay,
+          ),
+        )
         .toList();
 
     // ═══════════════════════════════════════════════════════════════
@@ -344,18 +377,22 @@ List<WaveConfig> generateWaveConfigs() {
       // Offset temporale: secondo archetipo arriva DOPO il primo —
       // somma del delay max del primo + 4s buffer per dare respiro.
       final firstMaxDelay = spawns.fold<double>(
-          0.0, (m, s) => s.delay > m ? s.delay : m);
+        0.0,
+        (m, s) => s.delay > m ? s.delay : m,
+      );
       final secondaryOffset = firstMaxDelay + 4.0;
       // Scala counts second archetype a 60% per evitare overflow caos.
       for (final s in secondArchetype.generator(wave)) {
-        spawns.add(WaveSpawn(
-          s.type,
-          // Gate is not multiplied (same exclusion as the primary archetype).
-          s.type == EnemyType.gate
-              ? s.count.clamp(1, 200)
-              : ((s.count * 2) * 0.6).round().clamp(1, 200),
-          delay: s.delay + secondaryOffset,
-        ));
+        spawns.add(
+          WaveSpawn(
+            s.type,
+            // Gate is not multiplied (same exclusion as the primary archetype).
+            s.type == EnemyType.gate
+                ? s.count.clamp(1, 200)
+                : ((s.count * 2) * 0.6).round().clamp(1, 200),
+            delay: s.delay + secondaryOffset,
+          ),
+        );
       }
     }
 
@@ -377,11 +414,9 @@ List<WaveConfig> generateWaveConfigs() {
     // `modHistory` ora unreached ma kept in file.
     const modifier = WaveModifier.none;
 
-    configs.add(WaveConfig(
-      waveNumber: wave,
-      spawns: spawns,
-      modifier: modifier,
-    ));
+    configs.add(
+      WaveConfig(waveNumber: wave, spawns: spawns, modifier: modifier),
+    );
   }
 
   return configs;
@@ -397,8 +432,7 @@ List<WaveConfig> generateWaveConfigs() {
 // Auto-modifier disabilitato in classic (utente). Funzione mantenuta per
 // futuro re-enable o modalità che la richiedano.
 // ignore: unused_element
-WaveModifier _pickModifier(
-    int wave, List<int> history, bool isPreBoss) {
+WaveModifier _pickModifier(int wave, List<int> history, bool isPreBoss) {
   if (wave <= 3) return WaveModifier.none;
   if (isPreBoss) return WaveModifier.none;
   if (wave % 2 == 1) return WaveModifier.none;
@@ -446,14 +480,30 @@ WaveConfig? _signatureWaveOverride(int wave) {
       return const WaveConfig(
         waveNumber: 6,
         spawns: [
-          WaveSpawn(EnemyType.drone, 16,
-              formation: SpawnFormation.playerRing, delay: 0),
-          WaveSpawn(EnemyType.drone, 16,
-              formation: SpawnFormation.playerRing, delay: 2.5),
-          WaveSpawn(EnemyType.drone, 18,
-              formation: SpawnFormation.playerRing, delay: 2.5),
-          WaveSpawn(EnemyType.drone, 20,
-              formation: SpawnFormation.playerDoubleRing, delay: 2.5),
+          WaveSpawn(
+            EnemyType.drone,
+            16,
+            formation: SpawnFormation.playerRing,
+            delay: 0,
+          ),
+          WaveSpawn(
+            EnemyType.drone,
+            16,
+            formation: SpawnFormation.playerRing,
+            delay: 2.5,
+          ),
+          WaveSpawn(
+            EnemyType.drone,
+            18,
+            formation: SpawnFormation.playerRing,
+            delay: 2.5,
+          ),
+          WaveSpawn(
+            EnemyType.drone,
+            20,
+            formation: SpawnFormation.playerDoubleRing,
+            delay: 2.5,
+          ),
         ],
       );
 
@@ -463,14 +513,30 @@ WaveConfig? _signatureWaveOverride(int wave) {
       return const WaveConfig(
         waveNumber: 13,
         spawns: [
-          WaveSpawn(EnemyType.kamikaze, 18,
-              formation: SpawnFormation.borderLine, delay: 0),
-          WaveSpawn(EnemyType.kamikaze, 20,
-              formation: SpawnFormation.borderLine, delay: 3.0),
-          WaveSpawn(EnemyType.kamikaze, 22,
-              formation: SpawnFormation.borderLine, delay: 3.0),
-          WaveSpawn(EnemyType.kamikaze, 24,
-              formation: SpawnFormation.scatter, delay: 3.0),
+          WaveSpawn(
+            EnemyType.kamikaze,
+            18,
+            formation: SpawnFormation.borderLine,
+            delay: 0,
+          ),
+          WaveSpawn(
+            EnemyType.kamikaze,
+            20,
+            formation: SpawnFormation.borderLine,
+            delay: 3.0,
+          ),
+          WaveSpawn(
+            EnemyType.kamikaze,
+            22,
+            formation: SpawnFormation.borderLine,
+            delay: 3.0,
+          ),
+          WaveSpawn(
+            EnemyType.kamikaze,
+            24,
+            formation: SpawnFormation.scatter,
+            delay: 3.0,
+          ),
         ],
       );
 
@@ -480,12 +546,24 @@ WaveConfig? _signatureWaveOverride(int wave) {
       return const WaveConfig(
         waveNumber: 18,
         spawns: [
-          WaveSpawn(EnemyType.blackHole, 4,
-              formation: SpawnFormation.cross, delay: 0),
-          WaveSpawn(EnemyType.blackHole, 4,
-              formation: SpawnFormation.diamond, delay: 4.0),
-          WaveSpawn(EnemyType.drone, 30,
-              formation: SpawnFormation.scatter, delay: 3.0),
+          WaveSpawn(
+            EnemyType.blackHole,
+            4,
+            formation: SpawnFormation.cross,
+            delay: 0,
+          ),
+          WaveSpawn(
+            EnemyType.blackHole,
+            4,
+            formation: SpawnFormation.diamond,
+            delay: 4.0,
+          ),
+          WaveSpawn(
+            EnemyType.drone,
+            30,
+            formation: SpawnFormation.scatter,
+            delay: 3.0,
+          ),
         ],
       );
 
@@ -495,12 +573,24 @@ WaveConfig? _signatureWaveOverride(int wave) {
       return const WaveConfig(
         waveNumber: 27,
         spawns: [
-          WaveSpawn(EnemyType.phantom, 24,
-              formation: SpawnFormation.hexagon, delay: 0),
-          WaveSpawn(EnemyType.phantom, 30,
-              formation: SpawnFormation.doublering, delay: 4.0),
-          WaveSpawn(EnemyType.phantom, 36,
-              formation: SpawnFormation.scatter, delay: 4.0),
+          WaveSpawn(
+            EnemyType.phantom,
+            24,
+            formation: SpawnFormation.hexagon,
+            delay: 0,
+          ),
+          WaveSpawn(
+            EnemyType.phantom,
+            30,
+            formation: SpawnFormation.doublering,
+            delay: 4.0,
+          ),
+          WaveSpawn(
+            EnemyType.phantom,
+            36,
+            formation: SpawnFormation.scatter,
+            delay: 4.0,
+          ),
         ],
       );
 
@@ -510,12 +600,24 @@ WaveConfig? _signatureWaveOverride(int wave) {
       return const WaveConfig(
         waveNumber: 33,
         spawns: [
-          WaveSpawn(EnemyType.mirror, 12,
-              formation: SpawnFormation.cross, delay: 0),
-          WaveSpawn(EnemyType.mirror, 14,
-              formation: SpawnFormation.squareRing, delay: 4.0),
-          WaveSpawn(EnemyType.mirror, 16,
-              formation: SpawnFormation.hexagon, delay: 4.0),
+          WaveSpawn(
+            EnemyType.mirror,
+            12,
+            formation: SpawnFormation.cross,
+            delay: 0,
+          ),
+          WaveSpawn(
+            EnemyType.mirror,
+            14,
+            formation: SpawnFormation.squareRing,
+            delay: 4.0,
+          ),
+          WaveSpawn(
+            EnemyType.mirror,
+            16,
+            formation: SpawnFormation.hexagon,
+            delay: 4.0,
+          ),
         ],
       );
 
@@ -525,12 +627,24 @@ WaveConfig? _signatureWaveOverride(int wave) {
       return const WaveConfig(
         waveNumber: 38,
         spawns: [
-          WaveSpawn(EnemyType.mine, 30,
-              formation: SpawnFormation.scatter, delay: 0),
-          WaveSpawn(EnemyType.mine, 35,
-              formation: SpawnFormation.honeycomb, delay: 3.5),
-          WaveSpawn(EnemyType.laserTurret, 6,
-              formation: SpawnFormation.cross, delay: 3.0),
+          WaveSpawn(
+            EnemyType.mine,
+            30,
+            formation: SpawnFormation.scatter,
+            delay: 0,
+          ),
+          WaveSpawn(
+            EnemyType.mine,
+            35,
+            formation: SpawnFormation.honeycomb,
+            delay: 3.5,
+          ),
+          WaveSpawn(
+            EnemyType.laserTurret,
+            6,
+            formation: SpawnFormation.cross,
+            delay: 3.0,
+          ),
         ],
       );
 
@@ -541,16 +655,36 @@ WaveConfig? _signatureWaveOverride(int wave) {
       return const WaveConfig(
         waveNumber: 47,
         spawns: [
-          WaveSpawn(EnemyType.kamikaze, 24,
-              formation: SpawnFormation.borderLine, delay: 0),
-          WaveSpawn(EnemyType.kamikaze, 24,
-              formation: SpawnFormation.borderLine, delay: 0.1),
-          WaveSpawn(EnemyType.kamikaze, 28,
-              formation: SpawnFormation.borderLine, delay: 3.9),
-          WaveSpawn(EnemyType.kamikaze, 28,
-              formation: SpawnFormation.borderLine, delay: 0.1),
-          WaveSpawn(EnemyType.kamikaze, 32,
-              formation: SpawnFormation.scatter, delay: 3.9),
+          WaveSpawn(
+            EnemyType.kamikaze,
+            24,
+            formation: SpawnFormation.borderLine,
+            delay: 0,
+          ),
+          WaveSpawn(
+            EnemyType.kamikaze,
+            24,
+            formation: SpawnFormation.borderLine,
+            delay: 0.1,
+          ),
+          WaveSpawn(
+            EnemyType.kamikaze,
+            28,
+            formation: SpawnFormation.borderLine,
+            delay: 3.9,
+          ),
+          WaveSpawn(
+            EnemyType.kamikaze,
+            28,
+            formation: SpawnFormation.borderLine,
+            delay: 0.1,
+          ),
+          WaveSpawn(
+            EnemyType.kamikaze,
+            32,
+            formation: SpawnFormation.scatter,
+            delay: 3.9,
+          ),
         ],
       );
 
@@ -560,12 +694,24 @@ WaveConfig? _signatureWaveOverride(int wave) {
       return const WaveConfig(
         waveNumber: 53,
         spawns: [
-          WaveSpawn(EnemyType.titan, 8,
-              formation: SpawnFormation.ring, delay: 0),
-          WaveSpawn(EnemyType.shieldEnemy, 12,
-              formation: SpawnFormation.cross, delay: 3.5),
-          WaveSpawn(EnemyType.titan, 10,
-              formation: SpawnFormation.triangle, delay: 3.5),
+          WaveSpawn(
+            EnemyType.titan,
+            8,
+            formation: SpawnFormation.ring,
+            delay: 0,
+          ),
+          WaveSpawn(
+            EnemyType.shieldEnemy,
+            12,
+            formation: SpawnFormation.cross,
+            delay: 3.5,
+          ),
+          WaveSpawn(
+            EnemyType.titan,
+            10,
+            formation: SpawnFormation.triangle,
+            delay: 3.5,
+          ),
         ],
       );
 
@@ -575,12 +721,24 @@ WaveConfig? _signatureWaveOverride(int wave) {
       return const WaveConfig(
         waveNumber: 58,
         spawns: [
-          WaveSpawn(EnemyType.proton, 40,
-              formation: SpawnFormation.scatter, delay: 0),
-          WaveSpawn(EnemyType.blackHole, 3,
-              formation: SpawnFormation.triangle, delay: 3.0),
-          WaveSpawn(EnemyType.proton, 50,
-              formation: SpawnFormation.tripleRing, delay: 3.0),
+          WaveSpawn(
+            EnemyType.proton,
+            40,
+            formation: SpawnFormation.scatter,
+            delay: 0,
+          ),
+          WaveSpawn(
+            EnemyType.blackHole,
+            3,
+            formation: SpawnFormation.triangle,
+            delay: 3.0,
+          ),
+          WaveSpawn(
+            EnemyType.proton,
+            50,
+            formation: SpawnFormation.tripleRing,
+            delay: 3.0,
+          ),
         ],
       );
 
@@ -590,16 +748,36 @@ WaveConfig? _signatureWaveOverride(int wave) {
       return const WaveConfig(
         waveNumber: 67,
         spawns: [
-          WaveSpawn(EnemyType.drone, 20,
-              formation: SpawnFormation.playerRing, delay: 0),
-          WaveSpawn(EnemyType.weaver, 12,
-              formation: SpawnFormation.playerRing, delay: 2.5),
-          WaveSpawn(EnemyType.drone, 20,
-              formation: SpawnFormation.playerRing, delay: 2.5),
-          WaveSpawn(EnemyType.weaver, 14,
-              formation: SpawnFormation.playerDoubleRing, delay: 2.5),
-          WaveSpawn(EnemyType.drone, 24,
-              formation: SpawnFormation.playerEncircle, delay: 2.5),
+          WaveSpawn(
+            EnemyType.drone,
+            20,
+            formation: SpawnFormation.playerRing,
+            delay: 0,
+          ),
+          WaveSpawn(
+            EnemyType.weaver,
+            12,
+            formation: SpawnFormation.playerRing,
+            delay: 2.5,
+          ),
+          WaveSpawn(
+            EnemyType.drone,
+            20,
+            formation: SpawnFormation.playerRing,
+            delay: 2.5,
+          ),
+          WaveSpawn(
+            EnemyType.weaver,
+            14,
+            formation: SpawnFormation.playerDoubleRing,
+            delay: 2.5,
+          ),
+          WaveSpawn(
+            EnemyType.drone,
+            24,
+            formation: SpawnFormation.playerEncircle,
+            delay: 2.5,
+          ),
         ],
       );
 
@@ -609,16 +787,36 @@ WaveConfig? _signatureWaveOverride(int wave) {
       return const WaveConfig(
         waveNumber: 73,
         spawns: [
-          WaveSpawn(EnemyType.kamikaze, 30,
-              formation: SpawnFormation.borderLine, delay: 0),
-          WaveSpawn(EnemyType.kamikaze, 32,
-              formation: SpawnFormation.borderLine, delay: 2.5),
-          WaveSpawn(EnemyType.kamikaze, 34,
-              formation: SpawnFormation.borderLine, delay: 2.5),
-          WaveSpawn(EnemyType.kamikaze, 36,
-              formation: SpawnFormation.scatter, delay: 2.5),
-          WaveSpawn(EnemyType.kamikaze, 40,
-              formation: SpawnFormation.vArrow, delay: 2.5),
+          WaveSpawn(
+            EnemyType.kamikaze,
+            30,
+            formation: SpawnFormation.borderLine,
+            delay: 0,
+          ),
+          WaveSpawn(
+            EnemyType.kamikaze,
+            32,
+            formation: SpawnFormation.borderLine,
+            delay: 2.5,
+          ),
+          WaveSpawn(
+            EnemyType.kamikaze,
+            34,
+            formation: SpawnFormation.borderLine,
+            delay: 2.5,
+          ),
+          WaveSpawn(
+            EnemyType.kamikaze,
+            36,
+            formation: SpawnFormation.scatter,
+            delay: 2.5,
+          ),
+          WaveSpawn(
+            EnemyType.kamikaze,
+            40,
+            formation: SpawnFormation.vArrow,
+            delay: 2.5,
+          ),
         ],
       );
 
@@ -628,14 +826,30 @@ WaveConfig? _signatureWaveOverride(int wave) {
       return const WaveConfig(
         waveNumber: 78,
         spawns: [
-          WaveSpawn(EnemyType.mirror, 16,
-              formation: SpawnFormation.hexagon, delay: 0),
-          WaveSpawn(EnemyType.mirror, 18,
-              formation: SpawnFormation.squareRing, delay: 3.5),
-          WaveSpawn(EnemyType.mirror, 20,
-              formation: SpawnFormation.cross, delay: 3.5),
-          WaveSpawn(EnemyType.shieldEnemy, 8,
-              formation: SpawnFormation.cross, delay: 3.0),
+          WaveSpawn(
+            EnemyType.mirror,
+            16,
+            formation: SpawnFormation.hexagon,
+            delay: 0,
+          ),
+          WaveSpawn(
+            EnemyType.mirror,
+            18,
+            formation: SpawnFormation.squareRing,
+            delay: 3.5,
+          ),
+          WaveSpawn(
+            EnemyType.mirror,
+            20,
+            formation: SpawnFormation.cross,
+            delay: 3.5,
+          ),
+          WaveSpawn(
+            EnemyType.shieldEnemy,
+            8,
+            formation: SpawnFormation.cross,
+            delay: 3.0,
+          ),
         ],
       );
 
@@ -645,14 +859,30 @@ WaveConfig? _signatureWaveOverride(int wave) {
       return const WaveConfig(
         waveNumber: 87,
         spawns: [
-          WaveSpawn(EnemyType.blackHole, 6,
-              formation: SpawnFormation.hexagon, delay: 0),
-          WaveSpawn(EnemyType.proton, 30,
-              formation: SpawnFormation.scatter, delay: 4.0),
-          WaveSpawn(EnemyType.blackHole, 4,
-              formation: SpawnFormation.cross, delay: 4.0),
-          WaveSpawn(EnemyType.proton, 40,
-              formation: SpawnFormation.tripleRing, delay: 3.0),
+          WaveSpawn(
+            EnemyType.blackHole,
+            6,
+            formation: SpawnFormation.hexagon,
+            delay: 0,
+          ),
+          WaveSpawn(
+            EnemyType.proton,
+            30,
+            formation: SpawnFormation.scatter,
+            delay: 4.0,
+          ),
+          WaveSpawn(
+            EnemyType.blackHole,
+            4,
+            formation: SpawnFormation.cross,
+            delay: 4.0,
+          ),
+          WaveSpawn(
+            EnemyType.proton,
+            40,
+            formation: SpawnFormation.tripleRing,
+            delay: 3.0,
+          ),
         ],
       );
 
@@ -662,14 +892,30 @@ WaveConfig? _signatureWaveOverride(int wave) {
       return const WaveConfig(
         waveNumber: 93,
         spawns: [
-          WaveSpawn(EnemyType.phantom, 30,
-              formation: SpawnFormation.hexagon, delay: 0),
-          WaveSpawn(EnemyType.phantom, 35,
-              formation: SpawnFormation.doublering, delay: 3.5),
-          WaveSpawn(EnemyType.phantom, 40,
-              formation: SpawnFormation.scatter, delay: 3.5),
-          WaveSpawn(EnemyType.phantom, 45,
-              formation: SpawnFormation.tripleRing, delay: 3.5),
+          WaveSpawn(
+            EnemyType.phantom,
+            30,
+            formation: SpawnFormation.hexagon,
+            delay: 0,
+          ),
+          WaveSpawn(
+            EnemyType.phantom,
+            35,
+            formation: SpawnFormation.doublering,
+            delay: 3.5,
+          ),
+          WaveSpawn(
+            EnemyType.phantom,
+            40,
+            formation: SpawnFormation.scatter,
+            delay: 3.5,
+          ),
+          WaveSpawn(
+            EnemyType.phantom,
+            45,
+            formation: SpawnFormation.tripleRing,
+            delay: 3.5,
+          ),
         ],
       );
 
@@ -702,10 +948,10 @@ _Archetype _pickArchetype(int wave, List<int> history) {
   final maxTier = wave <= 10
       ? 2
       : wave <= 25
-          ? 2
-          : wave <= 45
-              ? 3
-              : 4;
+      ? 2
+      : wave <= 45
+      ? 3
+      : 4;
   // Pre-boss climax (MEGASWARM forzato) solo se maxTier ≥ 3 (wave > 25).
   // BUG CRITICO: prima wave 4 (pre-boss boss 5) forzava minTier=3 ma
   // maxTier=2 → pool vuoto → pool[% 0] IntegerDivisionByZeroException
@@ -762,155 +1008,276 @@ void _pushHistory(List<int> h, int idx) {
 // ═══════════════════════════════════════════════════════════════════════
 final List<_Archetype> _archetypes = [
   // ─── TIER 1 ─────────────────────────────────────────────────────────
-  _Archetype('CARDINAL QUARTET', 1, (w) => [
-        const WaveSpawn(EnemyType.drone, 4, delay: 0),
-        WaveSpawn(EnemyType.drone, (12 + w).clamp(12, 30), delay: 3.0),
-      ]),
-  _Archetype('INCOMING RUSH', 1, (w) => [
-        WaveSpawn(EnemyType.drone, (20 + w * 2).clamp(20, 50), delay: 0.3),
-        WaveSpawn(EnemyType.kamikaze, (6 + w).clamp(6, 20), delay: 2.0),
-      ]),
-  _Archetype('GENTLE SWEEP', 1, (w) => [
-        WaveSpawn(EnemyType.weaver, (10 + w).clamp(10, 25), delay: 0.2),
-        WaveSpawn(EnemyType.drone, (15 + w * 2).clamp(15, 40), delay: 1.5),
-      ]),
-  _Archetype('BORDER RAIN', 1, (w) => [
-        WaveSpawn(EnemyType.swarmDrone,
-            (40 + w * 4).clamp(40, 120), delay: 0.2),
-        WaveSpawn(EnemyType.drone, (15 + w).clamp(15, 35), delay: 2.0),
-      ]),
-  _Archetype('PAIR ESCALATION', 1, (w) => [
-        const WaveSpawn(EnemyType.shieldEnemy, 2, delay: 0),
-        const WaveSpawn(EnemyType.weaver, 2, delay: 0.5),
-        WaveSpawn(EnemyType.drone, (25 + w * 2).clamp(25, 60), delay: 3.0),
-      ]),
+  _Archetype(
+    'CARDINAL QUARTET',
+    1,
+    (w) => [
+      const WaveSpawn(EnemyType.drone, 4, delay: 0),
+      WaveSpawn(EnemyType.drone, (12 + w).clamp(12, 30), delay: 3.0),
+    ],
+  ),
+  _Archetype(
+    'INCOMING RUSH',
+    1,
+    (w) => [
+      WaveSpawn(EnemyType.drone, (20 + w * 2).clamp(20, 50), delay: 0.3),
+      WaveSpawn(EnemyType.kamikaze, (6 + w).clamp(6, 20), delay: 2.0),
+    ],
+  ),
+  _Archetype(
+    'GENTLE SWEEP',
+    1,
+    (w) => [
+      WaveSpawn(EnemyType.weaver, (10 + w).clamp(10, 25), delay: 0.2),
+      WaveSpawn(EnemyType.drone, (15 + w * 2).clamp(15, 40), delay: 1.5),
+    ],
+  ),
+  _Archetype(
+    'BORDER RAIN',
+    1,
+    (w) => [
+      WaveSpawn(EnemyType.swarmDrone, (40 + w * 4).clamp(40, 120), delay: 0.2),
+      WaveSpawn(EnemyType.drone, (15 + w).clamp(15, 35), delay: 2.0),
+    ],
+  ),
+  _Archetype(
+    'PAIR ESCALATION',
+    1,
+    (w) => [
+      const WaveSpawn(EnemyType.shieldEnemy, 2, delay: 0),
+      const WaveSpawn(EnemyType.weaver, 2, delay: 0.5),
+      WaveSpawn(EnemyType.drone, (25 + w * 2).clamp(25, 60), delay: 3.0),
+    ],
+  ),
 
   // ─── TIER 2 ─────────────────────────────────────────────────────────
-  _Archetype('SPAWNER SIEGE', 2, (w) => [
-        WaveSpawn(EnemyType.spawner, (2 + w ~/ 15).clamp(2, 4), delay: 0.5),
-        WaveSpawn(EnemyType.drone, (20 + w).clamp(20, 40), delay: 2.5),
-      ]),
-  _Archetype('SNAKE PARADE', 2, (w) => [
-        WaveSpawn(EnemyType.snake, (4 + w ~/ 3).clamp(4, 12), delay: 0.3),
-        WaveSpawn(EnemyType.drone, (20 + w * 2).clamp(20, 50), delay: 2.5),
-      ]),
-  _Archetype('MIRROR WALL', 2, (w) => [
-        WaveSpawn(EnemyType.mirror, (5 + w ~/ 5).clamp(5, 10), delay: 0.3),
-        WaveSpawn(EnemyType.kamikaze, (20 + w).clamp(20, 45), delay: 2.0),
-      ]),
-  _Archetype('DIAGONAL STORM', 2, (w) => [
-        WaveSpawn(EnemyType.weaver, (30 + w * 3).clamp(30, 70), delay: 0.3),
-        WaveSpawn(EnemyType.drone, (10 + w).clamp(10, 30), delay: 2.5),
-      ]),
-  _Archetype('PULSAR RING', 2, (w) => [
-        WaveSpawn(EnemyType.pulsar, (6 + w ~/ 5).clamp(6, 12), delay: 0.3),
-        WaveSpawn(EnemyType.drone, (15 + w * 2).clamp(15, 40), delay: 2.0),
-      ]),
-  _Archetype('TESLA NETWORK', 2, (w) => [
-        WaveSpawn(EnemyType.tesla, (4 + w ~/ 6).clamp(4, 8), delay: 0.3),
-        WaveSpawn(EnemyType.shieldEnemy,
-            (5 + w ~/ 4).clamp(5, 12), delay: 2.0),
-        WaveSpawn(EnemyType.drone, (15 + w).clamp(15, 35), delay: 3.5),
-      ]),
-  _Archetype('PHANTOM HUNT', 2, (w) => [
-        WaveSpawn(EnemyType.phantom, (6 + w ~/ 4).clamp(6, 12), delay: 0.3),
-        WaveSpawn(EnemyType.weaver, (20 + w * 2).clamp(20, 45), delay: 2.0),
-      ]),
-  _Archetype('HAZARD MAZE', 2, (w) => [
-        WaveSpawn(EnemyType.mine, (8 + w ~/ 3).clamp(8, 16), delay: 0.3),
-        WaveSpawn(EnemyType.laserTurret,
-            (3 + w ~/ 8).clamp(3, 6), delay: 1.5),
-        WaveSpawn(EnemyType.snake, (8 + w ~/ 2).clamp(8, 20), delay: 3.0),
-      ]),
-  _Archetype('ORBITER CAGE', 2, (w) => [
-        WaveSpawn(EnemyType.orbiter, (5 + w ~/ 5).clamp(5, 10), delay: 0.3),
-        WaveSpawn(EnemyType.drone, (20 + w * 2).clamp(20, 50), delay: 2.5),
-      ]),
-  _Archetype('LEECH SWARM', 2, (w) => [
-        WaveSpawn(EnemyType.leech, (10 + w).clamp(10, 25), delay: 0.3),
-        WaveSpawn(EnemyType.drone, (25 + w * 2).clamp(25, 55), delay: 2.0),
-      ]),
+  _Archetype(
+    'SPAWNER SIEGE',
+    2,
+    (w) => [
+      WaveSpawn(EnemyType.spawner, (2 + w ~/ 15).clamp(2, 4), delay: 0.5),
+      WaveSpawn(EnemyType.drone, (20 + w).clamp(20, 40), delay: 2.5),
+    ],
+  ),
+  _Archetype(
+    'SNAKE PARADE',
+    2,
+    (w) => [
+      WaveSpawn(EnemyType.snake, (4 + w ~/ 3).clamp(4, 12), delay: 0.3),
+      WaveSpawn(EnemyType.drone, (20 + w * 2).clamp(20, 50), delay: 2.5),
+    ],
+  ),
+  _Archetype(
+    'MIRROR WALL',
+    2,
+    (w) => [
+      WaveSpawn(EnemyType.mirror, (5 + w ~/ 5).clamp(5, 10), delay: 0.3),
+      WaveSpawn(EnemyType.kamikaze, (20 + w).clamp(20, 45), delay: 2.0),
+    ],
+  ),
+  _Archetype(
+    'DIAGONAL STORM',
+    2,
+    (w) => [
+      WaveSpawn(EnemyType.weaver, (30 + w * 3).clamp(30, 70), delay: 0.3),
+      WaveSpawn(EnemyType.drone, (10 + w).clamp(10, 30), delay: 2.5),
+    ],
+  ),
+  _Archetype(
+    'PULSAR RING',
+    2,
+    (w) => [
+      WaveSpawn(EnemyType.pulsar, (6 + w ~/ 5).clamp(6, 12), delay: 0.3),
+      WaveSpawn(EnemyType.drone, (15 + w * 2).clamp(15, 40), delay: 2.0),
+    ],
+  ),
+  _Archetype(
+    'TESLA NETWORK',
+    2,
+    (w) => [
+      WaveSpawn(EnemyType.tesla, (4 + w ~/ 6).clamp(4, 8), delay: 0.3),
+      WaveSpawn(EnemyType.shieldEnemy, (5 + w ~/ 4).clamp(5, 12), delay: 2.0),
+      WaveSpawn(EnemyType.drone, (15 + w).clamp(15, 35), delay: 3.5),
+    ],
+  ),
+  _Archetype(
+    'PHANTOM HUNT',
+    2,
+    (w) => [
+      WaveSpawn(EnemyType.phantom, (6 + w ~/ 4).clamp(6, 12), delay: 0.3),
+      WaveSpawn(EnemyType.weaver, (20 + w * 2).clamp(20, 45), delay: 2.0),
+    ],
+  ),
+  _Archetype(
+    'HAZARD MAZE',
+    2,
+    (w) => [
+      WaveSpawn(EnemyType.mine, (8 + w ~/ 3).clamp(8, 16), delay: 0.3),
+      WaveSpawn(EnemyType.laserTurret, (3 + w ~/ 8).clamp(3, 6), delay: 1.5),
+      WaveSpawn(EnemyType.snake, (8 + w ~/ 2).clamp(8, 20), delay: 3.0),
+    ],
+  ),
+  _Archetype(
+    'ORBITER CAGE',
+    2,
+    (w) => [
+      WaveSpawn(EnemyType.orbiter, (5 + w ~/ 5).clamp(5, 10), delay: 0.3),
+      WaveSpawn(EnemyType.drone, (20 + w * 2).clamp(20, 50), delay: 2.5),
+    ],
+  ),
+  _Archetype(
+    'LEECH SWARM',
+    2,
+    (w) => [
+      WaveSpawn(EnemyType.leech, (10 + w).clamp(10, 25), delay: 0.3),
+      WaveSpawn(EnemyType.drone, (25 + w * 2).clamp(25, 55), delay: 2.0),
+    ],
+  ),
 
   // ─── TIER 3 — MEGASWARM (climax pre-boss) ───────────────────────────
-  _Archetype('MEGASWARM DRONES', 3, (w) => [
-        WaveSpawn(EnemyType.drone, (70 + w * 3).clamp(70, 160), delay: 0.3),
-        WaveSpawn(EnemyType.weaver, (5 + w ~/ 8).clamp(5, 12), delay: 2.0),
-      ]),
-  _Archetype('MEGASWARM KAMIKAZE', 3, (w) => [
-        WaveSpawn(EnemyType.kamikaze, (40 + w * 2).clamp(40, 90), delay: 0.3),
-        WaveSpawn(EnemyType.shieldEnemy,
-            (6 + w ~/ 6).clamp(6, 14), delay: 2.5),
-      ]),
-  _Archetype('MEGASWARM SNAKES', 3, (w) => [
-        WaveSpawn(EnemyType.snake, (8 + w ~/ 2).clamp(8, 24), delay: 0.3),
-        WaveSpawn(EnemyType.weaver, (25 + w * 2).clamp(25, 55), delay: 2.5),
-      ]),
-  _Archetype('MEGASWARM LEECHES', 3, (w) => [
-        WaveSpawn(EnemyType.leech, (20 + w).clamp(20, 40), delay: 0.3),
-        WaveSpawn(EnemyType.drone, (20 + w * 2).clamp(20, 50), delay: 2.0),
-      ]),
-  _Archetype('MEGASWARM SWARM', 3, (w) => [
-        WaveSpawn(EnemyType.swarmDrone,
-            (100 + w * 5).clamp(100, 220), delay: 0.2),
-        WaveSpawn(EnemyType.kamikaze, (15 + w).clamp(15, 40), delay: 2.5),
-      ]),
-  _Archetype('CONCENTRIC STORM', 3, (w) => [
-        // Ondate ring successive che circondano player.
-        WaveSpawn(EnemyType.drone, (15 + w).clamp(15, 35), delay: 0.3),
-        WaveSpawn(EnemyType.drone, (15 + w).clamp(15, 35), delay: 2.5),
-        WaveSpawn(EnemyType.drone, (15 + w).clamp(15, 35), delay: 4.5),
-        WaveSpawn(EnemyType.weaver, (5 + w ~/ 6).clamp(5, 12), delay: 5.5),
-      ]),
-  _Archetype('QUADRANT STORM', 3, (w) => [
-        WaveSpawn(EnemyType.weaver, (12 + w ~/ 2).clamp(12, 25), delay: 0.3),
-        WaveSpawn(EnemyType.pulsar, (6 + w ~/ 5).clamp(6, 12), delay: 1.2),
-        WaveSpawn(EnemyType.shieldEnemy,
-            (8 + w ~/ 4).clamp(8, 16), delay: 2.2),
-        WaveSpawn(EnemyType.drone, (20 + w).clamp(20, 45), delay: 3.5),
-      ]),
-  _Archetype('MEGASWARM GATES', 3, (w) => [
-        WaveSpawn(EnemyType.gate, (2 + w ~/ 30).clamp(2, 3), delay: 0.5),
-        WaveSpawn(EnemyType.drone, (40 + w * 2).clamp(40, 90), delay: 2.5),
-      ]),
-  _Archetype('MUTATOR STORM', 3, (w) => [
-        WaveSpawn(EnemyType.mutator, (2 + w ~/ 20).clamp(2, 4), delay: 0.3),
-        WaveSpawn(EnemyType.drone, (30 + w * 2).clamp(30, 70), delay: 2.0),
-      ]),
-  _Archetype('MEGASWARM TITANS', 3, (w) => [
-        WaveSpawn(EnemyType.titan, (4 + w ~/ 10).clamp(4, 8), delay: 0.3),
-        WaveSpawn(EnemyType.drone, (25 + w * 2).clamp(25, 55), delay: 2.5),
-      ]),
+  _Archetype(
+    'MEGASWARM DRONES',
+    3,
+    (w) => [
+      WaveSpawn(EnemyType.drone, (70 + w * 3).clamp(70, 160), delay: 0.3),
+      WaveSpawn(EnemyType.weaver, (5 + w ~/ 8).clamp(5, 12), delay: 2.0),
+    ],
+  ),
+  _Archetype(
+    'MEGASWARM KAMIKAZE',
+    3,
+    (w) => [
+      WaveSpawn(EnemyType.kamikaze, (40 + w * 2).clamp(40, 90), delay: 0.3),
+      WaveSpawn(EnemyType.shieldEnemy, (6 + w ~/ 6).clamp(6, 14), delay: 2.5),
+    ],
+  ),
+  _Archetype(
+    'MEGASWARM SNAKES',
+    3,
+    (w) => [
+      WaveSpawn(EnemyType.snake, (8 + w ~/ 2).clamp(8, 24), delay: 0.3),
+      WaveSpawn(EnemyType.weaver, (25 + w * 2).clamp(25, 55), delay: 2.5),
+    ],
+  ),
+  _Archetype(
+    'MEGASWARM LEECHES',
+    3,
+    (w) => [
+      WaveSpawn(EnemyType.leech, (20 + w).clamp(20, 40), delay: 0.3),
+      WaveSpawn(EnemyType.drone, (20 + w * 2).clamp(20, 50), delay: 2.0),
+    ],
+  ),
+  _Archetype(
+    'MEGASWARM SWARM',
+    3,
+    (w) => [
+      WaveSpawn(
+        EnemyType.swarmDrone,
+        (100 + w * 5).clamp(100, 220),
+        delay: 0.2,
+      ),
+      WaveSpawn(EnemyType.kamikaze, (15 + w).clamp(15, 40), delay: 2.5),
+    ],
+  ),
+  _Archetype(
+    'CONCENTRIC STORM',
+    3,
+    (w) => [
+      // Ondate ring successive che circondano player.
+      WaveSpawn(EnemyType.drone, (15 + w).clamp(15, 35), delay: 0.3),
+      WaveSpawn(EnemyType.drone, (15 + w).clamp(15, 35), delay: 2.5),
+      WaveSpawn(EnemyType.drone, (15 + w).clamp(15, 35), delay: 4.5),
+      WaveSpawn(EnemyType.weaver, (5 + w ~/ 6).clamp(5, 12), delay: 5.5),
+    ],
+  ),
+  _Archetype(
+    'QUADRANT STORM',
+    3,
+    (w) => [
+      WaveSpawn(EnemyType.weaver, (12 + w ~/ 2).clamp(12, 25), delay: 0.3),
+      WaveSpawn(EnemyType.pulsar, (6 + w ~/ 5).clamp(6, 12), delay: 1.2),
+      WaveSpawn(EnemyType.shieldEnemy, (8 + w ~/ 4).clamp(8, 16), delay: 2.2),
+      WaveSpawn(EnemyType.drone, (20 + w).clamp(20, 45), delay: 3.5),
+    ],
+  ),
+  _Archetype(
+    'MEGASWARM GATES',
+    3,
+    (w) => [
+      WaveSpawn(EnemyType.gate, (2 + w ~/ 30).clamp(2, 3), delay: 0.5),
+      WaveSpawn(EnemyType.drone, (40 + w * 2).clamp(40, 90), delay: 2.5),
+    ],
+  ),
+  _Archetype(
+    'MUTATOR STORM',
+    3,
+    (w) => [
+      WaveSpawn(EnemyType.mutator, (2 + w ~/ 20).clamp(2, 4), delay: 0.3),
+      WaveSpawn(EnemyType.drone, (30 + w * 2).clamp(30, 70), delay: 2.0),
+    ],
+  ),
+  _Archetype(
+    'MEGASWARM TITANS',
+    3,
+    (w) => [
+      WaveSpawn(EnemyType.titan, (4 + w ~/ 10).clamp(4, 8), delay: 0.3),
+      WaveSpawn(EnemyType.drone, (25 + w * 2).clamp(25, 55), delay: 2.5),
+    ],
+  ),
 
   // ─── TIER 4 — NIGHTMARE (wave 45+) ──────────────────────────────────
-  _Archetype('VOID STORM', 4, (w) => [
-        const WaveSpawn(EnemyType.blackHole, 2, delay: 0.5),
-        WaveSpawn(EnemyType.drone, (35 + w).clamp(35, 70), delay: 2.5),
-        WaveSpawn(EnemyType.proton, (8 + w ~/ 5).clamp(8, 20), delay: 4.0),
-      ]),
-  _Archetype('NECRO STORM', 4, (w) => [
-        WaveSpawn(EnemyType.necro, (3 + w ~/ 15).clamp(3, 6), delay: 0.3),
-        WaveSpawn(EnemyType.drone, (30 + w).clamp(30, 65), delay: 2.0),
-        WaveSpawn(EnemyType.weaver, (6 + w ~/ 8).clamp(6, 14), delay: 3.5),
-      ]),
-  _Archetype('MEGASWARM TIMEBOMBS', 4, (w) => [
-        WaveSpawn(EnemyType.timeBomb,
-            (12 + w ~/ 3).clamp(12, 25), delay: 0.3),
-        WaveSpawn(EnemyType.drone, (20 + w).clamp(20, 45), delay: 2.5),
-      ]),
-  _Archetype('GLITCH STORM', 4, (w) => [
-        WaveSpawn(EnemyType.glitch, (8 + w ~/ 4).clamp(8, 16), delay: 0.3),
-        WaveSpawn(EnemyType.kamikaze, (30 + w * 2).clamp(30, 70), delay: 2.0),
-      ]),
-  _Archetype('SIREN STORM', 4, (w) => [
-        WaveSpawn(EnemyType.siren, (6 + w ~/ 6).clamp(6, 12), delay: 0.3),
-        WaveSpawn(EnemyType.drone, (40 + w * 2).clamp(40, 80), delay: 2.0),
-        WaveSpawn(EnemyType.weaver, (8 + w ~/ 5).clamp(8, 20), delay: 3.5),
-      ]),
-  _Archetype('HELL SPAWN', 4, (w) => [
-        WaveSpawn(EnemyType.spawner, (3 + w ~/ 20).clamp(3, 5), delay: 0.5),
-        WaveSpawn(EnemyType.necro, (2 + w ~/ 25).clamp(2, 4), delay: 2.0),
-        WaveSpawn(EnemyType.kamikaze, (15 + w).clamp(15, 35), delay: 3.5),
-      ]),
+  _Archetype(
+    'VOID STORM',
+    4,
+    (w) => [
+      const WaveSpawn(EnemyType.blackHole, 2, delay: 0.5),
+      WaveSpawn(EnemyType.drone, (35 + w).clamp(35, 70), delay: 2.5),
+      WaveSpawn(EnemyType.proton, (8 + w ~/ 5).clamp(8, 20), delay: 4.0),
+    ],
+  ),
+  _Archetype(
+    'NECRO STORM',
+    4,
+    (w) => [
+      WaveSpawn(EnemyType.necro, (3 + w ~/ 15).clamp(3, 6), delay: 0.3),
+      WaveSpawn(EnemyType.drone, (30 + w).clamp(30, 65), delay: 2.0),
+      WaveSpawn(EnemyType.weaver, (6 + w ~/ 8).clamp(6, 14), delay: 3.5),
+    ],
+  ),
+  _Archetype(
+    'MEGASWARM TIMEBOMBS',
+    4,
+    (w) => [
+      WaveSpawn(EnemyType.timeBomb, (12 + w ~/ 3).clamp(12, 25), delay: 0.3),
+      WaveSpawn(EnemyType.drone, (20 + w).clamp(20, 45), delay: 2.5),
+    ],
+  ),
+  _Archetype(
+    'GLITCH STORM',
+    4,
+    (w) => [
+      WaveSpawn(EnemyType.glitch, (8 + w ~/ 4).clamp(8, 16), delay: 0.3),
+      WaveSpawn(EnemyType.kamikaze, (30 + w * 2).clamp(30, 70), delay: 2.0),
+    ],
+  ),
+  _Archetype(
+    'SIREN STORM',
+    4,
+    (w) => [
+      WaveSpawn(EnemyType.siren, (6 + w ~/ 6).clamp(6, 12), delay: 0.3),
+      WaveSpawn(EnemyType.drone, (40 + w * 2).clamp(40, 80), delay: 2.0),
+      WaveSpawn(EnemyType.weaver, (8 + w ~/ 5).clamp(8, 20), delay: 3.5),
+    ],
+  ),
+  _Archetype(
+    'HELL SPAWN',
+    4,
+    (w) => [
+      WaveSpawn(EnemyType.spawner, (3 + w ~/ 20).clamp(3, 5), delay: 0.5),
+      WaveSpawn(EnemyType.necro, (2 + w ~/ 25).clamp(2, 4), delay: 2.0),
+      WaveSpawn(EnemyType.kamikaze, (15 + w).clamp(15, 35), delay: 3.5),
+    ],
+  ),
 ];
 
 // Obsolete themed-wave helpers rimossi — sostituiti da archetype system.

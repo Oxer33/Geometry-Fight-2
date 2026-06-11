@@ -176,7 +176,10 @@ class _ModifiersSheetState extends State<ModifiersSheet> {
                 const Spacer(),
                 if (_active.isNotEmpty)
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       border: Border.all(
                         color: multiplier > 1.0
@@ -188,7 +191,9 @@ class _ModifiersSheetState extends State<ModifiersSheet> {
                     child: Text(
                       l10n.modifiersScoreLabel(multiplier.toStringAsFixed(1)),
                       style: TextStyle(
-                        color: multiplier > 1.0 ? Colors.greenAccent : Colors.orangeAccent,
+                        color: multiplier > 1.0
+                            ? Colors.greenAccent
+                            : Colors.orangeAccent,
                         fontSize: 11,
                         fontFamily: 'monospace',
                         fontWeight: FontWeight.bold,
@@ -221,104 +226,129 @@ class _ModifiersSheetState extends State<ModifiersSheet> {
               trackColor: const Color(0x3300FFFF),
               trackBorderColor: const Color(0x8800FFFF),
               child: ListView.builder(
-              controller: _scrollCtrl,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              itemCount: allModifiers.length,
-              itemBuilder: (context, index) {
-                final mod = allModifiers[index];
-                final isActive = _active.contains(mod.id);
+                controller: _scrollCtrl,
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                itemCount: allModifiers.length,
+                itemBuilder: (context, index) {
+                  final mod = allModifiers[index];
+                  final isActive = _active.contains(mod.id);
 
-                return GestureDetector(
-                  onTap: () => _toggle(mod.id),
-                  child: Container(
-                    margin: const EdgeInsets.only(bottom: 8),
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      border: Border.all(
+                  return GestureDetector(
+                    onTap: () => _toggle(mod.id),
+                    child: Container(
+                      margin: const EdgeInsets.only(bottom: 8),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: isActive
+                              ? (mod.isChallenge
+                                        ? Colors.redAccent
+                                        : Colors.cyanAccent)
+                                    .withValues(alpha: 0.6)
+                              : Colors.white12,
+                          width: isActive ? 2 : 1,
+                        ),
+                        borderRadius: BorderRadius.circular(8),
                         color: isActive
-                            ? (mod.isChallenge ? Colors.redAccent : Colors.cyanAccent).withValues(alpha: 0.6)
-                            : Colors.white12,
-                        width: isActive ? 2 : 1,
+                            ? (mod.isChallenge
+                                      ? Colors.redAccent
+                                      : Colors.cyanAccent)
+                                  .withValues(alpha: 0.08)
+                            : Colors.white.withValues(alpha: 0.02),
                       ),
-                      borderRadius: BorderRadius.circular(8),
-                      color: isActive
-                          ? (mod.isChallenge ? Colors.redAccent : Colors.cyanAccent).withValues(alpha: 0.08)
-                          : Colors.white.withValues(alpha: 0.02),
-                    ),
-                    child: Row(
-                      children: [
-                        Text(mod.icon, style: const TextStyle(fontSize: 20)),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  Text(
-                                    _modifierName(mod.id, l10n),
-                                    style: TextStyle(
-                                      color: isActive
-                                          ? (mod.isChallenge ? Colors.redAccent : Colors.cyanAccent)
-                                          : Colors.white,
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.bold,
-                                      fontFamily: 'monospace',
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(3),
-                                      color: mod.isChallenge
-                                          ? Colors.redAccent.withValues(alpha: 0.15)
-                                          : Colors.cyanAccent.withValues(alpha: 0.15),
-                                    ),
-                                    child: Text(
-                                      'x${mod.scoreMultiplier.toStringAsFixed(1)}',
+                      child: Row(
+                        children: [
+                          Text(mod.icon, style: const TextStyle(fontSize: 20)),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Text(
+                                      _modifierName(mod.id, l10n),
                                       style: TextStyle(
-                                        color: mod.isChallenge ? Colors.redAccent : Colors.cyanAccent,
-                                        fontSize: 9,
+                                        color: isActive
+                                            ? (mod.isChallenge
+                                                  ? Colors.redAccent
+                                                  : Colors.cyanAccent)
+                                            : Colors.white,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold,
                                         fontFamily: 'monospace',
                                       ),
                                     ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                _modifierDesc(mod.id, l10n),
-                                style: TextStyle(
-                                  color: Colors.white.withValues(alpha: 0.5),
-                                  fontSize: 10,
-                                  fontFamily: 'monospace',
+                                    const SizedBox(width: 8),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 6,
+                                        vertical: 1,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        borderRadius: BorderRadius.circular(3),
+                                        color: mod.isChallenge
+                                            ? Colors.redAccent.withValues(
+                                                alpha: 0.15,
+                                              )
+                                            : Colors.cyanAccent.withValues(
+                                                alpha: 0.15,
+                                              ),
+                                      ),
+                                      child: Text(
+                                        'x${mod.scoreMultiplier.toStringAsFixed(1)}',
+                                        style: TextStyle(
+                                          color: mod.isChallenge
+                                              ? Colors.redAccent
+                                              : Colors.cyanAccent,
+                                          fontSize: 9,
+                                          fontFamily: 'monospace',
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        // Toggle indicator
-                        Container(
-                          width: 24,
-                          height: 24,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: isActive ? Colors.greenAccent : Colors.white24,
+                                const SizedBox(height: 2),
+                                Text(
+                                  _modifierDesc(mod.id, l10n),
+                                  style: TextStyle(
+                                    color: Colors.white.withValues(alpha: 0.5),
+                                    fontSize: 10,
+                                    fontFamily: 'monospace',
+                                  ),
+                                ),
+                              ],
                             ),
-                            color: isActive ? Colors.greenAccent.withValues(alpha: 0.2) : null,
                           ),
-                          child: isActive
-                              ? const Icon(Icons.check, color: Colors.greenAccent, size: 14)
-                              : null,
-                        ),
-                      ],
+                          // Toggle indicator
+                          Container(
+                            width: 24,
+                            height: 24,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: isActive
+                                    ? Colors.greenAccent
+                                    : Colors.white24,
+                              ),
+                              color: isActive
+                                  ? Colors.greenAccent.withValues(alpha: 0.2)
+                                  : null,
+                            ),
+                            child: isActive
+                                ? const Icon(
+                                    Icons.check,
+                                    color: Colors.greenAccent,
+                                    size: 14,
+                                  )
+                                : null,
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                );
-              },
-            ),
+                  );
+                },
+              ),
             ),
           ),
 

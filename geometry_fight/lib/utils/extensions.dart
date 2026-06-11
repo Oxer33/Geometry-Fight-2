@@ -31,10 +31,7 @@ extension Vector2Ext on Vector2 {
   }
 
   static Vector2 randomInRect(double width, double height) {
-    return Vector2(
-      _random.nextDouble() * width,
-      _random.nextDouble() * height,
-    );
+    return Vector2(_random.nextDouble() * width, _random.nextDouble() * height);
   }
 }
 

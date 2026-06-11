@@ -110,14 +110,23 @@ class _GameHudState extends State<GameHud> {
                   right: 0,
                   child: Center(
                     child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(8),
-                        color: (game.timeAttackTimer < 30
-                            ? Colors.red : Colors.cyanAccent).withValues(alpha: 0.1),
+                        color:
+                            (game.timeAttackTimer < 30
+                                    ? Colors.red
+                                    : Colors.cyanAccent)
+                                .withValues(alpha: 0.1),
                         border: Border.all(
-                          color: (game.timeAttackTimer < 30
-                              ? Colors.red : Colors.cyanAccent).withValues(alpha: 0.3),
+                          color:
+                              (game.timeAttackTimer < 30
+                                      ? Colors.red
+                                      : Colors.cyanAccent)
+                                  .withValues(alpha: 0.3),
                         ),
                       ),
                       child: Text(
@@ -133,7 +142,8 @@ class _GameHudState extends State<GameHud> {
                           shadows: [
                             Shadow(
                               color: game.timeAttackTimer < 30
-                                  ? Colors.red : Colors.cyanAccent,
+                                  ? Colors.red
+                                  : Colors.cyanAccent,
                               blurRadius: 8,
                             ),
                           ],
@@ -182,8 +192,16 @@ class _GameHudState extends State<GameHud> {
                           fontFamily: 'monospace',
                           letterSpacing: 4,
                           shadows: [
-                            const Shadow(color: Color(0xFF00FF88), blurRadius: 16),
-                            Shadow(color: const Color(0xFF00FF88).withValues(alpha: 0.5), blurRadius: 32),
+                            const Shadow(
+                              color: Color(0xFF00FF88),
+                              blurRadius: 16,
+                            ),
+                            Shadow(
+                              color: const Color(
+                                0xFF00FF88,
+                              ).withValues(alpha: 0.5),
+                              blurRadius: 32,
+                            ),
                           ],
                         ),
                       ),
@@ -205,7 +223,9 @@ class _GameHudState extends State<GameHud> {
                 Positioned.fill(
                   child: IgnorePointer(
                     child: Container(
-                      color: Colors.red.withValues(alpha: game.hitFlashTimer * 0.5),
+                      color: Colors.red.withValues(
+                        alpha: game.hitFlashTimer * 0.5,
+                      ),
                     ),
                   ),
                 ),
@@ -281,10 +301,7 @@ class _ScorePanel extends StatelessWidget {
               fontFamily: 'monospace',
               letterSpacing: 1.5,
               shadows: [
-                Shadow(
-                  color: _getScoreGlowColor(),
-                  blurRadius: 12,
-                ),
+                Shadow(color: _getScoreGlowColor(), blurRadius: 12),
                 Shadow(
                   color: _getScoreGlowColor().withValues(alpha: 0.5),
                   blurRadius: 24,
@@ -400,7 +417,8 @@ class _StatusPanel extends StatelessWidget {
         children: [
           // Time Attack: vite illimitate → niente counter vite, solo bombe
           // (richiesta utente). Pacifist: niente vite/bombe. Zen: conta morti.
-          if (isTimeAttackMode || isPacifistMode) const SizedBox.shrink()
+          if (isTimeAttackMode || isPacifistMode)
+            const SizedBox.shrink()
           else if (isZenMode)
             Row(
               mainAxisSize: MainAxisSize.min,
@@ -548,8 +566,9 @@ class _WaveIndicator extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color =
-        isBossWave ? const Color(0xFFFF2244) : const Color(0xFF4488FF);
+    final color = isBossWave
+        ? const Color(0xFFFF2244)
+        : const Color(0xFF4488FF);
     final hasModifier = modifier != WaveModifier.none;
     final modColor = Color(modifier.tagColorArgb);
 
@@ -570,8 +589,11 @@ class _WaveIndicator extends StatelessWidget {
               if (isBossWave)
                 Padding(
                   padding: const EdgeInsets.only(right: 4),
-                  child: Icon(Icons.warning_amber,
-                      color: color.withValues(alpha: 0.8), size: 14),
+                  child: Icon(
+                    Icons.warning_amber,
+                    color: color.withValues(alpha: 0.8),
+                    size: 14,
+                  ),
                 ),
               Text(
                 isBossWave ? l10n.hudBossWave(wave) : l10n.hudWaveNumber(wave),
@@ -594,19 +616,23 @@ class _WaveIndicator extends StatelessWidget {
           Padding(
             padding: const EdgeInsets.only(top: 3),
             child: Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(8),
-                border:
-                    Border.all(color: modColor.withValues(alpha: 0.5), width: 1),
+                border: Border.all(
+                  color: modColor.withValues(alpha: 0.5),
+                  width: 1,
+                ),
                 color: modColor.withValues(alpha: 0.12),
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Icon(Icons.bolt,
-                      color: modColor.withValues(alpha: 0.9), size: 11),
+                  Icon(
+                    Icons.bolt,
+                    color: modColor.withValues(alpha: 0.9),
+                    size: 11,
+                  ),
                   const SizedBox(width: 3),
                   Text(
                     modifier.displayName,
@@ -618,8 +644,9 @@ class _WaveIndicator extends StatelessWidget {
                       letterSpacing: 2,
                       shadows: [
                         Shadow(
-                            color: modColor.withValues(alpha: 0.7),
-                            blurRadius: 5),
+                          color: modColor.withValues(alpha: 0.7),
+                          blurRadius: 5,
+                        ),
                       ],
                     ),
                   ),
@@ -662,8 +689,8 @@ class _BossHpBar extends StatelessWidget {
     final barColor = healthPercent > 0.5
         ? bossColor
         : healthPercent > 0.25
-            ? const Color(0xFFFFAA00)
-            : const Color(0xFFFF2244);
+        ? const Color(0xFFFFAA00)
+        : const Color(0xFFFF2244);
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -802,52 +829,64 @@ class _PowerUpBar extends StatelessWidget {
     final items = <Widget>[];
 
     if (player.rapidFireTimer > 0) {
-      items.add(_NeonPowerUpIndicator(
-        label: l10n.powerUpRapidFire,
-        icon: Icons.speed,
-        color: const Color(0xFFFF4400),
-        remaining: player.rapidFireTimer / 15,
-      ));
+      items.add(
+        _NeonPowerUpIndicator(
+          label: l10n.powerUpRapidFire,
+          icon: Icons.speed,
+          color: const Color(0xFFFF4400),
+          remaining: player.rapidFireTimer / 15,
+        ),
+      );
     }
     if (player.overdriveTimer > 0) {
-      items.add(_NeonPowerUpIndicator(
-        label: l10n.powerUpOverdrive,
-        icon: Icons.flash_on,
-        color: const Color(0xFFFFFFFF),
-        remaining: player.overdriveTimer / 15,
-      ));
+      items.add(
+        _NeonPowerUpIndicator(
+          label: l10n.powerUpOverdrive,
+          icon: Icons.flash_on,
+          color: const Color(0xFFFFFFFF),
+          remaining: player.overdriveTimer / 15,
+        ),
+      );
     }
     if (player.magnetTimer > 0) {
-      items.add(_NeonPowerUpIndicator(
-        label: l10n.powerUpMagnet,
-        icon: Icons.all_inclusive,
-        color: const Color(0xFFFFEE00),
-        remaining: player.magnetTimer / 15,
-      ));
+      items.add(
+        _NeonPowerUpIndicator(
+          label: l10n.powerUpMagnet,
+          icon: Icons.all_inclusive,
+          color: const Color(0xFFFFEE00),
+          remaining: player.magnetTimer / 15,
+        ),
+      );
     }
     if (player.timeSlowTimer > 0) {
-      items.add(_NeonPowerUpIndicator(
-        label: l10n.powerUpTimeSlow,
-        icon: Icons.hourglass_bottom,
-        color: const Color(0xFFAA00FF),
-        remaining: player.timeSlowTimer / 15,
-      ));
+      items.add(
+        _NeonPowerUpIndicator(
+          label: l10n.powerUpTimeSlow,
+          icon: Icons.hourglass_bottom,
+          color: const Color(0xFFAA00FF),
+          remaining: player.timeSlowTimer / 15,
+        ),
+      );
     }
     if (player.weaponTimer > 0) {
-      items.add(_NeonPowerUpIndicator(
-        label: l10n.powerUpSpreadShot,
-        icon: Icons.gps_fixed,
-        color: const Color(0xFFFF8800),
-        remaining: player.weaponTimer / 15,
-      ));
+      items.add(
+        _NeonPowerUpIndicator(
+          label: l10n.powerUpSpreadShot,
+          icon: Icons.gps_fixed,
+          color: const Color(0xFFFF8800),
+          remaining: player.weaponTimer / 15,
+        ),
+      );
     }
     if (player.firePowerTimer > 0) {
-      items.add(_NeonPowerUpIndicator(
-        label: l10n.powerUpFirePower,
-        icon: Icons.local_fire_department,
-        color: const Color(0xFFFF3300),
-        remaining: player.firePowerTimer / 20,
-      ));
+      items.add(
+        _NeonPowerUpIndicator(
+          label: l10n.powerUpFirePower,
+          icon: Icons.local_fire_department,
+          color: const Color(0xFFFF3300),
+          remaining: player.firePowerTimer / 20,
+        ),
+      );
     }
 
     return Column(
@@ -972,10 +1011,7 @@ class _GlassContainer extends StatelessWidget {
           width: 0.5,
         ),
         boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.3),
-            blurRadius: 8,
-          ),
+          BoxShadow(color: Colors.black.withValues(alpha: 0.3), blurRadius: 8),
         ],
       ),
       child: child,
@@ -1143,11 +1179,7 @@ class _OffscreenEnemyArrows extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Positioned.fill(
-      child: CustomPaint(
-        painter: _ArrowPainter(game),
-      ),
-    );
+    return Positioned.fill(child: CustomPaint(painter: _ArrowPainter(game)));
   }
 }
 
@@ -1181,10 +1213,9 @@ class _ArrowPainter extends CustomPainter {
           // NaN guard: se coincide col player, skip arrow.
           final delta = child.position - playerPos;
           if (delta.length < 0.001) continue;
-          _offscreen.add(_EnemyDir(
-            direction: delta.normalized(),
-            distance: delta.length,
-          ));
+          _offscreen.add(
+            _EnemyDir(direction: delta.normalized(), distance: delta.length),
+          );
         }
       }
       if (child is BossBase) {
@@ -1192,11 +1223,13 @@ class _ArrowPainter extends CustomPainter {
         if (rel.x.abs() > halfW + 40 || rel.y.abs() > halfH + 40) {
           final delta = child.position - playerPos;
           if (delta.length < 0.001) continue;
-          _offscreen.add(_EnemyDir(
-            direction: delta.normalized(),
-            distance: delta.length,
-            isBoss: true,
-          ));
+          _offscreen.add(
+            _EnemyDir(
+              direction: delta.normalized(),
+              distance: delta.length,
+              isBoss: true,
+            ),
+          );
         }
       }
     }
@@ -1211,8 +1244,12 @@ class _ArrowPainter extends CustomPainter {
       // Calcola posizione della freccia sul bordo dello schermo
       double arrowX, arrowY;
       // Interseca il bordo dello schermo
-      final scaleX = dir.x != 0 ? (halfW - margin) / dir.x.abs() : double.infinity;
-      final scaleY = dir.y != 0 ? (halfH - margin) / dir.y.abs() : double.infinity;
+      final scaleX = dir.x != 0
+          ? (halfW - margin) / dir.x.abs()
+          : double.infinity;
+      final scaleY = dir.y != 0
+          ? (halfH - margin) / dir.y.abs()
+          : double.infinity;
       final scale = scaleX < scaleY ? scaleX : scaleY;
       arrowX = halfW + dir.x * scale;
       arrowY = halfH + dir.y * scale;
@@ -1226,7 +1263,9 @@ class _ArrowPainter extends CustomPainter {
 
       // Disegna freccia
       final arrowSize = enemy.isBoss ? 10.0 : 7.0;
-      final color = enemy.isBoss ? const Color(0xFFFFD700) : const Color(0xFFFF2244);
+      final color = enemy.isBoss
+          ? const Color(0xFFFFD700)
+          : const Color(0xFFFF2244);
       final alpha = (1.0 - (enemy.distance / 1500).clamp(0.0, 0.7));
 
       canvas.save();
@@ -1261,7 +1300,11 @@ class _EnemyDir {
   final Vector2 direction;
   final double distance;
   final bool isBoss;
-  _EnemyDir({required this.direction, required this.distance, this.isBoss = false});
+  _EnemyDir({
+    required this.direction,
+    required this.distance,
+    this.isBoss = false,
+  });
 }
 
 class _GameNotifier extends ChangeNotifier implements Listenable {

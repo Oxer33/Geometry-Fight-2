@@ -57,7 +57,9 @@ class ChainLightningEffect extends PositionComponent {
 
   void _drawJaggedSegment(Canvas canvas, Vector2 a, Vector2 b) {
     final dist = (b - a).length;
-    if (dist < 1) return; // guard: skip zero-length segments to avoid NaN from normalized()
+    if (dist < 1) {
+      return; // guard: skip zero-length segments to avoid NaN from normalized()
+    }
     final steps = (dist / 18).clamp(2, 12).toInt();
     final dir = (b - a) / steps.toDouble();
     final perp = Vector2(-dir.y, dir.x).normalized();

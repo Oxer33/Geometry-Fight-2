@@ -27,72 +27,520 @@ class AchievementDef {
 /// Tutti gli achievement del gioco
 const List<AchievementDef> allAchievements = [
   // === COMBAT ===
-  AchievementDef(id: 'kills_100', name: 'Primo Sangue', description: 'Uccidi 100 nemici in totale', icon: '⚔️', category: 'combat', target: 100, reward: 50),
-  AchievementDef(id: 'kills_1000', name: 'Sterminatore', description: 'Uccidi 1.000 nemici in totale', icon: '💀', category: 'combat', target: 1000, reward: 200),
-  AchievementDef(id: 'kills_10000', name: 'Genocida Geometrico', description: 'Uccidi 10.000 nemici in totale', icon: '☠️', category: 'combat', target: 10000, reward: 500),
-  AchievementDef(id: 'kills_100000', name: 'Leggenda', description: 'Uccidi 100.000 nemici in totale', icon: '🏆', category: 'combat', target: 100000, reward: 2000),
-  AchievementDef(id: 'kills_session_200', name: 'Furia Cieca', description: 'Uccidi 200 nemici in una partita', icon: '🔥', category: 'combat', target: 200, reward: 100),
-  AchievementDef(id: 'kills_session_500', name: 'Massacro', description: 'Uccidi 500 nemici in una partita', icon: '💥', category: 'combat', target: 500, reward: 300),
-  AchievementDef(id: 'bosses_10', name: 'Ammazza Boss', description: 'Sconfiggi 10 boss in totale', icon: '👑', category: 'combat', target: 10, reward: 200),
-  AchievementDef(id: 'bosses_50', name: 'Regicida', description: 'Sconfiggi 50 boss in totale', icon: '⚡', category: 'combat', target: 50, reward: 500),
-  AchievementDef(id: 'bombs_50', name: 'Artificiere', description: 'Usa 50 bombe in totale', icon: '💣', category: 'combat', target: 50, reward: 100),
+  AchievementDef(
+    id: 'kills_100',
+    name: 'Primo Sangue',
+    description: 'Uccidi 100 nemici in totale',
+    icon: '⚔️',
+    category: 'combat',
+    target: 100,
+    reward: 50,
+  ),
+  AchievementDef(
+    id: 'kills_1000',
+    name: 'Sterminatore',
+    description: 'Uccidi 1.000 nemici in totale',
+    icon: '💀',
+    category: 'combat',
+    target: 1000,
+    reward: 200,
+  ),
+  AchievementDef(
+    id: 'kills_10000',
+    name: 'Genocida Geometrico',
+    description: 'Uccidi 10.000 nemici in totale',
+    icon: '☠️',
+    category: 'combat',
+    target: 10000,
+    reward: 500,
+  ),
+  AchievementDef(
+    id: 'kills_100000',
+    name: 'Leggenda',
+    description: 'Uccidi 100.000 nemici in totale',
+    icon: '🏆',
+    category: 'combat',
+    target: 100000,
+    reward: 2000,
+  ),
+  AchievementDef(
+    id: 'kills_session_200',
+    name: 'Furia Cieca',
+    description: 'Uccidi 200 nemici in una partita',
+    icon: '🔥',
+    category: 'combat',
+    target: 200,
+    reward: 100,
+  ),
+  AchievementDef(
+    id: 'kills_session_500',
+    name: 'Massacro',
+    description: 'Uccidi 500 nemici in una partita',
+    icon: '💥',
+    category: 'combat',
+    target: 500,
+    reward: 300,
+  ),
+  AchievementDef(
+    id: 'bosses_10',
+    name: 'Ammazza Boss',
+    description: 'Sconfiggi 10 boss in totale',
+    icon: '👑',
+    category: 'combat',
+    target: 10,
+    reward: 200,
+  ),
+  AchievementDef(
+    id: 'bosses_50',
+    name: 'Regicida',
+    description: 'Sconfiggi 50 boss in totale',
+    icon: '⚡',
+    category: 'combat',
+    target: 50,
+    reward: 500,
+  ),
+  AchievementDef(
+    id: 'bombs_50',
+    name: 'Artificiere',
+    description: 'Usa 50 bombe in totale',
+    icon: '💣',
+    category: 'combat',
+    target: 50,
+    reward: 100,
+  ),
 
   // === SCORE ===
-  AchievementDef(id: 'score_100k', name: 'Sei Cifre', description: 'Raggiungi 100.000 punti', icon: '📊', category: 'score', target: 100000, reward: 100),
-  AchievementDef(id: 'score_1m', name: 'Milionario', description: 'Raggiungi 1.000.000 punti', icon: '💰', category: 'score', target: 1000000, reward: 300),
-  AchievementDef(id: 'score_10m', name: 'Re dei Punti', description: 'Raggiungi 10.000.000 punti', icon: '👑', category: 'score', target: 10000000, reward: 500),
-  AchievementDef(id: 'score_100m', name: 'Centurione', description: 'Raggiungi 100.000.000 punti', icon: '🌟', category: 'score', target: 100000000, reward: 1000),
-  AchievementDef(id: 'score_1b', name: 'Miliardario', description: 'Raggiungi 1.000.000.000 punti', icon: '💎', category: 'score', target: 1000000000, reward: 3000),
-  AchievementDef(id: 'multiplier_100', name: 'Combo x100', description: 'Raggiungi un moltiplicatore di 100x', icon: '🔢', category: 'score', target: 100, reward: 100),
-  AchievementDef(id: 'multiplier_500', name: 'Combo x500', description: 'Raggiungi un moltiplicatore di 500x', icon: '🔢', category: 'score', target: 500, reward: 300),
-  AchievementDef(id: 'multiplier_1000', name: 'Combo x1000', description: 'Raggiungi un moltiplicatore di 1000x', icon: '🔢', category: 'score', target: 1000, reward: 500),
-  AchievementDef(id: 'geoms_10000', name: 'Collezionista', description: 'Raccogli 10.000 geom in totale', icon: '💠', category: 'score', target: 10000, reward: 200),
+  AchievementDef(
+    id: 'score_100k',
+    name: 'Sei Cifre',
+    description: 'Raggiungi 100.000 punti',
+    icon: '📊',
+    category: 'score',
+    target: 100000,
+    reward: 100,
+  ),
+  AchievementDef(
+    id: 'score_1m',
+    name: 'Milionario',
+    description: 'Raggiungi 1.000.000 punti',
+    icon: '💰',
+    category: 'score',
+    target: 1000000,
+    reward: 300,
+  ),
+  AchievementDef(
+    id: 'score_10m',
+    name: 'Re dei Punti',
+    description: 'Raggiungi 10.000.000 punti',
+    icon: '👑',
+    category: 'score',
+    target: 10000000,
+    reward: 500,
+  ),
+  AchievementDef(
+    id: 'score_100m',
+    name: 'Centurione',
+    description: 'Raggiungi 100.000.000 punti',
+    icon: '🌟',
+    category: 'score',
+    target: 100000000,
+    reward: 1000,
+  ),
+  AchievementDef(
+    id: 'score_1b',
+    name: 'Miliardario',
+    description: 'Raggiungi 1.000.000.000 punti',
+    icon: '💎',
+    category: 'score',
+    target: 1000000000,
+    reward: 3000,
+  ),
+  AchievementDef(
+    id: 'multiplier_100',
+    name: 'Combo x100',
+    description: 'Raggiungi un moltiplicatore di 100x',
+    icon: '🔢',
+    category: 'score',
+    target: 100,
+    reward: 100,
+  ),
+  AchievementDef(
+    id: 'multiplier_500',
+    name: 'Combo x500',
+    description: 'Raggiungi un moltiplicatore di 500x',
+    icon: '🔢',
+    category: 'score',
+    target: 500,
+    reward: 300,
+  ),
+  AchievementDef(
+    id: 'multiplier_1000',
+    name: 'Combo x1000',
+    description: 'Raggiungi un moltiplicatore di 1000x',
+    icon: '🔢',
+    category: 'score',
+    target: 1000,
+    reward: 500,
+  ),
+  AchievementDef(
+    id: 'geoms_10000',
+    name: 'Collezionista',
+    description: 'Raccogli 10.000 geom in totale',
+    icon: '💠',
+    category: 'score',
+    target: 10000,
+    reward: 200,
+  ),
 
   // === PROGRESS ===
-  AchievementDef(id: 'wave_20', name: 'Persistente', description: 'Raggiungi wave 20', icon: '🌊', category: 'progress', target: 20, reward: 100),
-  AchievementDef(id: 'wave_50', name: 'Veterano', description: 'Raggiungi wave 50', icon: '🌊', category: 'progress', target: 50, reward: 300),
-  AchievementDef(id: 'wave_100', name: 'Centenario', description: 'Raggiungi wave 100', icon: '🌊', category: 'progress', target: 100, reward: 500),
-  AchievementDef(id: 'perfect_waves_5', name: 'Intoccabile', description: 'Completa 5 wave perfette consecutive', icon: '✨', category: 'progress', target: 5, reward: 200),
-  AchievementDef(id: 'perfect_waves_10', name: 'Fantasma', description: 'Completa 10 wave perfette consecutive', icon: '👻', category: 'progress', target: 10, reward: 500),
-  AchievementDef(id: 'perfect_waves_20', name: 'Divinità', description: 'Completa 20 wave perfette consecutive', icon: '🌌', category: 'progress', target: 20, reward: 1000),
+  AchievementDef(
+    id: 'wave_20',
+    name: 'Persistente',
+    description: 'Raggiungi wave 20',
+    icon: '🌊',
+    category: 'progress',
+    target: 20,
+    reward: 100,
+  ),
+  AchievementDef(
+    id: 'wave_50',
+    name: 'Veterano',
+    description: 'Raggiungi wave 50',
+    icon: '🌊',
+    category: 'progress',
+    target: 50,
+    reward: 300,
+  ),
+  AchievementDef(
+    id: 'wave_100',
+    name: 'Centenario',
+    description: 'Raggiungi wave 100',
+    icon: '🌊',
+    category: 'progress',
+    target: 100,
+    reward: 500,
+  ),
+  AchievementDef(
+    id: 'perfect_waves_5',
+    name: 'Intoccabile',
+    description: 'Completa 5 wave perfette consecutive',
+    icon: '✨',
+    category: 'progress',
+    target: 5,
+    reward: 200,
+  ),
+  AchievementDef(
+    id: 'perfect_waves_10',
+    name: 'Fantasma',
+    description: 'Completa 10 wave perfette consecutive',
+    icon: '👻',
+    category: 'progress',
+    target: 10,
+    reward: 500,
+  ),
+  AchievementDef(
+    id: 'perfect_waves_20',
+    name: 'Divinità',
+    description: 'Completa 20 wave perfette consecutive',
+    icon: '🌌',
+    category: 'progress',
+    target: 20,
+    reward: 1000,
+  ),
 
   // === MASTERY ===
-  AchievementDef(id: 'classic_normal', name: 'Classicista', description: 'Completa Classica in Normale', icon: '🎮', category: 'mastery', target: 1, reward: 200),
-  AchievementDef(id: 'classic_hard', name: 'Duro a Morire', description: 'Completa Classica in Difficile', icon: '💪', category: 'mastery', target: 1, reward: 500),
-  AchievementDef(id: 'classic_nightmare', name: 'Incubo Vivente', description: 'Completa Classica in Incubo', icon: '😈', category: 'mastery', target: 1, reward: 1000),
-  AchievementDef(id: 'all_modes', name: 'Tuttofare', description: 'Gioca in tutte le 6 modalità', icon: '🎯', category: 'mastery', target: 6, reward: 500),
-  AchievementDef(id: 'boss_rush_10', name: 'Cacciatore di Boss', description: 'Raggiungi boss 10 in Boss Rush', icon: '🗡️', category: 'mastery', target: 10, reward: 500),
+  AchievementDef(
+    id: 'classic_normal',
+    name: 'Classicista',
+    description: 'Completa Classica in Normale',
+    icon: '🎮',
+    category: 'mastery',
+    target: 1,
+    reward: 200,
+  ),
+  AchievementDef(
+    id: 'classic_hard',
+    name: 'Duro a Morire',
+    description: 'Completa Classica in Difficile',
+    icon: '💪',
+    category: 'mastery',
+    target: 1,
+    reward: 500,
+  ),
+  AchievementDef(
+    id: 'classic_nightmare',
+    name: 'Incubo Vivente',
+    description: 'Completa Classica in Incubo',
+    icon: '😈',
+    category: 'mastery',
+    target: 1,
+    reward: 1000,
+  ),
+  AchievementDef(
+    id: 'all_modes',
+    name: 'Tuttofare',
+    description: 'Gioca in tutte le 6 modalità',
+    icon: '🎯',
+    category: 'mastery',
+    target: 6,
+    reward: 500,
+  ),
+  AchievementDef(
+    id: 'boss_rush_10',
+    name: 'Cacciatore di Boss',
+    description: 'Raggiungi boss 10 in Boss Rush',
+    icon: '🗡️',
+    category: 'mastery',
+    target: 10,
+    reward: 500,
+  ),
 
   // === SPECIAL ===
-  AchievementDef(id: 'games_10', name: 'Giocatore', description: 'Gioca 10 partite', icon: '🕹️', category: 'special', target: 10, reward: 50),
-  AchievementDef(id: 'games_100', name: 'Appassionato', description: 'Gioca 100 partite', icon: '❤️', category: 'special', target: 100, reward: 300),
-  AchievementDef(id: 'games_500', name: 'Dipendente', description: 'Gioca 500 partite', icon: '🎮', category: 'special', target: 500, reward: 1000),
-  AchievementDef(id: 'gold_10000', name: 'Paperone', description: 'Accumula 10.000 Gold Geom', icon: '🪙', category: 'special', target: 10000, reward: 500),
-  AchievementDef(id: 'all_upgrades', name: 'Potenziato al Massimo', description: 'Compra tutti gli upgrade', icon: '⬆️', category: 'special', target: 1, reward: 1000),
-  AchievementDef(id: 'powerups_100', name: 'Drogato di Power-Up', description: 'Raccogli 100 power-up', icon: '⚡', category: 'special', target: 100, reward: 200),
+  AchievementDef(
+    id: 'games_10',
+    name: 'Giocatore',
+    description: 'Gioca 10 partite',
+    icon: '🕹️',
+    category: 'special',
+    target: 10,
+    reward: 50,
+  ),
+  AchievementDef(
+    id: 'games_100',
+    name: 'Appassionato',
+    description: 'Gioca 100 partite',
+    icon: '❤️',
+    category: 'special',
+    target: 100,
+    reward: 300,
+  ),
+  AchievementDef(
+    id: 'games_500',
+    name: 'Dipendente',
+    description: 'Gioca 500 partite',
+    icon: '🎮',
+    category: 'special',
+    target: 500,
+    reward: 1000,
+  ),
+  AchievementDef(
+    id: 'gold_10000',
+    name: 'Paperone',
+    description: 'Accumula 10.000 Gold Geom',
+    icon: '🪙',
+    category: 'special',
+    target: 10000,
+    reward: 500,
+  ),
+  AchievementDef(
+    id: 'all_upgrades',
+    name: 'Potenziato al Massimo',
+    description: 'Compra tutti gli upgrade',
+    icon: '⬆️',
+    category: 'special',
+    target: 1,
+    reward: 1000,
+  ),
+  AchievementDef(
+    id: 'powerups_100',
+    name: 'Drogato di Power-Up',
+    description: 'Raccogli 100 power-up',
+    icon: '⚡',
+    category: 'special',
+    target: 100,
+    reward: 200,
+  ),
 
   // === NUOVI (iter 12) ===
-  AchievementDef(id: 'kills_session_1000', name: 'Apocalisse', description: 'Uccidi 1000 nemici in una partita', icon: '🌋', category: 'combat', target: 1000, reward: 700),
-  AchievementDef(id: 'bosses_100', name: 'Sterminatore Reale', description: 'Sconfiggi 100 boss in totale', icon: '👹', category: 'combat', target: 100, reward: 1500),
-  AchievementDef(id: 'boss_session_5', name: 'Caccia Reale', description: 'Sconfiggi 5 boss in una partita', icon: '🎯', category: 'combat', target: 5, reward: 400),
-  AchievementDef(id: 'bombs_500', name: 'Demolitore', description: 'Usa 500 bombe in totale', icon: '🧨', category: 'combat', target: 500, reward: 800),
-  AchievementDef(id: 'multiplier_5000', name: 'Combo Divina', description: 'Raggiungi un moltiplicatore di 5000x', icon: '🌠', category: 'score', target: 5000, reward: 1500),
-  AchievementDef(id: 'geoms_100000', name: 'Avaro Geometrico', description: 'Raccogli 100.000 geom in totale', icon: '💍', category: 'score', target: 100000, reward: 800),
-  AchievementDef(id: 'wave_200', name: 'Inarrestabile', description: 'Raggiungi wave 200 (Survival/Tunnel)', icon: '🌀', category: 'progress', target: 200, reward: 1500),
-  AchievementDef(id: 'waves_wave_20', name: 'Schivatore', description: 'Waves mode: raggiungi wave 20', icon: '🔻', category: 'mastery', target: 20, reward: 300),
-  AchievementDef(id: 'waves_wave_50', name: 'Maestro del Dodge', description: 'Waves mode: raggiungi wave 50', icon: '🩰', category: 'mastery', target: 50, reward: 800),
-  AchievementDef(id: 'gravity_wave_15', name: 'Astrofisico', description: 'Gravity Inferno: raggiungi wave 15', icon: '🌑', category: 'mastery', target: 15, reward: 500),
-  AchievementDef(id: 'pacifist_combo_15', name: 'Pacifista Pro', description: 'Pacifist: combo gate 15+', icon: '🕊️', category: 'mastery', target: 15, reward: 600),
-  AchievementDef(id: 'time_attack_500k', name: 'Cronometrista', description: 'Time Attack: 500k score', icon: '⏱️', category: 'mastery', target: 500000, reward: 500),
-  AchievementDef(id: 'daily_streak_7', name: 'Devoto Giornaliero', description: 'Riscatta il daily reward 7 giorni di fila', icon: '📅', category: 'special', target: 7, reward: 500),
-  AchievementDef(id: 'daily_streak_30', name: 'Fedele Mensile', description: 'Riscatta il daily reward 30 giorni di fila', icon: '🗓️', category: 'special', target: 30, reward: 2000),
-  AchievementDef(id: 'gold_50000', name: 'Magnate', description: 'Accumula 50.000 Gold Geom', icon: '💸', category: 'special', target: 50000, reward: 1500),
-  AchievementDef(id: 'gauss_kills_500', name: 'Maestro Gauss', description: 'Uccidi 500 nemici con Gauss Cannon', icon: '🧲', category: 'mastery', target: 500, reward: 600),
-  AchievementDef(id: 'chain_kills_500', name: 'Tempesta', description: 'Uccidi 500 nemici con Chain Lightning', icon: '⚡', category: 'mastery', target: 500, reward: 600),
-  AchievementDef(id: 'all_weapons', name: 'Armaiolo', description: 'Sblocca tutte le armi', icon: '🔫', category: 'special', target: 1, reward: 800),
-  AchievementDef(id: 'all_skins', name: 'Fashionista', description: 'Sblocca tutte le skin', icon: '👗', category: 'special', target: 1, reward: 800),
-  AchievementDef(id: 'all_trails', name: 'Collezione Cosmica', description: 'Sblocca tutti i trail', icon: '🌈', category: 'special', target: 1, reward: 800),
-  AchievementDef(id: 'all_pets', name: 'Domatore', description: 'Sblocca tutti i pet', icon: '🐾', category: 'special', target: 1, reward: 800),
+  AchievementDef(
+    id: 'kills_session_1000',
+    name: 'Apocalisse',
+    description: 'Uccidi 1000 nemici in una partita',
+    icon: '🌋',
+    category: 'combat',
+    target: 1000,
+    reward: 700,
+  ),
+  AchievementDef(
+    id: 'bosses_100',
+    name: 'Sterminatore Reale',
+    description: 'Sconfiggi 100 boss in totale',
+    icon: '👹',
+    category: 'combat',
+    target: 100,
+    reward: 1500,
+  ),
+  AchievementDef(
+    id: 'boss_session_5',
+    name: 'Caccia Reale',
+    description: 'Sconfiggi 5 boss in una partita',
+    icon: '🎯',
+    category: 'combat',
+    target: 5,
+    reward: 400,
+  ),
+  AchievementDef(
+    id: 'bombs_500',
+    name: 'Demolitore',
+    description: 'Usa 500 bombe in totale',
+    icon: '🧨',
+    category: 'combat',
+    target: 500,
+    reward: 800,
+  ),
+  AchievementDef(
+    id: 'multiplier_5000',
+    name: 'Combo Divina',
+    description: 'Raggiungi un moltiplicatore di 5000x',
+    icon: '🌠',
+    category: 'score',
+    target: 5000,
+    reward: 1500,
+  ),
+  AchievementDef(
+    id: 'geoms_100000',
+    name: 'Avaro Geometrico',
+    description: 'Raccogli 100.000 geom in totale',
+    icon: '💍',
+    category: 'score',
+    target: 100000,
+    reward: 800,
+  ),
+  AchievementDef(
+    id: 'wave_200',
+    name: 'Inarrestabile',
+    description: 'Raggiungi wave 200 (Survival/Tunnel)',
+    icon: '🌀',
+    category: 'progress',
+    target: 200,
+    reward: 1500,
+  ),
+  AchievementDef(
+    id: 'waves_wave_20',
+    name: 'Schivatore',
+    description: 'Waves mode: raggiungi wave 20',
+    icon: '🔻',
+    category: 'mastery',
+    target: 20,
+    reward: 300,
+  ),
+  AchievementDef(
+    id: 'waves_wave_50',
+    name: 'Maestro del Dodge',
+    description: 'Waves mode: raggiungi wave 50',
+    icon: '🩰',
+    category: 'mastery',
+    target: 50,
+    reward: 800,
+  ),
+  AchievementDef(
+    id: 'gravity_wave_15',
+    name: 'Astrofisico',
+    description: 'Gravity Inferno: raggiungi wave 15',
+    icon: '🌑',
+    category: 'mastery',
+    target: 15,
+    reward: 500,
+  ),
+  AchievementDef(
+    id: 'pacifist_combo_15',
+    name: 'Pacifista Pro',
+    description: 'Pacifist: combo gate 15+',
+    icon: '🕊️',
+    category: 'mastery',
+    target: 15,
+    reward: 600,
+  ),
+  AchievementDef(
+    id: 'time_attack_500k',
+    name: 'Cronometrista',
+    description: 'Time Attack: 500k score',
+    icon: '⏱️',
+    category: 'mastery',
+    target: 500000,
+    reward: 500,
+  ),
+  AchievementDef(
+    id: 'daily_streak_7',
+    name: 'Devoto Giornaliero',
+    description: 'Riscatta il daily reward 7 giorni di fila',
+    icon: '📅',
+    category: 'special',
+    target: 7,
+    reward: 500,
+  ),
+  AchievementDef(
+    id: 'daily_streak_30',
+    name: 'Fedele Mensile',
+    description: 'Riscatta il daily reward 30 giorni di fila',
+    icon: '🗓️',
+    category: 'special',
+    target: 30,
+    reward: 2000,
+  ),
+  AchievementDef(
+    id: 'gold_50000',
+    name: 'Magnate',
+    description: 'Accumula 50.000 Gold Geom',
+    icon: '💸',
+    category: 'special',
+    target: 50000,
+    reward: 1500,
+  ),
+  AchievementDef(
+    id: 'gauss_kills_500',
+    name: 'Maestro Gauss',
+    description: 'Uccidi 500 nemici con Gauss Cannon',
+    icon: '🧲',
+    category: 'mastery',
+    target: 500,
+    reward: 600,
+  ),
+  AchievementDef(
+    id: 'chain_kills_500',
+    name: 'Tempesta',
+    description: 'Uccidi 500 nemici con Chain Lightning',
+    icon: '⚡',
+    category: 'mastery',
+    target: 500,
+    reward: 600,
+  ),
+  AchievementDef(
+    id: 'all_weapons',
+    name: 'Armaiolo',
+    description: 'Sblocca tutte le armi',
+    icon: '🔫',
+    category: 'special',
+    target: 1,
+    reward: 800,
+  ),
+  AchievementDef(
+    id: 'all_skins',
+    name: 'Fashionista',
+    description: 'Sblocca tutte le skin',
+    icon: '👗',
+    category: 'special',
+    target: 1,
+    reward: 800,
+  ),
+  AchievementDef(
+    id: 'all_trails',
+    name: 'Collezione Cosmica',
+    description: 'Sblocca tutti i trail',
+    icon: '🌈',
+    category: 'special',
+    target: 1,
+    reward: 800,
+  ),
+  AchievementDef(
+    id: 'all_pets',
+    name: 'Domatore',
+    description: 'Sblocca tutti i pet',
+    icon: '🐾',
+    category: 'special',
+    target: 1,
+    reward: 800,
+  ),
 ];
 
 /// Manager per gli achievement — persistenza con Hive
@@ -141,14 +589,27 @@ class AchievementManager {
   }
 
   /// Incrementa il progresso (per contatori cumulativi)
-  static List<AchievementDef> incrementProgress(String achievementId, int amount) {
+  static List<AchievementDef> incrementProgress(
+    String achievementId,
+    int amount,
+  ) {
     final current = getProgress(achievementId);
     return updateProgress(achievementId, current + amount);
   }
 
   /// Sblocca direttamente (per achievement binari)
   static List<AchievementDef> unlock(String achievementId) {
-    final achievement = allAchievements.firstWhere((a) => a.id == achievementId, orElse: () => const AchievementDef(id: '', name: '', description: '', icon: '', category: '', target: 1));
+    final achievement = allAchievements.firstWhere(
+      (a) => a.id == achievementId,
+      orElse: () => const AchievementDef(
+        id: '',
+        name: '',
+        description: '',
+        icon: '',
+        category: '',
+        target: 1,
+      ),
+    );
     if (achievement.id.isEmpty) return [];
     return updateProgress(achievementId, achievement.target);
   }
@@ -246,14 +707,22 @@ class AchievementManager {
     newlyUnlocked.addAll(updateProgress('wave_50', waveReached));
     newlyUnlocked.addAll(updateProgress('wave_100', waveReached));
     newlyUnlocked.addAll(updateProgress('wave_200', waveReached));
-    newlyUnlocked.addAll(updateProgress('perfect_waves_5', consecutivePerfectWaves));
-    newlyUnlocked.addAll(updateProgress('perfect_waves_10', consecutivePerfectWaves));
-    newlyUnlocked.addAll(updateProgress('perfect_waves_20', consecutivePerfectWaves));
+    newlyUnlocked.addAll(
+      updateProgress('perfect_waves_5', consecutivePerfectWaves),
+    );
+    newlyUnlocked.addAll(
+      updateProgress('perfect_waves_10', consecutivePerfectWaves),
+    );
+    newlyUnlocked.addAll(
+      updateProgress('perfect_waves_20', consecutivePerfectWaves),
+    );
 
     // Mastery
     if (completedClassicNormal) newlyUnlocked.addAll(unlock('classic_normal'));
     if (completedClassicHard) newlyUnlocked.addAll(unlock('classic_hard'));
-    if (completedClassicNightmare) newlyUnlocked.addAll(unlock('classic_nightmare'));
+    if (completedClassicNightmare) {
+      newlyUnlocked.addAll(unlock('classic_nightmare'));
+    }
     newlyUnlocked.addAll(updateProgress('all_modes', modesPlayed));
     newlyUnlocked.addAll(updateProgress('boss_rush_10', bossRushWave));
 
@@ -275,9 +744,13 @@ class AchievementManager {
         case GameMode.gravityInferno:
           newlyUnlocked.addAll(updateProgress('gravity_wave_15', waveReached));
         case GameMode.timeAttack:
-          newlyUnlocked.addAll(updateProgress('time_attack_500k', sessionScore));
+          newlyUnlocked.addAll(
+            updateProgress('time_attack_500k', sessionScore),
+          );
         case GameMode.pacifist:
-          newlyUnlocked.addAll(updateProgress('pacifist_combo_15', maxGateCombo));
+          newlyUnlocked.addAll(
+            updateProgress('pacifist_combo_15', maxGateCombo),
+          );
         case GameMode.classic:
         case GameMode.bossRush:
         case GameMode.survival:
@@ -285,6 +758,7 @@ class AchievementManager {
         case GameMode.tunnel:
         case GameMode.dailyChallenge:
         case GameMode.snake:
+        case GameMode.arenaShrink:
           break;
       }
     }

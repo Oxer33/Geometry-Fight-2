@@ -28,13 +28,13 @@ class SwarmQueenBoss extends BossBase {
   static final math.Random _rng = math.Random();
 
   SwarmQueenBoss()
-      : super(
-          hp: 1800,
-          bossName: 'SWARM QUEEN',
-          pointValue: 3500,
-          neonColor: const Color(0xFFFF2288),
-          size: Vector2(110, 110),
-        );
+    : super(
+        hp: 1800,
+        bossName: 'SWARM QUEEN',
+        pointValue: 3500,
+        neonColor: const Color(0xFFFF2288),
+        size: Vector2(110, 110),
+      );
 
   // Hive-bond attivo SOLO nelle prime due fasi. Nell'ultima fase lo scudo è
   // disattivato così il boss è davvero uccidibile (richiesta utente: "in ultima
@@ -60,8 +60,11 @@ class SwarmQueenBoss extends BossBase {
 
   // SwarmQueen è ROSA INTENSO → mob sciame rosa/rosso (swarmDrone + leech + kamikaze).
   @override
-  List<EnemyType> get colorMatchedMinions =>
-      const [EnemyType.swarmDrone, EnemyType.leech, EnemyType.kamikaze];
+  List<EnemyType> get colorMatchedMinions => const [
+    EnemyType.swarmDrone,
+    EnemyType.leech,
+    EnemyType.kamikaze,
+  ];
 
   @override
   int getPhase() {
@@ -111,16 +114,21 @@ class SwarmQueenBoss extends BossBase {
     for (int i = 0; i < count; i++) {
       final angle = _rng.nextDouble() * math.pi * 2;
       final dist = 40 + _rng.nextDouble() * 30;
-      final pos = position + Vector2(math.cos(angle) * dist, math.sin(angle) * dist);
+      final pos =
+          position + Vector2(math.cos(angle) * dist, math.sin(angle) * dist);
       game.spawnEnemy(EnemyType.swarmDrone, pos);
     }
     // Fase 3: spawna anche kamikaze
     if (currentPhase >= 2) {
       for (int i = 0; i < 2; i++) {
-        game.spawnEnemy(EnemyType.kamikaze, position + Vector2(
-          (_rng.nextDouble() - 0.5) * 80,
-          (_rng.nextDouble() - 0.5) * 80,
-        ));
+        game.spawnEnemy(
+          EnemyType.kamikaze,
+          position +
+              Vector2(
+                (_rng.nextDouble() - 0.5) * 80,
+                (_rng.nextDouble() - 0.5) * 80,
+              ),
+        );
       }
     }
   }
@@ -152,10 +160,14 @@ class SwarmQueenBoss extends BossBase {
     // l'invulnerabilità. Contatore mob visibile come ring interno.
     if (scale <= 1.01 && _hiveBondActive) {
       final pulse = 0.5 + math.sin(_cellPhase * 4) * 0.3;
-      _shieldAuraPaint.color = const Color(0xFFFF00AA).withValues(alpha: 0.25 * pulse);
+      _shieldAuraPaint.color = const Color(
+        0xFFFF00AA,
+      ).withValues(alpha: 0.25 * pulse);
       _shieldAuraPaint.strokeWidth = 3;
       canvas.drawCircle(Offset(cx, cy), r * 1.5, _shieldAuraPaint);
-      _shieldAuraPaint.color = const Color(0xFFFFAADD).withValues(alpha: 0.5 * pulse);
+      _shieldAuraPaint.color = const Color(
+        0xFFFFAADD,
+      ).withValues(alpha: 0.5 * pulse);
       _shieldAuraPaint.strokeWidth = 1.5;
       canvas.drawCircle(Offset(cx, cy), r * 1.35, _shieldAuraPaint);
     }
@@ -168,14 +180,17 @@ class SwarmQueenBoss extends BossBase {
         final wingPath = Path()
           ..moveTo(cx + side * r * 0.4, cy)
           ..quadraticBezierTo(
-            cx + side * r * 1.2, cy - r * 0.3 + wingFlap * 30,
-            cx + side * r * 0.8, cy + r * 0.5,
+            cx + side * r * 1.2,
+            cy - r * 0.3 + wingFlap * 30,
+            cx + side * r * 0.8,
+            cy + r * 0.5,
           )
           ..lineTo(cx + side * r * 0.4, cy + r * 0.2)
           ..close();
         canvas.drawPath(wingPath, _wingPaint);
-        _wingShimmerPaint.color = const Color(0xFFFFAACC)
-            .withValues(alpha: 0.35 + math.sin(_wingPhase * 2) * 0.25);
+        _wingShimmerPaint.color = const Color(
+          0xFFFFAACC,
+        ).withValues(alpha: 0.35 + math.sin(_wingPhase * 2) * 0.25);
         _wingShimmerPaint.strokeWidth = 1;
         canvas.drawPath(wingPath, _wingShimmerPaint);
       }
@@ -188,11 +203,9 @@ class SwarmQueenBoss extends BossBase {
         final pAngle = pP;
         final pDist = r * (1.15 + ((pP * 0.25) % 1.0) * 0.5);
         final pAlpha = (1.0 - ((pP * 0.25) % 1.0)) * 0.7;
-        _pollenPaint.color =
-            const Color(0xFFFFDD88).withValues(alpha: pAlpha);
+        _pollenPaint.color = const Color(0xFFFFDD88).withValues(alpha: pAlpha);
         canvas.drawCircle(
-          Offset(cx + math.cos(pAngle) * pDist,
-              cy + math.sin(pAngle) * pDist),
+          Offset(cx + math.cos(pAngle) * pDist, cy + math.sin(pAngle) * pDist),
           1.8,
           _pollenPaint,
         );
@@ -206,8 +219,9 @@ class SwarmQueenBoss extends BossBase {
         final dR = r * 1.3;
         final dx = cx + math.cos(dAngle) * dR;
         final dy = cy + math.sin(dAngle) * dR;
-        _droneOrbitPaint.color =
-            const Color(0xFFFF3388).withValues(alpha: 0.85);
+        _droneOrbitPaint.color = const Color(
+          0xFFFF3388,
+        ).withValues(alpha: 0.85);
         canvas.save();
         canvas.translate(dx, dy);
         canvas.rotate(dAngle + math.pi / 2);
@@ -233,14 +247,13 @@ class SwarmQueenBoss extends BossBase {
         final baseAR = cAng + 0.1;
         final crownPath = Path()
           ..moveTo(tipX, tipY)
-          ..lineTo(cx + math.cos(baseAL) * cDist,
-              cy + math.sin(baseAL) * cDist)
-          ..lineTo(cx + math.cos(baseAR) * cDist,
-              cy + math.sin(baseAR) * cDist)
+          ..lineTo(cx + math.cos(baseAL) * cDist, cy + math.sin(baseAL) * cDist)
+          ..lineTo(cx + math.cos(baseAR) * cDist, cy + math.sin(baseAR) * cDist)
           ..close();
         canvas.drawPath(crownPath, _crownPaint);
-        _crownJewelPaint.color = const Color(0xFFFFFFFF)
-            .withValues(alpha: 0.7 + math.sin(_cellPhase * 4 + i) * 0.3);
+        _crownJewelPaint.color = const Color(
+          0xFFFFFFFF,
+        ).withValues(alpha: 0.7 + math.sin(_cellPhase * 4 + i) * 0.3);
         canvas.drawCircle(Offset(tipX, tipY), 2, _crownJewelPaint);
       }
     }
@@ -282,8 +295,9 @@ class SwarmQueenBoss extends BossBase {
           }
         }
         miniPath.close();
-        _cellFillPaint.color =
-            const Color(0xFFFFDD44).withValues(alpha: cellAlpha * 0.6);
+        _cellFillPaint.color = const Color(
+          0xFFFFDD44,
+        ).withValues(alpha: cellAlpha * 0.6);
         canvas.drawPath(miniPath, _cellFillPaint);
         _cellPaint.color = paint.color.withValues(alpha: cellAlpha);
         canvas.drawPath(miniPath, _cellPaint);
@@ -291,11 +305,11 @@ class SwarmQueenBoss extends BossBase {
 
       // Core halo + bianco pulsante
       final pulse = 0.5 + math.sin(_cellPhase * 2) * 0.4;
-      _coreHaloPaint.color =
-          const Color(0xFFFF88BB).withValues(alpha: pulse * 0.5);
+      _coreHaloPaint.color = const Color(
+        0xFFFF88BB,
+      ).withValues(alpha: pulse * 0.5);
       canvas.drawCircle(Offset.zero, r * 0.22, _coreHaloPaint);
-      _corePaint.color =
-          const Color(0xFFFFFFFF).withValues(alpha: pulse);
+      _corePaint.color = const Color(0xFFFFFFFF).withValues(alpha: pulse);
       canvas.drawCircle(Offset.zero, r * 0.14 * pulse, _corePaint);
     }
     canvas.restore();

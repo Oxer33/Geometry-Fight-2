@@ -21,15 +21,19 @@ class Geom extends PositionComponent
   // path never changes after onLoad(). Avoids one Path allocation per frame.
   late Path _diamondPath;
 
-  Geom({this.value = 1})
-      : super(size: Vector2(10, 10), anchor: Anchor.center);
+  Geom({this.value = 1}) : super(size: Vector2(10, 10), anchor: Anchor.center);
 
   @override
   Future<void> onLoad() async {
     _color = _getColorForValue(value);
     _rotationSpeed = (_random.nextDouble() - 0.5) * 5;
-    add(CircleHitbox(radius: geomCollectRadius, anchor: Anchor.center, isSolid: true)
-      ..position = size / 2);
+    add(
+      CircleHitbox(
+        radius: geomCollectRadius,
+        anchor: Anchor.center,
+        isSolid: true,
+      )..position = size / 2,
+    );
     // Build diamond path once — gemSize is constant for the life of this geom.
     final gemSize = 4.0 + value * 1.5;
     _diamondPath = Path()
@@ -61,7 +65,10 @@ class Geom extends PositionComponent
 
     // Tunnel mode: despawn geom dietro la camera (evita accumulo infinito)
     if (game.isTunnelMode) {
-      final cameraLeft = game.camera.viewfinder.position.x - (game.size.x > 0 ? game.size.x / 2 : 400) - 200;
+      final cameraLeft =
+          game.camera.viewfinder.position.x -
+          (game.size.x > 0 ? game.size.x / 2 : 400) -
+          200;
       if (position.x < cameraLeft) {
         removeFromParent();
         return;
@@ -73,7 +80,7 @@ class Geom extends PositionComponent
     // Upgrade magnetRange aggiunge raggio extra
     final player = game.player;
     final dist = position.distanceTo(player.position);
-    
+
     // Raggio base passivo (80px) + upgrade + power-up (stackano)
     const double baseAttractionRange = 80.0;
     final upgradeRange = game.saveData.magnetRange;
@@ -111,8 +118,7 @@ class Geom extends PositionComponent
         final proximity = magnetRange > 0
             ? (1.0 - dist / magnetRange).clamp(0.0, 1.0)
             : 0.0;
-        final attractSpeed =
-            player.hasMagnet ? 800.0 : 400.0 + proximity * 300;
+        final attractSpeed = player.hasMagnet ? 800.0 : 400.0 + proximity * 300;
         position += dir * attractSpeed * dt;
       }
     }
@@ -143,7 +149,9 @@ class Geom extends PositionComponent
 
   @override
   void onCollisionStart(
-      Set<Vector2> intersectionPoints, PositionComponent other) {
+    Set<Vector2> intersectionPoints,
+    PositionComponent other,
+  ) {
     if (other is Player) {
       game.collectGeom(value);
       removeFromParent();

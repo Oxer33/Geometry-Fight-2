@@ -104,10 +104,7 @@ class _SettingsScreenState extends State<SettingsScreen>
 
   /// Wrap orizzontale di chip selezionabili per ogni lingua supportata.
   /// Tocco su una chip = applica lingua immediatamente.
-  Widget _buildLanguageWrap({
-    required double entrance,
-    required double delay,
-  }) {
+  Widget _buildLanguageWrap({required double entrance, required double delay}) {
     final e = (delay >= 1.0
         ? 1.0
         : ((entrance - delay) / (1.0 - delay)).clamp(0.0, 1.0));
@@ -145,25 +142,23 @@ class _SettingsScreenState extends State<SettingsScreen>
                 borderRadius: BorderRadius.circular(8),
                 child: Container(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 14, vertical: 10),
+                    horizontal: 14,
+                    vertical: 10,
+                  ),
                   decoration: BoxDecoration(
                     color: isSel
                         ? Colors.purpleAccent.withValues(alpha: 0.25)
                         : Colors.transparent,
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
-                      color: isSel
-                          ? Colors.purpleAccent
-                          : Colors.white24,
+                      color: isSel ? Colors.purpleAccent : Colors.white24,
                       width: isSel ? 2 : 1,
                     ),
                   ),
                   child: Text(
                     label,
                     style: TextStyle(
-                      color: isSel
-                          ? Colors.purpleAccent
-                          : Colors.white70,
+                      color: isSel ? Colors.purpleAccent : Colors.white70,
                       fontFamily: 'monospace',
                       fontWeight: FontWeight.w700,
                       fontSize: 13,
@@ -206,8 +201,11 @@ class _SettingsScreenState extends State<SettingsScreen>
         ),
         title: Row(
           children: [
-            const Icon(Icons.report_problem_rounded,
-                color: Colors.redAccent, size: 20),
+            const Icon(
+              Icons.report_problem_rounded,
+              color: Colors.redAccent,
+              size: 20,
+            ),
             const SizedBox(width: 8),
             Text(
               l10n.settingsCrashLogsTitle(logs.length),
@@ -244,43 +242,49 @@ class _SettingsScreenState extends State<SettingsScreen>
                   trackColor: const Color(0x3300FFFF),
                   trackBorderColor: const Color(0x8800FFFF),
                   child: ListView.separated(
-                  controller: _crashLogsCtrl,
-                  itemCount: logs.length,
-                  separatorBuilder: (_, i) =>
-                      const Divider(color: Colors.white12, height: 12),
-                  itemBuilder: (_, i) {
-                    // Più recenti in cima
-                    final entry = logs[logs.length - 1 - i];
-                    return Text(
-                      entry,
-                      style: const TextStyle(
-                        color: Colors.white70,
-                        fontFamily: 'monospace',
-                        fontSize: 10,
-                      ),
-                    );
-                  },
-                ),
+                    controller: _crashLogsCtrl,
+                    itemCount: logs.length,
+                    separatorBuilder: (_, i) =>
+                        const Divider(color: Colors.white12, height: 12),
+                    itemBuilder: (_, i) {
+                      // Più recenti in cima
+                      final entry = logs[logs.length - 1 - i];
+                      return Text(
+                        entry,
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontFamily: 'monospace',
+                          fontSize: 10,
+                        ),
+                      );
+                    },
+                  ),
                 ),
         ),
         actions: [
           if (logs.isNotEmpty)
             TextButton.icon(
-              icon: const Icon(Icons.copy_rounded,
-                  color: Colors.cyanAccent, size: 16),
+              icon: const Icon(
+                Icons.copy_rounded,
+                color: Colors.cyanAccent,
+                size: 16,
+              ),
               label: Text(
                 l10n.settingsCopy,
                 style: const TextStyle(
-                    color: Colors.cyanAccent, fontFamily: 'monospace'),
+                  color: Colors.cyanAccent,
+                  fontFamily: 'monospace',
+                ),
               ),
               onPressed: () async {
-                await Clipboard.setData(
-                    ClipboardData(text: logs.join('\n\n')));
+                await Clipboard.setData(ClipboardData(text: logs.join('\n\n')));
                 if (!ctx.mounted) return;
                 ScaffoldMessenger.of(ctx).showSnackBar(
                   SnackBar(
-                    content: Text(l10n.settingsLogsCopied,
-                        style: const TextStyle(fontFamily: 'monospace')),
+                    content: Text(
+                      l10n.settingsLogsCopied,
+                      style: const TextStyle(fontFamily: 'monospace'),
+                    ),
                     backgroundColor: Colors.cyanAccent,
                     duration: const Duration(seconds: 1),
                   ),
@@ -289,12 +293,17 @@ class _SettingsScreenState extends State<SettingsScreen>
             ),
           if (logs.isNotEmpty)
             TextButton.icon(
-              icon: const Icon(Icons.delete_outline,
-                  color: Colors.redAccent, size: 16),
+              icon: const Icon(
+                Icons.delete_outline,
+                color: Colors.redAccent,
+                size: 16,
+              ),
               label: Text(
                 l10n.settingsDelete,
                 style: const TextStyle(
-                    color: Colors.redAccent, fontFamily: 'monospace'),
+                  color: Colors.redAccent,
+                  fontFamily: 'monospace',
+                ),
               ),
               onPressed: () async {
                 await CrashReporter.clear();
@@ -304,9 +313,13 @@ class _SettingsScreenState extends State<SettingsScreen>
             ),
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: Text(l10n.close,
-                style: const TextStyle(
-                    color: Colors.white54, fontFamily: 'monospace')),
+            child: Text(
+              l10n.close,
+              style: const TextStyle(
+                color: Colors.white54,
+                fontFamily: 'monospace',
+              ),
+            ),
           ),
         ],
       ),
@@ -342,196 +355,208 @@ class _SettingsScreenState extends State<SettingsScreen>
                     trackColor: const Color(0x3300FFFF),
                     trackBorderColor: const Color(0x8800FFFF),
                     child: ListView(
-                    controller: _settingsCtrl,
-                    padding: const EdgeInsets.all(20),
-                    children: [
-                      // Language section (added BEFORE Audio per task)
-                      _buildSectionHeader(
+                      controller: _settingsCtrl,
+                      padding: const EdgeInsets.all(20),
+                      children: [
+                        // Language section (added BEFORE Audio per task)
+                        _buildSectionHeader(
                           l10n.settingsLanguage,
                           Icons.language_rounded,
                           Colors.purpleAccent,
                           entrance,
-                          0.0),
-                      const SizedBox(height: 12),
-                      _buildLanguageWrap(
-                        entrance: entrance,
-                        delay: 0.02,
-                      ),
+                          0.0,
+                        ),
+                        const SizedBox(height: 12),
+                        _buildLanguageWrap(entrance: entrance, delay: 0.02),
 
-                      const SizedBox(height: 24),
+                        const SizedBox(height: 24),
 
-                      // Audio section
-                      _buildSectionHeader(
+                        // Audio section
+                        _buildSectionHeader(
                           l10n.settingsAudio,
                           Icons.volume_up_rounded,
                           Colors.cyanAccent,
                           entrance,
-                          0.05),
-                      const SizedBox(height: 12),
-                      _buildSlider(
-                        label: l10n.settingsMusic,
-                        value: _bgmVolume,
-                        icon: Icons.music_note_rounded,
-                        color: Colors.cyanAccent,
-                        onChanged: (v) => setState(() => _bgmVolume = v),
-                        onChangeEnd: (_) => unawaited(_saveSettings()),
-                        entrance: entrance,
-                        delay: 0.08,
-                        glow: glow,
-                      ),
-                      const SizedBox(height: 16),
-                      _buildSlider(
-                        label: l10n.settingsSfxLong,
-                        value: _sfxVolume,
-                        icon: Icons.surround_sound_rounded,
-                        color: const Color(0xFFFF4466),
-                        onChanged: (v) => setState(() => _sfxVolume = v),
-                        onChangeEnd: (_) => unawaited(_saveSettings()),
-                        entrance: entrance,
-                        delay: 0.12,
-                        glow: glow,
-                      ),
+                          0.05,
+                        ),
+                        const SizedBox(height: 12),
+                        _buildSlider(
+                          label: l10n.settingsMusic,
+                          value: _bgmVolume,
+                          icon: Icons.music_note_rounded,
+                          color: Colors.cyanAccent,
+                          onChanged: (v) => setState(() => _bgmVolume = v),
+                          onChangeEnd: (_) => unawaited(_saveSettings()),
+                          entrance: entrance,
+                          delay: 0.08,
+                          glow: glow,
+                        ),
+                        const SizedBox(height: 16),
+                        _buildSlider(
+                          label: l10n.settingsSfxLong,
+                          value: _sfxVolume,
+                          icon: Icons.surround_sound_rounded,
+                          color: const Color(0xFFFF4466),
+                          onChanged: (v) => setState(() => _sfxVolume = v),
+                          onChangeEnd: (_) => unawaited(_saveSettings()),
+                          entrance: entrance,
+                          delay: 0.12,
+                          glow: glow,
+                        ),
 
-                      const SizedBox(height: 24),
+                        const SizedBox(height: 24),
 
-                      // Gameplay section
-                      _buildSectionHeader(
+                        // Gameplay section
+                        _buildSectionHeader(
                           l10n.settingsGameplay,
                           Icons.tune_rounded,
                           const Color(0xFFCC00FF),
                           entrance,
-                          0.18),
-                      const SizedBox(height: 12),
-                      _buildToggle(
-                        label: l10n.settingsVibration,
-                        value: _vibration,
-                        icon: Icons.vibration_rounded,
-                        color: const Color(0xFFCC00FF),
-                        onChanged: (v) {
-                          setState(() => _vibration = v);
-                          unawaited(_saveSettings());
-                        },
-                        entrance: entrance,
-                        delay: 0.22,
-                        glow: glow,
-                      ),
-                      const SizedBox(height: 12),
-                      _buildToggle(
-                        label: l10n.settingsShowFps,
-                        value: _showFps,
-                        icon: Icons.speed_rounded,
-                        color: Colors.greenAccent,
-                        onChanged: (v) {
-                          setState(() => _showFps = v);
-                          unawaited(_saveSettings());
-                        },
-                        entrance: entrance,
-                        delay: 0.26,
-                        glow: glow,
-                      ),
+                          0.18,
+                        ),
+                        const SizedBox(height: 12),
+                        _buildToggle(
+                          label: l10n.settingsVibration,
+                          value: _vibration,
+                          icon: Icons.vibration_rounded,
+                          color: const Color(0xFFCC00FF),
+                          onChanged: (v) {
+                            setState(() => _vibration = v);
+                            unawaited(_saveSettings());
+                          },
+                          entrance: entrance,
+                          delay: 0.22,
+                          glow: glow,
+                        ),
+                        const SizedBox(height: 12),
+                        _buildToggle(
+                          label: l10n.settingsShowFps,
+                          value: _showFps,
+                          icon: Icons.speed_rounded,
+                          color: Colors.greenAccent,
+                          onChanged: (v) {
+                            setState(() => _showFps = v);
+                            unawaited(_saveSettings());
+                          },
+                          entrance: entrance,
+                          delay: 0.26,
+                          glow: glow,
+                        ),
 
-                      const SizedBox(height: 32),
+                        const SizedBox(height: 32),
 
-                      // Danger zone
-                      _buildSectionHeader(
+                        // Danger zone
+                        _buildSectionHeader(
                           l10n.settingsDangerZone,
                           Icons.warning_rounded,
                           Colors.redAccent,
                           entrance,
-                          0.3),
-                      const SizedBox(height: 12),
-                      _buildResetButton(entrance, glow, l10n),
+                          0.3,
+                        ),
+                        const SizedBox(height: 12),
+                        _buildResetButton(entrance, glow, l10n),
 
-                      const SizedBox(height: 32),
+                        const SizedBox(height: 32),
 
-                      // Test / Debug section
-                      _buildSectionHeader(
+                        // Test / Debug section
+                        _buildSectionHeader(
                           l10n.settingsTestDebug,
                           Icons.bug_report_rounded,
                           Colors.amberAccent,
                           entrance,
-                          0.4),
-                      const SizedBox(height: 12),
-                      _buildTestButton(
-                        label: l10n.settingsAddCredits,
-                        icon: Icons.add_circle_outline,
-                        color: Colors.amberAccent,
-                        entrance: entrance,
-                        delay: 0.45,
-                        onTap: () async {
-                          final messenger = ScaffoldMessenger.of(context);
-                          final save = SaveManager.load();
-                          save.goldGeoms += 1000;
-                          await SaveManager.save(save);
-                          if (!mounted) return;
-                          messenger.showSnackBar(
-                            SnackBar(
-                              content: Text(
+                          0.4,
+                        ),
+                        const SizedBox(height: 12),
+                        _buildTestButton(
+                          label: l10n.settingsAddCredits,
+                          icon: Icons.add_circle_outline,
+                          color: Colors.amberAccent,
+                          entrance: entrance,
+                          delay: 0.45,
+                          onTap: () async {
+                            final messenger = ScaffoldMessenger.of(context);
+                            final save = SaveManager.load();
+                            save.goldGeoms += 100000;
+                            await SaveManager.save(save);
+                            if (!mounted) return;
+                            messenger.showSnackBar(
+                              SnackBar(
+                                content: Text(
                                   l10n.settingsCreditsAdded(save.goldGeoms),
                                   style: const TextStyle(
-                                      fontFamily: 'monospace')),
-                              backgroundColor: Colors.amberAccent.shade700,
-                              duration: const Duration(seconds: 1),
-                            ),
-                          );
-                        },
-                      ),
-                      const SizedBox(height: 12),
-                      _buildTestButton(
-                        label: l10n.settingsResetPurchases,
-                        icon: Icons.restart_alt_rounded,
-                        color: Colors.orangeAccent,
-                        entrance: entrance,
-                        delay: 0.5,
-                        onTap: () async {
-                          final messenger = ScaffoldMessenger.of(context);
-                          // Rebuild SaveData immutabilmente (coding-style:
-                          // ALWAYS new objects, NEVER mutate): preservo i
-                          // campi non resettati (goldGeoms, highscores,
-                          // stats, totalPlaytime, playedModes,
-                          // activeModifiers) e ricreo liste/mappe da zero.
-                          final current = SaveManager.load();
-                          final save = SaveData(
-                            goldGeoms: current.goldGeoms,
-                            upgrades: <String, int>{},
-                            unlockedSkins: <String>['classic'],
-                            unlockedTrails: <String>['normal'],
-                            unlockedModes: <String>['classic'],
-                            unlockedWeapons: <String>['basic'],
-                            highscores: Map<String, int>.from(current.highscores),
-                            totalPlaytime: current.totalPlaytime,
-                            stats: Map<String, int>.from(current.stats),
-                            playedModes: List<String>.from(current.playedModes),
-                            activeModifiers:
-                                List<String>.from(current.activeModifiers),
-                            activeSkin: 'classic',
-                            activeTrail: 'normal',
-                            startingWeapon: 'basic',
-                          );
-                          await SaveManager.save(save);
-                          if (!mounted) return;
-                          messenger.showSnackBar(
-                            SnackBar(
-                              content: Text(l10n.settingsPurchasesReset,
+                                    fontFamily: 'monospace',
+                                  ),
+                                ),
+                                backgroundColor: Colors.amberAccent.shade700,
+                                duration: const Duration(seconds: 1),
+                              ),
+                            );
+                          },
+                        ),
+                        const SizedBox(height: 12),
+                        _buildTestButton(
+                          label: l10n.settingsResetPurchases,
+                          icon: Icons.restart_alt_rounded,
+                          color: Colors.orangeAccent,
+                          entrance: entrance,
+                          delay: 0.5,
+                          onTap: () async {
+                            final messenger = ScaffoldMessenger.of(context);
+                            // Rebuild SaveData immutabilmente (coding-style:
+                            // ALWAYS new objects, NEVER mutate): preservo i
+                            // campi non resettati (goldGeoms, highscores,
+                            // stats, totalPlaytime, playedModes,
+                            // activeModifiers) e ricreo liste/mappe da zero.
+                            final current = SaveManager.load();
+                            final save = SaveData(
+                              goldGeoms: current.goldGeoms,
+                              upgrades: <String, int>{},
+                              unlockedSkins: <String>['classic'],
+                              unlockedTrails: <String>['normal'],
+                              unlockedModes: <String>['classic'],
+                              unlockedWeapons: <String>['basic'],
+                              highscores: Map<String, int>.from(
+                                current.highscores,
+                              ),
+                              totalPlaytime: current.totalPlaytime,
+                              stats: Map<String, int>.from(current.stats),
+                              playedModes: List<String>.from(
+                                current.playedModes,
+                              ),
+                              activeModifiers: List<String>.from(
+                                current.activeModifiers,
+                              ),
+                              activeSkin: 'classic',
+                              activeTrail: 'normal',
+                              startingWeapon: 'basic',
+                            );
+                            await SaveManager.save(save);
+                            if (!mounted) return;
+                            messenger.showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                  l10n.settingsPurchasesReset,
                                   style: const TextStyle(
-                                      fontFamily: 'monospace')),
-                              backgroundColor: Colors.orangeAccent,
-                              duration: const Duration(seconds: 1),
-                            ),
-                          );
-                        },
-                      ),
-                      const SizedBox(height: 12),
-                      _buildTestButton(
-                        label: l10n.settingsCrashLogs,
-                        icon: Icons.report_problem_rounded,
-                        color: Colors.redAccent,
-                        entrance: entrance,
-                        delay: 0.55,
-                        onTap: _showCrashLogs,
-                      ),
-                    ],
-                  ),
+                                    fontFamily: 'monospace',
+                                  ),
+                                ),
+                                backgroundColor: Colors.orangeAccent,
+                                duration: const Duration(seconds: 1),
+                              ),
+                            );
+                          },
+                        ),
+                        const SizedBox(height: 12),
+                        _buildTestButton(
+                          label: l10n.settingsCrashLogs,
+                          icon: Icons.report_problem_rounded,
+                          color: Colors.redAccent,
+                          entrance: entrance,
+                          delay: 0.55,
+                          onTap: _showCrashLogs,
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ],
@@ -558,11 +583,15 @@ class _SettingsScreenState extends State<SettingsScreen>
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(8),
                     border: Border.all(
-                        color: Colors.cyanAccent.withValues(alpha: 0.3)),
+                      color: Colors.cyanAccent.withValues(alpha: 0.3),
+                    ),
                     color: Colors.cyanAccent.withValues(alpha: 0.05),
                   ),
-                  child: const Icon(Icons.arrow_back,
-                      color: Colors.cyanAccent, size: 20),
+                  child: const Icon(
+                    Icons.arrow_back,
+                    color: Colors.cyanAccent,
+                    size: 20,
+                  ),
                 ),
               ),
               const SizedBox(width: 16),
@@ -585,8 +614,15 @@ class _SettingsScreenState extends State<SettingsScreen>
   }
 
   Widget _buildSectionHeader(
-      String title, IconData icon, Color color, double entrance, double delay) {
-    final e = (delay >= 1.0 ? 1.0 : ((entrance - delay) / (1.0 - delay)).clamp(0.0, 1.0));
+    String title,
+    IconData icon,
+    Color color,
+    double entrance,
+    double delay,
+  ) {
+    final e = (delay >= 1.0
+        ? 1.0
+        : ((entrance - delay) / (1.0 - delay)).clamp(0.0, 1.0));
     return Opacity(
       opacity: e,
       child: Transform.translate(
@@ -613,7 +649,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                 fontFamily: 'monospace',
                 letterSpacing: 4,
                 shadows: [
-                  Shadow(color: color.withValues(alpha: 0.3), blurRadius: 4)
+                  Shadow(color: color.withValues(alpha: 0.3), blurRadius: 4),
                 ],
               ),
             ),
@@ -623,10 +659,7 @@ class _SettingsScreenState extends State<SettingsScreen>
                 height: 1,
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    colors: [
-                      color.withValues(alpha: 0.3),
-                      Colors.transparent,
-                    ],
+                    colors: [color.withValues(alpha: 0.3), Colors.transparent],
                   ),
                 ),
               ),
@@ -648,7 +681,9 @@ class _SettingsScreenState extends State<SettingsScreen>
     required double delay,
     required double glow,
   }) {
-    final e = (delay >= 1.0 ? 1.0 : ((entrance - delay) / (1.0 - delay)).clamp(0.0, 1.0));
+    final e = (delay >= 1.0
+        ? 1.0
+        : ((entrance - delay) / (1.0 - delay)).clamp(0.0, 1.0));
     final pct = (value * 100).round();
 
     return Opacity(
@@ -686,12 +721,13 @@ class _SettingsScreenState extends State<SettingsScreen>
                   const Spacer(),
                   Container(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 8, vertical: 2),
+                      horizontal: 8,
+                      vertical: 2,
+                    ),
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(6),
                       color: color.withValues(alpha: 0.1),
-                      border:
-                          Border.all(color: color.withValues(alpha: 0.3)),
+                      border: Border.all(color: color.withValues(alpha: 0.3)),
                     ),
                     child: Text(
                       '$pct%',
@@ -714,10 +750,12 @@ class _SettingsScreenState extends State<SettingsScreen>
                   thumbColor: color,
                   overlayColor: color.withValues(alpha: 0.15),
                   trackHeight: 4,
-                  thumbShape:
-                      const RoundSliderThumbShape(enabledThumbRadius: 7),
-                  overlayShape:
-                      const RoundSliderOverlayShape(overlayRadius: 16),
+                  thumbShape: const RoundSliderThumbShape(
+                    enabledThumbRadius: 7,
+                  ),
+                  overlayShape: const RoundSliderOverlayShape(
+                    overlayRadius: 16,
+                  ),
                 ),
                 child: Slider(
                   value: value,
@@ -742,7 +780,9 @@ class _SettingsScreenState extends State<SettingsScreen>
     required double delay,
     required double glow,
   }) {
-    final e = (delay >= 1.0 ? 1.0 : ((entrance - delay) / (1.0 - delay)).clamp(0.0, 1.0));
+    final e = (delay >= 1.0
+        ? 1.0
+        : ((entrance - delay) / (1.0 - delay)).clamp(0.0, 1.0));
 
     return Opacity(
       opacity: e,
@@ -757,8 +797,9 @@ class _SettingsScreenState extends State<SettingsScreen>
               begin: Alignment.centerLeft,
               end: Alignment.centerRight,
               colors: [
-                (value ? color : Colors.white)
-                    .withValues(alpha: 0.04 + (value ? glow * 0.02 : 0)),
+                (value ? color : Colors.white).withValues(
+                  alpha: 0.04 + (value ? glow * 0.02 : 0),
+                ),
                 Colors.transparent,
               ],
             ),
@@ -807,8 +848,9 @@ class _SettingsScreenState extends State<SettingsScreen>
                   child: AnimatedAlign(
                     duration: const Duration(milliseconds: 250),
                     curve: Curves.easeOutCubic,
-                    alignment:
-                        value ? Alignment.centerRight : Alignment.centerLeft,
+                    alignment: value
+                        ? Alignment.centerRight
+                        : Alignment.centerLeft,
                     child: Container(
                       width: 20,
                       height: 20,
@@ -887,7 +929,10 @@ class _SettingsScreenState extends State<SettingsScreen>
   }
 
   Widget _buildResetButton(
-      double entrance, double glow, AppLocalizations l10n) {
+    double entrance,
+    double glow,
+    AppLocalizations l10n,
+  ) {
     final e = ((entrance - 0.35) / 0.65).clamp(0.0, 1.0);
 
     return Opacity(
@@ -904,43 +949,56 @@ class _SettingsScreenState extends State<SettingsScreen>
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                     side: BorderSide(
-                        color: Colors.redAccent.withValues(alpha: 0.3)),
+                      color: Colors.redAccent.withValues(alpha: 0.3),
+                    ),
                   ),
                   title: Row(
                     children: [
-                      const Icon(Icons.warning_rounded,
-                          color: Colors.redAccent, size: 20),
+                      const Icon(
+                        Icons.warning_rounded,
+                        color: Colors.redAccent,
+                        size: 20,
+                      ),
                       const SizedBox(width: 8),
-                      Text(l10n.settingsResetTitle,
-                          style: const TextStyle(
-                            color: Colors.redAccent,
-                            fontFamily: 'monospace',
-                            fontSize: 16,
-                          )),
+                      Text(
+                        l10n.settingsResetTitle,
+                        style: const TextStyle(
+                          color: Colors.redAccent,
+                          fontFamily: 'monospace',
+                          fontSize: 16,
+                        ),
+                      ),
                     ],
                   ),
                   content: Text(
                     l10n.settingsResetWarning,
                     style: const TextStyle(
-                        color: Colors.white70,
-                        fontFamily: 'monospace',
-                        fontSize: 12),
+                      color: Colors.white70,
+                      fontFamily: 'monospace',
+                      fontSize: 12,
+                    ),
                   ),
                   actions: [
                     TextButton(
                       onPressed: () => Navigator.pop(context, false),
-                      child: Text(l10n.cancel,
-                          style: const TextStyle(
-                              color: Colors.white54,
-                              fontFamily: 'monospace')),
+                      child: Text(
+                        l10n.cancel,
+                        style: const TextStyle(
+                          color: Colors.white54,
+                          fontFamily: 'monospace',
+                        ),
+                      ),
                     ),
                     TextButton(
                       onPressed: () => Navigator.pop(context, true),
-                      child: Text(l10n.settingsResetButton,
-                          style: const TextStyle(
-                              color: Colors.redAccent,
-                              fontFamily: 'monospace',
-                              fontWeight: FontWeight.bold)),
+                      child: Text(
+                        l10n.settingsResetButton,
+                        style: const TextStyle(
+                          color: Colors.redAccent,
+                          fontFamily: 'monospace',
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -982,7 +1040,8 @@ class _SettingsScreenState extends State<SettingsScreen>
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(
-                    color: Colors.redAccent.withValues(alpha: 0.4)),
+                  color: Colors.redAccent.withValues(alpha: 0.4),
+                ),
                 gradient: LinearGradient(
                   colors: [
                     Colors.redAccent.withValues(alpha: 0.08),
@@ -993,8 +1052,11 @@ class _SettingsScreenState extends State<SettingsScreen>
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.delete_forever_rounded,
-                      color: Colors.redAccent, size: 18),
+                  const Icon(
+                    Icons.delete_forever_rounded,
+                    color: Colors.redAccent,
+                    size: 18,
+                  ),
                   const SizedBox(width: 8),
                   Text(
                     l10n.settingsResetAllData,

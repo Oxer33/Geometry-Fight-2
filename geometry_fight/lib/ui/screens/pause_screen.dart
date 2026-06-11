@@ -8,11 +8,7 @@ class PauseScreen extends StatefulWidget {
   final VoidCallback onResume;
   final VoidCallback onQuit;
 
-  const PauseScreen({
-    super.key,
-    required this.onResume,
-    required this.onQuit,
-  });
+  const PauseScreen({super.key, required this.onResume, required this.onQuit});
 
   @override
   State<PauseScreen> createState() => _PauseScreenState();
@@ -58,18 +54,22 @@ class _PauseScreenState extends State<PauseScreen>
       parent: _entranceController,
       curve: const Interval(0.0, 0.5, curve: Curves.easeOut),
     );
-    _titleSlide = Tween<double>(begin: -30, end: 0).animate(CurvedAnimation(
-      parent: _entranceController,
-      curve: const Interval(0.15, 0.55, curve: Curves.easeOutCubic),
-    ));
+    _titleSlide = Tween<double>(begin: -30, end: 0).animate(
+      CurvedAnimation(
+        parent: _entranceController,
+        curve: const Interval(0.15, 0.55, curve: Curves.easeOutCubic),
+      ),
+    );
     _titleFade = CurvedAnimation(
       parent: _entranceController,
       curve: const Interval(0.15, 0.55, curve: Curves.easeOut),
     );
-    _buttonsSlide = Tween<double>(begin: 40, end: 0).animate(CurvedAnimation(
-      parent: _entranceController,
-      curve: const Interval(0.35, 0.75, curve: Curves.easeOutCubic),
-    ));
+    _buttonsSlide = Tween<double>(begin: 40, end: 0).animate(
+      CurvedAnimation(
+        parent: _entranceController,
+        curve: const Interval(0.35, 0.75, curve: Curves.easeOutCubic),
+      ),
+    );
     _buttonsFade = CurvedAnimation(
       parent: _entranceController,
       curve: const Interval(0.35, 0.75, curve: Curves.easeOut),
@@ -272,8 +272,9 @@ class _PauseScreenState extends State<PauseScreen>
             shadows: [
               Shadow(color: Colors.cyanAccent, blurRadius: glowRadius),
               Shadow(
-                  color: Colors.cyanAccent.withValues(alpha: 0.5),
-                  blurRadius: glowRadius * 2),
+                color: Colors.cyanAccent.withValues(alpha: 0.5),
+                blurRadius: glowRadius * 2,
+              ),
             ],
           ),
         ),
@@ -360,8 +361,9 @@ class _NeonPauseButtonState extends State<_NeonPauseButton>
                 boxShadow: widget.isPrimary
                     ? [
                         BoxShadow(
-                          color: widget.color
-                              .withValues(alpha: 0.2 + widget.pulse * 0.1),
+                          color: widget.color.withValues(
+                            alpha: 0.2 + widget.pulse * 0.1,
+                          ),
                           blurRadius: 16,
                           spreadRadius: -2,
                         ),
@@ -384,8 +386,9 @@ class _NeonPauseButtonState extends State<_NeonPauseButton>
                       shadows: widget.isPrimary
                           ? [
                               Shadow(
-                                  color: widget.color.withValues(alpha: 0.5),
-                                  blurRadius: 8)
+                                color: widget.color.withValues(alpha: 0.5),
+                                blurRadius: 8,
+                              ),
                             ]
                           : null,
                     ),
@@ -448,4 +451,3 @@ class _PauseParticlesPainter extends CustomPainter {
   bool shouldRepaint(covariant _PauseParticlesPainter old) =>
       old.time != time || old.opacity != opacity;
 }
-

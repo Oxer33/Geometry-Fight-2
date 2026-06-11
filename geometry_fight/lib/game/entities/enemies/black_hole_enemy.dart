@@ -23,14 +23,14 @@ class BlackHoleEnemy extends EnemyBase {
 
   // HP alto: con baseFireRate 8 e damageMultiplier ~1.0, servono ~3-5s di fuoco diretto
   BlackHoleEnemy()
-      : super(
-          hp: 35,
-          speed: 0,
-          pointValue: 30,
-          geomValue: 10,
-          neonColor: NeonColors.darkRed,
-          size: Vector2(40, 40),
-        );
+    : super(
+        hp: 35,
+        speed: 0,
+        pointValue: 30,
+        geomValue: 10,
+        neonColor: NeonColors.darkRed,
+        size: Vector2(40, 40),
+      );
 
   @override
   void takeDamage(double amount, {bool isArea = false}) {
@@ -73,7 +73,9 @@ class BlackHoleEnemy extends EnemyBase {
     }
     // Player attraction: long-range (600px) + force quadratica con proximity
     // (più vicino → MOLTO più forte). Skip se invincible/dead.
-    if (game.player.isMounted && !game.player.isInvincible && game.player.lives > 0) {
+    if (game.player.isMounted &&
+        !game.player.isInvincible &&
+        game.player.lives > 0) {
       final toHole = position - game.player.position;
       const playerPullRadius = 600.0;
       const playerPullRadiusSq = playerPullRadius * playerPullRadius;
@@ -95,13 +97,19 @@ class BlackHoleEnemy extends EnemyBase {
         if (game.isTunnelMode) {
           final camY = game.camera.viewfinder.position.y;
           final halfH = game.tunnelHeight / 2;
-          game.player.position.y = game.player.position.y
-              .clamp(camY - halfH + 10, camY + halfH - 10);
+          game.player.position.y = game.player.position.y.clamp(
+            camY - halfH + 10,
+            camY + halfH - 10,
+          );
         } else {
-          game.player.position.x =
-              game.player.position.x.clamp(10.0, arenaWidth - 10);
-          game.player.position.y =
-              game.player.position.y.clamp(10.0, arenaHeight - 10);
+          game.player.position.x = game.player.position.x.clamp(
+            10.0,
+            arenaWidth - 10,
+          );
+          game.player.position.y = game.player.position.y.clamp(
+            10.0,
+            arenaHeight - 10,
+          );
         }
       }
     }
@@ -153,7 +161,8 @@ class BlackHoleEnemy extends EnemyBase {
     // appena spawnati dalla stessa morte — stavano entro 20px e venivano
     // killSilent subito, vanificando la "pioggia di proton").
     for (final child in List.from(game.world.children)) {
-      if (child is EnemyBase && child != this &&
+      if (child is EnemyBase &&
+          child != this &&
           child is! BlackHoleEnemy &&
           child is! ProtonEnemy) {
         final dist = child.position.distanceTo(position);
@@ -169,14 +178,22 @@ class BlackHoleEnemy extends EnemyBase {
     final toPlayer = game.player.position - position;
     if (toPlayer.length > 0 && toPlayer.length < killRadius * 1.5) {
       final pushDir = toPlayer.normalized();
-      final falloff =
-          (1.0 - toPlayer.length / (killRadius * 1.5)).clamp(0.0, 1.0);
+      final falloff = (1.0 - toPlayer.length / (killRadius * 1.5)).clamp(
+        0.0,
+        1.0,
+      );
       final pushDistance = pushForce * falloff;
       game.player.applyKnockback(pushDir, pushDistance, duration: 1.2);
     }
 
     // Mega esplosione visiva
-    game.spawnExplosion(position, NeonColors.red, radius: 150, particleCount: 25, epic: true);
+    game.spawnExplosion(
+      position,
+      NeonColors.red,
+      radius: 150,
+      particleCount: 25,
+      epic: true,
+    );
     game.triggerScreenShake(6, 0.3);
     if (!game.isTunnelMode) {
       game.grid.applyForce(position, 300, 2500);
@@ -206,13 +223,17 @@ class BlackHoleEnemy extends EnemyBase {
     final pulse = math.sin(_rotAngle * 3);
     // Flash strobe quando attivo: on/off veloce sulle alpha dei layer esterni,
     // così il black hole "lampeggia" (richiesta user). Dormant = 1.0 fisso.
-    final flashStrobe = active ? (math.sin(_rotAngle * 18) > 0 ? 1.0 : 0.35) : 1.0;
+    final flashStrobe = active
+        ? (math.sin(_rotAngle * 18) > 0 ? 1.0 : 0.35)
+        : 1.0;
 
     // === ALONE CROMATICO ESTERNO (molto grande e luminoso) ===
     // 3 strati sovrapposti con hue sfasato → effetto arcobaleno rotante
     for (int layer = 0; layer < 3; layer++) {
       final layerR = r * (2.8 - layer * 0.4);
-      final baseAlpha = active ? (0.20 - layer * 0.05 + pulse * 0.05) : (0.08 - layer * 0.02);
+      final baseAlpha = active
+          ? (0.20 - layer * 0.05 + pulse * 0.05)
+          : (0.08 - layer * 0.02);
       final alpha = baseAlpha * flashStrobe;
       final c = _chromaColor(layer * 120.0);
       EnemyBase.detailPaint.color = c.withValues(alpha: alpha.clamp(0.0, 1.0));
@@ -240,7 +261,10 @@ class BlackHoleEnemy extends EnemyBase {
       final angle = i * math.pi / 3;
       canvas.drawArc(
         Rect.fromCircle(center: Offset.zero, radius: r),
-        angle, math.pi / 4, false, _ringPaint,
+        angle,
+        math.pi / 4,
+        false,
+        _ringPaint,
       );
     }
     canvas.restore();
@@ -256,7 +280,10 @@ class BlackHoleEnemy extends EnemyBase {
       final angle = i * math.pi / 2;
       canvas.drawArc(
         Rect.fromCircle(center: Offset.zero, radius: r * 0.65),
-        angle, math.pi / 5, false, _ringPaint,
+        angle,
+        math.pi / 5,
+        false,
+        _ringPaint,
       );
     }
     canvas.restore();
@@ -279,20 +306,35 @@ class BlackHoleEnemy extends EnemyBase {
         final px = cx + pDist * math.cos(pAngle);
         final py = cy + pDist * math.sin(pAngle);
         final pColor = _chromaColor(i * (360.0 / particleCount));
-        final pAlpha = active ? (0.4 + math.sin(_rotAngle * 4 + i) * 0.2) : 0.15;
-        EnemyBase.detailPaint.color = pColor.withValues(alpha: pAlpha.clamp(0.0, 1.0));
-        canvas.drawCircle(Offset(px, py), active ? 2.0 : 1.2, EnemyBase.detailPaint);
+        final pAlpha = active
+            ? (0.4 + math.sin(_rotAngle * 4 + i) * 0.2)
+            : 0.15;
+        EnemyBase.detailPaint.color = pColor.withValues(
+          alpha: pAlpha.clamp(0.0, 1.0),
+        );
+        canvas.drawCircle(
+          Offset(px, py),
+          active ? 2.0 : 1.2,
+          EnemyBase.detailPaint,
+        );
       }
 
       // Punto luminoso centrale — bianco brillante pulsante
       final coreAlpha = (0.7 + pulse * 0.3).clamp(0.0, 1.0);
-      EnemyBase.detailPaint.color = Color.fromARGB((coreAlpha * 255).round(), 255, 255, 255);
+      EnemyBase.detailPaint.color = Color.fromARGB(
+        (coreAlpha * 255).round(),
+        255,
+        255,
+        255,
+      );
       canvas.drawCircle(Offset(cx, cy), r * 0.2, EnemyBase.detailPaint);
 
       // Dormant: anello sottile che pulsa lentamente per segnalare pericolo latente
       if (!active) {
         final dormantColor = _chromaColor(0);
-        EnemyBase.detailPaint.color = dormantColor.withValues(alpha: 0.12 + math.sin(_rotAngle * 2) * 0.06);
+        EnemyBase.detailPaint.color = dormantColor.withValues(
+          alpha: 0.12 + math.sin(_rotAngle * 2) * 0.06,
+        );
         EnemyBase.detailPaint.style = PaintingStyle.stroke;
         EnemyBase.detailPaint.strokeWidth = 1.0;
         canvas.drawCircle(Offset(cx, cy), r * 1.3, EnemyBase.detailPaint);

@@ -55,15 +55,15 @@ class AstralSentinelBoss extends BossBase {
   double _radialBurstTimer = 5.0;
 
   AstralSentinelBoss()
-      : super(
-          // Boost (richiesta utente: "troppo banale"):
-          // HP 900 → 1400 (+55%), pointValue 9000 → 12000.
-          hp: 1400,
-          bossName: 'ASTRAL SENTINEL',
-          pointValue: 12000,
-          neonColor: NeonColors.cyan,
-          size: Vector2(130, 130),
-        );
+    : super(
+        // Boost (richiesta utente: "troppo banale"):
+        // HP 900 → 1400 (+55%), pointValue 9000 → 12000.
+        hp: 1400,
+        bossName: 'ASTRAL SENTINEL',
+        pointValue: 12000,
+        neonColor: NeonColors.cyan,
+        size: Vector2(130, 130),
+      );
 
   int get _starCount {
     if (currentPhase >= 2) return 10;
@@ -73,8 +73,11 @@ class AstralSentinelBoss extends BossBase {
 
   // AstralSentinel è CIANO COSMICO → mob ciano/stellari (drone + orbiter + pulsar).
   @override
-  List<EnemyType> get colorMatchedMinions =>
-      const [EnemyType.drone, EnemyType.orbiter, EnemyType.pulsar];
+  List<EnemyType> get colorMatchedMinions => const [
+    EnemyType.drone,
+    EnemyType.orbiter,
+    EnemyType.pulsar,
+  ];
 
   @override
   int getPhase() {
@@ -104,7 +107,10 @@ class AstralSentinelBoss extends BossBase {
         final ang = i * math.pi * 2 / count + _phase * 0.3;
         final dir = Vector2(math.cos(ang), math.sin(ang));
         final bullet = EnemyBullet(
-            direction: dir, speed: 180, color: NeonColors.cyan);
+          direction: dir,
+          speed: 180,
+          color: NeonColors.cyan,
+        );
         bullet.position = position.clone();
         game.world.add(bullet);
       }
@@ -123,8 +129,8 @@ class AstralSentinelBoss extends BossBase {
       final radius = _kBaseRadius + (cnt - 5) * _kRadiusPerExtraStar;
       _starPositions = List.generate(cnt, (i) {
         final ang = _phase * 0.8 + i * math.pi * 2 / cnt;
-        final raw = playerPosition +
-            Vector2(math.cos(ang), math.sin(ang)) * radius;
+        final raw =
+            playerPosition + Vector2(math.cos(ang), math.sin(ang)) * radius;
         // Clamp a arena bounds così le stelle restano sempre dentro la zona
         // di gioco (player vicino al bordo non "imbrogliava").
         return Vector2(
@@ -163,7 +169,10 @@ class AstralSentinelBoss extends BossBase {
             // copre la durata della ricarica (cycleTimer 3-4s).
             final perp = Vector2(-dirN.y, dirN.x);
             final bullet = EnemyBullet(
-                direction: perp, speed: 0, color: NeonColors.cyan);
+              direction: perp,
+              speed: 0,
+              color: NeonColors.cyan,
+            );
             bullet.position = pos;
             game.world.add(bullet);
           }
@@ -188,8 +197,9 @@ class AstralSentinelBoss extends BossBase {
       final auraR = (50 + i * 15) * scale;
       final auraAlpha =
           (0.2 - i * 0.04) * (0.5 + math.sin(_phase * 2 + i) * 0.5);
-      _auraPaint.color =
-          NeonColors.cyan.withValues(alpha: auraAlpha * paint.color.a);
+      _auraPaint.color = NeonColors.cyan.withValues(
+        alpha: auraAlpha * paint.color.a,
+      );
       canvas.drawCircle(Offset(cx, cy), auraR, _auraPaint);
     }
 
@@ -215,8 +225,9 @@ class AstralSentinelBoss extends BossBase {
     _hexStrokePaint.strokeWidth = 2 * scale;
     _hexStrokePaint.color = paint.color;
     canvas.drawPath(hexPath, _hexStrokePaint);
-    _coreInnerPaint.color =
-        const Color(0xFFFFFFFF).withValues(alpha: paint.color.a);
+    _coreInnerPaint.color = const Color(
+      0xFFFFFFFF,
+    ).withValues(alpha: paint.color.a);
     canvas.drawCircle(Offset(cx, cy), 10 * scale, _coreInnerPaint);
 
     // Stelle + linee (render relativo a boss)
@@ -227,38 +238,48 @@ class AstralSentinelBoss extends BossBase {
           : 1.0;
       final lineAlpha = windFrac.clamp(0.0, 1.0);
 
-      _linePaint.color =
-          NeonColors.cyan.withValues(alpha: 0.3 + lineAlpha * 0.5);
+      _linePaint.color = NeonColors.cyan.withValues(
+        alpha: 0.3 + lineAlpha * 0.5,
+      );
       _linePaint.strokeWidth = 1 + lineAlpha * 2;
       for (int i = 0; i < _starPositions.length; i++) {
         final a = _starPositions[i] - position + Vector2(cx, cy);
-        final b = _starPositions[(i + 1) % _starPositions.length] -
-                position +
+        final b =
+            _starPositions[(i + 1) % _starPositions.length] -
+            position +
             Vector2(cx, cy);
-        canvas.drawLine(
-            Offset(a.x, a.y), Offset(b.x, b.y), _linePaint);
+        canvas.drawLine(Offset(a.x, a.y), Offset(b.x, b.y), _linePaint);
       }
 
       for (final star in _starPositions) {
         final local = star - position + Vector2(cx, cy);
         final pulse = 0.7 + math.sin(_phase * 6) * 0.3;
-        _starGlowPaint.color = NeonColors.cyan
-            .withValues(alpha: 0.4 * pulse * lineAlpha);
+        _starGlowPaint.color = NeonColors.cyan.withValues(
+          alpha: 0.4 * pulse * lineAlpha,
+        );
         canvas.drawCircle(
-            Offset(local.x, local.y), 12 * scale * pulse, _starGlowPaint);
+          Offset(local.x, local.y),
+          12 * scale * pulse,
+          _starGlowPaint,
+        );
         // 5 raggi punte stella
-        _starRayPaint.color = const Color(0xFFFFFFFF)
-            .withValues(alpha: pulse * lineAlpha);
+        _starRayPaint.color = const Color(
+          0xFFFFFFFF,
+        ).withValues(alpha: pulse * lineAlpha);
         _starRayPaint.strokeWidth = 1.2 * scale;
         for (int k = 0; k < 5; k++) {
           final a = _phase * 2 + k * math.pi * 2 / 5;
           final tipX = local.x + math.cos(a) * 9 * scale;
           final tipY = local.y + math.sin(a) * 9 * scale;
           canvas.drawLine(
-              Offset(local.x, local.y), Offset(tipX, tipY), _starRayPaint);
+            Offset(local.x, local.y),
+            Offset(tipX, tipY),
+            _starRayPaint,
+          );
         }
-        _starPaint.color = const Color(0xFFFFFFFF)
-            .withValues(alpha: pulse * lineAlpha);
+        _starPaint.color = const Color(
+          0xFFFFFFFF,
+        ).withValues(alpha: pulse * lineAlpha);
         canvas.drawCircle(Offset(local.x, local.y), 3 * scale, _starPaint);
       }
     }

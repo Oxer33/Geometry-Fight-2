@@ -35,9 +35,11 @@ abstract class EnemyBase extends PositionComponent
   // può variare nel tempo (lento all'inizio, rapido verso la fine del warning)
   double _blinkPhase = 0;
   bool get isSpawnInvulnerable => _spawnInvulnTimer > 0;
-  double get spawnInvulnTimer => _spawnInvulnTimer; // FIX H5: accesso da PhantomEnemy
+  double get spawnInvulnTimer =>
+      _spawnInvulnTimer; // FIX H5: accesso da PhantomEnemy
   /// Azzera invulnerabilità spawn (per nemici generati in-game, non spawnati)
   void clearSpawnInvulnerability() => _spawnInvulnTimer = 0;
+
   /// Set breve invuln (es. 0.1s) per figli dei Splitter → protegge dalla
   /// cascata laser/plasma che investirebbe i figli nello stesso frame del
   /// padre. NON usa i 1.2s di default (evita che i figli restino fermi a
@@ -95,13 +97,18 @@ abstract class EnemyBase extends PositionComponent
     required this.geomValue,
     required this.neonColor,
     Vector2? size,
-  })  : maxHp = hp,
-        super(size: size != null ? size * 2 : Vector2(40, 40), anchor: Anchor.center);
+  }) : maxHp = hp,
+       super(
+         size: size != null ? size * 2 : Vector2(40, 40),
+         anchor: Anchor.center,
+       );
 
   @override
   Future<void> onLoad() async {
-    add(CircleHitbox(radius: size.x / 2, anchor: Anchor.center)
-      ..position = size / 2);
+    add(
+      CircleHitbox(radius: size.x / 2, anchor: Anchor.center)
+        ..position = size / 2,
+    );
   }
 
   @override
@@ -254,15 +261,22 @@ abstract class EnemyBase extends PositionComponent
   }
 
   void onDeath() {
-    if (_isDead) return; // FIX C1: evita double-death (bullet + bomba nello stesso frame)
+    if (_isDead) {
+      return; // FIX C1: evita double-death (bullet + bomba nello stesso frame)
+    }
     _isDead = true;
     game.onEnemyKilled(this);
     // Esplosioni scalate per valore nemico: mob deboli piccole, nemici forti epic
     final isEpic = geomValue >= 4 || pointValue >= 10;
     final particles = geomValue <= 1 ? 8 : (isEpic ? 20 : 12);
     final explosionRadius = geomValue <= 1 ? size.x * 0.8 : size.x * 1.2;
-    game.spawnExplosion(position, neonColor,
-        radius: explosionRadius, particleCount: particles, epic: isEpic);
+    game.spawnExplosion(
+      position,
+      neonColor,
+      radius: explosionRadius,
+      particleCount: particles,
+      epic: isEpic,
+    );
     removeFromParent();
   }
 
@@ -283,8 +297,12 @@ abstract class EnemyBase extends PositionComponent
     if (_isDead) return;
     _isDead = true;
     if (spawnPuff) {
-      game.spawnExplosion(position, neonColor,
-          radius: size.x * 0.5, particleCount: 3);
+      game.spawnExplosion(
+        position,
+        neonColor,
+        radius: size.x * 0.5,
+        particleCount: 3,
+      );
     }
     removeFromParent();
   }
@@ -320,7 +338,8 @@ abstract class EnemyBase extends PositionComponent
 
   // Paint cache riutilizzabili per evitare allocazioni ogni frame
   // (con 60 nemici x 60fps = migliaia di allocazioni risparmiate)
-  static final _glowPaint = Paint(); // NO MaskFilter.blur — troppo costoso su mobile!
+  static final _glowPaint =
+      Paint(); // NO MaskFilter.blur — troppo costoso su mobile!
   static final _mainPaint = Paint();
   static final _hpBgPaint = Paint()..color = const Color(0x33FFFFFF);
   static final _hpBarPaint = Paint();
@@ -364,13 +383,13 @@ abstract class EnemyBase extends PositionComponent
     // blur, particelle e dettagli costosi → massima performance.
     final mainScale = highDetail ? 1.0 : 1.02;
     renderShape(canvas, _mainPaint, mainScale);
-    _mainPaint.style = PaintingStyle.fill; // Reset per chi usa fill internamente
+    _mainPaint.style =
+        PaintingStyle.fill; // Reset per chi usa fill internamente
 
     // === MINI HP BAR (solo per nemici con più di 1 HP e non a vita piena) ===
     if (maxHp > 1 && hp < maxHp && hp > 0) {
       _renderMiniHpBar(canvas, cx, cy);
     }
-
   }
 
   /// Mini barra HP sotto il nemico (usa Paint cache)
@@ -381,12 +400,12 @@ abstract class EnemyBase extends PositionComponent
     final barY = cy + size.y / 2 + 4;
     final hpPercent = (hp / maxHp).clamp(0.0, 1.0);
 
-    canvas.drawRect(
-      Rect.fromLTWH(barX, barY, barWidth, barHeight),
-      _hpBgPaint,
-    );
-    _hpBarPaint.color = hpPercent > 0.5 ? neonColor
-        : hpPercent > 0.25 ? const Color(0xFFFFAA00) : const Color(0xFFFF2200);
+    canvas.drawRect(Rect.fromLTWH(barX, barY, barWidth, barHeight), _hpBgPaint);
+    _hpBarPaint.color = hpPercent > 0.5
+        ? neonColor
+        : hpPercent > 0.25
+        ? const Color(0xFFFFAA00)
+        : const Color(0xFFFF2200);
     canvas.drawRect(
       Rect.fromLTWH(barX, barY, barWidth * hpPercent, barHeight),
       _hpBarPaint,

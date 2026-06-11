@@ -6,7 +6,7 @@ import 'enemy_base.dart';
 /// LEECH - Nemico parassita che si aggancia al player e lo rallenta.
 /// Forma: piccolo cerchio con tentacoli ondulanti
 /// Colore: verde acido (#88FF00)
-/// Comportamento: si avvicina rapidamente, quando è vicino "si aggancia" 
+/// Comportamento: si avvicina rapidamente, quando è vicino "si aggancia"
 /// e drena velocità del player. Va ucciso in fretta!
 /// Spawn: dal wave 12, in gruppi di 2-5
 class LeechEnemy extends EnemyBase {
@@ -14,8 +14,7 @@ class LeechEnemy extends EnemyBase {
   double _tentaclePhase = 0;
 
   // Paint caches: evita alloc per frame × N leech.
-  static final Paint _tentaclePaint = Paint()
-    ..style = PaintingStyle.stroke;
+  static final Paint _tentaclePaint = Paint()..style = PaintingStyle.stroke;
   static final Paint _ringPaint = Paint()
     ..style = PaintingStyle.stroke
     ..strokeWidth = 0.6;
@@ -73,14 +72,14 @@ class LeechEnemy extends EnemyBase {
   }
 
   LeechEnemy()
-      : super(
-          hp: 2,
-          speed: 250, // Veloce per raggiungere il player
-          pointValue: 7,
-          geomValue: 3,
-          neonColor: const Color(0xFF88FF00), // Verde acido
-          size: Vector2(14, 14),
-        );
+    : super(
+        hp: 2,
+        speed: 250, // Veloce per raggiungere il player
+        pointValue: 7,
+        geomValue: 3,
+        neonColor: const Color(0xFF88FF00), // Verde acido
+        size: Vector2(14, 14),
+      );
 
   // Non uccide al contatto (richiesta utente): si aggancia e rallenta invece
   // di danneggiare.
@@ -106,10 +105,12 @@ class LeechEnemy extends EnemyBase {
         return;
       }
       // Segui il player attaccato (orbita attorno a lui)
-      position = playerPosition + Vector2(
-        math.cos(_tentaclePhase * 2) * 20,
-        math.sin(_tentaclePhase * 2) * 20,
-      );
+      position =
+          playerPosition +
+          Vector2(
+            math.cos(_tentaclePhase * 2) * 20,
+            math.sin(_tentaclePhase * 2) * 20,
+          );
 
       // Si stacca SOLO quando il player "squote" la navicella (richiesta
       // utente). Niente più timer automatico di sgancio.
@@ -190,20 +191,26 @@ class LeechEnemy extends EnemyBase {
         final sx = cx + math.cos(sacAngle) * r * 0.3;
         final sy = cy + math.sin(sacAngle) * r * 0.3;
         final sacPulse = 0.25 + math.sin(_tentaclePhase * 4 + i * 2) * 0.2;
-        EnemyBase.detailPaint.color = const Color(0xFFCCFF00).withValues(alpha: sacPulse);
+        EnemyBase.detailPaint.color = const Color(
+          0xFFCCFF00,
+        ).withValues(alpha: sacPulse);
         canvas.drawCircle(Offset(sx, sy), 1.0, EnemyBase.detailPaint);
       }
 
       // Nucleo pulsante
       final corePulse = 0.4 + math.sin(_tentaclePhase * 3) * 0.3;
-      EnemyBase.detailPaint.color = const Color(0xFFFFFFFF).withValues(alpha: corePulse);
+      EnemyBase.detailPaint.color = const Color(
+        0xFFFFFFFF,
+      ).withValues(alpha: corePulse);
       canvas.drawCircle(Offset(cx, cy), r * 0.15, EnemyBase.detailPaint);
     }
 
     // Se agganciato: indicatore rosso + vene di assorbimento
     if (_attached && scale <= 1.01) {
       final pulseAlpha = 0.5 + math.sin(_tentaclePhase * 4) * 0.3;
-      _attachPaint.color = const Color(0xFFFF0000).withValues(alpha: pulseAlpha);
+      _attachPaint.color = const Color(
+        0xFFFF0000,
+      ).withValues(alpha: pulseAlpha);
       canvas.drawCircle(Offset(cx, cy), r * 0.4, _attachPaint);
 
       // Vene rosse pulsanti verso l'esterno
@@ -212,7 +219,10 @@ class LeechEnemy extends EnemyBase {
         final vAngle = i * math.pi / 2 + _tentaclePhase;
         canvas.drawLine(
           Offset(cx, cy),
-          Offset(cx + math.cos(vAngle) * r * 0.5, cy + math.sin(vAngle) * r * 0.5),
+          Offset(
+            cx + math.cos(vAngle) * r * 0.5,
+            cy + math.sin(vAngle) * r * 0.5,
+          ),
           _veinPaint,
         );
       }
