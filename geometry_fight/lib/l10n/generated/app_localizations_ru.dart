@@ -9,6 +9,156 @@ class AppLocalizationsRu extends AppLocalizations {
   AppLocalizationsRu([String locale = 'ru']) : super(locale);
 
   @override
+  String get skinDescMagma =>
+      'Раскалённая расплавленная порода — свечение лавы';
+
+  @override
+  String get skinDescFrost => 'Кристальный лёд бело-голубого оттенка';
+
+  @override
+  String get skinDescToxic => 'Радиоактивный светящийся кислотно-зелёный';
+
+  @override
+  String get skinDescObsidian => 'Чёрный обсидиан с фиолетовыми отблесками';
+
+  @override
+  String get skinDescSolar => 'Ослепительное солнечное золото';
+
+  @override
+  String get skinDescAbyss => 'Переливчатая бездна сине-бирюзового цвета';
+
+  @override
+  String get skinDescCosmos => 'Текучая фиолетово-розовая туманность';
+
+  @override
+  String get skinDescChrome => 'Зеркальный металлический хром';
+
+  @override
+  String get skinDescEmerald => 'Ярко-зелёный сверкающий изумруд';
+
+  @override
+  String get skinDescSunset => 'Плавный закат оранжево-маджентового оттенка';
+
+  @override
+  String get skinDescSingularity =>
+      'Black Hole: орбитальный аккреционный диск + гравитационная линза';
+
+  @override
+  String get skinDescSupernova =>
+      'Коллапсирующая звезда: бело-золотое ядро + пульсирующие лучи';
+
+  @override
+  String get skinDescStarforge =>
+      'Звёздная кузня: фиолетовый корпус с полем мерцающих звёзд';
+
+  @override
+  String get skinDescTempest => 'Буря: ветвистые молнии, обвивающие корпус';
+
+  @override
+  String get skinDescSpectrum =>
+      'Полная призматическая рефракция: орбитальные радужные осколки';
+
+  @override
+  String get skinDescHellfire =>
+      'Инферно: пламя, лижущее корпус + восходящие искры';
+
+  @override
+  String get skinDescGlacier =>
+      'Ледник: кристальный корпус + ледяные осколки + холодное свечение';
+
+  @override
+  String get skinDescPlague =>
+      'Токсичная биоугроза: стекающая кислота + булькающие пузыри';
+
+  @override
+  String get skinDescPhantom =>
+      'Квантовый призрак: расходящиеся RGB-копии со сдвигом фазы';
+
+  @override
+  String get skinDescCelestial =>
+      'Небесная аврора: ленты света, обтекающие корпус';
+
+  @override
+  String get trailDescEmber => 'Пылающие красно-оранжевые угли';
+
+  @override
+  String get trailDescFrostbite => 'Бело-голубые ледяные осколки';
+
+  @override
+  String get trailDescVenom => 'Пульсирующий кислотно-зелёный яд';
+
+  @override
+  String get trailDescShadow => 'Тёмная тень с фиолетовыми искрами';
+
+  @override
+  String get trailDescSolarflare => 'Ослепительный золото-белый протуберанец';
+
+  @override
+  String get trailDescOceanic => 'Глубокие сине-бирюзовые волны';
+
+  @override
+  String get trailDescStarfield => 'Белые звёзды на ночном следу';
+
+  @override
+  String get trailDescChromatic => 'Молниеносная RGB-аберрация';
+
+  @override
+  String get trailDescJade => 'Ярко-зелёная нефритовая полоса';
+
+  @override
+  String get trailDescDusk => 'Сумерки: оранжевый → маджента';
+
+  @override
+  String get trailDescEventhorizon =>
+      'Частицы, закручивающиеся в спираль к чёрному ядру';
+
+  @override
+  String get trailDescNovablast => 'Вспышки бело-золотого света вдоль следа';
+
+  @override
+  String get trailDescCosmicdust =>
+      'Сверкающая космическая пыль фиолетово-синего цвета';
+
+  @override
+  String get trailDescThunderbolt => 'Ветвистые электрические молнии';
+
+  @override
+  String get trailDescPrismflow => 'Текущая рефрагированная радужная лента';
+
+  @override
+  String get trailDescMagmaflow =>
+      'Расплавленная лава с раскалёнными трещинами + искры';
+
+  @override
+  String get trailDescCryostorm => 'Ледяная буря: кристальные осколки + иней';
+
+  @override
+  String get trailDescAcidspill => 'Булькающая токсичная кислота с каплями';
+
+  @override
+  String get trailDescWraith =>
+      'Призрачные расплывчатые следы, расходящиеся в стороны';
+
+  @override
+  String get trailDescStardust => 'Сверкающая многоцветная звёздная пыль';
+
+  @override
+  String get petDescSlower =>
+      'Создаёт поле замедления перед кораблём: враги внутри двигаются в рапиде.';
+
+  @override
+  String get petDescBomber =>
+      'Сбрасывает мины вокруг игрока: взрываются при контакте с врагом или по истечении срока, нанося AoE-урон.';
+
+  @override
+  String get petDescRepulsor =>
+      'Силовое поле, отталкивающее ближних врагов: урона нет, чистый защитный контроль (противоположность Black Hole).';
+
+  @override
+  String get modeDescArenaShrink =>
+      'Арена сжимается со временем: места для манёвра не остаётся. Продержись как можно дольше!';
+
+  @override
   String get appTitle => 'Geometry Fight 2';
 
   @override

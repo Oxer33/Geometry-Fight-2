@@ -112,6 +112,270 @@ abstract class AppLocalizations {
     Locale('zh'),
   ];
 
+  /// No description provided for @skinDescMagma.
+  ///
+  /// In it, this message translates to:
+  /// **'Roccia fusa incandescente — bagliore di lava'**
+  String get skinDescMagma;
+
+  /// No description provided for @skinDescFrost.
+  ///
+  /// In it, this message translates to:
+  /// **'Ghiaccio cristallino bianco-azzurro'**
+  String get skinDescFrost;
+
+  /// No description provided for @skinDescToxic.
+  ///
+  /// In it, this message translates to:
+  /// **'Verde acido radioattivo luminoso'**
+  String get skinDescToxic;
+
+  /// No description provided for @skinDescObsidian.
+  ///
+  /// In it, this message translates to:
+  /// **'Ossidiana nera con riflessi viola'**
+  String get skinDescObsidian;
+
+  /// No description provided for @skinDescSolar.
+  ///
+  /// In it, this message translates to:
+  /// **'Oro solare brillante e accecante'**
+  String get skinDescSolar;
+
+  /// No description provided for @skinDescAbyss.
+  ///
+  /// In it, this message translates to:
+  /// **'Profondità abissale cangiante blu-teal'**
+  String get skinDescAbyss;
+
+  /// No description provided for @skinDescCosmos.
+  ///
+  /// In it, this message translates to:
+  /// **'Nebulosa viola-rosa che fluisce'**
+  String get skinDescCosmos;
+
+  /// No description provided for @skinDescChrome.
+  ///
+  /// In it, this message translates to:
+  /// **'Cromo metallico riflettente'**
+  String get skinDescChrome;
+
+  /// No description provided for @skinDescEmerald.
+  ///
+  /// In it, this message translates to:
+  /// **'Smeraldo verde brillante'**
+  String get skinDescEmerald;
+
+  /// No description provided for @skinDescSunset.
+  ///
+  /// In it, this message translates to:
+  /// **'Tramonto arancio-magenta sfumato'**
+  String get skinDescSunset;
+
+  /// No description provided for @skinDescSingularity.
+  ///
+  /// In it, this message translates to:
+  /// **'Buco nero: disco d\'accrescimento orbitante + lente gravitazionale'**
+  String get skinDescSingularity;
+
+  /// No description provided for @skinDescSupernova.
+  ///
+  /// In it, this message translates to:
+  /// **'Stella che collassa: nucleo bianco-oro + raggi pulsanti'**
+  String get skinDescSupernova;
+
+  /// No description provided for @skinDescStarforge.
+  ///
+  /// In it, this message translates to:
+  /// **'Forgia stellare: scafo viola con campo di stelle scintillanti'**
+  String get skinDescStarforge;
+
+  /// No description provided for @skinDescTempest.
+  ///
+  /// In it, this message translates to:
+  /// **'Tempesta: fulmini ramificati che avvolgono lo scafo'**
+  String get skinDescTempest;
+
+  /// No description provided for @skinDescSpectrum.
+  ///
+  /// In it, this message translates to:
+  /// **'Rifrazione prismatica totale: schegge arcobaleno orbitanti'**
+  String get skinDescSpectrum;
+
+  /// No description provided for @skinDescHellfire.
+  ///
+  /// In it, this message translates to:
+  /// **'Inferno: fiamme che lambiscono lo scafo + braci ascendenti'**
+  String get skinDescHellfire;
+
+  /// No description provided for @skinDescGlacier.
+  ///
+  /// In it, this message translates to:
+  /// **'Ghiacciaio: scafo cristallino + schegge di ghiaccio + bagliore freddo'**
+  String get skinDescGlacier;
+
+  /// No description provided for @skinDescPlague.
+  ///
+  /// In it, this message translates to:
+  /// **'Biorischio tossico: acido gocciolante + bolle gorgoglianti'**
+  String get skinDescPlague;
+
+  /// No description provided for @skinDescPhantom.
+  ///
+  /// In it, this message translates to:
+  /// **'Spettro quantico: copie sfasate RGB che si separano'**
+  String get skinDescPhantom;
+
+  /// No description provided for @skinDescCelestial.
+  ///
+  /// In it, this message translates to:
+  /// **'Aurora celeste: nastri di luce che fluiscono attorno allo scafo'**
+  String get skinDescCelestial;
+
+  /// No description provided for @trailDescEmber.
+  ///
+  /// In it, this message translates to:
+  /// **'Braci ardenti rosso-arancio'**
+  String get trailDescEmber;
+
+  /// No description provided for @trailDescFrostbite.
+  ///
+  /// In it, this message translates to:
+  /// **'Schegge di gelo bianco-azzurro'**
+  String get trailDescFrostbite;
+
+  /// No description provided for @trailDescVenom.
+  ///
+  /// In it, this message translates to:
+  /// **'Veleno verde acido pulsante'**
+  String get trailDescVenom;
+
+  /// No description provided for @trailDescShadow.
+  ///
+  /// In it, this message translates to:
+  /// **'Ombra scura con scintille viola'**
+  String get trailDescShadow;
+
+  /// No description provided for @trailDescSolarflare.
+  ///
+  /// In it, this message translates to:
+  /// **'Brillamento oro-bianco accecante'**
+  String get trailDescSolarflare;
+
+  /// No description provided for @trailDescOceanic.
+  ///
+  /// In it, this message translates to:
+  /// **'Onde blu-teal profonde'**
+  String get trailDescOceanic;
+
+  /// No description provided for @trailDescStarfield.
+  ///
+  /// In it, this message translates to:
+  /// **'Stelle bianche su scia notturna'**
+  String get trailDescStarfield;
+
+  /// No description provided for @trailDescChromatic.
+  ///
+  /// In it, this message translates to:
+  /// **'Aberrazione RGB velocissima'**
+  String get trailDescChromatic;
+
+  /// No description provided for @trailDescJade.
+  ///
+  /// In it, this message translates to:
+  /// **'Giada verde brillante'**
+  String get trailDescJade;
+
+  /// No description provided for @trailDescDusk.
+  ///
+  /// In it, this message translates to:
+  /// **'Crepuscolo arancio → magenta'**
+  String get trailDescDusk;
+
+  /// No description provided for @trailDescEventhorizon.
+  ///
+  /// In it, this message translates to:
+  /// **'Particelle risucchiate in spirale verso un nucleo nero'**
+  String get trailDescEventhorizon;
+
+  /// No description provided for @trailDescNovablast.
+  ///
+  /// In it, this message translates to:
+  /// **'Esplosioni di luce bianco-oro lungo la scia'**
+  String get trailDescNovablast;
+
+  /// No description provided for @trailDescCosmicdust.
+  ///
+  /// In it, this message translates to:
+  /// **'Polvere stellare scintillante viola-blu'**
+  String get trailDescCosmicdust;
+
+  /// No description provided for @trailDescThunderbolt.
+  ///
+  /// In it, this message translates to:
+  /// **'Fulmini ramificati elettrici che saltano'**
+  String get trailDescThunderbolt;
+
+  /// No description provided for @trailDescPrismflow.
+  ///
+  /// In it, this message translates to:
+  /// **'Nastro arcobaleno rifratto che scorre'**
+  String get trailDescPrismflow;
+
+  /// No description provided for @trailDescMagmaflow.
+  ///
+  /// In it, this message translates to:
+  /// **'Lava fusa con crepe incandescenti + braci'**
+  String get trailDescMagmaflow;
+
+  /// No description provided for @trailDescCryostorm.
+  ///
+  /// In it, this message translates to:
+  /// **'Bufera di ghiaccio: schegge cristalline + gelo'**
+  String get trailDescCryostorm;
+
+  /// No description provided for @trailDescAcidspill.
+  ///
+  /// In it, this message translates to:
+  /// **'Acido tossico gorgogliante con gocce'**
+  String get trailDescAcidspill;
+
+  /// No description provided for @trailDescWraith.
+  ///
+  /// In it, this message translates to:
+  /// **'Scie spettrali sfumate che si separano'**
+  String get trailDescWraith;
+
+  /// No description provided for @trailDescStardust.
+  ///
+  /// In it, this message translates to:
+  /// **'Polvere di stelle scintillante multicolore'**
+  String get trailDescStardust;
+
+  /// No description provided for @petDescSlower.
+  ///
+  /// In it, this message translates to:
+  /// **'Crea un campo di rallentamento davanti alla navicella: i nemici che entrano nel campo si muovono al rallentatore.'**
+  String get petDescSlower;
+
+  /// No description provided for @petDescBomber.
+  ///
+  /// In it, this message translates to:
+  /// **'Sgancia mine esplosive attorno al player: detonano al contatto coi nemici o a fine vita, infliggendo danno ad area.'**
+  String get petDescBomber;
+
+  /// No description provided for @petDescRepulsor.
+  ///
+  /// In it, this message translates to:
+  /// **'Campo di forza che respinge i nemici vicini al player: nessun danno, puro controllo difensivo (opposto del Black Hole).'**
+  String get petDescRepulsor;
+
+  /// No description provided for @modeDescArenaShrink.
+  ///
+  /// In it, this message translates to:
+  /// **'L\'arena si restringe nel tempo: lo spazio per schivare svanisce. Resisti il più a lungo possibile!'**
+  String get modeDescArenaShrink;
+
   /// Application title shown in OS task switcher
   ///
   /// In it, this message translates to:

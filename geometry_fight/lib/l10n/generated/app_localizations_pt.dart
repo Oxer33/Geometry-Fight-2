@@ -9,6 +9,157 @@ class AppLocalizationsPt extends AppLocalizations {
   AppLocalizationsPt([String locale = 'pt']) : super(locale);
 
   @override
+  String get skinDescMagma => 'Rocha derretida incandescente — brilho de lava';
+
+  @override
+  String get skinDescFrost => 'Gelo cristalino branco-azulado';
+
+  @override
+  String get skinDescToxic => 'Verde ácido radioativo luminoso';
+
+  @override
+  String get skinDescObsidian => 'Obsidiana negra com reflexos violeta';
+
+  @override
+  String get skinDescSolar => 'Ouro solar brilhante e ofuscante';
+
+  @override
+  String get skinDescAbyss => 'Profundeza abissal iridescente azul-teal';
+
+  @override
+  String get skinDescCosmos => 'Nebulosa violeta-rosa que flui';
+
+  @override
+  String get skinDescChrome => 'Cromo metálico refletivo';
+
+  @override
+  String get skinDescEmerald => 'Esmeralda verde brilhante';
+
+  @override
+  String get skinDescSunset => 'Pôr do sol laranja-magenta degradê';
+
+  @override
+  String get skinDescSingularity =>
+      'Black Hole: disco de acreção orbital + lente gravitacional';
+
+  @override
+  String get skinDescSupernova =>
+      'Estrela em colapso: núcleo branco-ouro + raios pulsantes';
+
+  @override
+  String get skinDescStarforge =>
+      'Forja estelar: casco violeta com campo de estrelas cintilantes';
+
+  @override
+  String get skinDescTempest =>
+      'Tempestade: relâmpagos ramificados envolvendo o casco';
+
+  @override
+  String get skinDescSpectrum =>
+      'Refração prismática total: fragmentos arco-íris orbitando';
+
+  @override
+  String get skinDescHellfire =>
+      'Inferno: chamas lambendo o casco + brasas ascendentes';
+
+  @override
+  String get skinDescGlacier =>
+      'Glaciar: casco cristalino + fragmentos de gelo + brilho gelado';
+
+  @override
+  String get skinDescPlague =>
+      'Biorrisco tóxico: ácido pingando + bolhas borbulhantes';
+
+  @override
+  String get skinDescPhantom =>
+      'Espectro quântico: cópias defasadas RGB que se separam';
+
+  @override
+  String get skinDescCelestial =>
+      'Aurora celestial: fitas de luz fluindo ao redor do casco';
+
+  @override
+  String get trailDescEmber => 'Brasas ardentes vermelho-laranja';
+
+  @override
+  String get trailDescFrostbite => 'Fragmentos de gelo branco-azulado';
+
+  @override
+  String get trailDescVenom => 'Veneno verde ácido pulsante';
+
+  @override
+  String get trailDescShadow => 'Sombra escura com faíscas violeta';
+
+  @override
+  String get trailDescSolarflare => 'Fulgor ouro-branco ofuscante';
+
+  @override
+  String get trailDescOceanic => 'Ondas azul-teal profundas';
+
+  @override
+  String get trailDescStarfield => 'Estrelas brancas em rastro noturno';
+
+  @override
+  String get trailDescChromatic => 'Aberração RGB ultrarrápida';
+
+  @override
+  String get trailDescJade => 'Jade verde brilhante';
+
+  @override
+  String get trailDescDusk => 'Crepúsculo laranja → magenta';
+
+  @override
+  String get trailDescEventhorizon =>
+      'Partículas sugadas em espiral para um núcleo negro';
+
+  @override
+  String get trailDescNovablast =>
+      'Explosões de luz branco-ouro ao longo do rastro';
+
+  @override
+  String get trailDescCosmicdust => 'Poeira estelar cintilante violeta-azul';
+
+  @override
+  String get trailDescThunderbolt =>
+      'Relâmpagos ramificados elétricos saltando';
+
+  @override
+  String get trailDescPrismflow => 'Fita arco-íris refratada fluindo';
+
+  @override
+  String get trailDescMagmaflow =>
+      'Lava derretida com fissuras incandescentes + brasas';
+
+  @override
+  String get trailDescCryostorm =>
+      'Nevasca de gelo: fragmentos cristalinos + gelo';
+
+  @override
+  String get trailDescAcidspill => 'Ácido tóxico borbulhante com gotas';
+
+  @override
+  String get trailDescWraith => 'Rastros espectrais esfumaçados que se separam';
+
+  @override
+  String get trailDescStardust => 'Poeira estelar cintilante multicolorida';
+
+  @override
+  String get petDescSlower =>
+      'Cria um campo de desaceleração à frente da nave: inimigos que entram no campo se movem em câmera lenta.';
+
+  @override
+  String get petDescBomber =>
+      'Lança minas explosivas ao redor do player: detonam ao contato com inimigos ou ao expirar, causando dano AoE.';
+
+  @override
+  String get petDescRepulsor =>
+      'Campo de força que repele inimigos próximos do player: nenhum dano, puro controle defensivo (oposto do Black Hole).';
+
+  @override
+  String get modeDescArenaShrink =>
+      'A arena encolhe com o tempo: o espaço para desviar some. Sobreviva o máximo possível!';
+
+  @override
   String get appTitle => 'Geometry Fight 2';
 
   @override

@@ -9,6 +9,155 @@ class AppLocalizationsDe extends AppLocalizations {
   AppLocalizationsDe([String locale = 'de']) : super(locale);
 
   @override
+  String get skinDescMagma => 'Glühend geschmolzenes Gestein — Lavaglut';
+
+  @override
+  String get skinDescFrost => 'Kristallklares Weiß-Blau-Eis';
+
+  @override
+  String get skinDescToxic => 'Leuchtendes radioaktives Säuregrün';
+
+  @override
+  String get skinDescObsidian => 'Schwarzer Obsidian mit violetten Reflexen';
+
+  @override
+  String get skinDescSolar => 'Gleißend strahlendes Sonnengold';
+
+  @override
+  String get skinDescAbyss => 'Schimmernde Abgrundtiefe in Blau-Teal';
+
+  @override
+  String get skinDescCosmos => 'Fließende violett-rosa Nebula';
+
+  @override
+  String get skinDescChrome => 'Reflektierendes Metallchrom';
+
+  @override
+  String get skinDescEmerald => 'Leuchtendes Smaragdgrün';
+
+  @override
+  String get skinDescSunset => 'Sanft verlaufendes Orange-Magenta-Abendrot';
+
+  @override
+  String get skinDescSingularity =>
+      'Black Hole: umlaufende Akkretionsscheibe + Gravitationslinse';
+
+  @override
+  String get skinDescSupernova =>
+      'Kollabierende Sterne: Weiß-Gold-Kern + pulsierende Strahlen';
+
+  @override
+  String get skinDescStarforge =>
+      'Sternenesse: violetter Rumpf mit funkelndem Sternenfeld';
+
+  @override
+  String get skinDescTempest => 'Sturm: verzweigte Blitze umhüllen den Rumpf';
+
+  @override
+  String get skinDescSpectrum =>
+      'Totale prismatische Refraktion: orbitierende Regenbogensplitter';
+
+  @override
+  String get skinDescHellfire =>
+      'Inferno: Flammen lecken am Rumpf + aufsteigende Glut';
+
+  @override
+  String get skinDescGlacier =>
+      'Gletscher: kristalliner Rumpf + Eissplitter + kalter Schimmer';
+
+  @override
+  String get skinDescPlague =>
+      'Toxisches Biohazard: tropfende Säure + blubbernde Blasen';
+
+  @override
+  String get skinDescPhantom =>
+      'Quantenspektrum: versetzte RGB-Kopien trennen sich auf';
+
+  @override
+  String get skinDescCelestial =>
+      'Himmlische Aurora: Lichtbänder fließen um den Rumpf';
+
+  @override
+  String get trailDescEmber => 'Glühende Rot-Orange-Glutpartikel';
+
+  @override
+  String get trailDescFrostbite => 'Weiß-Blaue Frostsplitter';
+
+  @override
+  String get trailDescVenom => 'Pulsierendes Säuregrün-Gift';
+
+  @override
+  String get trailDescShadow => 'Dunkler Schatten mit violetten Funken';
+
+  @override
+  String get trailDescSolarflare => 'Gleißendes Gold-Weiß-Aufflackern';
+
+  @override
+  String get trailDescOceanic => 'Tiefe Blau-Teal-Wellen';
+
+  @override
+  String get trailDescStarfield => 'Weiße Sterne auf Nachtspur';
+
+  @override
+  String get trailDescChromatic => 'Blitzschnelle RGB-Aberration';
+
+  @override
+  String get trailDescJade => 'Leuchtendes Jadegrün';
+
+  @override
+  String get trailDescDusk => 'Dämmerung: Orange → Magenta';
+
+  @override
+  String get trailDescEventhorizon =>
+      'Partikel spiralen in einen schwarzen Kern gesogen';
+
+  @override
+  String get trailDescNovablast =>
+      'Weiß-Gold-Lichtexplosionen entlang der Spur';
+
+  @override
+  String get trailDescCosmicdust => 'Funkelnder violett-blauer Sternenstaub';
+
+  @override
+  String get trailDescThunderbolt =>
+      'Verzweigte elektrische Blitze springen über';
+
+  @override
+  String get trailDescPrismflow => 'Fließendes gebrochenes Regenbogenband';
+
+  @override
+  String get trailDescMagmaflow =>
+      'Geschmolzene Lava mit glühenden Rissen + Glut';
+
+  @override
+  String get trailDescCryostorm => 'Eissturm: Kristallsplitter + Frost';
+
+  @override
+  String get trailDescAcidspill => 'Blubbernde Giftsäure mit Tropfen';
+
+  @override
+  String get trailDescWraith => 'Verblassende Geisterschweife trennen sich auf';
+
+  @override
+  String get trailDescStardust => 'Funkelnder mehrfarbiger Sternenstaub';
+
+  @override
+  String get petDescSlower =>
+      'Erzeugt ein Verlangsamungsfeld vor dem Schiff: Gegner im Feld bewegen sich in Zeitlupe.';
+
+  @override
+  String get petDescBomber =>
+      'Wirft Sprengminen um den Spieler ab: detonieren bei Gegnerkontakt oder nach Ablauf, verursachen AoE-Schaden.';
+
+  @override
+  String get petDescRepulsor =>
+      'Kraftfeld stößt nahe Gegner vom Spieler weg: kein Schaden, reines Defensiv-Control (Gegenteil des Black Hole).';
+
+  @override
+  String get modeDescArenaShrink =>
+      'Die Arena schrumpft mit der Zeit: der Ausweichraum verschwindet. Überlebe so lange wie möglich!';
+
+  @override
   String get appTitle => 'Geometry Fight 2';
 
   @override

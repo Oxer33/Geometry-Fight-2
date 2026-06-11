@@ -9,6 +9,138 @@ class AppLocalizationsZh extends AppLocalizations {
   AppLocalizationsZh([String locale = 'zh']) : super(locale);
 
   @override
+  String get skinDescMagma => '炽热熔岩岩浆 — 熔岩余辉';
+
+  @override
+  String get skinDescFrost => '白蓝冰晶冰霜';
+
+  @override
+  String get skinDescToxic => '荧光放射性酸绿';
+
+  @override
+  String get skinDescObsidian => '黑色黑曜石带紫色反光';
+
+  @override
+  String get skinDescSolar => '耀眼灼目的太阳金';
+
+  @override
+  String get skinDescAbyss => '蓝绿幻彩深渊';
+
+  @override
+  String get skinDescCosmos => '紫粉流动星云';
+
+  @override
+  String get skinDescChrome => '高反射金属铬';
+
+  @override
+  String get skinDescEmerald => '明亮翠绿祖母绿';
+
+  @override
+  String get skinDescSunset => '橙红渐变日落';
+
+  @override
+  String get skinDescSingularity => 'Black Hole：环绕吸积盘 + 引力透镜';
+
+  @override
+  String get skinDescSupernova => '星体坍缩：白金核心 + 脉冲射线';
+
+  @override
+  String get skinDescStarforge => '星锻炉：紫色舰体伴闪烁星野';
+
+  @override
+  String get skinDescTempest => '风暴：分叉闪电缠绕舰身';
+
+  @override
+  String get skinDescSpectrum => '全棱镜折射：彩虹碎片环绕轨行';
+
+  @override
+  String get skinDescHellfire => '地狱火：烈焰舔舐舰身 + 飞升余烬';
+
+  @override
+  String get skinDescGlacier => '冰川：晶体舰壳 + 冰刺碎片 + 冰冷光晕';
+
+  @override
+  String get skinDescPlague => '生化危机：酸液滴落 + 气泡咕嘟';
+
+  @override
+  String get skinDescPhantom => '量子幽灵：RGB 错位残影分裂';
+
+  @override
+  String get skinDescCelestial => '天穹极光：光带流绕舰身';
+
+  @override
+  String get trailDescEmber => '红橙燃烧余烬';
+
+  @override
+  String get trailDescFrostbite => '白蓝冰霜碎片';
+
+  @override
+  String get trailDescVenom => '脉动酸绿毒液';
+
+  @override
+  String get trailDescShadow => '暗影伴紫色火花';
+
+  @override
+  String get trailDescSolarflare => '耀目金白耀斑';
+
+  @override
+  String get trailDescOceanic => '深邃蓝绿海浪';
+
+  @override
+  String get trailDescStarfield => '夜空白星轨迹';
+
+  @override
+  String get trailDescChromatic => '超速 RGB 色差';
+
+  @override
+  String get trailDescJade => '明亮翠绿玉石';
+
+  @override
+  String get trailDescDusk => '暮色橙 → 品红';
+
+  @override
+  String get trailDescEventhorizon => '粒子螺旋吸入黑色核心';
+
+  @override
+  String get trailDescNovablast => '沿轨迹迸发白金光爆';
+
+  @override
+  String get trailDescCosmicdust => '紫蓝闪烁星尘';
+
+  @override
+  String get trailDescThunderbolt => '跳跃分叉电气闪电';
+
+  @override
+  String get trailDescPrismflow => '流淌的折射彩虹光带';
+
+  @override
+  String get trailDescMagmaflow => '熔岩流带炽热裂缝 + 余烬';
+
+  @override
+  String get trailDescCryostorm => '冰暴：晶体碎片 + 冰霜';
+
+  @override
+  String get trailDescAcidspill => '咕嘟冒泡毒酸液滴';
+
+  @override
+  String get trailDescWraith => '渐隐分裂的幽灵光迹';
+
+  @override
+  String get trailDescStardust => '多彩闪烁星尘';
+
+  @override
+  String get petDescSlower => '在舰前方生成减速力场：进入的敌人移速大幅降低。';
+
+  @override
+  String get petDescBomber => '在玩家周围投放地雷：接触敌人或生命结束时引爆，造成 AoE 伤害。';
+
+  @override
+  String get petDescRepulsor => '力场推开玩家周围的敌人：无伤害，纯防御控场（Black Hole 的对立面）。';
+
+  @override
+  String get modeDescArenaShrink => '竞技场随时间缩小：闪避空间逐渐消失。坚持得越久越好！';
+
+  @override
   String get appTitle => 'Geometry Fight 2';
 
   @override

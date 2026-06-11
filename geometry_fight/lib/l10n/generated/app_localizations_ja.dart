@@ -9,6 +9,139 @@ class AppLocalizationsJa extends AppLocalizations {
   AppLocalizationsJa([String locale = 'ja']) : super(locale);
 
   @override
+  String get skinDescMagma => '灼熱の溶岩岩 — マグマの輝き';
+
+  @override
+  String get skinDescFrost => '白青の透き通る氷晶';
+
+  @override
+  String get skinDescToxic => '放射性の眩しい酸グリーン';
+
+  @override
+  String get skinDescObsidian => '紫のリフレクション付き漆黒の黒曜石';
+
+  @override
+  String get skinDescSolar => '眩しいほど輝くソーラーゴールド';
+
+  @override
+  String get skinDescAbyss => '青〜ティールに揺れる深淵の深み';
+
+  @override
+  String get skinDescCosmos => '流れる紫ピンクのネビュラ';
+
+  @override
+  String get skinDescChrome => '反射する金属クロム';
+
+  @override
+  String get skinDescEmerald => '鮮やかな輝きを放つエメラルドグリーン';
+
+  @override
+  String get skinDescSunset => 'オレンジからマゼンタへのグラデーションサンセット';
+
+  @override
+  String get skinDescSingularity => 'Black Hole: 軌道する降着円盤＋重力レンズ';
+
+  @override
+  String get skinDescSupernova => '崩壊する星: 白金コア＋脈動するビーム';
+
+  @override
+  String get skinDescStarforge => '星の鍛冶場: 輝く星々のフィールドを持つ紫スカーフ';
+
+  @override
+  String get skinDescTempest => '嵐: 船体を巻く分岐雷撃';
+
+  @override
+  String get skinDescSpectrum => '完全プリズム屈折: 軌道するレインボーシャード';
+
+  @override
+  String get skinDescHellfire => '地獄の業火: 船体を舐める炎＋舞い上がる火の粉';
+
+  @override
+  String get skinDescGlacier => '氷河: クリスタル船体＋氷のシャード＋冷たい輝き';
+
+  @override
+  String get skinDescPlague => '毒性バイオハザード: 滴る酸＋泡立つバブル';
+
+  @override
+  String get skinDescPhantom => '量子スペクター: 分離するRGB位相ずれコピー';
+
+  @override
+  String get skinDescCelestial => '天空のオーロラ: 船体を流れる光のリボン';
+
+  @override
+  String get trailDescEmber => '赤オレンジの燃える火の粉';
+
+  @override
+  String get trailDescFrostbite => '白青の凍結シャード';
+
+  @override
+  String get trailDescVenom => '脈打つ酸グリーンのベノム';
+
+  @override
+  String get trailDescShadow => '紫のスパーク付き暗闇の影';
+
+  @override
+  String get trailDescSolarflare => '目を射る金白のソーラーフレア';
+
+  @override
+  String get trailDescOceanic => '深い青ティールの波';
+
+  @override
+  String get trailDescStarfield => '夜のトレイルに輝く白い星々';
+
+  @override
+  String get trailDescChromatic => '超高速RGB収差';
+
+  @override
+  String get trailDescJade => '鮮烈に輝くジェイドグリーン';
+
+  @override
+  String get trailDescDusk => 'オレンジ → マゼンタのたそがれ';
+
+  @override
+  String get trailDescEventhorizon => '暗黒コアに向かって螺旋状に引き込まれるパーティクル';
+
+  @override
+  String get trailDescNovablast => 'トレイルに沿って爆発する白金の光';
+
+  @override
+  String get trailDescCosmicdust => 'きらめく紫青の星間塵';
+
+  @override
+  String get trailDescThunderbolt => '跳び回る分岐電撃';
+
+  @override
+  String get trailDescPrismflow => '流れる屈折レインボーリボン';
+
+  @override
+  String get trailDescMagmaflow => '白熱クラック＋火の粉付き溶融ラバ';
+
+  @override
+  String get trailDescCryostorm => '氷晶シャード＋凍気のアイスストーム';
+
+  @override
+  String get trailDescAcidspill => '滴る液滴付き泡立つ毒酸';
+
+  @override
+  String get trailDescWraith => '分離する霞んだ霊体の尾';
+
+  @override
+  String get trailDescStardust => 'きらめくマルチカラーの星の粉塵';
+
+  @override
+  String get petDescSlower => '船首前方に減速フィールドを展開: フィールドに入った敵がスローモーで移動。';
+
+  @override
+  String get petDescBomber => 'プレイヤー周囲に爆発機雷を設置: 敵に接触するか寿命終了時にAoEダメージ爆発。';
+
+  @override
+  String get petDescRepulsor =>
+      'プレイヤー近くの敵を弾く力場: ダメージなし、純粋な防衛コントロール（Black Hole の逆）。';
+
+  @override
+  String get modeDescArenaShrink => 'アリーナは時間とともに縮小し、回避スペースが消えていく。できるだけ長く生き延びろ！';
+
+  @override
   String get appTitle => 'Geometry Fight 2';
 
   @override

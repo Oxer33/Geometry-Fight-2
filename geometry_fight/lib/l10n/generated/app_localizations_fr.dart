@@ -9,6 +9,160 @@ class AppLocalizationsFr extends AppLocalizations {
   AppLocalizationsFr([String locale = 'fr']) : super(locale);
 
   @override
+  String get skinDescMagma => 'Roche en fusion incandescente — lueur de lave';
+
+  @override
+  String get skinDescFrost => 'Glace cristalline blanc-azur';
+
+  @override
+  String get skinDescToxic => 'Vert acide radioactif lumineux';
+
+  @override
+  String get skinDescObsidian => 'Obsidienne noire aux reflets violets';
+
+  @override
+  String get skinDescSolar => 'Or solaire brillant et aveuglant';
+
+  @override
+  String get skinDescAbyss => 'Profondeur abyssale chatoyante bleu-teal';
+
+  @override
+  String get skinDescCosmos => 'Nébuleuse violet-rose en mouvement';
+
+  @override
+  String get skinDescChrome => 'Chrome métallique réfléchissant';
+
+  @override
+  String get skinDescEmerald => 'Émeraude vert éclatant';
+
+  @override
+  String get skinDescSunset => 'Coucher de soleil orange-magenta dégradé';
+
+  @override
+  String get skinDescSingularity =>
+      'Black Hole : disque d\'accrétion orbital + lentille gravitationnelle';
+
+  @override
+  String get skinDescSupernova =>
+      'Étoile en collapse : noyau blanc-or + rayons pulsants';
+
+  @override
+  String get skinDescStarforge =>
+      'Forge stellaire : coque violette avec champ d\'étoiles scintillantes';
+
+  @override
+  String get skinDescTempest =>
+      'Tempête : éclairs ramifiés enveloppant la coque';
+
+  @override
+  String get skinDescSpectrum =>
+      'Réfraction prismatique totale : éclats arc-en-ciel en orbite';
+
+  @override
+  String get skinDescHellfire =>
+      'Enfer : flammes léchant la coque + braises ascendantes';
+
+  @override
+  String get skinDescGlacier =>
+      'Glacier : coque cristalline + éclats de glace + lueur froide';
+
+  @override
+  String get skinDescPlague =>
+      'Biorisque toxique : acide qui dégouline + bulles gargouillantes';
+
+  @override
+  String get skinDescPhantom =>
+      'Spectre quantique : copies RGB déphasées qui se séparent';
+
+  @override
+  String get skinDescCelestial =>
+      'Aurore céleste : rubans de lumière fluant autour de la coque';
+
+  @override
+  String get trailDescEmber => 'Braises ardentes rouge-orange';
+
+  @override
+  String get trailDescFrostbite => 'Éclats de givre blanc-azur';
+
+  @override
+  String get trailDescVenom => 'Venin vert acide pulsant';
+
+  @override
+  String get trailDescShadow => 'Ombre sombre aux étincelles violettes';
+
+  @override
+  String get trailDescSolarflare => 'Éruption or-blanc aveuglante';
+
+  @override
+  String get trailDescOceanic => 'Vagues bleu-teal profondes';
+
+  @override
+  String get trailDescStarfield => 'Étoiles blanches sur sillage nocturne';
+
+  @override
+  String get trailDescChromatic => 'Aberration RGB ultra-rapide';
+
+  @override
+  String get trailDescJade => 'Jade vert éclatant';
+
+  @override
+  String get trailDescDusk => 'Crépuscule orange → magenta';
+
+  @override
+  String get trailDescEventhorizon =>
+      'Particules aspirées en spirale vers un noyau noir';
+
+  @override
+  String get trailDescNovablast =>
+      'Explosions de lumière blanc-or le long du sillage';
+
+  @override
+  String get trailDescCosmicdust =>
+      'Poussière stellaire scintillante violet-bleu';
+
+  @override
+  String get trailDescThunderbolt =>
+      'Éclairs ramifiés électriques qui jaillissent';
+
+  @override
+  String get trailDescPrismflow => 'Ruban arc-en-ciel réfracté en mouvement';
+
+  @override
+  String get trailDescMagmaflow =>
+      'Lave en fusion avec fissures incandescentes + braises';
+
+  @override
+  String get trailDescCryostorm =>
+      'Blizzard de glace : éclats cristallins + givre';
+
+  @override
+  String get trailDescAcidspill =>
+      'Acide toxique gargouillant avec gouttelettes';
+
+  @override
+  String get trailDescWraith => 'Sillages spectraux estompés qui se séparent';
+
+  @override
+  String get trailDescStardust =>
+      'Poussière d\'étoiles scintillante multicolore';
+
+  @override
+  String get petDescSlower =>
+      'Crée un champ de ralentissement devant le vaisseau : les ennemis entrant dans le champ se déplacent au ralenti.';
+
+  @override
+  String get petDescBomber =>
+      'Largue des mines explosives autour du joueur : détonent au contact des ennemis ou en fin de vie, infligeant des dégâts AoE.';
+
+  @override
+  String get petDescRepulsor =>
+      'Champ de force repoussant les ennemis proches du joueur : aucun dégât, pur contrôle défensif (opposé du Black Hole).';
+
+  @override
+  String get modeDescArenaShrink =>
+      'L\'arène rétrécit avec le temps : l\'espace pour esquiver disparaît. Survivez le plus longtemps possible !';
+
+  @override
   String get appTitle => 'Geometry Fight 2';
 
   @override

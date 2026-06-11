@@ -9,6 +9,154 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
+  String get skinDescMagma => 'Glowing molten rock — lava-hot radiance';
+
+  @override
+  String get skinDescFrost => 'Crystalline white-blue ice';
+
+  @override
+  String get skinDescToxic => 'Radioactive luminous acid green';
+
+  @override
+  String get skinDescObsidian => 'Black obsidian with violet reflections';
+
+  @override
+  String get skinDescSolar => 'Dazzling brilliant solar gold';
+
+  @override
+  String get skinDescAbyss => 'Blue-teal iridescent abyssal depths';
+
+  @override
+  String get skinDescCosmos => 'Flowing violet-pink nebula';
+
+  @override
+  String get skinDescChrome => 'Reflective metallic chrome';
+
+  @override
+  String get skinDescEmerald => 'Brilliant bright-green emerald';
+
+  @override
+  String get skinDescSunset => 'Gradient orange-to-magenta sunset';
+
+  @override
+  String get skinDescSingularity =>
+      'Black Hole: orbiting accretion disk + gravitational lens';
+
+  @override
+  String get skinDescSupernova =>
+      'Collapsing star: white-gold core + pulsing rays';
+
+  @override
+  String get skinDescStarforge =>
+      'Star Forge: violet hull with a field of glittering stars';
+
+  @override
+  String get skinDescTempest =>
+      'Storm: branching lightning bolts wrapping the hull';
+
+  @override
+  String get skinDescSpectrum =>
+      'Total prismatic refraction: orbiting rainbow shards';
+
+  @override
+  String get skinDescHellfire =>
+      'Inferno: flames licking the hull + rising embers';
+
+  @override
+  String get skinDescGlacier =>
+      'Glacier: crystalline hull + ice shards + cold glow';
+
+  @override
+  String get skinDescPlague =>
+      'Toxic biohazard: dripping acid + bubbling pustules';
+
+  @override
+  String get skinDescPhantom =>
+      'Quantum specter: RGB phase-copies splitting apart';
+
+  @override
+  String get skinDescCelestial =>
+      'Celestial aurora: ribbons of light flowing around the hull';
+
+  @override
+  String get trailDescEmber => 'Burning red-orange embers';
+
+  @override
+  String get trailDescFrostbite => 'White-blue frost shards';
+
+  @override
+  String get trailDescVenom => 'Pulsing acid-green venom';
+
+  @override
+  String get trailDescShadow => 'Dark shadow with violet sparks';
+
+  @override
+  String get trailDescSolarflare => 'Blinding gold-white solar flare';
+
+  @override
+  String get trailDescOceanic => 'Deep blue-teal ocean waves';
+
+  @override
+  String get trailDescStarfield => 'White stars on a night-sky trail';
+
+  @override
+  String get trailDescChromatic => 'Ultra-fast RGB aberration';
+
+  @override
+  String get trailDescJade => 'Brilliant bright-green jade';
+
+  @override
+  String get trailDescDusk => 'Dusk orange → magenta';
+
+  @override
+  String get trailDescEventhorizon => 'Particles spiralling into a dark core';
+
+  @override
+  String get trailDescNovablast =>
+      'White-gold light explosions along the trail';
+
+  @override
+  String get trailDescCosmicdust => 'Glittering violet-blue stardust';
+
+  @override
+  String get trailDescThunderbolt =>
+      'Branching electric lightning bolts leaping';
+
+  @override
+  String get trailDescPrismflow => 'Flowing refracted rainbow ribbon';
+
+  @override
+  String get trailDescMagmaflow => 'Molten lava with glowing cracks + embers';
+
+  @override
+  String get trailDescCryostorm => 'Ice storm: crystalline shards + frost';
+
+  @override
+  String get trailDescAcidspill => 'Bubbling toxic acid with dripping drops';
+
+  @override
+  String get trailDescWraith => 'Fading spectral trails splitting apart';
+
+  @override
+  String get trailDescStardust => 'Multicolour glittering stardust';
+
+  @override
+  String get petDescSlower =>
+      'Creates a slowdown field in front of the ship: enemies that enter move in slow motion.';
+
+  @override
+  String get petDescBomber =>
+      'Drops explosive mines around the player: detonate on enemy contact or at end of life, dealing AoE damage.';
+
+  @override
+  String get petDescRepulsor =>
+      'Force field that pushes nearby enemies away from the player: no damage, pure defensive control (opposite of Black Hole).';
+
+  @override
+  String get modeDescArenaShrink =>
+      'The arena shrinks over time: the space to dodge vanishes. Survive as long as you can!';
+
+  @override
   String get appTitle => 'Geometry Fight 2';
 
   @override
