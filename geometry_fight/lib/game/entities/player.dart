@@ -1154,6 +1154,9 @@ class Player extends PositionComponent
     // === 7. WING-TIP LIGHTS (luci sulle punte delle ali) ===
     _renderWingLights(canvas, cx, cy);
 
+    // === 7b. FX SKIN SPETTACOLARI (iter 23) — solo skin attiva, no-op altre ===
+    _renderSkinFx(canvas, cx, cy);
+
     // === 8. SCUDO FORCE FIELD ===
     if (hasShield) {
       _renderShield(canvas, cx, cy);
@@ -1367,6 +1370,56 @@ class Player extends PositionComponent
           _crystalCachedSkin = 'sunset';
         }
         return _crystalColorCache!;
+      // ─── SKIN SPETTACOLARI (iter 23 — effetti custom) ──────────────────
+      case 'singularity':
+        return const Color(0xFF9B30FF);
+      case 'supernova':
+        final p = math.sin(_energyPhase * 3) * 0.5 + 0.5;
+        return Color.lerp(const Color(0xFFFFFFFF), const Color(0xFFFFAA00), p)!;
+      case 'starforge':
+        return const Color(0xFF7755FF);
+      case 'tempest':
+        return const Color(0xFF66CCFF);
+      case 'spectrum':
+        final step = ((_energyPhase * 50) / 5).floor() % 72;
+        if (_crystalCachedSkin != 'spectrum') _crystalColorCache = null;
+        if (_crystalHueStep != step || _crystalColorCache == null) {
+          _crystalHueStep = step;
+          _crystalColorCache = HSVColor.fromAHSV(
+            1,
+            step * 5.0,
+            0.85,
+            1,
+          ).toColor();
+          _crystalCachedSkin = 'spectrum';
+        }
+        return _crystalColorCache!;
+      case 'hellfire':
+        final p = math.sin(_energyPhase * 5) * 0.5 + 0.5;
+        return Color.lerp(const Color(0xFFFF2200), const Color(0xFFFFAA00), p)!;
+      case 'glacier':
+        return const Color(0xFF88DDFF);
+      case 'plague':
+        return const Color(0xFF88FF22);
+      case 'phantom':
+        final ph = (_energyPhase * 6).floor() % 3;
+        if (ph == 0) return const Color(0xFFFF44AA);
+        if (ph == 1) return const Color(0xFF44AAFF);
+        return const Color(0xFFAA44FF);
+      case 'celestial':
+        final step = ((_energyPhase * 22) / 5).floor() % 96;
+        if (_crystalCachedSkin != 'celestial') _crystalColorCache = null;
+        if (_crystalHueStep != step || _crystalColorCache == null) {
+          _crystalHueStep = step;
+          _crystalColorCache = HSVColor.fromAHSV(
+            1,
+            (150 + math.sin(step * 0.13) * 90 + 360) % 360,
+            0.6,
+            1,
+          ).toColor();
+          _crystalCachedSkin = 'celestial';
+        }
+        return _crystalColorCache!;
       case 'classic':
       default:
         return NeonColors.cyan;
@@ -1485,6 +1538,49 @@ class Player extends PositionComponent
       case 'dusk':
         final t = (index / _maxTrailLength).clamp(0.0, 1.0);
         return Color.lerp(const Color(0xFFFF8844), const Color(0xFFFF2299), t)!;
+      // ─── TRAIL SPETTACOLARI (iter 23 — effetti custom) ─────────────────
+      case 'eventhorizon':
+        // Spirale risucchiata: viola brillante → quasi nero verso la coda.
+        final t = (index / _maxTrailLength).clamp(0.0, 1.0);
+        return Color.lerp(const Color(0xFFCC66FF), const Color(0xFF1A0033), t)!;
+      case 'novablast':
+        // Esplosioni bianco↔oro pulsanti.
+        final p = math.sin(_energyPhase * 6 + index * 0.5) * 0.5 + 0.5;
+        return Color.lerp(const Color(0xFFFFDD55), const Color(0xFFFFFFFF), p)!;
+      case 'cosmicdust':
+        // Polvere stellare: banda viola-blu.
+        final h = (250 + index * 4) % 360;
+        return HSVColor.fromAHSV(1, h.toDouble(), 0.7, 1).toColor();
+      case 'thunderbolt':
+        // Flicker elettrico cyan/bianco.
+        return index % 3 == 0
+            ? const Color(0xFFFFFFFF)
+            : const Color(0xFF66DDFF);
+      case 'prismflow':
+        // Spettro completo velocissimo.
+        final h = ((_energyPhase * 100) + index * 22) % 360;
+        return HSVColor.fromAHSV(1, h, 0.95, 1).toColor();
+      case 'magmaflow':
+        // Lava: giallo incandescente → rosso scuro.
+        final t = (index / _maxTrailLength).clamp(0.0, 1.0);
+        return Color.lerp(const Color(0xFFFFEE00), const Color(0xFF992200), t)!;
+      case 'cryostorm':
+        // Bufera di ghiaccio: azzurro + schegge bianche.
+        return index % 4 == 0
+            ? const Color(0xFFFFFFFF)
+            : const Color(0xFF88DDFF);
+      case 'acidspill':
+        // Acido gorgogliante verde pulsante.
+        final p = math.sin(_energyPhase * 5 + index * 0.4) * 0.5 + 0.5;
+        return Color.lerp(const Color(0xFF66CC00), const Color(0xFFCCFF33), p)!;
+      case 'wraith':
+        // Spettro viola che svanisce nel buio.
+        final t = (index / _maxTrailLength).clamp(0.0, 1.0);
+        return Color.lerp(const Color(0xFFCC99FF), const Color(0xFF330055), t)!;
+      case 'stardust':
+        // Polvere di stelle multicolore scintillante.
+        final h = ((_energyPhase * 70) + index * 45) % 360;
+        return HSVColor.fromAHSV(1, h, 0.85, 1).toColor();
       case 'normal':
       default:
         return NeonColors.cyan;
@@ -1762,6 +1858,99 @@ class Player extends PositionComponent
   /// Glitch overlay: 3 copie ship offset RGB. Mirror di `_drawGlitchShip`
   /// shop preview.
   static final Paint _glitchPaint = Paint();
+
+  // FX paints dedicati per le skin spettacolari (iter 23).
+  static final _fxPaint = Paint();
+  static final _fxStroke = Paint()
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 1.2;
+
+  /// Overlay FX in-game per le skin spettacolari. No-op (return) per tutte le
+  /// altre skin → costo nullo quando non equipaggiata. `_energyPhase` anima.
+  void _renderSkinFx(Canvas canvas, double cx, double cy) {
+    final skin = game.saveData.activeSkin;
+    final p = _energyPhase;
+    switch (skin) {
+      case 'singularity':
+        // Disco d'accrescimento ellittico: particelle multicolore orbitanti.
+        for (int i = 0; i < 10; i++) {
+          final a = p * (2 + (i % 3) * 0.5) + i * 0.628;
+          final r = 18.0 + (i % 4) * 4;
+          final hue = (i * 36 + p * 40) % 360;
+          _fxPaint.color = HSVColor.fromAHSV(0.85, hue, 0.8, 1).toColor();
+          canvas.drawCircle(
+            Offset(cx + math.cos(a) * r, cy + math.sin(a) * r * 0.5),
+            1.6,
+            _fxPaint,
+          );
+        }
+      case 'supernova':
+        final pulse = math.sin(p * 4) * 0.3 + 0.7;
+        _fxStroke.color = const Color(
+          0xFFFFEEAA,
+        ).withValues(alpha: 0.5 * pulse);
+        for (int i = 0; i < 8; i++) {
+          final a = i * math.pi / 4 + p * 0.5;
+          final len = 18 + math.sin(p * 5 + i) * 6;
+          canvas.drawLine(
+            Offset(cx + math.cos(a) * 10, cy + math.sin(a) * 10),
+            Offset(cx + math.cos(a) * len, cy + math.sin(a) * len),
+            _fxStroke,
+          );
+        }
+      case 'tempest':
+        final rng = math.Random((p * 8).floor());
+        _fxStroke.color = const Color(0xFFCCF0FF).withValues(alpha: 0.85);
+        for (int b = 0; b < 3; b++) {
+          final a0 = rng.nextDouble() * math.pi * 2;
+          var lx = cx + math.cos(a0) * 10, ly = cy + math.sin(a0) * 10;
+          final path = Path()..moveTo(lx, ly);
+          for (int seg = 0; seg < 3; seg++) {
+            lx += math.cos(a0) * 6 + (rng.nextDouble() - 0.5) * 10;
+            ly += math.sin(a0) * 6 + (rng.nextDouble() - 0.5) * 10;
+            path.lineTo(lx, ly);
+          }
+          canvas.drawPath(path, _fxStroke);
+        }
+      case 'spectrum':
+        for (int i = 0; i < 6; i++) {
+          final a = p * 1.2 + i * math.pi / 3;
+          final hue = (i * 60 + p * 30) % 360;
+          _fxPaint.color = HSVColor.fromAHSV(0.8, hue, 0.9, 1).toColor();
+          canvas.drawCircle(
+            Offset(cx + math.cos(a) * 20, cy + math.sin(a) * 20),
+            2.0,
+            _fxPaint,
+          );
+        }
+      case 'celestial':
+        for (int ribbon = 0; ribbon < 2; ribbon++) {
+          final hue = (p * 30 + ribbon * 120) % 360;
+          _fxStroke.color = HSVColor.fromAHSV(0.4, hue, 0.7, 1).toColor();
+          final path = Path();
+          for (int k = 0; k <= 12; k++) {
+            final x = cx + (-18 + k * 3);
+            final y =
+                cy + math.sin(k * 0.5 + p * 2 + ribbon * 1.5) * 7 + ribbon * 4;
+            k == 0 ? path.moveTo(x, y) : path.lineTo(x, y);
+          }
+          canvas.drawPath(path, _fxStroke);
+        }
+      case 'phantom':
+        final sep = (math.sin(p * 3) * 0.5 + 0.5) * 5 + 2;
+        const cols = [Color(0xFFFF3366), Color(0xFF3366FF)];
+        for (int i = 0; i < 2; i++) {
+          _fxPaint.color = cols[i].withValues(alpha: 0.35);
+          canvas.drawCircle(
+            Offset(cx + (i == 0 ? -sep : sep), cy),
+            9,
+            _fxPaint,
+          );
+        }
+      default:
+        return;
+    }
+  }
 
   void _renderGlitchOverlay(Canvas canvas, Paint paint) {
     final cx = size.x / 2;

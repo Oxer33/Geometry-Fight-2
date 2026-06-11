@@ -574,6 +574,77 @@ class _ShopScreenState extends State<ShopScreen> with TickerProviderStateMixin {
         'La navicella originale cyan',
         NeonColors.cyan,
       ),
+      // ─── Recolor base / entry-level (richiesta utente: spostati tra i primi) ─
+      _SkinDef(
+        'magma',
+        'Magma',
+        3000,
+        'Roccia fusa incandescente — bagliore di lava',
+        const Color(0xFFFF5522),
+      ),
+      _SkinDef(
+        'frost',
+        'Frost',
+        3000,
+        'Ghiaccio cristallino bianco-azzurro',
+        const Color(0xFF99E6FF),
+      ),
+      _SkinDef(
+        'toxic',
+        'Toxic',
+        4000,
+        'Verde acido radioattivo luminoso',
+        const Color(0xFF88FF00),
+      ),
+      _SkinDef(
+        'obsidian',
+        'Obsidian',
+        6000,
+        'Ossidiana nera con riflessi viola',
+        const Color(0xFF9944FF),
+      ),
+      _SkinDef(
+        'solar',
+        'Solar',
+        5000,
+        'Oro solare brillante e accecante',
+        const Color(0xFFFFCC00),
+      ),
+      _SkinDef(
+        'abyss',
+        'Abyss',
+        7000,
+        'Profondità abissale cangiante blu-teal',
+        const Color(0xFF1188FF),
+      ),
+      _SkinDef(
+        'cosmos',
+        'Cosmos',
+        7000,
+        'Nebulosa viola-rosa che fluisce',
+        const Color(0xFFCC55FF),
+      ),
+      _SkinDef(
+        'chrome',
+        'Chrome',
+        4000,
+        'Cromo metallico riflettente',
+        const Color(0xFFCCDDEE),
+      ),
+      _SkinDef(
+        'emerald',
+        'Emerald',
+        4000,
+        'Smeraldo verde brillante',
+        const Color(0xFF22FFAA),
+      ),
+      _SkinDef(
+        'sunset',
+        'Sunset',
+        6000,
+        'Tramonto arancio-magenta sfumato',
+        const Color(0xFFFF7755),
+      ),
       _SkinDef(
         'stealth',
         'Stealth',
@@ -679,76 +750,76 @@ class _ShopScreenState extends State<ShopScreen> with TickerProviderStateMixin {
         'RGB chromatic shift — aberration animata',
         const Color(0xFFFF0066),
       ),
-      // ─── NEW SKINS (iter 22 — richiesta utente: +10 skin) ──────────────
+      // ─── SKIN SPETTACOLARI (iter 23 — effetti custom, non recolor) ──────
       _SkinDef(
-        'magma',
-        'Magma',
-        18000,
-        'Roccia fusa incandescente — bagliore di lava',
-        const Color(0xFFFF5522),
+        'singularity',
+        'Singularity',
+        60000,
+        'Buco nero: disco d\'accrescimento orbitante + lente gravitazionale',
+        const Color(0xFF9B30FF),
       ),
       _SkinDef(
-        'frost',
-        'Frost',
-        18000,
-        'Ghiaccio cristallino bianco-azzurro',
-        const Color(0xFF99E6FF),
+        'supernova',
+        'Supernova',
+        65000,
+        'Stella che collassa: nucleo bianco-oro + raggi pulsanti',
+        const Color(0xFFFFE066),
       ),
       _SkinDef(
-        'toxic',
-        'Toxic',
-        20000,
-        'Verde acido radioattivo luminoso',
-        const Color(0xFF88FF00),
+        'starforge',
+        'Starforge',
+        55000,
+        'Forgia stellare: scafo viola con campo di stelle scintillanti',
+        const Color(0xFF7755FF),
       ),
       _SkinDef(
-        'obsidian',
-        'Obsidian',
-        35000,
-        'Ossidiana nera con riflessi viola',
-        const Color(0xFF9944FF),
+        'tempest',
+        'Tempest',
+        58000,
+        'Tempesta: fulmini ramificati che avvolgono lo scafo',
+        const Color(0xFF66CCFF),
       ),
       _SkinDef(
-        'solar',
-        'Solar',
-        30000,
-        'Oro solare brillante e accecante',
-        const Color(0xFFFFCC00),
+        'spectrum',
+        'Spectrum',
+        62000,
+        'Rifrazione prismatica totale: schegge arcobaleno orbitanti',
+        const Color(0xFFFFFFFF),
       ),
       _SkinDef(
-        'abyss',
-        'Abyss',
-        40000,
-        'Profondità abissale cangiante blu-teal',
-        const Color(0xFF1188FF),
+        'hellfire',
+        'Hellfire',
+        60000,
+        'Inferno: fiamme che lambiscono lo scafo + braci ascendenti',
+        const Color(0xFFFF4400),
       ),
       _SkinDef(
-        'cosmos',
-        'Cosmos',
-        42000,
-        'Nebulosa viola-rosa che fluisce',
-        const Color(0xFFCC55FF),
+        'glacier',
+        'Glacier',
+        52000,
+        'Ghiacciaio: scafo cristallino + schegge di ghiaccio + bagliore freddo',
+        const Color(0xFF88DDFF),
       ),
       _SkinDef(
-        'chrome',
-        'Chrome',
-        25000,
-        'Cromo metallico riflettente',
-        const Color(0xFFCCDDEE),
+        'plague',
+        'Plague',
+        54000,
+        'Biorischio tossico: acido gocciolante + bolle gorgoglianti',
+        const Color(0xFF88FF22),
       ),
       _SkinDef(
-        'emerald',
-        'Emerald',
-        22000,
-        'Smeraldo verde brillante',
-        const Color(0xFF22FFAA),
+        'phantom',
+        'Phantom',
+        56000,
+        'Spettro quantico: copie sfasate RGB che si separano',
+        const Color(0xFFCC66FF),
       ),
       _SkinDef(
-        'sunset',
-        'Sunset',
-        38000,
-        'Tramonto arancio-magenta sfumato',
-        const Color(0xFFFF7755),
+        'celestial',
+        'Celestial',
+        64000,
+        'Aurora celeste: nastri di luce che fluiscono attorno allo scafo',
+        const Color(0xFF66FFCC),
       ),
     ];
 
@@ -782,6 +853,77 @@ class _ShopScreenState extends State<ShopScreen> with TickerProviderStateMixin {
   Widget _buildTrailsTab() {
     final trails = [
       _TrailDef('normal', 'Normal', 0, 'Scia cyan standard', NeonColors.cyan),
+      // ─── Recolor base / entry-level (richiesta utente: spostati tra i primi) ─
+      _TrailDef(
+        'ember',
+        'Ember',
+        1500,
+        'Braci ardenti rosso-arancio',
+        const Color(0xFFFF5500),
+      ),
+      _TrailDef(
+        'frostbite',
+        'Frostbite',
+        1500,
+        'Schegge di gelo bianco-azzurro',
+        const Color(0xFFAAEEFF),
+      ),
+      _TrailDef(
+        'venom',
+        'Venom',
+        2000,
+        'Veleno verde acido pulsante',
+        const Color(0xFF88FF22),
+      ),
+      _TrailDef(
+        'shadow',
+        'Shadow',
+        3000,
+        'Ombra scura con scintille viola',
+        const Color(0xFF6622AA),
+      ),
+      _TrailDef(
+        'solarflare',
+        'Solar Flare',
+        3000,
+        'Brillamento oro-bianco accecante',
+        const Color(0xFFFFDD66),
+      ),
+      _TrailDef(
+        'oceanic',
+        'Oceanic',
+        2500,
+        'Onde blu-teal profonde',
+        const Color(0xFF1199DD),
+      ),
+      _TrailDef(
+        'starfield',
+        'Starfield',
+        3500,
+        'Stelle bianche su scia notturna',
+        const Color(0xFFFFFFFF),
+      ),
+      _TrailDef(
+        'chromatic',
+        'Chromatic',
+        4000,
+        'Aberrazione RGB velocissima',
+        const Color(0xFFFF33AA),
+      ),
+      _TrailDef(
+        'jade',
+        'Jade',
+        2000,
+        'Giada verde brillante',
+        const Color(0xFF33FFAA),
+      ),
+      _TrailDef(
+        'dusk',
+        'Dusk',
+        3000,
+        'Crepuscolo arancio → magenta',
+        const Color(0xFFFF6688),
+      ),
       _TrailDef(
         'fire',
         'Fire',
@@ -887,76 +1029,76 @@ class _ShopScreenState extends State<ShopScreen> with TickerProviderStateMixin {
         'Anelli neon expanding bianco-ciano',
         const Color(0xFF66FFFF),
       ),
-      // ─── NEW TRAILS (iter 22 — richiesta utente: +10 trail) ────────────
+      // ─── TRAIL SPETTACOLARI (iter 23 — effetti custom, non recolor) ─────
       _TrailDef(
-        'ember',
-        'Ember',
-        8000,
-        'Braci ardenti rosso-arancio',
-        const Color(0xFFFF5500),
+        'eventhorizon',
+        'Event Horizon',
+        40000,
+        'Particelle risucchiate in spirale verso un nucleo nero',
+        const Color(0xFF9B30FF),
       ),
       _TrailDef(
-        'frostbite',
-        'Frostbite',
-        8000,
-        'Schegge di gelo bianco-azzurro',
-        const Color(0xFFAAEEFF),
+        'novablast',
+        'Nova Blast',
+        42000,
+        'Esplosioni di luce bianco-oro lungo la scia',
+        const Color(0xFFFFDD55),
       ),
       _TrailDef(
-        'venom',
-        'Venom',
-        10000,
-        'Veleno verde acido pulsante',
-        const Color(0xFF88FF22),
+        'cosmicdust',
+        'Cosmic Dust',
+        38000,
+        'Polvere stellare scintillante viola-blu',
+        const Color(0xFF8866FF),
       ),
       _TrailDef(
-        'shadow',
-        'Shadow',
-        14000,
-        'Ombra scura con scintille viola',
-        const Color(0xFF6622AA),
+        'thunderbolt',
+        'Thunderbolt',
+        41000,
+        'Fulmini ramificati elettrici che saltano',
+        const Color(0xFF66DDFF),
       ),
       _TrailDef(
-        'solarflare',
-        'Solar Flare',
-        16000,
-        'Brillamento oro-bianco accecante',
-        const Color(0xFFFFDD66),
-      ),
-      _TrailDef(
-        'oceanic',
-        'Oceanic',
-        15000,
-        'Onde blu-teal profonde',
-        const Color(0xFF1199DD),
-      ),
-      _TrailDef(
-        'starfield',
-        'Starfield',
-        18000,
-        'Stelle bianche su scia notturna',
+        'prismflow',
+        'Prism Flow',
+        43000,
+        'Nastro arcobaleno rifratto che scorre',
         const Color(0xFFFFFFFF),
       ),
       _TrailDef(
-        'chromatic',
-        'Chromatic',
-        20000,
-        'Aberrazione RGB velocissima',
-        const Color(0xFFFF33AA),
+        'magmaflow',
+        'Magma Flow',
+        39000,
+        'Lava fusa con crepe incandescenti + braci',
+        const Color(0xFFFF5500),
       ),
       _TrailDef(
-        'jade',
-        'Jade',
-        12000,
-        'Giada verde brillante',
-        const Color(0xFF33FFAA),
+        'cryostorm',
+        'Cryo Storm',
+        40000,
+        'Bufera di ghiaccio: schegge cristalline + gelo',
+        const Color(0xFFAAEEFF),
       ),
       _TrailDef(
-        'dusk',
-        'Dusk',
-        17000,
-        'Crepuscolo arancio → magenta',
-        const Color(0xFFFF6688),
+        'acidspill',
+        'Acid Spill',
+        38000,
+        'Acido tossico gorgogliante con gocce',
+        const Color(0xFF99FF33),
+      ),
+      _TrailDef(
+        'wraith',
+        'Wraith',
+        41000,
+        'Scie spettrali sfumate che si separano',
+        const Color(0xFFBB88FF),
+      ),
+      _TrailDef(
+        'stardust',
+        'Stardust',
+        44000,
+        'Polvere di stelle scintillante multicolore',
+        const Color(0xFFFFFFFF),
       ),
     ];
 
@@ -1434,7 +1576,7 @@ class _ShopScreenState extends State<ShopScreen> with TickerProviderStateMixin {
       _ModeDef(
         'bossRush',
         'Boss Rush',
-        2000,
+        10000,
         'Solo boss, uno dopo l\'altro — niente mob',
         Icons.whatshot,
         const Color(0xFFFF4400),
@@ -1442,7 +1584,7 @@ class _ShopScreenState extends State<ShopScreen> with TickerProviderStateMixin {
       _ModeDef(
         'survival',
         'Survival',
-        2500,
+        12500,
         'Wave infinite sempre più difficili — quanto resisti?',
         Icons.all_inclusive,
         const Color(0xFF00FF88),
@@ -1450,7 +1592,7 @@ class _ShopScreenState extends State<ShopScreen> with TickerProviderStateMixin {
       _ModeDef(
         'timeAttack',
         'Time Attack',
-        1500,
+        7500,
         '3 minuti: fai più punti possibile prima che scada',
         Icons.timer,
         NeonColors.orange,
@@ -1458,7 +1600,7 @@ class _ShopScreenState extends State<ShopScreen> with TickerProviderStateMixin {
       _ModeDef(
         'zenMode',
         'Zen Mode',
-        1000,
+        5000,
         'Vite infinite — gioca senza stress, esplora tutto',
         Icons.spa,
         const Color(0xFF88CCFF),
@@ -1466,7 +1608,7 @@ class _ShopScreenState extends State<ShopScreen> with TickerProviderStateMixin {
       _ModeDef(
         'tunnel',
         'Tunnel',
-        3000,
+        15000,
         'Scorrimento laterale in un tunnel infinito',
         Icons.straighten,
         NeonColors.purple,
@@ -1474,7 +1616,7 @@ class _ShopScreenState extends State<ShopScreen> with TickerProviderStateMixin {
       _ModeDef(
         'pacifist',
         'Pacifist',
-        1500,
+        7500,
         'Niente colpi! Sopravvivi con i Gate (GW Pacifism)',
         Icons.spa_outlined,
         const Color(0xFF77FFD4),
@@ -1482,7 +1624,7 @@ class _ShopScreenState extends State<ShopScreen> with TickerProviderStateMixin {
       _ModeDef(
         'waves',
         'Waves',
-        800,
+        4000,
         'Solo triangoli rossi cardinali. Rari buchi neri. Dodge puro.',
         Icons.change_history,
         const Color(0xFFFF3344),
@@ -1490,7 +1632,7 @@ class _ShopScreenState extends State<ShopScreen> with TickerProviderStateMixin {
       _ModeDef(
         'gravityInferno',
         'Gravity Inferno',
-        1800,
+        9000,
         'Tanti buchi neri + pochi mob misti. Niente boss. Caos gravitazionale.',
         Icons.blur_circular,
         const Color(0xFF9933FF),
@@ -1498,7 +1640,7 @@ class _ShopScreenState extends State<ShopScreen> with TickerProviderStateMixin {
       _ModeDef(
         'snake',
         'Snake',
-        2500,
+        12500,
         'Lascia una scia letale con la navicella. No armi, no boss, no powerup.',
         Icons.timeline_rounded,
         const Color(0xFF66FF66),
@@ -1506,7 +1648,7 @@ class _ShopScreenState extends State<ShopScreen> with TickerProviderStateMixin {
       _ModeDef(
         'arenaShrink',
         'Arena Shrink',
-        2200,
+        11000,
         'L\'arena si restringe nel tempo: lo spazio per schivare svanisce. Sopravvivi!',
         Icons.crop_square,
         const Color(0xFF00E5FF),
@@ -2854,6 +2996,37 @@ class _SkinPreviewPainter extends CustomPainter {
       case 'glitch':
         _drawGlitchShip(canvas, scale, color);
         break;
+      // ─── SKIN SPETTACOLARI (iter 23) ───────────────────────────────────
+      case 'singularity':
+        _drawSingularityShip(canvas, scale, color);
+        break;
+      case 'supernova':
+        _drawSupernovaShip(canvas, scale, color);
+        break;
+      case 'starforge':
+        _drawStarforgeShip(canvas, scale, color);
+        break;
+      case 'tempest':
+        _drawTempestShip(canvas, scale, color);
+        break;
+      case 'spectrum':
+        _drawSpectrumShip(canvas, scale, color);
+        break;
+      case 'hellfire':
+        _drawHellfireShip(canvas, scale, color);
+        break;
+      case 'glacier':
+        _drawGlacierShip(canvas, scale, color);
+        break;
+      case 'plague':
+        _drawPlagueShip(canvas, scale, color);
+        break;
+      case 'phantom':
+        _drawPhantomShip(canvas, scale, color);
+        break;
+      case 'celestial':
+        _drawCelestialShip(canvas, scale, color);
+        break;
       default:
         _drawClassicShip(canvas, scale, color);
     }
@@ -3169,6 +3342,282 @@ class _SkinPreviewPainter extends CustomPainter {
       ..lineTo(-4 * s, -6 * s)
       ..close();
     canvas.drawPath(path, paint);
+  }
+
+  // ════════════════ SKIN SPETTACOLARI (iter 23) ════════════════
+  // Disegni custom con effetti animati (particelle/raggi/fulmini/aurora) —
+  // NON semplici recolor. `time` anima, _drawShipPath disegna la sagoma nave.
+
+  void _drawSingularityShip(Canvas canvas, double s, Color c) {
+    // Lente gravitazionale.
+    _gStroke
+      ..color = c.withValues(alpha: 0.35)
+      ..strokeWidth = 1.0;
+    canvas.drawCircle(Offset.zero, 26 * s, _gStroke);
+    // Disco d'accrescimento ellittico: particelle multicolore orbitanti.
+    for (int i = 0; i < 14; i++) {
+      final ang = time * (1.5 + (i % 3) * 0.4) + i * (math.pi * 2 / 14);
+      final rad = (14 + (i % 4) * 4) * s;
+      final hue = (i * 26 + time * 40) % 360;
+      final pp = Paint()..color = HSVColor.fromAHSV(0.9, hue, 0.8, 1).toColor();
+      canvas.drawCircle(
+        Offset(math.cos(ang) * rad, math.sin(ang) * rad * 0.5),
+        1.6,
+        pp,
+      );
+    }
+    // Corpo nero.
+    _gFill.color = const Color(0xFF050008);
+    _drawShipPath(canvas, s, _gFill);
+    _gStroke
+      ..color = c
+      ..strokeWidth = 1.4;
+    _drawShipPath(canvas, s, _gStroke);
+    // Event horizon.
+    _gFill.color = const Color(0xFF000000);
+    canvas.drawCircle(Offset(0, 2 * s), 4 * s, _gFill);
+    _gGlowBlurSm.color = c.withValues(alpha: 0.7);
+    canvas.drawCircle(Offset(0, 2 * s), 5 * s, _gGlowBlurSm);
+  }
+
+  void _drawSupernovaShip(Canvas canvas, double s, Color c) {
+    final pulse = math.sin(time * 4) * 0.3 + 0.7;
+    _gStroke
+      ..color = c.withValues(alpha: 0.6 * pulse)
+      ..strokeWidth = 1.5;
+    for (int i = 0; i < 12; i++) {
+      final a = i * math.pi / 6 + time * 0.5;
+      final len = (18 + math.sin(time * 5 + i) * 6) * s;
+      canvas.drawLine(
+        Offset(math.cos(a) * 8 * s, math.sin(a) * 8 * s),
+        Offset(math.cos(a) * len, math.sin(a) * len),
+        _gStroke,
+      );
+    }
+    _gGlowBlur.color = const Color(0xFFFFAA00).withValues(alpha: 0.3 * pulse);
+    canvas.drawCircle(Offset.zero, 16 * s, _gGlowBlur);
+    _gFill.color = Color.lerp(const Color(0xFFFFFFFF), c, 0.5)!;
+    _drawShipPath(canvas, s, _gFill);
+    _gStroke
+      ..color = const Color(0xFFFFFFFF)
+      ..strokeWidth = 1.3;
+    _drawShipPath(canvas, s, _gStroke);
+    _gFill.color = const Color(0xFFFFFFFF);
+    canvas.drawCircle(Offset(0, 2 * s), 3 * s * pulse, _gFill);
+  }
+
+  void _drawStarforgeShip(Canvas canvas, double s, Color c) {
+    for (int i = 0; i < 16; i++) {
+      final a = i * 2.4 + time * 0.2;
+      final r = (10 + (i * 7 % 18)) * s;
+      final tw = math.sin(time * 4 + i * 1.7) * 0.5 + 0.5;
+      final sp = Paint()
+        ..color = Colors.white.withValues(alpha: 0.3 + tw * 0.6);
+      canvas.drawCircle(
+        Offset(math.cos(a) * r, math.sin(a) * r),
+        tw * 1.4 + 0.4,
+        sp,
+      );
+    }
+    _gFill.color = const Color(0xFF1A0A33);
+    _drawShipPath(canvas, s, _gFill);
+    _gStroke
+      ..color = c
+      ..strokeWidth = 1.3;
+    _drawShipPath(canvas, s, _gStroke);
+    _gGlowBlurSm.color = c.withValues(alpha: 0.8);
+    canvas.drawCircle(Offset(0, 2 * s), 3.5 * s, _gGlowBlurSm);
+  }
+
+  void _drawTempestShip(Canvas canvas, double s, Color c) {
+    _gFill.color = const Color(0xFF081020);
+    _drawShipPath(canvas, s, _gFill);
+    _gStroke
+      ..color = c
+      ..strokeWidth = 1.3;
+    _drawShipPath(canvas, s, _gStroke);
+    // Fulmini ramificati (rigenerati a scatti deterministici via seed).
+    final rng = math.Random((time * 6).floor());
+    _gStroke
+      ..color = const Color(0xFFCCF0FF).withValues(alpha: 0.9)
+      ..strokeWidth = 1.2;
+    for (int b = 0; b < 4; b++) {
+      final a0 = rng.nextDouble() * math.pi * 2;
+      var px = math.cos(a0) * 8 * s, py = math.sin(a0) * 8 * s;
+      final path = Path()..moveTo(px, py);
+      for (int seg = 0; seg < 4; seg++) {
+        px += (math.cos(a0) * 5 + (rng.nextDouble() - 0.5) * 8) * s;
+        py += (math.sin(a0) * 5 + (rng.nextDouble() - 0.5) * 8) * s;
+        path.lineTo(px, py);
+      }
+      canvas.drawPath(path, _gStroke);
+    }
+    _gGlowBlurSm.color = c.withValues(alpha: 0.8);
+    canvas.drawCircle(Offset(0, 2 * s), 3 * s, _gGlowBlurSm);
+  }
+
+  void _drawSpectrumShip(Canvas canvas, double s, Color c) {
+    for (int i = 0; i < 8; i++) {
+      final a = time * 1.2 + i * math.pi / 4;
+      final r = 18 * s;
+      final hue = (i * 45 + time * 30) % 360;
+      canvas.save();
+      canvas.translate(math.cos(a) * r, math.sin(a) * r);
+      canvas.rotate(a * 2);
+      final sp = Paint()
+        ..color = HSVColor.fromAHSV(0.85, hue, 0.9, 1).toColor();
+      final shard = Path()
+        ..moveTo(0, -3 * s)
+        ..lineTo(2 * s, 0)
+        ..lineTo(0, 3 * s)
+        ..lineTo(-2 * s, 0)
+        ..close();
+      canvas.drawPath(shard, sp);
+      canvas.restore();
+    }
+    _gFill.color = const Color(0xFFF0F0FF);
+    _drawShipPath(canvas, s, _gFill);
+    final hueE = (time * 60) % 360;
+    _gStroke
+      ..color = HSVColor.fromAHSV(1, hueE, 0.8, 1).toColor()
+      ..strokeWidth = 1.5;
+    _drawShipPath(canvas, s, _gStroke);
+  }
+
+  void _drawHellfireShip(Canvas canvas, double s, Color c) {
+    // Fiamme che lambiscono lo scafo.
+    for (int i = 0; i < 7; i++) {
+      final a = (i / 7) * math.pi * 2;
+      final fl = math.sin(time * 8 + i * 1.3) * 0.5 + 0.5;
+      final fp = Paint()
+        ..color = Color.lerp(
+          const Color(0xFFFF2200),
+          const Color(0xFFFFDD00),
+          fl,
+        )!.withValues(alpha: 0.7)
+        ..strokeWidth = 2.5
+        ..strokeCap = StrokeCap.round;
+      canvas.drawLine(
+        Offset(math.cos(a) * 9 * s, math.sin(a) * 9 * s),
+        Offset(
+          math.cos(a) * (14 + fl * 8) * s,
+          math.sin(a) * (14 + fl * 8) * s,
+        ),
+        fp,
+      );
+    }
+    // Braci ascendenti.
+    for (int i = 0; i < 5; i++) {
+      final ey = (-((time * 30 + i * 20) % 40) + 10) * s;
+      final ex = math.sin(time * 3 + i) * 8 * s;
+      final ep = Paint()
+        ..color = const Color(0xFFFFAA00).withValues(alpha: 0.6);
+      canvas.drawCircle(Offset(ex, ey), 1.2, ep);
+    }
+    _gFill.color = const Color(0xFF330800);
+    _drawShipPath(canvas, s, _gFill);
+    _gStroke
+      ..color = const Color(0xFFFF5500)
+      ..strokeWidth = 1.4;
+    _drawShipPath(canvas, s, _gStroke);
+  }
+
+  void _drawGlacierShip(Canvas canvas, double s, Color c) {
+    _gGlowBlur.color = c.withValues(alpha: 0.25);
+    canvas.drawCircle(Offset.zero, 18 * s, _gGlowBlur);
+    _gFill.color = const Color(0xFFCCEEFF).withValues(alpha: 0.9);
+    _drawShipPath(canvas, s, _gFill);
+    _gStroke
+      ..color = const Color(0xFFFFFFFF)
+      ..strokeWidth = 1.2;
+    _drawShipPath(canvas, s, _gStroke);
+    // Schegge di ghiaccio (cristalli a 3 assi) orbitanti.
+    for (int i = 0; i < 6; i++) {
+      final a = time * 0.6 + i * math.pi / 3;
+      final r = 17 * s;
+      final cxp = math.cos(a) * r, cyp = math.sin(a) * r;
+      final tw = math.sin(time * 4 + i) * 0.3 + 0.7;
+      _gStroke
+        ..color = c.withValues(alpha: tw)
+        ..strokeWidth = 0.9;
+      for (int k = 0; k < 3; k++) {
+        final ka = k * math.pi / 3 + a;
+        canvas.drawLine(
+          Offset(cxp - math.cos(ka) * 3 * s, cyp - math.sin(ka) * 3 * s),
+          Offset(cxp + math.cos(ka) * 3 * s, cyp + math.sin(ka) * 3 * s),
+          _gStroke,
+        );
+      }
+    }
+  }
+
+  void _drawPlagueShip(Canvas canvas, double s, Color c) {
+    final pulse = math.sin(time * 3) * 0.2 + 0.4;
+    _gGlowBlur.color = c.withValues(alpha: pulse);
+    canvas.drawCircle(Offset.zero, 17 * s, _gGlowBlur);
+    _gFill.color = const Color(0xFF224400);
+    _drawShipPath(canvas, s, _gFill);
+    _gStroke
+      ..color = c
+      ..strokeWidth = 1.4;
+    _drawShipPath(canvas, s, _gStroke);
+    // Bolle che salgono e si dissolvono.
+    for (int i = 0; i < 8; i++) {
+      final prog = (time * 0.7 + i * 0.3) % 1.0;
+      final bx = math.sin(i * 2.1) * 10 * s;
+      final by = (8 - prog * 18) * s;
+      final br = (1.5 + math.sin(i.toDouble()) * 0.8) * (1 - prog * 0.5);
+      final bp = Paint()
+        ..color = const Color(0xFFCCFF44).withValues(alpha: (1 - prog) * 0.8);
+      canvas.drawCircle(Offset(bx, by), br * s, bp);
+    }
+  }
+
+  void _drawPhantomShip(Canvas canvas, double s, Color c) {
+    final sep = (math.sin(time * 3) * 0.5 + 0.5) * 4 * s + 1;
+    const colors = [Color(0xFFFF3366), Color(0xFF33FF99), Color(0xFF3366FF)];
+    final offsets = [Offset(-sep, 0), Offset(sep, 0), Offset(0, sep)];
+    for (int i = 0; i < 3; i++) {
+      canvas.save();
+      canvas.translate(offsets[i].dx, offsets[i].dy);
+      _gFill.color = colors[i].withValues(alpha: 0.5);
+      _drawShipPath(canvas, s, _gFill);
+      canvas.restore();
+    }
+    _gFill.color = const Color(0xFFEEEEFF).withValues(alpha: 0.6);
+    _drawShipPath(canvas, s, _gFill);
+    _gStroke
+      ..color = c
+      ..strokeWidth = 1.0;
+    _drawShipPath(canvas, s, _gStroke);
+  }
+
+  void _drawCelestialShip(Canvas canvas, double s, Color c) {
+    // Nastri aurora multi-hue dietro la nave.
+    for (int ribbon = 0; ribbon < 3; ribbon++) {
+      final path = Path();
+      final baseHue = (time * 30 + ribbon * 120) % 360;
+      for (int k = 0; k <= 20; k++) {
+        final x = (-20 + k * 2) * s;
+        final y =
+            (math.sin(k * 0.5 + time * 2 + ribbon * 1.5) * 6 + ribbon * 3 - 3) *
+            s;
+        k == 0 ? path.moveTo(x, y) : path.lineTo(x, y);
+      }
+      final rp = Paint()
+        ..color = HSVColor.fromAHSV(0.5, baseHue, 0.7, 1).toColor()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 3.0
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
+      canvas.drawPath(path, rp);
+    }
+    _gFill.color = const Color(0xFFEEFFFF).withValues(alpha: 0.85);
+    _drawShipPath(canvas, s, _gFill);
+    final hueE = (time * 40) % 360;
+    _gStroke
+      ..color = HSVColor.fromAHSV(1, hueE, 0.5, 1).toColor()
+      ..strokeWidth = 1.3;
+    _drawShipPath(canvas, s, _gStroke);
   }
 
   void _drawPreviewThrusters(
@@ -3981,6 +4430,179 @@ class _TrailPreviewPainter extends CustomPainter {
               _trailBodyPaint,
             );
             _trailBodyPaint.style = PaintingStyle.fill;
+          }
+          break;
+        // ─── TRAIL SPETTACOLARI (iter 23 — effetti custom) ───────────────
+        case 'eventhorizon':
+          trailColor = Color.lerp(
+            const Color(0xFF1A0033),
+            const Color(0xFFCC66FF),
+            progress,
+          )!;
+          trailAlpha = progress * 0.6;
+          trailSize = progress * 3.5;
+          final sa = time * 5 - i * 0.5;
+          _trailBodyPaint.color = const Color(
+            0xFFEE99FF,
+          ).withValues(alpha: progress * 0.5);
+          canvas.drawCircle(
+            Offset(
+              tx + math.cos(sa) * (1 - progress) * 12,
+              ty + math.sin(sa) * (1 - progress) * 12,
+            ),
+            1.0,
+            _trailBodyPaint,
+          );
+          break;
+        case 'novablast':
+          final np = math.sin(time * 6 + i * 0.5) * 0.5 + 0.5;
+          trailColor = Color.lerp(
+            const Color(0xFFFFDD55),
+            const Color(0xFFFFFFFF),
+            np,
+          )!;
+          trailAlpha = progress * 0.6;
+          trailSize = progress * 3.5 + np * 1.5;
+          if (i % 6 == 0 && progress > 0.3) {
+            _trailBodyPaint
+              ..color = const Color(
+                0xFFFFEE99,
+              ).withValues(alpha: progress * 0.4 * np)
+              ..style = PaintingStyle.stroke
+              ..strokeWidth = 1.2;
+            canvas.drawCircle(Offset(tx, ty), 4 + np * 6, _trailBodyPaint);
+            _trailBodyPaint.style = PaintingStyle.fill;
+          }
+          break;
+        case 'cosmicdust':
+          final hh = (250 + i * 4) % 360;
+          trailColor = HSVColor.fromAHSV(1, hh.toDouble(), 0.7, 1).toColor();
+          trailAlpha = progress * 0.5;
+          trailSize = progress * 2.8;
+          if (i % 2 == 0) {
+            final tw = math.sin(time * 6 + i) * 0.5 + 0.5;
+            _trailBodyPaint.color = Colors.white.withValues(
+              alpha: progress * tw * 0.8,
+            );
+            canvas.drawCircle(
+              Offset(tx + math.sin(i * 1.3) * 5, ty + math.cos(i * 1.7) * 5),
+              tw * 1.2,
+              _trailBodyPaint,
+            );
+          }
+          break;
+        case 'thunderbolt':
+          trailColor = i % 3 == 0
+              ? const Color(0xFFFFFFFF)
+              : const Color(0xFF66DDFF);
+          trailAlpha = progress * 0.6;
+          trailSize = progress * 2.5;
+          if (i % 2 == 0 && progress > 0.2) {
+            _trailBodyPaint
+              ..color = const Color(
+                0xFFCCF0FF,
+              ).withValues(alpha: progress * 0.6)
+              ..strokeWidth = 1.0;
+            canvas.drawLine(
+              Offset(tx, ty),
+              Offset(
+                tx + math.sin(time * 30 + i) * 4,
+                ty + math.cos(time * 25 + i) * 4,
+              ),
+              _trailBodyPaint,
+            );
+          }
+          break;
+        case 'prismflow':
+          final ph = ((time * 100) + i * 22) % 360;
+          trailColor = HSVColor.fromAHSV(1, ph, 0.95, 1).toColor();
+          trailAlpha = progress * 0.6;
+          trailSize = progress * 4;
+          break;
+        case 'magmaflow':
+          trailColor = Color.lerp(
+            const Color(0xFFFFEE00),
+            const Color(0xFF992200),
+            progress,
+          )!;
+          trailAlpha = progress * 0.6;
+          trailSize = progress * 4 + math.sin(time * 8 + i) * 1.0;
+          if (i % 4 == 0 && progress > 0.3) {
+            _trailBodyPaint.color = const Color(
+              0xFFFFAA00,
+            ).withValues(alpha: progress * 0.5);
+            canvas.drawCircle(
+              Offset(
+                tx + math.sin(time * 5 + i) * 7,
+                ty - ((time * 20 + i * 5) % 16),
+              ),
+              1.4,
+              _trailBodyPaint,
+            );
+          }
+          break;
+        case 'cryostorm':
+          trailColor = i % 4 == 0
+              ? const Color(0xFFFFFFFF)
+              : const Color(0xFF88DDFF);
+          trailAlpha = progress * 0.55;
+          trailSize = progress * 3;
+          if (i % 3 == 0 && progress > 0.2) {
+            _drawIceCrystal(canvas, tx, ty, progress * 5, progress * 0.6);
+          }
+          break;
+        case 'acidspill':
+          final ap2 = math.sin(time * 5 + i * 0.4) * 0.5 + 0.5;
+          trailColor = Color.lerp(
+            const Color(0xFF66CC00),
+            const Color(0xFFCCFF33),
+            ap2,
+          )!;
+          trailAlpha = progress * 0.6;
+          trailSize = progress * 3.5;
+          if (i % 3 == 0 && progress > 0.25) {
+            _trailBodyPaint
+              ..color = const Color(
+                0xFFCCFF44,
+              ).withValues(alpha: progress * 0.4)
+              ..style = PaintingStyle.stroke
+              ..strokeWidth = 1.0;
+            canvas.drawCircle(
+              Offset(tx + math.sin(i.toDouble()) * 4, ty),
+              2.5 + ap2 * 2,
+              _trailBodyPaint,
+            );
+            _trailBodyPaint.style = PaintingStyle.fill;
+          }
+          break;
+        case 'wraith':
+          trailColor = Color.lerp(
+            const Color(0xFF330055),
+            const Color(0xFFCC99FF),
+            progress,
+          )!;
+          trailAlpha = progress * 0.5;
+          trailSize = progress * 4;
+          _trailBodyPaint.color = const Color(
+            0xFFBB88FF,
+          ).withValues(alpha: progress * 0.2);
+          canvas.drawCircle(
+            Offset(tx + math.sin(time * 2 + i * 0.3) * 6, ty),
+            trailSize * 1.4,
+            _trailBodyPaint,
+          );
+          break;
+        case 'stardust':
+          final sh = ((time * 70) + i * 45) % 360;
+          trailColor = HSVColor.fromAHSV(1, sh, 0.85, 1).toColor();
+          trailAlpha = progress * 0.55;
+          trailSize = progress * 2.8;
+          if (i % 2 == 0) {
+            final tw = math.sin(time * 8 + i * 1.5) * 0.5 + 0.5;
+            _trailBodyPaint.color = Colors.white.withValues(
+              alpha: progress * tw * 0.9,
+            );
+            canvas.drawCircle(Offset(tx, ty), tw * 1.6, _trailBodyPaint);
           }
           break;
         default: // normal + nuove scie generiche → usa il colore del _TrailDef
