@@ -1113,6 +1113,12 @@ class Player extends PositionComponent
     } else if (skinId == 'glitch') {
       // Body bianco con glow RGB animato → effetto chromatic shift.
       bodyColor = const Color(0xFFEEEEEE);
+    } else if (skinId == 'obsidian') {
+      // Corpo nero ossidiana, glow viola ereditato da baseColor.
+      bodyColor = const Color(0xFF0A0014);
+    } else if (skinId == 'abyss') {
+      // Corpo blu abissale scurissimo, glow ciano/blu cangiante.
+      bodyColor = const Color(0xFF001022);
     }
     if (isInvincible) {
       final blink = ((_invincibleTimer * 12).toInt() % 2 == 0);
@@ -1301,6 +1307,66 @@ class Player extends PositionComponent
           _crystalCachedSkin = 'prism';
         }
         return _crystalColorCache!;
+      // ─── NEW SKINS (iter 22 — richiesta utente: +10 skin) ──────────────
+      case 'magma':
+        return const Color(0xFFFF5522);
+      case 'frost':
+        return const Color(0xFF99E6FF);
+      case 'toxic':
+        return const Color(0xFF88FF00);
+      case 'obsidian':
+        return const Color(0xFF9944FF);
+      case 'solar':
+        return const Color(0xFFFFCC00);
+      case 'chrome':
+        return const Color(0xFFCCDDEE);
+      case 'emerald':
+        return const Color(0xFF22FFAA);
+      case 'abyss':
+        // Cangiante blu↔ciano (oscilla nella banda ~165-225°).
+        final step = ((_energyPhase * 15) / 5).floor() % 96;
+        if (_crystalCachedSkin != 'abyss') _crystalColorCache = null;
+        if (_crystalHueStep != step || _crystalColorCache == null) {
+          _crystalHueStep = step;
+          _crystalColorCache = HSVColor.fromAHSV(
+            1,
+            195 + math.sin(step * 0.13) * 30,
+            0.85,
+            1,
+          ).toColor();
+          _crystalCachedSkin = 'abyss';
+        }
+        return _crystalColorCache!;
+      case 'cosmos':
+        // Nebulosa viola↔rosa (oscilla ~260-330°).
+        final step = ((_energyPhase * 16) / 5).floor() % 96;
+        if (_crystalCachedSkin != 'cosmos') _crystalColorCache = null;
+        if (_crystalHueStep != step || _crystalColorCache == null) {
+          _crystalHueStep = step;
+          _crystalColorCache = HSVColor.fromAHSV(
+            1,
+            (295 + math.sin(step * 0.13) * 35) % 360,
+            0.7,
+            1,
+          ).toColor();
+          _crystalCachedSkin = 'cosmos';
+        }
+        return _crystalColorCache!;
+      case 'sunset':
+        // Tramonto arancio↔magenta (oscilla attorno al rosso).
+        final step = ((_energyPhase * 14) / 5).floor() % 96;
+        if (_crystalCachedSkin != 'sunset') _crystalColorCache = null;
+        if (_crystalHueStep != step || _crystalColorCache == null) {
+          _crystalHueStep = step;
+          _crystalColorCache = HSVColor.fromAHSV(
+            1,
+            (350 + math.sin(step * 0.13) * 40 + 360) % 360,
+            0.85,
+            1,
+          ).toColor();
+          _crystalCachedSkin = 'sunset';
+        }
+        return _crystalColorCache!;
       case 'classic':
       default:
         return NeonColors.cyan;
@@ -1388,6 +1454,37 @@ class Player extends PositionComponent
           const Color(0xFFFFFFFF),
           tp,
         )!;
+      // ─── NEW TRAILS (iter 22 — richiesta utente: +10 trail) ────────────
+      case 'ember':
+        final t = (index / _maxTrailLength).clamp(0.0, 1.0);
+        return Color.lerp(const Color(0xFFFF8800), const Color(0xFF991100), t)!;
+      case 'frostbite':
+        return const Color(0xFFAAEEFF);
+      case 'venom':
+        final t = (math.sin(_energyPhase * 5 + index * 0.4) * 0.5 + 0.5);
+        return Color.lerp(const Color(0xFF55CC00), const Color(0xFFAAFF33), t)!;
+      case 'shadow':
+        return index % 4 == 0
+            ? const Color(0xFFCC66FF)
+            : const Color(0xFF220033);
+      case 'solarflare':
+        final t = (index / _maxTrailLength).clamp(0.0, 1.0);
+        return Color.lerp(const Color(0xFFFFFFFF), const Color(0xFFFFAA00), t)!;
+      case 'oceanic':
+        final h = (190 + index * 5) % 360;
+        return HSVColor.fromAHSV(1, h.toDouble(), 0.8, 1).toColor();
+      case 'starfield':
+        return index % 4 == 0
+            ? const Color(0xFFFFFFFF)
+            : const Color(0xFF223366);
+      case 'chromatic':
+        final h = ((_energyPhase * 120) + index * 30) % 360;
+        return HSVColor.fromAHSV(1, h, 1, 1).toColor();
+      case 'jade':
+        return const Color(0xFF33FFAA);
+      case 'dusk':
+        final t = (index / _maxTrailLength).clamp(0.0, 1.0);
+        return Color.lerp(const Color(0xFFFF8844), const Color(0xFFFF2299), t)!;
       case 'normal':
       default:
         return NeonColors.cyan;

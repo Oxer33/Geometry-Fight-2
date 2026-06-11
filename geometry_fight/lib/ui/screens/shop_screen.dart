@@ -679,6 +679,77 @@ class _ShopScreenState extends State<ShopScreen> with TickerProviderStateMixin {
         'RGB chromatic shift — aberration animata',
         const Color(0xFFFF0066),
       ),
+      // ─── NEW SKINS (iter 22 — richiesta utente: +10 skin) ──────────────
+      _SkinDef(
+        'magma',
+        'Magma',
+        18000,
+        'Roccia fusa incandescente — bagliore di lava',
+        const Color(0xFFFF5522),
+      ),
+      _SkinDef(
+        'frost',
+        'Frost',
+        18000,
+        'Ghiaccio cristallino bianco-azzurro',
+        const Color(0xFF99E6FF),
+      ),
+      _SkinDef(
+        'toxic',
+        'Toxic',
+        20000,
+        'Verde acido radioattivo luminoso',
+        const Color(0xFF88FF00),
+      ),
+      _SkinDef(
+        'obsidian',
+        'Obsidian',
+        35000,
+        'Ossidiana nera con riflessi viola',
+        const Color(0xFF9944FF),
+      ),
+      _SkinDef(
+        'solar',
+        'Solar',
+        30000,
+        'Oro solare brillante e accecante',
+        const Color(0xFFFFCC00),
+      ),
+      _SkinDef(
+        'abyss',
+        'Abyss',
+        40000,
+        'Profondità abissale cangiante blu-teal',
+        const Color(0xFF1188FF),
+      ),
+      _SkinDef(
+        'cosmos',
+        'Cosmos',
+        42000,
+        'Nebulosa viola-rosa che fluisce',
+        const Color(0xFFCC55FF),
+      ),
+      _SkinDef(
+        'chrome',
+        'Chrome',
+        25000,
+        'Cromo metallico riflettente',
+        const Color(0xFFCCDDEE),
+      ),
+      _SkinDef(
+        'emerald',
+        'Emerald',
+        22000,
+        'Smeraldo verde brillante',
+        const Color(0xFF22FFAA),
+      ),
+      _SkinDef(
+        'sunset',
+        'Sunset',
+        38000,
+        'Tramonto arancio-magenta sfumato',
+        const Color(0xFFFF7755),
+      ),
     ];
 
     return _buildPreviewGrid(
@@ -815,6 +886,77 @@ class _ShopScreenState extends State<ShopScreen> with TickerProviderStateMixin {
         19000,
         'Anelli neon expanding bianco-ciano',
         const Color(0xFF66FFFF),
+      ),
+      // ─── NEW TRAILS (iter 22 — richiesta utente: +10 trail) ────────────
+      _TrailDef(
+        'ember',
+        'Ember',
+        8000,
+        'Braci ardenti rosso-arancio',
+        const Color(0xFFFF5500),
+      ),
+      _TrailDef(
+        'frostbite',
+        'Frostbite',
+        8000,
+        'Schegge di gelo bianco-azzurro',
+        const Color(0xFFAAEEFF),
+      ),
+      _TrailDef(
+        'venom',
+        'Venom',
+        10000,
+        'Veleno verde acido pulsante',
+        const Color(0xFF88FF22),
+      ),
+      _TrailDef(
+        'shadow',
+        'Shadow',
+        14000,
+        'Ombra scura con scintille viola',
+        const Color(0xFF6622AA),
+      ),
+      _TrailDef(
+        'solarflare',
+        'Solar Flare',
+        16000,
+        'Brillamento oro-bianco accecante',
+        const Color(0xFFFFDD66),
+      ),
+      _TrailDef(
+        'oceanic',
+        'Oceanic',
+        15000,
+        'Onde blu-teal profonde',
+        const Color(0xFF1199DD),
+      ),
+      _TrailDef(
+        'starfield',
+        'Starfield',
+        18000,
+        'Stelle bianche su scia notturna',
+        const Color(0xFFFFFFFF),
+      ),
+      _TrailDef(
+        'chromatic',
+        'Chromatic',
+        20000,
+        'Aberrazione RGB velocissima',
+        const Color(0xFFFF33AA),
+      ),
+      _TrailDef(
+        'jade',
+        'Jade',
+        12000,
+        'Giada verde brillante',
+        const Color(0xFF33FFAA),
+      ),
+      _TrailDef(
+        'dusk',
+        'Dusk',
+        17000,
+        'Crepuscolo arancio → magenta',
+        const Color(0xFFFF6688),
       ),
     ];
 
@@ -3841,10 +3983,10 @@ class _TrailPreviewPainter extends CustomPainter {
             _trailBodyPaint.style = PaintingStyle.fill;
           }
           break;
-        default: // normal
-          trailColor = NeonColors.cyan;
-          trailAlpha = progress * 0.35;
-          trailSize = progress * 3;
+        default: // normal + nuove scie generiche → usa il colore del _TrailDef
+          trailColor = color;
+          trailAlpha = progress * 0.4;
+          trailSize = progress * 3.2;
       }
 
       // Iter 5 (utente "trails quasi invisibili"): bump 1.3 → 2.0 per
