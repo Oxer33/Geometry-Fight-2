@@ -35,10 +35,11 @@ class VoidReaperBoss extends BossBase {
     EnemyType.proton,
   ];
 
-  // Hitbox più ampia del default 0.7: la falce è sottile ma il corpo deve
-  // poter colpire al contatto (richiesta utente: "se mi tocca non fa danni").
+  // Hitbox più ampia del default 0.7: la falce è sottile ma RUOTA, e la punta
+  // (triangolo a r*0.9 ≈ 45px) spazza un cerchio. 0.90 (45px) copre la punta
+  // spazzata (richiesta utente: "se mi tocca non fa danni" + colpi sulla lama).
   @override
-  double get hitboxRadiusFactor => 0.85;
+  double get hitboxRadiusFactor => 0.90;
 
   @override
   int getPhase() {

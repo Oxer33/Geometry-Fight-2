@@ -56,8 +56,11 @@ class SwarmMotherBoss extends BossBase {
     EnemyType.swarmDrone,
   ];
 
+  // Fase 0: ottagono irregolare ~80-88px su bbox 180. 0.90 (81px) copre il
+  // corpo centrale. La SECONDA metà (fase 1+) vaga lontano ed è gestita a
+  // parte in codice via _kHalfContactRadius → non va coperta da questo cerchio.
   @override
-  double get hitboxRadiusFactor => 0.85;
+  double get hitboxRadiusFactor => 0.90;
 
   @override
   int getPhase() {

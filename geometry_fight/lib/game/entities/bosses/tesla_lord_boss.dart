@@ -36,6 +36,12 @@ class TeslaLordBoss extends BossBase {
     EnemyType.glitch,
   ];
 
+  // Ottagono corpo a r*0.8 = 44px su bbox 110. Default 0.7 (38px) lasciava
+  // fuori i bordi dell'ottagono. (Le torri tesla restano hazard separati con
+  // il loro check di danno.)
+  @override
+  double get hitboxRadiusFactor => 0.80;
+
   @override
   int getPhase() {
     if (healthPercent > 0.7) return 0;

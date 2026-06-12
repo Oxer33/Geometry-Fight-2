@@ -77,6 +77,11 @@ abstract class BossBase extends PositionComponent
   /// stretto (sotto 0.6 alcuni boss diventano "troppo piccoli da colpire").
   /// Boss con visivi più estesi (es. TheGrid 200×200, SwarmMother body
   /// largo) override il getter per allargare il hitbox al loro extent.
+  ///
+  /// NB: il factor PUÒ superare 1.0 — alcuni boss disegnano parti del corpo
+  /// (tentacoli rotanti, orbi, angoli di quadrati che ruotano) oltre la bbox
+  /// quadrata, quindi un raggio > size/2 è legittimo per coprirle (es.
+  /// VoidKraken 1.35, CrimsonCrown 1.10, TheArchitect 1.05).
   double get hitboxRadiusFactor => 0.7;
 
   @override

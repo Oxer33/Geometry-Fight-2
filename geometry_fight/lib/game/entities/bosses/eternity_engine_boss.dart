@@ -83,6 +83,11 @@ class EternityEngineBoss extends BossBase {
     EnemyType.decoy,
   ];
 
+  // Anello esterno a r*0.9 ≈ 58px (+ denti ingranaggio) su bbox 130. Default
+  // 0.7 (45px) lasciava l'intero anello esterno fuori dall'hitbox.
+  @override
+  double get hitboxRadiusFactor => 0.92;
+
   @override
   int getPhase() {
     if (healthPercent > 0.85) return 0;

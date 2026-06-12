@@ -36,6 +36,11 @@ class ChronoWraithBoss extends BossBase {
     EnemyType.mirror,
   ];
 
+  // Blob a 12 lati pulsante a r ≈ 50px (picco 58 col wobble) su bbox 130.
+  // Default 0.7 (45px) restava dentro al corpo → il bordo non era colpibile.
+  @override
+  double get hitboxRadiusFactor => 0.86;
+
   @override
   int getPhase() {
     if (healthPercent > 0.70) return 0;

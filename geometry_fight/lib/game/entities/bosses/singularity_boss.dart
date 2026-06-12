@@ -59,6 +59,11 @@ class SingularityBoss extends BossBase {
     EnemyType.weaver,
   ];
 
+  // Disco "event horizon" + bordo a r = 55px su bbox 140. Default 0.7 (49px)
+  // lasciava fuori l'anello esterno del disco solido.
+  @override
+  double get hitboxRadiusFactor => 0.80;
+
   @override
   int getPhase() {
     if (healthPercent > 0.7) return 0;

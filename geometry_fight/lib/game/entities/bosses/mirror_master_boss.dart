@@ -86,6 +86,12 @@ class MirrorMasterBoss extends BossBase {
     EnemyType.orbiter,
   ];
 
+  // Ottagono corpo a r*0.85 ≈ 40px su bbox 95. Default 0.7 (33px) lasciava
+  // fuori i vertici dell'ottagono. (Shard prismatici e scudo-specchio sono
+  // componenti orbitanti separati.)
+  @override
+  double get hitboxRadiusFactor => 0.86;
+
   @override
   int getPhase() {
     if (healthPercent > 0.7) return 0;

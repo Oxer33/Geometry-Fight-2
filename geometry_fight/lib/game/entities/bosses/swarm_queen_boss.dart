@@ -66,6 +66,12 @@ class SwarmQueenBoss extends BossBase {
     EnemyType.kamikaze,
   ];
 
+  // Esagono corpo a r*0.7 = 38px + corona spike fino a ~58px (arco superiore)
+  // su bbox 110. 0.80 (44px) copre la silhouette con la corona; default 0.7
+  // copriva esattamente solo l'esagono base.
+  @override
+  double get hitboxRadiusFactor => 0.80;
+
   @override
   int getPhase() {
     if (healthPercent > 0.7) return 0;

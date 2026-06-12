@@ -58,6 +58,12 @@ class NexusPrimeBoss extends BossBase {
     EnemyType.decoy,
   ];
 
+  // Esagono esterno a r*0.9 ≈ 40px su bbox 90. Default 0.7 (31px) troppo
+  // stretto: i vertici dell'esagono restavano fuori dall'hitbox. (I satelliti
+  // orbitanti a 80px restano meccanica separata, non corpo.)
+  @override
+  double get hitboxRadiusFactor => 0.88;
+
   @override
   int getPhase() {
     if (healthPercent > 0.7) return 0;

@@ -50,11 +50,12 @@ class CrimsonCrownBoss extends BossBase {
     EnemyType.splitter,
   ];
 
-  // CrimsonCrown ha orbi orbitanti che estendono il visivo verso il bordo
-  // bbox (size 100). Override 0.7 → 0.85 → bullet ricochet/homing
-  // colpiscono il body senza "pass-through" sull'edge.
+  // Corpo: core 35px + corona 5 spike fino a ~50px + 6 orbi orbitanti a
+  // 60-65px (bbox 100). Gli orbi sono disegnati come parte del corpo → 0.85
+  // (42px) ne copriva solo il centro. 1.10 (55px) copre corona piena + anello
+  // interno degli orbi.
   @override
-  double get hitboxRadiusFactor => 0.85;
+  double get hitboxRadiusFactor => 1.10;
 
   @override
   int getPhase() {

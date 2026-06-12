@@ -45,6 +45,11 @@ class PhantomKingBoss extends BossBase {
     EnemyType.decoy,
   ];
 
+  // Corona a 5 punte: tips a r*0.9 ≈ 38px su bbox 85. Default 0.7 (30px)
+  // colpiva solo il nucleo → le punte della corona non erano bersagliabili.
+  @override
+  double get hitboxRadiusFactor => 0.88;
+
   @override
   int getPhase() {
     if (healthPercent > 0.7) return 0;

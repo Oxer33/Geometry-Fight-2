@@ -38,6 +38,11 @@ class InfernoBoss extends BossBase {
     EnemyType.proton,
   ];
 
+  // Stella a 5 punte: tips a r*0.85 ≈ 41px su bbox 90. Default 0.7 (31px)
+  // copriva solo il nucleo incandescente, non le punte della stella.
+  @override
+  double get hitboxRadiusFactor => 0.88;
+
   @override
   int getPhase() {
     if (healthPercent > 0.7) return 0;

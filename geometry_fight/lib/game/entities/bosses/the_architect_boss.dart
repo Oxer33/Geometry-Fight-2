@@ -33,10 +33,13 @@ class TheArchitectBoss extends BossBase {
     EnemyType.laserTurret,
   ];
 
-  // TheArchitect struttura modulare 160×160 con appendici → visivo ~80%
-  // della bbox. Override 0.7 → 0.8.
+  // Corpo = due quadrati concentrici che RUOTANO (canvas.rotate): il quadrato
+  // esterno ha mezzo-lato r=65 → angoli a 65√2 ≈ 92px (bbox 160) che spazzano
+  // un cerchio. 0.8 (64px) copriva solo i lati, non gli angoli rotanti. 1.05
+  // (84px) copre gran parte dello sweep. (Le strutture esagonali a 150-350px
+  // sono componenti separati, non corpo.)
   @override
-  double get hitboxRadiusFactor => 0.8;
+  double get hitboxRadiusFactor => 1.05;
 
   @override
   int getPhase() {

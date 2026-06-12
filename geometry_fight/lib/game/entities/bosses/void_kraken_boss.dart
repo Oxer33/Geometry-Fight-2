@@ -57,6 +57,12 @@ class VoidKrakenBoss extends BossBase {
     EnemyType.mirror,
   ];
 
+  // 6 tentacoli rotanti che si estendono fino a 90px dal centro su bbox 120.
+  // Default 0.7 (42px) copriva solo il core → i tentacoli (il corpo) erano
+  // intoccabili. 1.35 (81px) copre core + gran parte dei tentacoli rotanti.
+  @override
+  double get hitboxRadiusFactor => 1.35;
+
   @override
   int getPhase() {
     if (healthPercent < 0.40) return 2;

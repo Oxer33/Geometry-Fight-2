@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 import 'dart:ui';
+import 'package:flame/collisions.dart';
 import 'package:flame/components.dart';
 import '../../../data/constants.dart';
 import '../../../data/wave_configs.dart';
@@ -54,11 +55,21 @@ class TheGridBoss extends BossBase {
     EnemyType.decoy,
   ];
 
-  // TheGrid renderizza una griglia che copre quasi tutto il bbox 200x200
-  // (visual border quasi tangente alla bbox). Override factor a 0.85
-  // per coprire l'extent visivo (default 0.7 lo renderebbe troppo piccolo).
+  // TheGrid è un QUADRATO assiale (lato = size*0.9 = 180px su bbox 200): un
+  // cerchio non può coprire gli angoli (a ~127px) senza eccedere enormemente
+  // sui lati. Uso un RectangleHitbox che combacia col quadrato disegnato.
   @override
-  double get hitboxRadiusFactor => 0.85;
+  Future<void> onLoad() async {
+    await super.onLoad();
+    children.whereType<CircleHitbox>().toList().forEach(
+      (h) => h.removeFromParent(),
+    );
+    final side = size.x * 0.9; // = lato del quadrato disegnato (s*2)
+    add(
+      RectangleHitbox(size: Vector2(side, side), anchor: Anchor.center)
+        ..position = size / 2,
+    );
+  }
 
   @override
   int getPhase() {

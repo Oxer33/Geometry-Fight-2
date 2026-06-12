@@ -49,6 +49,12 @@ class GravitonBoss extends BossBase {
     EnemyType.gravityWell,
   ];
 
+  // Anelli gravitazionali rotanti fino a r*0.9 = 45px su bbox 100. La sfera
+  // opaca è solo 20px, ma gli anelli sono il corpo visibile → 0.90 (45px).
+  // Default 0.7 (35px) lasciava l'anello esterno non bersagliabile.
+  @override
+  double get hitboxRadiusFactor => 0.90;
+
   @override
   int getPhase() {
     if (healthPercent > 0.7) return 0;

@@ -8,8 +8,9 @@ import 'boss_base.dart';
 import '../projectiles.dart';
 
 // Hitbox raggio unificato: copre corpo (size 120 → radius 60) + orbita teste
-// (80px offset + 12px testa). 100 = corpo + metà orbita → colpi teste contano.
-const double _kHitboxRadius = 100;
+// (80px offset ± wobble 15 + 12px testa ≈ 107px al massimo). 105 copre quasi
+// tutta l'orbita delle teste → colpire le teste conta sempre.
+const double _kHitboxRadius = 105;
 
 // Rage mode: ridotto ulteriormente (richiesta utente "spara troppo").
 // 5 bullet × 1/0.35s ≈ 14/s radiali + secondary 3/3s = 1/s. Totale ~15/s

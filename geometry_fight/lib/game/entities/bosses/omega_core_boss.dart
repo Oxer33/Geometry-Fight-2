@@ -48,6 +48,11 @@ class OmegaCoreBoss extends BossBase {
     EnemyType.decoy,
   ];
 
+  // Anello esterno orbitante a r*0.85 = 51px su bbox 120. Default 0.7 (42px)
+  // copriva sfera + anello interno ma non l'anello esterno (la silhouette).
+  @override
+  double get hitboxRadiusFactor => 0.85;
+
   @override
   int getPhase() {
     if (healthPercent >= 0.85) return 0;
