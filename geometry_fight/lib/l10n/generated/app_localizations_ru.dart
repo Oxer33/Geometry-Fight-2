@@ -9,6 +9,15 @@ class AppLocalizationsRu extends AppLocalizations {
   AppLocalizationsRu([String locale = 'ru']) : super(locale);
 
   @override
+  String get petNameSlower => 'ЗАМЕДЛИТЕЛЬ';
+
+  @override
+  String get petNameBomber => 'БОМБАРДИР';
+
+  @override
+  String get petNameRepulsor => 'ОТТАЛКИВАТЕЛЬ';
+
+  @override
   String get skinDescMagma =>
       'Раскалённая расплавленная порода — свечение лавы';
 

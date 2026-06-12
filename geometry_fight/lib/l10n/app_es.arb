@@ -1,5 +1,8 @@
 {
   "@@locale": "es",
+  "petNameSlower": "RALENTIZADOR",
+  "petNameBomber": "BOMBARDERO",
+  "petNameRepulsor": "REPULSOR",
   "skinDescMagma": "Roca fundida incandescente — resplandor de lava",
   "skinDescFrost": "Hielo cristalino blanco-azulado",
   "skinDescToxic": "Verde ácido radioactivo luminoso",

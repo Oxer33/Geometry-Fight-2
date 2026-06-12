@@ -9,6 +9,15 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
+  String get petNameSlower => 'SLOWER';
+
+  @override
+  String get petNameBomber => 'BOMBER';
+
+  @override
+  String get petNameRepulsor => 'REPULSOR';
+
+  @override
   String get skinDescMagma => 'Glowing molten rock — lava-hot radiance';
 
   @override

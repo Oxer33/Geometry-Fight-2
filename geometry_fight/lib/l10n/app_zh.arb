@@ -1,5 +1,8 @@
 {
   "@@locale": "zh",
+  "petNameSlower": "减速器",
+  "petNameBomber": "轰炸机",
+  "petNameRepulsor": "排斥器",
   "skinDescMagma": "炽热熔岩岩浆 — 熔岩余辉",
   "skinDescFrost": "白蓝冰晶冰霜",
   "skinDescToxic": "荧光放射性酸绿",

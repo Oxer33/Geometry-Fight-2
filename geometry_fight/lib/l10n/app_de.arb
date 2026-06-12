@@ -1,5 +1,8 @@
 {
   "@@locale": "de",
+  "petNameSlower": "VERLANGSAMER",
+  "petNameBomber": "BOMBER",
+  "petNameRepulsor": "REPULSOR",
   "skinDescMagma": "Glühend geschmolzenes Gestein — Lavaglut",
   "skinDescFrost": "Kristallklares Weiß-Blau-Eis",
   "skinDescToxic": "Leuchtendes radioaktives Säuregrün",

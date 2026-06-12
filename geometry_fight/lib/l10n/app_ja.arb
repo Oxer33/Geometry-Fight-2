@@ -1,5 +1,8 @@
 {
   "@@locale": "ja",
+  "petNameSlower": "スロウアー",
+  "petNameBomber": "ボンバー",
+  "petNameRepulsor": "リパルサー",
   "skinDescMagma": "灼熱の溶岩岩 — マグマの輝き",
   "skinDescFrost": "白青の透き通る氷晶",
   "skinDescToxic": "放射性の眩しい酸グリーン",

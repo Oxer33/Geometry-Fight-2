@@ -1,5 +1,8 @@
 {
   "@@locale": "it",
+  "petNameSlower": "RALLENTATORE",
+  "petNameBomber": "BOMBARDIERE",
+  "petNameRepulsor": "REPULSORE",
   "skinDescMagma": "Roccia fusa incandescente — bagliore di lava",
   "skinDescFrost": "Ghiaccio cristallino bianco-azzurro",
   "skinDescToxic": "Verde acido radioattivo luminoso",

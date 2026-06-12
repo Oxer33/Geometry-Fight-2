@@ -9,6 +9,15 @@ class AppLocalizationsIt extends AppLocalizations {
   AppLocalizationsIt([String locale = 'it']) : super(locale);
 
   @override
+  String get petNameSlower => 'RALLENTATORE';
+
+  @override
+  String get petNameBomber => 'BOMBARDIERE';
+
+  @override
+  String get petNameRepulsor => 'REPULSORE';
+
+  @override
   String get skinDescMagma => 'Roccia fusa incandescente — bagliore di lava';
 
   @override

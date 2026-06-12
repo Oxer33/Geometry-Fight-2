@@ -1,5 +1,8 @@
 {
   "@@locale": "en",
+  "petNameSlower": "SLOWER",
+  "petNameBomber": "BOMBER",
+  "petNameRepulsor": "REPULSOR",
   "skinDescMagma": "Glowing molten rock — lava-hot radiance",
   "skinDescFrost": "Crystalline white-blue ice",
   "skinDescToxic": "Radioactive luminous acid green",

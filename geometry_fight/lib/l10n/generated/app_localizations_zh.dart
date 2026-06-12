@@ -9,6 +9,15 @@ class AppLocalizationsZh extends AppLocalizations {
   AppLocalizationsZh([String locale = 'zh']) : super(locale);
 
   @override
+  String get petNameSlower => '减速器';
+
+  @override
+  String get petNameBomber => '轰炸机';
+
+  @override
+  String get petNameRepulsor => '排斥器';
+
+  @override
   String get skinDescMagma => '炽热熔岩岩浆 — 熔岩余辉';
 
   @override

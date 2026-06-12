@@ -112,6 +112,24 @@ abstract class AppLocalizations {
     Locale('zh'),
   ];
 
+  /// No description provided for @petNameSlower.
+  ///
+  /// In it, this message translates to:
+  /// **'RALLENTATORE'**
+  String get petNameSlower;
+
+  /// No description provided for @petNameBomber.
+  ///
+  /// In it, this message translates to:
+  /// **'BOMBARDIERE'**
+  String get petNameBomber;
+
+  /// No description provided for @petNameRepulsor.
+  ///
+  /// In it, this message translates to:
+  /// **'REPULSORE'**
+  String get petNameRepulsor;
+
   /// No description provided for @skinDescMagma.
   ///
   /// In it, this message translates to:

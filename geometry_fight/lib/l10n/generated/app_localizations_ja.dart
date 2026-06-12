@@ -9,6 +9,15 @@ class AppLocalizationsJa extends AppLocalizations {
   AppLocalizationsJa([String locale = 'ja']) : super(locale);
 
   @override
+  String get petNameSlower => 'スロウアー';
+
+  @override
+  String get petNameBomber => 'ボンバー';
+
+  @override
+  String get petNameRepulsor => 'リパルサー';
+
+  @override
   String get skinDescMagma => '灼熱の溶岩岩 — マグマの輝き';
 
   @override

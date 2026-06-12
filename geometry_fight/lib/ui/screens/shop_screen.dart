@@ -332,6 +332,9 @@ class _ShopScreenState extends State<ShopScreen> with TickerProviderStateMixin {
         'black_hole_pet' => l10n.petNameBlackHole,
         'emp_drone' => l10n.petNameEmpDrone,
         'tactical_spotter' => l10n.petNameTacticalSpotter,
+        'slower' => l10n.petNameSlower,
+        'bomber' => l10n.petNameBomber,
+        'repulsor' => l10n.petNameRepulsor,
         _ => fallback,
       };
 
