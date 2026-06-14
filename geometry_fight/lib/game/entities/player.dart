@@ -1119,6 +1119,26 @@ class Player extends PositionComponent
     } else if (skinId == 'abyss') {
       // Corpo blu abissale scurissimo, glow ciano/blu cangiante.
       bodyColor = const Color(0xFF001022);
+    } else if (skinId == 'singularity') {
+      bodyColor = const Color(0xFF050008); // nero buco nero (match shop)
+    } else if (skinId == 'supernova') {
+      bodyColor = Color.lerp(const Color(0xFFFFFFFF), baseColor, 0.5)!;
+    } else if (skinId == 'starforge') {
+      bodyColor = const Color(0xFF1A0A33); // viola profondo
+    } else if (skinId == 'tempest') {
+      bodyColor = const Color(0xFF081020); // blu notte tempesta
+    } else if (skinId == 'spectrum') {
+      bodyColor = const Color(0xFFF0F0FF); // bianco prismatico
+    } else if (skinId == 'hellfire') {
+      bodyColor = const Color(0xFF330800); // rosso scuro brace
+    } else if (skinId == 'glacier') {
+      bodyColor = const Color(0xFFCCEEFF); // cristallo ghiaccio
+    } else if (skinId == 'plague') {
+      bodyColor = const Color(0xFF224400); // verde tossico scuro
+    } else if (skinId == 'phantom') {
+      bodyColor = const Color(0xFFEEEEFF).withValues(alpha: 0.85);
+    } else if (skinId == 'celestial') {
+      bodyColor = const Color(0xFFEEFFFF); // bianco celeste
     }
     if (isInvincible) {
       final blink = ((_invincibleTimer * 12).toInt() % 2 == 0);
@@ -1870,82 +1890,185 @@ class Player extends PositionComponent
   void _renderSkinFx(Canvas canvas, double cx, double cy) {
     final skin = game.saveData.activeSkin;
     final p = _energyPhase;
+    const s = 1.15; // scala effetti proporzionata alla nave in-game (~30px)
     switch (skin) {
       case 'singularity':
-        // Disco d'accrescimento ellittico: particelle multicolore orbitanti.
-        for (int i = 0; i < 10; i++) {
-          final a = p * (2 + (i % 3) * 0.5) + i * 0.628;
-          final r = 18.0 + (i % 4) * 4;
-          final hue = (i * 36 + p * 40) % 360;
-          _fxPaint.color = HSVColor.fromAHSV(0.85, hue, 0.8, 1).toColor();
+        // Disco d'accrescimento ellittico multicolore (14 part.) + horizon.
+        for (int i = 0; i < 14; i++) {
+          final a = p * (1.5 + (i % 3) * 0.4) + i * (math.pi * 2 / 14);
+          final rad = (14 + (i % 4) * 4) * s;
+          final hue = (i * 26 + p * 40) % 360;
+          _fxPaint.color = HSVColor.fromAHSV(0.9, hue, 0.8, 1).toColor();
           canvas.drawCircle(
-            Offset(cx + math.cos(a) * r, cy + math.sin(a) * r * 0.5),
-            1.6,
+            Offset(cx + math.cos(a) * rad, cy + math.sin(a) * rad * 0.5),
+            1.4,
             _fxPaint,
           );
         }
+        _fxPaint.color = const Color(0xFF000000);
+        canvas.drawCircle(Offset(cx, cy + 2 * s), 3.2 * s, _fxPaint);
       case 'supernova':
         final pulse = math.sin(p * 4) * 0.3 + 0.7;
-        _fxStroke.color = const Color(
-          0xFFFFEEAA,
-        ).withValues(alpha: 0.5 * pulse);
-        for (int i = 0; i < 8; i++) {
-          final a = i * math.pi / 4 + p * 0.5;
-          final len = 18 + math.sin(p * 5 + i) * 6;
+        _fxStroke
+          ..color = const Color(0xFFFFFFFF).withValues(alpha: 0.6 * pulse)
+          ..strokeWidth = 1.3;
+        for (int i = 0; i < 12; i++) {
+          final a = i * math.pi / 6 + p * 0.5;
+          final len = (12 + math.sin(p * 5 + i) * 5) * s;
           canvas.drawLine(
-            Offset(cx + math.cos(a) * 10, cy + math.sin(a) * 10),
+            Offset(cx + math.cos(a) * 6 * s, cy + math.sin(a) * 6 * s),
             Offset(cx + math.cos(a) * len, cy + math.sin(a) * len),
             _fxStroke,
           );
         }
+        _fxPaint.color = const Color(0xFFFFFFFF);
+        canvas.drawCircle(Offset(cx, cy + 2 * s), 2.2 * s * pulse, _fxPaint);
+      case 'starforge':
+        // Campo di stelle scintillanti (16) attorno allo scafo.
+        for (int i = 0; i < 16; i++) {
+          final a = i * 2.4 + p * 0.2;
+          final r = (10 + (i * 7 % 18)) * s;
+          final tw = math.sin(p * 4 + i * 1.7) * 0.5 + 0.5;
+          _fxPaint.color = const Color(
+            0xFFFFFFFF,
+          ).withValues(alpha: 0.3 + tw * 0.6);
+          canvas.drawCircle(
+            Offset(cx + math.cos(a) * r, cy + math.sin(a) * r),
+            tw * 1.4 + 0.4,
+            _fxPaint,
+          );
+        }
       case 'tempest':
-        final rng = math.Random((p * 8).floor());
-        _fxStroke.color = const Color(0xFFCCF0FF).withValues(alpha: 0.85);
-        for (int b = 0; b < 3; b++) {
+        final rng = math.Random((p * 6).floor());
+        _fxStroke
+          ..color = const Color(0xFFCCF0FF).withValues(alpha: 0.9)
+          ..strokeWidth = 1.2;
+        for (int b = 0; b < 4; b++) {
           final a0 = rng.nextDouble() * math.pi * 2;
-          var lx = cx + math.cos(a0) * 10, ly = cy + math.sin(a0) * 10;
+          var lx = cx + math.cos(a0) * 8 * s, ly = cy + math.sin(a0) * 8 * s;
           final path = Path()..moveTo(lx, ly);
-          for (int seg = 0; seg < 3; seg++) {
-            lx += math.cos(a0) * 6 + (rng.nextDouble() - 0.5) * 10;
-            ly += math.sin(a0) * 6 + (rng.nextDouble() - 0.5) * 10;
+          for (int seg = 0; seg < 4; seg++) {
+            lx += (math.cos(a0) * 5 + (rng.nextDouble() - 0.5) * 8) * s;
+            ly += (math.sin(a0) * 5 + (rng.nextDouble() - 0.5) * 8) * s;
             path.lineTo(lx, ly);
           }
           canvas.drawPath(path, _fxStroke);
         }
       case 'spectrum':
-        for (int i = 0; i < 6; i++) {
-          final a = p * 1.2 + i * math.pi / 3;
-          final hue = (i * 60 + p * 30) % 360;
-          _fxPaint.color = HSVColor.fromAHSV(0.8, hue, 0.9, 1).toColor();
-          canvas.drawCircle(
-            Offset(cx + math.cos(a) * 20, cy + math.sin(a) * 20),
-            2.0,
-            _fxPaint,
+        // Schegge prismatiche orbitanti (8), ognuna un colore diverso.
+        for (int i = 0; i < 8; i++) {
+          final a = p * 1.2 + i * math.pi / 4;
+          final r = 18 * s;
+          final hue = (i * 45 + p * 30) % 360;
+          canvas.save();
+          canvas.translate(cx + math.cos(a) * r, cy + math.sin(a) * r);
+          canvas.rotate(a * 2);
+          _fxPaint.color = HSVColor.fromAHSV(0.85, hue, 0.9, 1).toColor();
+          final shard = Path()
+            ..moveTo(0, -3 * s)
+            ..lineTo(2 * s, 0)
+            ..lineTo(0, 3 * s)
+            ..lineTo(-2 * s, 0)
+            ..close();
+          canvas.drawPath(shard, _fxPaint);
+          canvas.restore();
+        }
+      case 'hellfire':
+        // Fiamme che lambiscono lo scafo (7) + braci ascendenti (5).
+        for (int i = 0; i < 7; i++) {
+          final a = (i / 7) * math.pi * 2;
+          final fl = math.sin(p * 8 + i * 1.3) * 0.5 + 0.5;
+          _fxStroke
+            ..color = Color.lerp(
+              const Color(0xFFFF2200),
+              const Color(0xFFFFDD00),
+              fl,
+            )!.withValues(alpha: 0.75)
+            ..strokeWidth = 2.2
+            ..strokeCap = StrokeCap.round;
+          canvas.drawLine(
+            Offset(cx + math.cos(a) * 9 * s, cy + math.sin(a) * 9 * s),
+            Offset(
+              cx + math.cos(a) * (13 + fl * 7) * s,
+              cy + math.sin(a) * (13 + fl * 7) * s,
+            ),
+            _fxStroke,
           );
         }
+        for (int i = 0; i < 5; i++) {
+          final ey = cy + (-((p * 30 + i * 20) % 40) + 10) * s;
+          final ex = cx + math.sin(p * 3 + i) * 8 * s;
+          _fxPaint.color = const Color(0xFFFFAA00).withValues(alpha: 0.6);
+          canvas.drawCircle(Offset(ex, ey), 1.2, _fxPaint);
+        }
+      case 'glacier':
+        // Schegge di ghiaccio (cristalli a 3 assi) orbitanti (6).
+        for (int i = 0; i < 6; i++) {
+          final a = p * 0.6 + i * math.pi / 3;
+          final r = 17 * s;
+          final gx = cx + math.cos(a) * r, gy = cy + math.sin(a) * r;
+          final tw = math.sin(p * 4 + i) * 0.3 + 0.7;
+          _fxStroke
+            ..color = const Color(0xFF88DDFF).withValues(alpha: tw)
+            ..strokeWidth = 0.9;
+          for (int k = 0; k < 3; k++) {
+            final ka = k * math.pi / 3 + a;
+            canvas.drawLine(
+              Offset(gx - math.cos(ka) * 3 * s, gy - math.sin(ka) * 3 * s),
+              Offset(gx + math.cos(ka) * 3 * s, gy + math.sin(ka) * 3 * s),
+              _fxStroke,
+            );
+          }
+        }
+      case 'plague':
+        // Bolle acide che salgono e si dissolvono (8).
+        for (int i = 0; i < 8; i++) {
+          final prog = (p * 0.7 + i * 0.3) % 1.0;
+          final bx = cx + math.sin(i * 2.1) * 10 * s;
+          final by = cy + (8 - prog * 18) * s;
+          final br = (1.5 + math.sin(i.toDouble()) * 0.8) * (1 - prog * 0.5);
+          _fxPaint.color = const Color(
+            0xFFCCFF44,
+          ).withValues(alpha: (1 - prog) * 0.8);
+          canvas.drawCircle(Offset(bx, by), br * s, _fxPaint);
+        }
+      case 'phantom':
+        // 3 copie RGB sfasate del corpo nave (chromatic aberration, mirror shop).
+        final sep = (math.sin(p * 3) * 0.5 + 0.5) * 4 + 1.5;
+        _fxPaint.color = const Color(0xFFFF3366).withValues(alpha: 0.4);
+        canvas.save();
+        canvas.translate(-sep, 0);
+        _drawShipBody(canvas, _fxPaint, 1.0);
+        canvas.restore();
+        _fxPaint.color = const Color(0xFF3366FF).withValues(alpha: 0.4);
+        canvas.save();
+        canvas.translate(sep, 0);
+        _drawShipBody(canvas, _fxPaint, 1.0);
+        canvas.restore();
+        _fxPaint.color = const Color(0xFF33FF99).withValues(alpha: 0.4);
+        canvas.save();
+        canvas.translate(0, sep);
+        _drawShipBody(canvas, _fxPaint, 1.0);
+        canvas.restore();
       case 'celestial':
-        for (int ribbon = 0; ribbon < 2; ribbon++) {
+        // Nastri aurora multi-hue (3) attorno allo scafo.
+        for (int ribbon = 0; ribbon < 3; ribbon++) {
           final hue = (p * 30 + ribbon * 120) % 360;
-          _fxStroke.color = HSVColor.fromAHSV(0.4, hue, 0.7, 1).toColor();
+          _fxStroke
+            ..color = HSVColor.fromAHSV(0.5, hue, 0.7, 1).toColor()
+            ..strokeWidth = 2.5;
           final path = Path();
-          for (int k = 0; k <= 12; k++) {
-            final x = cx + (-18 + k * 3);
+          for (int k = 0; k <= 20; k++) {
+            final x = cx + (-16 + k * 1.6) * s;
             final y =
-                cy + math.sin(k * 0.5 + p * 2 + ribbon * 1.5) * 7 + ribbon * 4;
+                cy +
+                (math.sin(k * 0.5 + p * 2 + ribbon * 1.5) * 6 +
+                        ribbon * 3 -
+                        3) *
+                    s;
             k == 0 ? path.moveTo(x, y) : path.lineTo(x, y);
           }
           canvas.drawPath(path, _fxStroke);
-        }
-      case 'phantom':
-        final sep = (math.sin(p * 3) * 0.5 + 0.5) * 5 + 2;
-        const cols = [Color(0xFFFF3366), Color(0xFF3366FF)];
-        for (int i = 0; i < 2; i++) {
-          _fxPaint.color = cols[i].withValues(alpha: 0.35);
-          canvas.drawCircle(
-            Offset(cx + (i == 0 ? -sep : sep), cy),
-            9,
-            _fxPaint,
-          );
         }
       default:
         return;
