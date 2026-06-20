@@ -162,6 +162,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get menuStore => '商店';
 
   @override
+  String get menuTalents => 'TALENTI';
+
+  @override
   String get menuSettings => '设置';
 
   @override
@@ -1063,6 +1066,20 @@ class AppLocalizationsZh extends AppLocalizations {
   String get weaponDescChain => '电闪在5个敌人间弹跳——完美克制群敌。';
 
   @override
+  String get weaponNameShotgun => 'Shotgun';
+
+  @override
+  String get weaponDescShotgun =>
+      '8 pallettoni arancioni a cono ravvicinato — devastante da vicino.';
+
+  @override
+  String get weaponNameRailgun => 'Railgun';
+
+  @override
+  String get weaponDescRailgun =>
+      'Colpo hitscan istantaneo che perfora TUTTI i nemici in linea retta.';
+
+  @override
   String get modeDescClassic => '100波每10波一个Boss——标准模式';
 
   @override
@@ -1336,10 +1353,79 @@ class AppLocalizationsZh extends AppLocalizations {
   String get modDescMagnetKing => '巨大的磁铁范围。几何体飞向你。';
 
   @override
+  String get waveModNameFrenzy => '狂暴';
+
+  @override
+  String get waveModTaglineFrenzy => '敌人速度 +35%';
+
+  @override
+  String get waveModNameTank => '坦克';
+
+  @override
+  String get waveModTaglineTank => '敌人生命 ×1.6';
+
+  @override
+  String get waveModNameGlass => '玻璃';
+
+  @override
+  String get waveModTaglineGlass => '敌人生命 ×0.4，分数 ×1.6';
+
+  @override
+  String get waveModNameLoot => '战利品';
+
+  @override
+  String get waveModTaglineLoot => '双倍几何体掉落';
+
+  @override
+  String get waveModNameBlitz => '闪击';
+
+  @override
+  String get waveModTaglineBlitz => '+50% 敌人';
+
+  @override
+  String get waveModNameHaste => '急速';
+
+  @override
+  String get waveModTaglineHaste => '波次紧凑';
+
+  @override
+  String get waveModNameMagnetic => '磁力';
+
+  @override
+  String get waveModTaglineMagnetic => '几何体磁铁 ×2';
+
+  @override
+  String get waveModNameIron => '钢铁';
+
+  @override
+  String get waveModTaglineIron => '缓慢坦克';
+
+  @override
   String get gameOverBossLabel => 'BOSS';
 
   @override
   String get gameOverGoldGeoms => '金色几何体';
+
+  @override
+  String get gameOverGoldBase => '基础';
+
+  @override
+  String get gameOverGoldBonus => '奖励';
+
+  @override
+  String get gameOverGoldAchievement => '成就';
+
+  @override
+  String get hudJoystickMove => '移动';
+
+  @override
+  String get hudJoystickAim => '瞄准';
+
+  @override
+  String get diffStatHp => '生命';
+
+  @override
+  String get diffStatSpeed => '速度';
 
   @override
   String get achKills100Name => '首杀';

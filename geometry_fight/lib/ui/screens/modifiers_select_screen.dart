@@ -3,72 +3,8 @@ import '../../data/constants.dart';
 import '../../data/difficulty.dart';
 import '../../data/modifiers.dart';
 import '../../l10n/generated/app_localizations.dart';
+import '../shared/modifier_labels.dart';
 import '../widgets/neon_back_button.dart';
-
-/// Localized name for a modifier id. Falls back to catalog Italian if id is
-/// unknown (defensive — keeps render path safe when new mods are added).
-String _modifierName(String id, AppLocalizations l10n) {
-  switch (id) {
-    case 'glass_cannon':
-      return l10n.modNameGlassCannon;
-    case 'bullet_hell':
-      return l10n.modNameBulletHell;
-    case 'speed_demon':
-      return l10n.modNameSpeedDemon;
-    case 'no_powerups':
-      return l10n.modNameNoPowerups;
-    case 'fog_of_war':
-      return l10n.modNameFogOfWar;
-    case 'tiny_arena':
-      return l10n.modNameTinyArena;
-    case 'one_shot':
-      return l10n.modNameOneShot;
-    case 'chaos':
-      return l10n.modNameChaos;
-    case 'giant_mode':
-      return l10n.modNameGiantMode;
-    case 'ricochet_world':
-      return l10n.modNameRicochetWorld;
-    case 'infinite_bombs':
-      return l10n.modNameInfiniteBombs;
-    case 'magnet_king':
-      return l10n.modNameMagnetKing;
-    default:
-      return getModifier(id)?.name ?? id;
-  }
-}
-
-/// Localized description for a modifier id. Falls back to catalog Italian.
-String _modifierDesc(String id, AppLocalizations l10n) {
-  switch (id) {
-    case 'glass_cannon':
-      return l10n.modDescGlassCannon;
-    case 'bullet_hell':
-      return l10n.modDescBulletHell;
-    case 'speed_demon':
-      return l10n.modDescSpeedDemon;
-    case 'no_powerups':
-      return l10n.modDescNoPowerups;
-    case 'fog_of_war':
-      return l10n.modDescFogOfWar;
-    case 'tiny_arena':
-      return l10n.modDescTinyArena;
-    case 'one_shot':
-      return l10n.modDescOneShot;
-    case 'chaos':
-      return l10n.modDescChaos;
-    case 'giant_mode':
-      return l10n.modDescGiantMode;
-    case 'ricochet_world':
-      return l10n.modDescRicochetWorld;
-    case 'infinite_bombs':
-      return l10n.modDescInfiniteBombs;
-    case 'magnet_king':
-      return l10n.modDescMagnetKing;
-    default:
-      return getModifier(id)?.description ?? '';
-  }
-}
 
 /// Iter 9: filtra modifier incompatibili con mode rules.
 /// Es: pacifist no shoot → glass_cannon/bullet_hell/one_shot/ricochet_world/
@@ -146,6 +82,12 @@ class _ModifiersSelectScreenState extends State<ModifiersSelectScreen> {
   late List<String> _active;
   late List<GameModifier> _availableModifiers;
   static const _maxActive = 3;
+
+  // Step indicator labels for the pre-game wizard. Pacifist/Snake skip
+  // difficulty + loadout (3-step wizard); other modes run the full 6-step
+  // wizard. Named consts avoid magic strings scattered in the build method.
+  static const _stepLabelShortWizard = '2/3';
+  static const _stepLabelFullWizard = '3/6';
 
   // Caveman-review: guard rapid double-tap from re-firing onConfirm (which
   // navigates to next screen). Widget unmounts on advance — no reset needed.
@@ -236,7 +178,11 @@ class _ModifiersSelectScreenState extends State<ModifiersSelectScreen> {
               padding: const EdgeInsets.all(10),
               child: Row(
                 children: [
-                  NeonBackButton(onTap: widget.onBack),
+                  Semantics(
+                    button: true,
+                    label: l10n.back,
+                    child: NeonBackButton(onTap: widget.onBack),
+                  ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text(
@@ -266,7 +212,9 @@ class _ModifiersSelectScreenState extends State<ModifiersSelectScreen> {
                     // difficulty + loadout → questo screen è step 2 di 3.
                     // Altre modalità è 3 di 6 (full wizard).
                     child: Text(
-                      _isShortWizard ? '2/3' : '3/6',
+                      _isShortWizard
+                          ? _stepLabelShortWizard
+                          : _stepLabelFullWizard,
                       style: const TextStyle(
                         color: NeonColors.cyan,
                         fontSize: 12,
@@ -330,66 +278,86 @@ class _ModifiersSelectScreenState extends State<ModifiersSelectScreen> {
                     final color = m.isChallenge
                         ? const Color(0xFFFF4466)
                         : const Color(0xFF44CCFF);
-                    return GestureDetector(
-                      onTap: () => _tapMod(m.id),
-                      child: Container(
-                        margin: const EdgeInsets.only(bottom: 8),
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(8),
-                          color: on
-                              ? color.withValues(alpha: 0.15)
-                              : color.withValues(alpha: 0.04),
-                          border: Border.all(
-                            color: color.withValues(alpha: on ? 0.95 : 0.3),
-                            width: on ? 2 : 1,
+                    return Semantics(
+                      button: true,
+                      selected: on,
+                      label: modifierName(
+                        l10n,
+                        m.id,
+                        getModifier(m.id)?.name ?? m.id,
+                      ),
+                      child: GestureDetector(
+                        onTap: () => _tapMod(m.id),
+                        child: Container(
+                          margin: const EdgeInsets.only(bottom: 8),
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(8),
+                            color: on
+                                ? color.withValues(alpha: 0.15)
+                                : color.withValues(alpha: 0.04),
+                            border: Border.all(
+                              color: color.withValues(alpha: on ? 0.95 : 0.3),
+                              width: on ? 2 : 1,
+                            ),
                           ),
-                        ),
-                        child: Row(
-                          children: [
-                            Text(m.icon, style: const TextStyle(fontSize: 22)),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    _modifierName(m.id, l10n),
-                                    style: TextStyle(
-                                      color: color,
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w900,
-                                      fontFamily: 'monospace',
-                                      letterSpacing: 2,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    _modifierDesc(m.id, l10n),
-                                    style: TextStyle(
-                                      color: Colors.white.withValues(
-                                        alpha: 0.7,
+                          child: Row(
+                            children: [
+                              Text(
+                                m.icon,
+                                style: const TextStyle(fontSize: 22),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      modifierName(
+                                        l10n,
+                                        m.id,
+                                        getModifier(m.id)?.name ?? m.id,
                                       ),
-                                      fontSize: 10,
-                                      fontFamily: 'monospace',
-                                      height: 1.2,
+                                      style: TextStyle(
+                                        color: color,
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w900,
+                                        fontFamily: 'monospace',
+                                        letterSpacing: 2,
+                                      ),
                                     ),
-                                  ),
-                                ],
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      modifierDesc(
+                                        l10n,
+                                        m.id,
+                                        getModifier(m.id)?.description ?? '',
+                                      ),
+                                      style: TextStyle(
+                                        color: Colors.white.withValues(
+                                          alpha: 0.7,
+                                        ),
+                                        fontSize: 10,
+                                        fontFamily: 'monospace',
+                                        height: 1.2,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
-                            ),
-                            Text(
-                              '×${m.scoreMultiplier.toStringAsFixed(1)}',
-                              style: TextStyle(
-                                color: m.scoreMultiplier > 1.0
-                                    ? NeonColors.green
-                                    : Colors.amber,
-                                fontSize: 11,
-                                fontFamily: 'monospace',
-                                fontWeight: FontWeight.w900,
+                              Text(
+                                '×${m.scoreMultiplier.toStringAsFixed(1)}',
+                                style: TextStyle(
+                                  color: m.scoreMultiplier > 1.0
+                                      ? NeonColors.green
+                                      : Colors.amber,
+                                  fontSize: 11,
+                                  fontFamily: 'monospace',
+                                  fontWeight: FontWeight.w900,
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
                       ),
                     );
@@ -413,15 +381,105 @@ class _ModifiersSelectScreenState extends State<ModifiersSelectScreen> {
   Widget _buildConfirmCard(AppLocalizations l10n) {
     if (_active.isEmpty) {
       final color = NeonColors.cyan.withValues(alpha: 0.85);
-      return GestureDetector(
+      return Semantics(
+        button: true,
+        label: l10n.modNoneCard,
+        child: GestureDetector(
+          onTap: _confirm,
+          child: Container(
+            margin: const EdgeInsets.only(bottom: 10),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(8),
+              color: color.withValues(alpha: 0.10),
+              border: Border.all(color: color, width: 2),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 28,
+                  height: 28,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: color, width: 1.6),
+                  ),
+                  alignment: Alignment.center,
+                  child: Icon(Icons.block_rounded, color: color, size: 18),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        l10n.modNoneCard,
+                        style: TextStyle(
+                          color: color,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w900,
+                          fontFamily: 'monospace',
+                          letterSpacing: 2,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        l10n.modNoneCardDesc,
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.7),
+                          fontSize: 10,
+                          fontFamily: 'monospace',
+                          height: 1.2,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Text(
+                  '×1.0',
+                  style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.7),
+                    fontSize: 11,
+                    fontFamily: 'monospace',
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+    // Stato con modificatori attivi: oro + nomi + moltiplicatore totale.
+    final names = _active
+        .map((id) => modifierName(l10n, id, getModifier(id)?.name ?? id))
+        .join(', ');
+    final total = combinedScoreMultiplier(_active);
+    return Semantics(
+      button: true,
+      label: names,
+      child: GestureDetector(
         onTap: _confirm,
         child: Container(
           margin: const EdgeInsets.only(bottom: 10),
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(8),
-            color: color.withValues(alpha: 0.10),
-            border: Border.all(color: color, width: 2),
+            gradient: LinearGradient(
+              colors: [
+                NeonColors.gold.withValues(alpha: 0.20),
+                NeonColors.gold.withValues(alpha: 0.05),
+              ],
+            ),
+            border: Border.all(
+              color: NeonColors.gold.withValues(alpha: 0.9),
+              width: 2,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: NeonColors.gold.withValues(alpha: 0.35),
+                blurRadius: 12,
+              ),
+            ],
           ),
           child: Row(
             children: [
@@ -430,10 +488,14 @@ class _ModifiersSelectScreenState extends State<ModifiersSelectScreen> {
                 height: 28,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  border: Border.all(color: color, width: 1.6),
+                  border: Border.all(color: NeonColors.gold, width: 1.6),
                 ),
                 alignment: Alignment.center,
-                child: Icon(Icons.block_rounded, color: color, size: 18),
+                child: const Icon(
+                  Icons.play_arrow_rounded,
+                  color: NeonColors.gold,
+                  size: 20,
+                ),
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -441,125 +503,41 @@ class _ModifiersSelectScreenState extends State<ModifiersSelectScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      l10n.modNoneCard,
-                      style: TextStyle(
-                        color: color,
-                        fontSize: 13,
+                      names,
+                      style: const TextStyle(
+                        color: NeonColors.gold,
+                        fontSize: 12,
                         fontWeight: FontWeight.w900,
                         fontFamily: 'monospace',
-                        letterSpacing: 2,
+                        letterSpacing: 1.2,
+                        height: 1.25,
                       ),
                     ),
-                    const SizedBox(height: 2),
+                    const SizedBox(height: 3),
                     Text(
-                      l10n.modNoneCardDesc,
+                      l10n.modifiersActiveCount(_active.length, _maxActive),
                       style: TextStyle(
                         color: Colors.white.withValues(alpha: 0.7),
                         fontSize: 10,
                         fontFamily: 'monospace',
-                        height: 1.2,
                       ),
                     ),
                   ],
                 ),
               ),
+              const SizedBox(width: 8),
+              // Moltiplicatore totale dei punti dei modificatori attivi.
               Text(
-                '×1.0',
-                style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.7),
-                  fontSize: 11,
-                  fontFamily: 'monospace',
+                '×${total.toStringAsFixed(2)}',
+                style: const TextStyle(
+                  color: NeonColors.gold,
+                  fontSize: 15,
                   fontWeight: FontWeight.w900,
+                  fontFamily: 'monospace',
                 ),
               ),
             ],
           ),
-        ),
-      );
-    }
-    // Stato con modificatori attivi: oro + nomi + moltiplicatore totale.
-    final names = _active.map((id) => _modifierName(id, l10n)).join(', ');
-    final total = combinedScoreMultiplier(_active);
-    return GestureDetector(
-      onTap: _confirm,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 10),
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(8),
-          gradient: LinearGradient(
-            colors: [
-              NeonColors.gold.withValues(alpha: 0.20),
-              NeonColors.gold.withValues(alpha: 0.05),
-            ],
-          ),
-          border: Border.all(
-            color: NeonColors.gold.withValues(alpha: 0.9),
-            width: 2,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: NeonColors.gold.withValues(alpha: 0.35),
-              blurRadius: 12,
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 28,
-              height: 28,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(color: NeonColors.gold, width: 1.6),
-              ),
-              alignment: Alignment.center,
-              child: const Icon(
-                Icons.play_arrow_rounded,
-                color: NeonColors.gold,
-                size: 20,
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    names,
-                    style: const TextStyle(
-                      color: NeonColors.gold,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w900,
-                      fontFamily: 'monospace',
-                      letterSpacing: 1.2,
-                      height: 1.25,
-                    ),
-                  ),
-                  const SizedBox(height: 3),
-                  Text(
-                    l10n.modifiersActiveCount(_active.length, _maxActive),
-                    style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.7),
-                      fontSize: 10,
-                      fontFamily: 'monospace',
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 8),
-            // Moltiplicatore totale dei punti dei modificatori attivi.
-            Text(
-              '×${total.toStringAsFixed(2)}',
-              style: const TextStyle(
-                color: NeonColors.gold,
-                fontSize: 15,
-                fontWeight: FontWeight.w900,
-                fontFamily: 'monospace',
-              ),
-            ),
-          ],
         ),
       ),
     );

@@ -79,18 +79,24 @@ class _ModeSelectScreenState extends State<ModeSelectScreen>
     return Scaffold(
       backgroundColor: Colors.black,
       body: SafeArea(
+        // Perf (rebuild-scope narrowing): l'AnimatedBuilder esterno ascolta
+        // SOLO `_entranceController` (one-shot 900ms → si ferma a fine
+        // animazione, niente rebuild a regime). Il `_glowController` ripetuto
+        // (~7s loop) NON ricostruisce più Column + GridView: è confinato in un
+        // AnimatedBuilder stretto attorno alla singola card (vedi
+        // _buildModeList), così a 60fps si ridisegnano solo le ~12 card che
+        // leggono davvero `glow`, non la struttura della lista.
         child: AnimatedBuilder(
-          animation: Listenable.merge([_entranceController, _glowController]),
+          animation: _entranceController,
           builder: (context, _) {
             final entrance = _entranceController.value;
-            final glow = _glowController.value;
 
             // Iter 19 (utente: "auto-advance on tap"): rimosso bottone
             // AVANTI bottom — tap su card unlocked = setState + onConfirm.
             return Column(
               children: [
                 // Header (con step indicator 1/5 a destra integrato — iter 8).
-                _buildHeader(l10n, entrance, glow),
+                _buildHeader(l10n, entrance),
 
                 // Mode list orizzontale (con scroll arrow indicator)
                 Expanded(
@@ -104,7 +110,7 @@ class _ModeSelectScreenState extends State<ModeSelectScreen>
                         // Iter 13 (utente: "togliamo freccia scroll"):
                         // rimossi Stack + chevron icon + black gradient fade.
                         Expanded(
-                          child: _buildModeList(l10n, saveData, entrance, glow),
+                          child: _buildModeList(l10n, saveData, entrance),
                         ),
                       ],
                     ),
@@ -118,7 +124,7 @@ class _ModeSelectScreenState extends State<ModeSelectScreen>
     );
   }
 
-  Widget _buildHeader(AppLocalizations l10n, double entrance, double glow) {
+  Widget _buildHeader(AppLocalizations l10n, double entrance) {
     return Opacity(
       opacity: entrance,
       child: Transform.translate(
@@ -195,7 +201,6 @@ class _ModeSelectScreenState extends State<ModeSelectScreen>
     AppLocalizations l10n,
     SaveData saveData,
     double entrance,
-    double glow,
   ) {
     final e = ((entrance - 0.15) / 0.85).clamp(0.0, 1.0);
     // Iter 20 (richiesta utente: "card height -50%, width -30%, 3 file,
@@ -241,28 +246,41 @@ class _ModeSelectScreenState extends State<ModeSelectScreen>
                 final isUnlocked =
                     config.unlockCost == 0 ||
                     saveData.unlockedModes.contains(mode.name);
-                return _NeonModeCard(
-                  config: config,
-                  modeName: _modeName(l10n, mode),
-                  mode: mode,
-                  isUnlocked: isUnlocked,
-                  glow: glow,
-                  onTap: () {
-                    // Iter 19 (utente: "tap auto-advance"). Locked → snackbar
-                    // "Sblocca nello SHOP"; unlocked → onConfirm immediato.
-                    // Caveman-review: _isAdvancing guard blocks double-tap race
-                    // (PageRoute push not yet committed → second tap re-fires).
-                    if (_isAdvancing) return;
-                    if (!isUnlocked) {
-                      _showLockedSnack(l10n);
-                      return;
-                    }
-                    _isAdvancing = true;
-                    // Iter 22: rimosso `setState(_selectedMode = mode)` — il
-                    // visual `isSelected` non esiste più (cards uniformi), e
-                    // il widget unmount tramite onConfirm rende il rebuild
-                    // sprecato.
-                    widget.onConfirm(mode);
+                void onTap() {
+                  // Iter 19 (utente: "tap auto-advance"). Locked → snackbar
+                  // "Sblocca nello SHOP"; unlocked → onConfirm immediato.
+                  // Caveman-review: _isAdvancing guard blocks double-tap race
+                  // (PageRoute push not yet committed → second tap re-fires).
+                  if (_isAdvancing) return;
+                  if (!isUnlocked) {
+                    _showLockedSnack(l10n);
+                    return;
+                  }
+                  _isAdvancing = true;
+                  // Iter 22: rimosso `setState(_selectedMode = mode)` — il
+                  // visual `isSelected` non esiste più (cards uniformi), e
+                  // il widget unmount tramite onConfirm rende il rebuild
+                  // sprecato.
+                  widget.onConfirm(mode);
+                }
+
+                // Perf (rebuild-scope narrowing): SOLO la card legge `glow`
+                // (_glowController, ciclo ~7s). L'AnimatedBuilder stretto qui
+                // confina il rebuild ~60fps alla singola card — la GridView,
+                // la map() e i wrapper di entrata restano fuori dal repeating
+                // rebuild. Risultato per-frame identico: stesso valore `glow`
+                // passato a _NeonModeCard, stessi widget.
+                return AnimatedBuilder(
+                  animation: _glowController,
+                  builder: (context, _) {
+                    return _NeonModeCard(
+                      config: config,
+                      modeName: _modeName(l10n, mode),
+                      mode: mode,
+                      isUnlocked: isUnlocked,
+                      glow: _glowController.value,
+                      onTap: onTap,
+                    );
                   },
                 );
               }).toList(),
@@ -394,151 +412,167 @@ class _NeonModeCard extends StatelessWidget {
     // Accessibility note: tap area 28h × 81w soddisfa WCAG 2.2 AA target
     // size (24×24 min). Sotto Material 48dp guideline per scelta esplicita
     // di compattezza richiesta dall'utente (3 file × 11 modi → 28h max).
-    return GestureDetector(
-      onTap: onTap,
-      behavior: HitTestBehavior.opaque,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 250),
-        // Iter 21 (utente: "tap auto-advance, no preselezione classic"):
-        // rimossa la distinzione visuale `isSelected` vs `unlocked-but-not-
-        // selected` — il flow è tap-to-advance, non c'è più una card
-        // "selezionata in attesa di Avanti". Tutte le card unlocked
-        // hanno lo stesso bordo + glow moderato per uniformità.
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: isUnlocked
-              ? [
-                  BoxShadow(
-                    color: themeColor.withValues(alpha: 0.25 + glow * 0.15),
-                    blurRadius: 10,
-                  ),
-                ]
-              : null,
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(12),
-          child: Stack(
-            children: [
-              // Cosmic background painter: radial gradient + stelle stabili.
-              Positioned.fill(
-                child: CustomPaint(
-                  painter: _CosmicCardPainter(
-                    color: tint,
-                    seed: mode.hashCode,
-                    pulse: glow,
-                    isUnlocked: isUnlocked,
-                  ),
-                ),
-              ),
-              // Border neon — uniforme per tutte le card unlocked
-              Positioned.fill(
-                child: Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: tint.withValues(alpha: isUnlocked ? 0.55 : 0.18),
-                      width: 1.2,
+    // Semantics: nodo button con label = nome modalità. Locked → label
+    // "<nome> (locked)" + enabled:false così screen reader annuncia lo stato.
+    return Semantics(
+      button: true,
+      enabled: isUnlocked,
+      label: isUnlocked ? modeName : '$modeName (locked)',
+      child: GestureDetector(
+        onTap: onTap,
+        behavior: HitTestBehavior.opaque,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 250),
+          // Iter 21 (utente: "tap auto-advance, no preselezione classic"):
+          // rimossa la distinzione visuale `isSelected` vs `unlocked-but-not-
+          // selected` — il flow è tap-to-advance, non c'è più una card
+          // "selezionata in attesa di Avanti". Tutte le card unlocked
+          // hanno lo stesso bordo + glow moderato per uniformità.
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: isUnlocked
+                ? [
+                    BoxShadow(
+                      color: themeColor.withValues(alpha: 0.25 + glow * 0.15),
+                      blurRadius: 10,
+                    ),
+                  ]
+                : null,
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: Stack(
+              children: [
+                // Cosmic background painter: radial gradient + stelle stabili.
+                // Decorativo puro → ExcludeSemantics (nessun contenuto per a11y).
+                Positioned.fill(
+                  child: ExcludeSemantics(
+                    child: CustomPaint(
+                      painter: _CosmicCardPainter(
+                        color: tint,
+                        seed: mode.hashCode,
+                        pulse: glow,
+                        isUnlocked: isUnlocked,
+                      ),
                     ),
                   ),
                 ),
-              ),
-              // Contenuto compact (iter 20: 28h card, testo centrato H+V).
-              // Row centrato sia orizzontalmente sia verticalmente, con icona
-              // + nome modalità. Per i mode locked l'icona del lucchetto e
-              // il costo restano in linea (no Column nested per minimizzare
-              // altezza). FittedBox per auto-shrink su nomi lunghi (GRAVITY
-              // INFERNO, BOSS RUSH).
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                child: Center(
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    mainAxisSize: MainAxisSize.max,
-                    children: [
-                      Text(config.icon, style: const TextStyle(fontSize: 16.8)),
-                      const SizedBox(width: 4),
-                      // Caveman-review: FittedBox.scaleDown senza floor poteva
-                      // ridurre "GRAVITY INFERNO" (15 chars × monospace) sotto
-                      // i ~7px su 4 colonne visibili → illeggibile. Wrap con
-                      // MediaQuery clamp + maxLines:1 + ellipsis come ultimo
-                      // baluardo se anche lo scaling al floor non basta.
-                      Flexible(
-                        child: FittedBox(
-                          fit: BoxFit.scaleDown,
-                          alignment: Alignment.center,
-                          // Minimum scale floor: 0.75 → ~9px effettivi sul
-                          // font 12 base, ancora leggibile sul 28h delle card.
-                          child: ConstrainedBox(
-                            constraints: const BoxConstraints(minWidth: 0),
-                            child: Text(
-                              modeName,
-                              maxLines: 1,
-                              softWrap: false,
-                              overflow: TextOverflow.ellipsis,
-                              textAlign: TextAlign.center,
-                              // Iter 21 (utente: "scritte tutte bianche
-                              // evidenti come classic preselezionata"):
-                              // unlocked = sempre bianco fontSize 13
-                              // shadow forte themeColor blurRadius 8;
-                              // locked = white30 senza shadow. Rimossa
-                              // distinzione isSelected (tap auto-advance).
-                              style: TextStyle(
-                                color: isUnlocked
-                                    ? Colors.white
-                                    : Colors.white30,
-                                // +20% (13 → 15.6) richiesta utente.
-                                fontSize: 15.6,
-                                fontWeight: FontWeight.w700,
-                                fontFamily: 'monospace',
-                                letterSpacing: -0.5,
-                                shadows: isUnlocked
-                                    ? [
-                                        Shadow(
-                                          color: themeColor.withValues(
-                                            alpha: 0.95,
+                // Border neon — uniforme per tutte le card unlocked
+                Positioned.fill(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: tint.withValues(alpha: isUnlocked ? 0.55 : 0.18),
+                        width: 1.2,
+                      ),
+                    ),
+                  ),
+                ),
+                // Contenuto compact (iter 20: 28h card, testo centrato H+V).
+                // Row centrato sia orizzontalmente sia verticalmente, con icona
+                // + nome modalità. Per i mode locked l'icona del lucchetto e
+                // il costo restano in linea (no Column nested per minimizzare
+                // altezza). FittedBox per auto-shrink su nomi lunghi (GRAVITY
+                // INFERNO, BOSS RUSH).
+                Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 2,
+                  ),
+                  child: Center(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.max,
+                      children: [
+                        Text(
+                          config.icon,
+                          style: const TextStyle(fontSize: 16.8),
+                        ),
+                        const SizedBox(width: 4),
+                        // Caveman-review: FittedBox.scaleDown senza floor poteva
+                        // ridurre "GRAVITY INFERNO" (15 chars × monospace) sotto
+                        // i ~7px su 4 colonne visibili → illeggibile. Wrap con
+                        // MediaQuery clamp + maxLines:1 + ellipsis come ultimo
+                        // baluardo se anche lo scaling al floor non basta.
+                        Flexible(
+                          child: FittedBox(
+                            fit: BoxFit.scaleDown,
+                            alignment: Alignment.center,
+                            // Minimum scale floor: 0.75 → ~9px effettivi sul
+                            // font 12 base, ancora leggibile sul 28h delle card.
+                            child: ConstrainedBox(
+                              constraints: const BoxConstraints(minWidth: 0),
+                              child: Text(
+                                modeName,
+                                maxLines: 1,
+                                softWrap: false,
+                                overflow: TextOverflow.ellipsis,
+                                textAlign: TextAlign.center,
+                                // Iter 21 (utente: "scritte tutte bianche
+                                // evidenti come classic preselezionata"):
+                                // unlocked = sempre bianco fontSize 13
+                                // shadow forte themeColor blurRadius 8;
+                                // locked = white30 senza shadow. Rimossa
+                                // distinzione isSelected (tap auto-advance).
+                                style: TextStyle(
+                                  color: isUnlocked
+                                      ? Colors.white
+                                      : Colors.white30,
+                                  // +20% (13 → 15.6) richiesta utente.
+                                  fontSize: 15.6,
+                                  fontWeight: FontWeight.w700,
+                                  fontFamily: 'monospace',
+                                  letterSpacing: -0.5,
+                                  shadows: isUnlocked
+                                      ? [
+                                          Shadow(
+                                            color: themeColor.withValues(
+                                              alpha: 0.95,
+                                            ),
+                                            blurRadius: 8,
                                           ),
-                                          blurRadius: 8,
-                                        ),
-                                        // Glow bianco soft pulsante (lento):
-                                        // alpha 0.15→0.70, blur 4→16 guidati da
-                                        // `glow` (_glowController, ciclo ~7s).
-                                        Shadow(
-                                          color: Colors.white.withValues(
-                                            alpha: 0.15 + glow * 0.55,
+                                          // Glow bianco soft pulsante (lento):
+                                          // alpha 0.15→0.70, blur 4→16 guidati da
+                                          // `glow` (_glowController, ciclo ~7s).
+                                          Shadow(
+                                            color: Colors.white.withValues(
+                                              alpha: 0.15 + glow * 0.55,
+                                            ),
+                                            blurRadius: 4 + glow * 12,
                                           ),
-                                          blurRadius: 4 + glow * 12,
-                                        ),
-                                      ]
-                                    : null,
+                                        ]
+                                      : null,
+                                ),
                               ),
                             ),
                           ),
                         ),
-                      ),
-                      if (!isUnlocked) ...[
-                        const SizedBox(width: 4),
-                        Icon(
-                          Icons.lock_rounded,
-                          color: Colors.orange.withValues(alpha: 0.65),
-                          size: 12,
-                        ),
-                        const SizedBox(width: 2),
-                        Text(
-                          '${config.unlockCost}',
-                          style: TextStyle(
-                            color: Colors.orange.withValues(alpha: 0.7),
-                            fontSize: 10.8,
-                            fontFamily: 'monospace',
+                        if (!isUnlocked) ...[
+                          const SizedBox(width: 4),
+                          Icon(
+                            Icons.lock_rounded,
+                            color: Colors.orange.withValues(alpha: 0.65),
+                            size: 12,
                           ),
-                          overflow: TextOverflow.ellipsis,
-                          maxLines: 1,
-                        ),
+                          const SizedBox(width: 2),
+                          Text(
+                            '${config.unlockCost}',
+                            style: TextStyle(
+                              color: Colors.orange.withValues(alpha: 0.7),
+                              fontSize: 10.8,
+                              fontFamily: 'monospace',
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
+                          ),
+                        ],
                       ],
-                    ],
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

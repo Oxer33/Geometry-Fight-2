@@ -89,18 +89,16 @@ class _PauseScreenState extends State<PauseScreen>
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    return AnimatedBuilder(
-      animation: Listenable.merge([
-        _entranceController,
-        _pulseController,
-        _particleController,
-      ]),
-      builder: (context, _) {
-        final pulse = _pulseController.value;
-        return Stack(
-          children: [
-            // Frosted glass background
-            BackdropFilter(
+    // Rebuild scope is narrowed per region so each repeating ~60fps controller
+    // only rebuilds the subtree that reads it. The rendered result every frame
+    // is identical to wrapping the whole Stack in one merged AnimatedBuilder.
+    return Stack(
+      children: [
+        // Frosted glass background (entrance-only: _blurAnim, _bgFade)
+        AnimatedBuilder(
+          animation: _entranceController,
+          builder: (context, _) {
+            return BackdropFilter(
               filter: ImageFilter.blur(
                 sigmaX: 8.0 * _blurAnim.value,
                 sigmaY: 8.0 * _blurAnim.value,
@@ -108,29 +106,51 @@ class _PauseScreenState extends State<PauseScreen>
               child: Container(
                 color: Colors.black.withValues(alpha: 0.6 * _bgFade.value),
               ),
-            ),
+            );
+          },
+        ),
 
-            // Floating particles
-            CustomPaint(
+        // Floating particles (repeating: _particleController + entrance _bgFade)
+        AnimatedBuilder(
+          animation: Listenable.merge([
+            _entranceController,
+            _particleController,
+          ]),
+          builder: (context, _) {
+            return CustomPaint(
               painter: _PauseParticlesPainter(
                 time: _particleController.value,
                 opacity: _bgFade.value,
               ),
               size: Size.infinite,
-            ),
+            );
+          },
+        ),
 
-            // Scanline overlay
-            Opacity(
+        // Scanline overlay (entrance-only: _bgFade)
+        AnimatedBuilder(
+          animation: _entranceController,
+          builder: (context, _) {
+            return Opacity(
               opacity: 0.03 * _bgFade.value,
               child: CustomPaint(
                 painter: ScanlinePainter(),
                 size: Size.infinite,
               ),
-            ),
+            );
+          },
+        ),
 
-            // Content
-            Center(
-              child: Column(
+        // Content (entrance slides/fades + repeating _pulseController)
+        Center(
+          child: AnimatedBuilder(
+            animation: Listenable.merge([
+              _entranceController,
+              _pulseController,
+            ]),
+            builder: (context, _) {
+              final pulse = _pulseController.value;
+              return Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   // PAUSED title with glitch + pulse
@@ -202,12 +222,17 @@ class _PauseScreenState extends State<PauseScreen>
                     ),
                   ),
                 ],
-              ),
-            ),
+              );
+            },
+          ),
+        ),
 
-            // Vignette
-            IgnorePointer(
-              child: Opacity(
+        // Vignette (entrance-only: _bgFade)
+        IgnorePointer(
+          child: AnimatedBuilder(
+            animation: _entranceController,
+            builder: (context, _) {
+              return Opacity(
                 opacity: _bgFade.value,
                 child: Container(
                   decoration: BoxDecoration(
@@ -220,11 +245,11 @@ class _PauseScreenState extends State<PauseScreen>
                     ),
                   ),
                 ),
-              ),
-            ),
-          ],
-        );
-      },
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 
@@ -328,76 +353,80 @@ class _NeonPauseButtonState extends State<_NeonPauseButton>
     final glowAlpha = widget.isPrimary ? 0.15 + widget.pulse * 0.1 : 0.05;
     final borderAlpha = widget.isPrimary ? 0.8 : 0.5;
 
-    return GestureDetector(
-      onTapDown: (_) => _pressController.forward(),
-      onTapUp: (_) {
-        _pressController.reverse();
-        widget.onTap();
-      },
-      onTapCancel: () => _pressController.reverse(),
-      child: AnimatedBuilder(
-        animation: _pressController,
-        builder: (context, _) {
-          final scale = 1.0 - _pressController.value * 0.05;
-          return Transform.scale(
-            scale: scale,
-            child: Container(
-              width: 220,
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: widget.color.withValues(alpha: borderAlpha),
-                  width: widget.isPrimary ? 2 : 1,
+    return Semantics(
+      button: true,
+      label: widget.text,
+      child: GestureDetector(
+        onTapDown: (_) => _pressController.forward(),
+        onTapUp: (_) {
+          _pressController.reverse();
+          widget.onTap();
+        },
+        onTapCancel: () => _pressController.reverse(),
+        child: AnimatedBuilder(
+          animation: _pressController,
+          builder: (context, _) {
+            final scale = 1.0 - _pressController.value * 0.05;
+            return Transform.scale(
+              scale: scale,
+              child: Container(
+                width: 220,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: widget.color.withValues(alpha: borderAlpha),
+                    width: widget.isPrimary ? 2 : 1,
+                  ),
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      widget.color.withValues(alpha: glowAlpha),
+                      widget.color.withValues(alpha: glowAlpha * 0.3),
+                    ],
+                  ),
+                  boxShadow: widget.isPrimary
+                      ? [
+                          BoxShadow(
+                            color: widget.color.withValues(
+                              alpha: 0.2 + widget.pulse * 0.1,
+                            ),
+                            blurRadius: 16,
+                            spreadRadius: -2,
+                          ),
+                        ]
+                      : null,
                 ),
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    widget.color.withValues(alpha: glowAlpha),
-                    widget.color.withValues(alpha: glowAlpha * 0.3),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(widget.icon, color: widget.color, size: 20),
+                    const SizedBox(width: 10),
+                    Text(
+                      widget.text,
+                      style: TextStyle(
+                        color: widget.color,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        fontFamily: 'monospace',
+                        letterSpacing: 4,
+                        shadows: widget.isPrimary
+                            ? [
+                                Shadow(
+                                  color: widget.color.withValues(alpha: 0.5),
+                                  blurRadius: 8,
+                                ),
+                              ]
+                            : null,
+                      ),
+                    ),
                   ],
                 ),
-                boxShadow: widget.isPrimary
-                    ? [
-                        BoxShadow(
-                          color: widget.color.withValues(
-                            alpha: 0.2 + widget.pulse * 0.1,
-                          ),
-                          blurRadius: 16,
-                          spreadRadius: -2,
-                        ),
-                      ]
-                    : null,
               ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(widget.icon, color: widget.color, size: 20),
-                  const SizedBox(width: 10),
-                  Text(
-                    widget.text,
-                    style: TextStyle(
-                      color: widget.color,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      fontFamily: 'monospace',
-                      letterSpacing: 4,
-                      shadows: widget.isPrimary
-                          ? [
-                              Shadow(
-                                color: widget.color.withValues(alpha: 0.5),
-                                blurRadius: 8,
-                              ),
-                            ]
-                          : null,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
+            );
+          },
+        ),
       ),
     );
   }

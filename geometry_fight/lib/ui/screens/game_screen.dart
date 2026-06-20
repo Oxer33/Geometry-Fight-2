@@ -11,6 +11,7 @@ import '../../game/game_world.dart';
 import '../../data/daily_challenge.dart';
 import '../../game/systems/audio_system.dart';
 import '../../game/systems/music_manager.dart';
+import '../../l10n/generated/app_localizations.dart';
 import '../hud.dart';
 import '../widgets/animated_builder_widget.dart';
 import '../widgets/virtual_joystick.dart';
@@ -271,6 +272,7 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: Colors.black,
       body: ColoredBox(
@@ -306,7 +308,7 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
             ),
 
             // === JOYSTICK VISUALI (dual-stick) ===
-            _buildDualJoysticks(),
+            _buildDualJoysticks(l10n),
 
             // === HUD OVERLAY ===
             GameHud(game: _game),
@@ -421,14 +423,14 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
   }
 
   /// Costruisce i due joystick visuali: movimento (sinistra) e mira (destra)
-  Widget _buildDualJoysticks() {
+  Widget _buildDualJoysticks(AppLocalizations l10n) {
     return Row(
       children: [
         // === JOYSTICK SINISTRO - MOVIMENTO ===
         Expanded(
           child: VirtualJoystick(
             color: const Color(0xFF00FFFF), // Cyan neon
-            label: 'MOVE',
+            label: l10n.hudJoystickMove,
             radius: 55,
             onStart: () {
               _game.usingTouchMove = true;
@@ -447,7 +449,7 @@ class _GameScreenState extends State<GameScreen> with WidgetsBindingObserver {
         Expanded(
           child: VirtualJoystick(
             color: const Color(0xFFFF4444), // Rosso neon
-            label: 'AIM',
+            label: l10n.hudJoystickAim,
             radius: 55,
             onStart: () {
               _game.isShooting = true;

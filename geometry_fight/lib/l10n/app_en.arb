@@ -52,6 +52,7 @@
   "menuPlay": "PLAY",
   "menuShop": "SHOP",
   "menuStore": "STORE",
+  "menuTalents": "TALENTS",
   "menuSettings": "SETTINGS",
   "menuStats": "STATS",
   "menuAchievements": "TROPHIES",
@@ -431,6 +432,10 @@
   "weaponDescGauss": "Violet shot with 1s gravitational pull — clusters enemies for full damage.",
   "weaponNameChain": "Chain Lightning",
   "weaponDescChain": "Electric bolt bounces between 5 enemies — perfect vs groups.",
+  "weaponNameShotgun": "Shotgun",
+  "weaponDescShotgun": "8 orange pellets in a close cone — devastating up close.",
+  "weaponNameRailgun": "Railgun",
+  "weaponDescRailgun": "Instant hitscan shot that pierces every enemy in a straight line.",
 
   "modeDescClassic": "100 waves with a boss every 10 — the standard mode",
   "modeDescBossRush": "Bosses only, one after another — no mobs",
@@ -529,8 +534,58 @@
   "modNameMagnetKing": "MAGNET KING",
   "modDescMagnetKing": "Huge magnet range. Geoms fly toward you.",
 
+  "waveModNameFrenzy": "FRENZY",
+  "@waveModNameFrenzy": {
+    "description": "Wave modifier HUD banner name: faster enemies"
+  },
+  "waveModTaglineFrenzy": "enemies +35% speed",
+  "waveModNameTank": "TANK",
+  "waveModTaglineTank": "enemies x1.6 HP",
+  "waveModNameGlass": "GLASS",
+  "waveModTaglineGlass": "enemies x0.4 HP, points x1.6",
+  "waveModNameLoot": "LOOT",
+  "waveModTaglineLoot": "double geom drops",
+  "waveModNameBlitz": "BLITZ",
+  "waveModTaglineBlitz": "+50% enemies",
+  "waveModNameHaste": "HASTE",
+  "waveModTaglineHaste": "waves close together",
+  "waveModNameMagnetic": "MAGNETIC",
+  "waveModTaglineMagnetic": "geom magnet x2",
+  "waveModNameIron": "IRON",
+  "waveModTaglineIron": "slow tanks",
+
   "gameOverBossLabel": "BOSS",
   "gameOverGoldGeoms": "GOLD GEOMS",
+  "gameOverGoldBase": "base",
+  "@gameOverGoldBase": {
+    "description": "Gold breakdown label: base gold earned from the run"
+  },
+  "gameOverGoldBonus": "bonus",
+  "@gameOverGoldBonus": {
+    "description": "Gold breakdown label: bonus gold from perfect waves"
+  },
+  "gameOverGoldAchievement": "achievement",
+  "@gameOverGoldAchievement": {
+    "description": "Gold breakdown label: gold awarded from achievements"
+  },
+
+  "hudJoystickMove": "MOVE",
+  "@hudJoystickMove": {
+    "description": "Label on the left movement joystick"
+  },
+  "hudJoystickAim": "AIM",
+  "@hudJoystickAim": {
+    "description": "Label on the right aim/shoot joystick"
+  },
+
+  "diffStatHp": "HP",
+  "@diffStatHp": {
+    "description": "Enemy HP stat label prefix on the difficulty select screen"
+  },
+  "diffStatSpeed": "SPD",
+  "@diffStatSpeed": {
+    "description": "Enemy speed stat label prefix on the difficulty select screen"
+  },
 
   "achKills100Name": "First Blood",
   "achKills100Desc": "Kill 100 enemies in total",

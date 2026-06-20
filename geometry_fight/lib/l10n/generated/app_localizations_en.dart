@@ -178,6 +178,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get menuStore => 'STORE';
 
   @override
+  String get menuTalents => 'TALENTS';
+
+  @override
   String get menuSettings => 'SETTINGS';
 
   @override
@@ -1096,6 +1099,20 @@ class AppLocalizationsEn extends AppLocalizations {
       'Electric bolt bounces between 5 enemies — perfect vs groups.';
 
   @override
+  String get weaponNameShotgun => 'Shotgun';
+
+  @override
+  String get weaponDescShotgun =>
+      '8 orange pellets in a close cone — devastating up close.';
+
+  @override
+  String get weaponNameRailgun => 'Railgun';
+
+  @override
+  String get weaponDescRailgun =>
+      'Instant hitscan shot that pierces every enemy in a straight line.';
+
+  @override
   String get modeDescClassic =>
       '100 waves with a boss every 10 — the standard mode';
 
@@ -1390,10 +1407,79 @@ class AppLocalizationsEn extends AppLocalizations {
   String get modDescMagnetKing => 'Huge magnet range. Geoms fly toward you.';
 
   @override
+  String get waveModNameFrenzy => 'FRENZY';
+
+  @override
+  String get waveModTaglineFrenzy => 'enemies +35% speed';
+
+  @override
+  String get waveModNameTank => 'TANK';
+
+  @override
+  String get waveModTaglineTank => 'enemies x1.6 HP';
+
+  @override
+  String get waveModNameGlass => 'GLASS';
+
+  @override
+  String get waveModTaglineGlass => 'enemies x0.4 HP, points x1.6';
+
+  @override
+  String get waveModNameLoot => 'LOOT';
+
+  @override
+  String get waveModTaglineLoot => 'double geom drops';
+
+  @override
+  String get waveModNameBlitz => 'BLITZ';
+
+  @override
+  String get waveModTaglineBlitz => '+50% enemies';
+
+  @override
+  String get waveModNameHaste => 'HASTE';
+
+  @override
+  String get waveModTaglineHaste => 'waves close together';
+
+  @override
+  String get waveModNameMagnetic => 'MAGNETIC';
+
+  @override
+  String get waveModTaglineMagnetic => 'geom magnet x2';
+
+  @override
+  String get waveModNameIron => 'IRON';
+
+  @override
+  String get waveModTaglineIron => 'slow tanks';
+
+  @override
   String get gameOverBossLabel => 'BOSS';
 
   @override
   String get gameOverGoldGeoms => 'GOLD GEOMS';
+
+  @override
+  String get gameOverGoldBase => 'base';
+
+  @override
+  String get gameOverGoldBonus => 'bonus';
+
+  @override
+  String get gameOverGoldAchievement => 'achievement';
+
+  @override
+  String get hudJoystickMove => 'MOVE';
+
+  @override
+  String get hudJoystickAim => 'AIM';
+
+  @override
+  String get diffStatHp => 'HP';
+
+  @override
+  String get diffStatSpeed => 'SPD';
 
   @override
   String get achKills100Name => 'First Blood';

@@ -180,6 +180,9 @@ class AppLocalizationsRu extends AppLocalizations {
   String get menuStore => 'МАГАЗИН';
 
   @override
+  String get menuTalents => 'TALENTI';
+
+  @override
   String get menuSettings => 'НАСТРОЙКИ';
 
   @override
@@ -1106,6 +1109,20 @@ class AppLocalizationsRu extends AppLocalizations {
       'Электрическая молния скачет между 5 врагами — идеально против групп.';
 
   @override
+  String get weaponNameShotgun => 'Shotgun';
+
+  @override
+  String get weaponDescShotgun =>
+      '8 pallettoni arancioni a cono ravvicinato — devastante da vicino.';
+
+  @override
+  String get weaponNameRailgun => 'Railgun';
+
+  @override
+  String get weaponDescRailgun =>
+      'Colpo hitscan istantaneo che perfora TUTTI i nemici in linea retta.';
+
+  @override
   String get modeDescClassic =>
       '100 волн с боссом каждые 10 — стандартный режим';
 
@@ -1405,10 +1422,79 @@ class AppLocalizationsRu extends AppLocalizations {
   String get modDescMagnetKing => 'Огромный радиус магнита. Геомы летят к вам.';
 
   @override
+  String get waveModNameFrenzy => 'БЕШЕНСТВО';
+
+  @override
+  String get waveModTaglineFrenzy => 'враги +35% скорости';
+
+  @override
+  String get waveModNameTank => 'ТАНК';
+
+  @override
+  String get waveModTaglineTank => 'враги ×1.6 HP';
+
+  @override
+  String get waveModNameGlass => 'СТЕКЛО';
+
+  @override
+  String get waveModTaglineGlass => 'враги ×0.4 HP, очки ×1.6';
+
+  @override
+  String get waveModNameLoot => 'ДОБЫЧА';
+
+  @override
+  String get waveModTaglineLoot => 'двойные геомы';
+
+  @override
+  String get waveModNameBlitz => 'БЛИЦ';
+
+  @override
+  String get waveModTaglineBlitz => '+50% врагов';
+
+  @override
+  String get waveModNameHaste => 'СПЕШКА';
+
+  @override
+  String get waveModTaglineHaste => 'плотные волны';
+
+  @override
+  String get waveModNameMagnetic => 'МАГНИТ';
+
+  @override
+  String get waveModTaglineMagnetic => 'магнит геомов ×2';
+
+  @override
+  String get waveModNameIron => 'ЖЕЛЕЗО';
+
+  @override
+  String get waveModTaglineIron => 'медленные танки';
+
+  @override
   String get gameOverBossLabel => 'БОСС';
 
   @override
   String get gameOverGoldGeoms => 'ЗОЛОТЫЕ ГЕОМЫ';
+
+  @override
+  String get gameOverGoldBase => 'база';
+
+  @override
+  String get gameOverGoldBonus => 'бонус';
+
+  @override
+  String get gameOverGoldAchievement => 'достижение';
+
+  @override
+  String get hudJoystickMove => 'ДВИЖ';
+
+  @override
+  String get hudJoystickAim => 'ПРИЦЕЛ';
+
+  @override
+  String get diffStatHp => 'HP';
+
+  @override
+  String get diffStatSpeed => 'СКР';
 
   @override
   String get achKills100Name => 'Первая Кровь';

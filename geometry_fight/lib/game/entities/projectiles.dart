@@ -280,9 +280,9 @@ class PlayerBullet extends PositionComponent
   void _applyFearToNearby() {
     const fearRadius = 80.0;
     int fearCount = 0;
-    for (final child in game.world.children) {
+    for (final child in game.activeEnemies) {
       if (fearCount >= 5) break; // Limita a 5 per performance
-      if (child is EnemyBase && child.canFearDodge) {
+      if (child.canFearDodge) {
         final dist = child.position.distanceTo(position);
         if (dist < fearRadius && dist > 5) {
           child.applyFear(position);
@@ -461,29 +461,27 @@ class LaserBeam extends PositionComponent
     Vector2? hitPoint;
     if (doWalk) {
       final dmgMul = realDt * 60 * 2; // 2× per compensare skip frame
-      for (final child in game.world.children) {
-        if (child is EnemyBase) {
-          final toEnemy = child.position - position;
-          final dot = toEnemy.dot(dir);
-          if (dot > 0 && dot < laserBeamLength) {
-            final perpDist = (toEnemy - dir * dot).length;
-            if (perpDist < enemyHitRadius) {
-              child.takeDamage(damage * dmgMul, isArea: true);
-              didHit = true;
-              hitPoint = child.position;
-            }
+      for (final child in game.activeEnemies) {
+        final toEnemy = child.position - position;
+        final dot = toEnemy.dot(dir);
+        if (dot > 0 && dot < laserBeamLength) {
+          final perpDist = (toEnemy - dir * dot).length;
+          if (perpDist < enemyHitRadius) {
+            child.takeDamage(damage * dmgMul, isArea: true);
+            didHit = true;
+            hitPoint = child.position;
           }
         }
-        if (child is BossBase) {
-          final toBoss = child.position - position;
-          final dot = toBoss.dot(dir);
-          if (dot > 0 && dot < laserBeamLength) {
-            final perpDist = (toBoss - dir * dot).length;
-            if (perpDist < bossHitRadius) {
-              child.takeDamage(damage * dmgMul);
-              didHit = true;
-              hitPoint = child.position;
-            }
+      }
+      for (final child in game.world.children.whereType<BossBase>()) {
+        final toBoss = child.position - position;
+        final dot = toBoss.dot(dir);
+        if (dot > 0 && dot < laserBeamLength) {
+          final perpDist = (toBoss - dir * dot).length;
+          if (perpDist < bossHitRadius) {
+            child.takeDamage(damage * dmgMul);
+            didHit = true;
+            hitPoint = child.position;
           }
         }
       }
@@ -504,6 +502,45 @@ class LaserBeam extends PositionComponent
   static final _laserCorePaint = Paint();
   static final _laserPulsePaint = Paint();
   static final _laserConePath = Path();
+
+  // ── Cache colori invarianti per-frame (stesse formule, alpha costante) ──
+  // Evita di riallocare Color identici ad ogni frame nel render del beam.
+  static final Color _coneGlowCol = NeonColors.laserRed.withValues(alpha: 0.6);
+  static final Color _beamHaloCol = const Color(
+    0xFFAA0000,
+  ).withValues(alpha: 0.25);
+  static final Color _beamMidCol = const Color(
+    0xFFFF2244,
+  ).withValues(alpha: 0.55);
+  static const Color _beamCoreCol = Color(0xFFFF6677);
+  static const Color _beamNucleusCol = Color(0xFFFFEEDD);
+  static final Color _cometHaloCol = const Color(
+    0xFFFF1100,
+  ).withValues(alpha: 0.5);
+  static final Color _cometMidCol = const Color(
+    0xFFFFAA22,
+  ).withValues(alpha: 0.85);
+  static final Color _cometNucleusCol = const Color(
+    0xFFFFFFFF,
+  ).withValues(alpha: 0.95);
+  static final Color _secHaloCol = const Color(
+    0xFFFF6633,
+  ).withValues(alpha: 0.7);
+  static final Color _secNucleusCol = const Color(
+    0xFFFFEEAA,
+  ).withValues(alpha: 0.95);
+  static final Color _crackleCol = const Color(
+    0xFFFFFFFF,
+  ).withValues(alpha: 0.85);
+
+  // Trail comete: trailAlpha = 0.55 * (1 - t/6) per t=1..5 → 5 valori discreti.
+  // Precalcolati una sola volta (index t-1).
+  static final List<Color> _cometTrailCols = List<Color>.generate(
+    5,
+    (i) =>
+        const Color(0xFFFF3322).withValues(alpha: 0.55 * (1.0 - (i + 1) / 6.0)),
+    growable: false,
+  );
 
   @override
   void render(Canvas canvas) {
@@ -533,28 +570,28 @@ class LaserBeam extends PositionComponent
     // Era disegnato in fondo → comets in regione y<22 nascosti dal cono.
     // User feedback "deve partire dalla punta del triangolo": ora cono
     // sotto + comets sopra → pulse visibile dalla punta in poi.
-    _laserGlowPaint.color = NeonColors.laserRed.withValues(alpha: 0.6);
+    _laserGlowPaint.color = _coneGlowCol;
     canvas.drawPath(_laserConePath, _laserGlowPaint);
     _laserCorePaint.color = NeonColors.laserRed;
     canvas.drawPath(_laserConePath, _laserCorePaint);
 
     // ─── BEAM PRINCIPALE 4 STRATI (outer halo → mid → core → nucleus) ───
-    _laserGlowPaint.color = const Color(0xFFAA0000).withValues(alpha: 0.25);
+    _laserGlowPaint.color = _beamHaloCol;
     canvas.drawRect(
       Rect.fromLTWH(-glowW * 0.9, coneLen, glowW * 1.8, pulseLen),
       _laserGlowPaint,
     );
-    _laserGlowPaint.color = const Color(0xFFFF2244).withValues(alpha: 0.55);
+    _laserGlowPaint.color = _beamMidCol;
     canvas.drawRect(
       Rect.fromLTWH(-glowW * 0.5, coneLen, glowW, pulseLen),
       _laserGlowPaint,
     );
-    _laserCorePaint.color = const Color(0xFFFF6677);
+    _laserCorePaint.color = _beamCoreCol;
     canvas.drawRect(
       Rect.fromLTWH(-coreW * 0.9, coneLen, coreW * 1.8, pulseLen),
       _laserCorePaint,
     );
-    _laserCorePaint.color = const Color(0xFFFFEEDD);
+    _laserCorePaint.color = _beamNucleusCol;
     canvas.drawRect(
       Rect.fromLTWH(-coreW * 0.4, coneLen, coreW * 0.8, pulseLen),
       _laserCorePaint,
@@ -586,10 +623,7 @@ class LaserBeam extends PositionComponent
       for (int t = 1; t <= 5; t++) {
         final trailY = py - t * cometR;
         if (trailY < 0) continue;
-        final trailAlpha = 0.55 * (1.0 - t / 6.0);
-        _laserPulsePaint.color = const Color(
-          0xFFFF3322,
-        ).withValues(alpha: trailAlpha);
+        _laserPulsePaint.color = _cometTrailCols[t - 1];
         canvas.drawCircle(
           Offset(0, trailY),
           cometR * (1.0 - t * 0.16),
@@ -598,13 +632,13 @@ class LaserBeam extends PositionComponent
       }
 
       // Halo esterno rosso
-      _laserPulsePaint.color = const Color(0xFFFF1100).withValues(alpha: 0.5);
+      _laserPulsePaint.color = _cometHaloCol;
       canvas.drawCircle(Offset(0, py), cometR * 1.4, _laserPulsePaint);
       // Mid arancione caldo
-      _laserPulsePaint.color = const Color(0xFFFFAA22).withValues(alpha: 0.85);
+      _laserPulsePaint.color = _cometMidCol;
       canvas.drawCircle(Offset(0, py), cometR * 0.85, _laserPulsePaint);
       // Nucleus bianco caldo
-      _laserPulsePaint.color = const Color(0xFFFFFFFF).withValues(alpha: 0.95);
+      _laserPulsePaint.color = _cometNucleusCol;
       canvas.drawCircle(Offset(0, py), cometR * 0.45, _laserPulsePaint);
     }
 
@@ -618,9 +652,9 @@ class LaserBeam extends PositionComponent
     for (int i = 0; i < cometCount; i++) {
       final raw = _pulsePhase * cometSpeed + (i + 0.5) * stepLen;
       final py = raw % fullLen;
-      _laserPulsePaint.color = const Color(0xFFFF6633).withValues(alpha: 0.7);
+      _laserPulsePaint.color = _secHaloCol;
       canvas.drawCircle(Offset(0, py), secR * 1.4, _laserPulsePaint);
-      _laserPulsePaint.color = const Color(0xFFFFEEAA).withValues(alpha: 0.95);
+      _laserPulsePaint.color = _secNucleusCol;
       canvas.drawCircle(Offset(0, py), secR * 0.6, _laserPulsePaint);
     }
 
@@ -633,7 +667,7 @@ class LaserBeam extends PositionComponent
       final crackleX =
           (crackleSeed % 2 == 0 ? 1 : -1) *
           (glowW * 0.55 + (crackleSeed % 7) * 0.5);
-      _laserPulsePaint.color = const Color(0xFFFFFFFF).withValues(alpha: 0.85);
+      _laserPulsePaint.color = _crackleCol;
       canvas.drawCircle(
         Offset(crackleX, crackleY),
         1.4 * sizeMultiplier,
@@ -728,6 +762,20 @@ class PlasmaBullet extends PositionComponent
   static final _plasmaBodyPaint = Paint();
   static final _plasmaCorePaint = Paint();
 
+  // ── LUT colori per-alpha (256 step → delta <=1/256, impercettibile) ──
+  // pulse/blink variano con _phase ogni frame: invece di riallocare
+  // plasmaViolet/bianco ad ogni draw, indicizziamo per alpha quantizzato.
+  static final List<Color> _plasmaVioletLut = List<Color>.generate(
+    256,
+    (i) => NeonColors.plasmaViolet.withValues(alpha: i / 255.0),
+    growable: false,
+  );
+  static final List<Color> _plasmaWhiteLut = List<Color>.generate(
+    256,
+    (i) => const Color(0xFFFFFFFF).withValues(alpha: i / 255.0),
+    growable: false,
+  );
+
   @override
   void render(Canvas canvas) {
     // Palla plasma FLUO + lampeggiante (richiesta utente).
@@ -738,19 +786,16 @@ class PlasmaBullet extends PositionComponent
     final center = Offset(size.x / 2, size.y / 2);
 
     // 3 strati di glow concentrici per effetto neon fluo intenso
-    _plasmaGlowOuter.color = NeonColors.plasmaViolet.withValues(
-      alpha: 0.25 * pulse,
-    );
+    _plasmaGlowOuter.color =
+        _plasmaVioletLut[(0.25 * pulse * 255).round().clamp(0, 255)];
     canvas.drawCircle(center, baseRadius * 2.4, _plasmaGlowOuter);
 
-    _plasmaGlowMid.color = NeonColors.plasmaViolet.withValues(
-      alpha: 0.5 * pulse,
-    );
+    _plasmaGlowMid.color =
+        _plasmaVioletLut[(0.5 * pulse * 255).round().clamp(0, 255)];
     canvas.drawCircle(center, baseRadius * 1.8, _plasmaGlowMid);
 
-    _plasmaGlowInner.color = NeonColors.plasmaViolet.withValues(
-      alpha: 0.8 * pulse,
-    );
+    _plasmaGlowInner.color =
+        _plasmaVioletLut[(0.8 * pulse * 255).round().clamp(0, 255)];
     canvas.drawCircle(center, baseRadius * 1.3, _plasmaGlowInner);
 
     // Core viola pieno (blink veloce sopra)
@@ -758,7 +803,8 @@ class PlasmaBullet extends PositionComponent
     canvas.drawCircle(center, baseRadius, _plasmaBodyPaint);
 
     // Nucleo bianco acceso che lampeggia (fluo extra)
-    _plasmaCorePaint.color = const Color(0xFFFFFFFF).withValues(alpha: blink);
+    _plasmaCorePaint.color =
+        _plasmaWhiteLut[(blink * 255).round().clamp(0, 255)];
     canvas.drawCircle(center, baseRadius * 0.45, _plasmaCorePaint);
   }
 
@@ -844,29 +890,43 @@ class RailgunBeam extends PositionComponent {
   static final Paint _coreP = Paint()..strokeCap = StrokeCap.round;
   static final Paint _ringP = Paint()..style = PaintingStyle.stroke;
 
+  // ── LUT colori per-alpha (256 step → delta <=1/256, impercettibile) ──
+  // t = _life/_maxLife varia di continuo: indicizziamo ciano/bianco per
+  // alpha quantizzato invece di riallocare Color ad ogni frame.
+  static const Color _railCol = Color(0xFF66E0FF);
+  static final List<Color> _railCyanLut = List<Color>.generate(
+    256,
+    (i) => _railCol.withValues(alpha: i / 255.0),
+    growable: false,
+  );
+  static final List<Color> _railWhiteLut = List<Color>.generate(
+    256,
+    (i) => const Color(0xFFFFFFFF).withValues(alpha: i / 255.0),
+    growable: false,
+  );
+
   @override
   void render(Canvas canvas) {
     final t = (_life / _maxLife).clamp(0.0, 1.0);
-    const col = Color(0xFF66E0FF);
     final o = Offset(origin.x, origin.y);
     final e = Offset(
       origin.x + direction.x * length,
       origin.y + direction.y * length,
     );
     // Glow esterno largo (si assottiglia mentre svanisce).
-    _glowP.color = col.withValues(alpha: 0.28 * t);
+    _glowP.color = _railCyanLut[(0.28 * t * 255).round().clamp(0, 255)];
     _glowP.strokeWidth = 20 * t + 4;
     canvas.drawLine(o, e, _glowP);
     // Corpo ciano.
-    _bodyP.color = col.withValues(alpha: 0.85 * t);
+    _bodyP.color = _railCyanLut[(0.85 * t * 255).round().clamp(0, 255)];
     _bodyP.strokeWidth = 8 * t + 2;
     canvas.drawLine(o, e, _bodyP);
     // Core bianco incandescente.
-    _coreP.color = Color.fromRGBO(255, 255, 255, t);
+    _coreP.color = _railWhiteLut[(t * 255).round().clamp(0, 255)];
     _coreP.strokeWidth = 3 * t + 1;
     canvas.drawLine(o, e, _coreP);
     // Shockwave ring espandente al muzzle.
-    _ringP.color = col.withValues(alpha: 0.5 * t);
+    _ringP.color = _railCyanLut[(0.5 * t * 255).round().clamp(0, 255)];
     _ringP.strokeWidth = 2.5;
     canvas.drawCircle(o, (1 - t) * 46 + 6, _ringP);
   }
@@ -967,17 +1027,23 @@ class HomingMissile extends PositionComponent
     PositionComponent? fallback;
     double fallbackDist = homingTrackRadius;
 
-    for (final child in game.world.children) {
-      PositionComponent? candidate;
-      double? dist;
-      if (child is EnemyBase) {
-        candidate = child;
-        dist = child.position.distanceTo(position);
-      } else if (child is BossBase) {
-        candidate = child;
-        dist = child.position.distanceTo(position);
+    for (final child in game.activeEnemies) {
+      final candidate = child;
+      final dist = child.position.distanceTo(position);
+      if (dist > homingTrackRadius) continue; // Fuori raggio inseguimento
+
+      if (dist < fallbackDist) {
+        fallbackDist = dist;
+        fallback = candidate;
       }
-      if (candidate == null || dist == null) continue;
+      if (!claimed.contains(candidate) && dist < bestDist) {
+        bestDist = dist;
+        best = candidate;
+      }
+    }
+    for (final child in game.world.children.whereType<BossBase>()) {
+      final candidate = child;
+      final dist = child.position.distanceTo(position);
       if (dist > homingTrackRadius) continue; // Fuori raggio inseguimento
 
       if (dist < fallbackDist) {
@@ -1096,8 +1162,11 @@ class HomingMissile extends PositionComponent
   // Path cache: fin + nose dipendono solo da bodyW/bodyH (costanti per
   // sizeMultiplier). Cachiamo sul primo render per missile e riutilizziamo.
   // Con 20-30 missili attivi risparmiamo 40-60 Path alloc/frame.
+  // Idem per il corpo cilindrico: RRect a geometria statica (bodyW/bodyH
+  // costanti) → cache una volta, animato via canvas.translate/rotate.
   Path? _finPath;
   Path? _nosePath;
+  RRect? _bodyRRect;
   double _cachedBodyW = -1;
 
   @override
@@ -1164,24 +1233,22 @@ class HomingMissile extends PositionComponent
         ..lineTo(0, -bodyH * 0.65)
         ..lineTo(bodyW * 0.5, -bodyH * 0.35)
         ..close();
-    }
-
-    _homingFinPaint.color = NeonColors.cyan.withValues(alpha: 0.9);
-    canvas.drawPath(_finPath!, _homingFinPaint);
-
-    // Corpo cilindrico (rettangolo arrotondato)
-    _homingBodyPaint.color = NeonColors.cyan;
-    canvas.drawRRect(
-      RRect.fromRectAndRadius(
+      _bodyRRect = RRect.fromRectAndRadius(
         Rect.fromCenter(
           center: Offset(0, bodyH * 0.05),
           width: bodyW,
           height: bodyH * 0.8,
         ),
         Radius.circular(bodyW * 0.25),
-      ),
-      _homingBodyPaint,
-    );
+      );
+    }
+
+    _homingFinPaint.color = NeonColors.cyan.withValues(alpha: 0.9);
+    canvas.drawPath(_finPath!, _homingFinPaint);
+
+    // Corpo cilindrico (rettangolo arrotondato) — RRect cachato sopra.
+    _homingBodyPaint.color = NeonColors.cyan;
+    canvas.drawRRect(_bodyRRect!, _homingBodyPaint);
 
     // Punta conica (naso bianco)
     _homingNosePaint.color = const Color(0xFFE0FFFF);
@@ -1390,6 +1457,31 @@ class GaussBullet extends PositionComponent
   final Paint _glowPaint = Paint();
   final Paint _corePaint = Paint();
 
+  // ── Cache colori: glow viola ad alpha costante (hoist) + LUT 256-step
+  // per swirl/core il cui alpha varia con _phase ogni frame
+  // (delta <=1/256, impercettibile). Stesse formule di colore.
+  static final Color _gaussGlowOuterCol = const Color(
+    0xFFCC66FF,
+  ).withValues(alpha: 0.35);
+  static final Color _gaussGlowInnerCol = const Color(
+    0xFFCC66FF,
+  ).withValues(alpha: 0.55);
+  static final List<Color> _gaussVioletLut = List<Color>.generate(
+    256,
+    (i) => const Color(0xFFCC66FF).withValues(alpha: i / 255.0),
+    growable: false,
+  );
+  static final List<Color> _gaussTrailLut = List<Color>.generate(
+    256,
+    (i) => const Color(0xFFAA44EE).withValues(alpha: i / 255.0),
+    growable: false,
+  );
+  static final List<Color> _gaussWhiteLut = List<Color>.generate(
+    256,
+    (i) => const Color(0xFFFFFFFF).withValues(alpha: i / 255.0),
+    growable: false,
+  );
+
   @override
   void render(Canvas canvas) {
     final cx = size.x / 2;
@@ -1397,9 +1489,9 @@ class GaussBullet extends PositionComponent
     final s = sizeMultiplier;
 
     // Glow esterno viola.
-    _glowPaint.color = const Color(0xFFCC66FF).withValues(alpha: 0.35);
+    _glowPaint.color = _gaussGlowOuterCol;
     canvas.drawCircle(Offset(cx, cy), 11 * s, _glowPaint);
-    _glowPaint.color = const Color(0xFFCC66FF).withValues(alpha: 0.55);
+    _glowPaint.color = _gaussGlowInnerCol;
     canvas.drawCircle(Offset(cx, cy), 7 * s, _glowPaint);
 
     // Swirl: 10 piccoli cerchi che orbitano a 2 raggi differenti, ruotando.
@@ -1417,26 +1509,24 @@ class GaussBullet extends PositionComponent
       // Alpha più alta quando vicino al centro (illusione "trascinato dentro").
       final convergedness = 1.0 - (r / (9 * s));
       final alpha = (0.5 + convergedness * 0.45).clamp(0.0, 1.0);
-      _swirlPaint.color = const Color(0xFFCC66FF).withValues(alpha: alpha);
+      _swirlPaint.color = _gaussVioletLut[(alpha * 255).round().clamp(0, 255)];
       canvas.drawCircle(Offset(sx, sy), 1.6 * s, _swirlPaint);
 
       // Trail dot leggermente sfasato per dare senso di rotazione fluida.
       final tang = ang - 0.35;
       final tx = cx + math.cos(tang) * r;
       final ty = cy + math.sin(tang) * r;
-      _swirlPaint.color = const Color(
-        0xFFAA44EE,
-      ).withValues(alpha: alpha * 0.55);
+      _swirlPaint.color =
+          _gaussTrailLut[(alpha * 0.55 * 255).round().clamp(0, 255)];
       canvas.drawCircle(Offset(tx, ty), 1.1 * s, _swirlPaint);
     }
 
     // Core centrale: nucleo viola brillante che pulsa.
     final corePulse = 0.75 + 0.25 * math.sin(_phase * 14);
-    _corePaint.color = const Color(0xFFCC66FF).withValues(alpha: corePulse);
+    _corePaint.color = _gaussVioletLut[(corePulse * 255).round().clamp(0, 255)];
     canvas.drawCircle(Offset(cx, cy), 3.2 * s, _corePaint);
-    _corePaint.color = const Color(
-      0xFFFFFFFF,
-    ).withValues(alpha: corePulse * 0.9);
+    _corePaint.color =
+        _gaussWhiteLut[(corePulse * 0.9 * 255).round().clamp(0, 255)];
     canvas.drawCircle(Offset(cx, cy), 1.6 * s, _corePaint);
   }
 
@@ -1459,6 +1549,10 @@ class GaussBullet extends PositionComponent
 class OverdriveBeam extends PositionComponent
     with HasGameReference<GeometryFightGame> {
   final Vector2 direction;
+  // `direction` è costante per tutta la vita del beam: normalizziamo una
+  // sola volta in onLoad invece di chiamare direction.normalized() ogni
+  // frame nell'hit-walk (raycast eseguito a frame alterni).
+  late final Vector2 _dir;
   double _lifetime = 3.0;
   double _phase = 0;
   int _walkFrame = 0;
@@ -1468,6 +1562,11 @@ class OverdriveBeam extends PositionComponent
         size: Vector2(overdriveBeamWidth, overdriveBeamLength),
         anchor: Anchor.topCenter,
       );
+
+  @override
+  Future<void> onLoad() async {
+    _dir = direction.normalized();
+  }
 
   @override
   void update(double dt) {
@@ -1485,7 +1584,7 @@ class OverdriveBeam extends PositionComponent
     if (_walkFrame > 1 << 20) _walkFrame = 0;
     if ((_walkFrame & 1) == 0) {
       // Kill everything in path (enemies AND bosses) — raycast = danno ad AREA → splitter immuni
-      final dir = direction.normalized();
+      final dir = _dir;
       final toRemove = <EnemyBullet>[];
       for (final child in game.world.children) {
         if (child is EnemyBase) {
@@ -1527,6 +1626,31 @@ class OverdriveBeam extends PositionComponent
   static final _odCorePaint = Paint();
   static final _odEdgePaint = Paint();
 
+  // ── LUT arcobaleno (360 step hue, delta 1°/360 impercettibile) ──
+  // hue = (_phase*30)%360 varia ogni frame: precalcoliamo HSV→RGB una sola
+  // volta per ciascuna tinta, a entrambe le alpha usate (glow 0.3 / edge 0.5),
+  // evitando HSVColor.fromAHSV + withValues per-frame.
+  static final List<Color> _odRainbowGlowLut = List<Color>.generate(
+    360,
+    (h) => HSVColor.fromAHSV(
+      1.0,
+      h.toDouble(),
+      1.0,
+      1.0,
+    ).toColor().withValues(alpha: 0.3),
+    growable: false,
+  );
+  static final List<Color> _odRainbowEdgeLut = List<Color>.generate(
+    360,
+    (h) => HSVColor.fromAHSV(
+      1.0,
+      h.toDouble(),
+      1.0,
+      1.0,
+    ).toColor().withValues(alpha: 0.5),
+    growable: false,
+  );
+
   @override
   void render(Canvas canvas) {
     final angle = math.atan2(direction.y, direction.x) - math.pi / 2;
@@ -1535,11 +1659,10 @@ class OverdriveBeam extends PositionComponent
     canvas.rotate(angle);
 
     // Rainbow effect
-    final hue = (_phase * 30) % 360;
-    final rainbowColor = HSVColor.fromAHSV(1.0, hue, 1.0, 1.0).toColor();
+    final hueIndex = ((_phase * 30) % 360).floor().clamp(0, 359);
 
     // Glow (no blur — overdrive is rare but still saves GPU)
-    _odGlowPaint.color = rainbowColor.withValues(alpha: 0.3);
+    _odGlowPaint.color = _odRainbowGlowLut[hueIndex];
     canvas.drawRect(
       Rect.fromCenter(
         center: Offset.zero,
@@ -1561,7 +1684,7 @@ class OverdriveBeam extends PositionComponent
     );
 
     // Colored edge
-    _odEdgePaint.color = rainbowColor.withValues(alpha: 0.5);
+    _odEdgePaint.color = _odRainbowEdgeLut[hueIndex];
     canvas.drawRect(
       Rect.fromCenter(
         center: Offset.zero,

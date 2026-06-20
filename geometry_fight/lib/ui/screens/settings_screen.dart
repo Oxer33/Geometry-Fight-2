@@ -1,9 +1,11 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../data/achievements.dart';
+import '../../data/constants.dart';
 import '../../data/crash_reporter.dart';
 import '../../data/language_controller.dart';
 import '../../data/leaderboard.dart';
@@ -456,105 +458,139 @@ class _SettingsScreenState extends State<SettingsScreen>
                         const SizedBox(height: 12),
                         _buildResetButton(entrance, glow, l10n),
 
-                        const SizedBox(height: 32),
-
-                        // Test / Debug section
-                        _buildSectionHeader(
-                          l10n.settingsTestDebug,
-                          Icons.bug_report_rounded,
-                          Colors.amberAccent,
-                          entrance,
-                          0.4,
-                        ),
-                        const SizedBox(height: 12),
-                        _buildTestButton(
-                          label: l10n.settingsAddCredits,
-                          icon: Icons.add_circle_outline,
-                          color: Colors.amberAccent,
-                          entrance: entrance,
-                          delay: 0.45,
-                          onTap: () async {
-                            final messenger = ScaffoldMessenger.of(context);
-                            final save = SaveManager.load();
-                            save.goldGeoms += 100000;
-                            await SaveManager.save(save);
-                            if (!mounted) return;
-                            messenger.showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  l10n.settingsCreditsAdded(save.goldGeoms),
-                                  style: const TextStyle(
-                                    fontFamily: 'monospace',
+                        // Test / Debug section — DEBUG BUILDS ONLY. Cheat
+                        // buttons (add credits, reset purchases) and the
+                        // crash-log viewer must never reach production players.
+                        if (kDebugMode || kTestTools) ...[
+                          const SizedBox(height: 32),
+                          _buildSectionHeader(
+                            l10n.settingsTestDebug,
+                            Icons.bug_report_rounded,
+                            Colors.amberAccent,
+                            entrance,
+                            0.4,
+                          ),
+                          const SizedBox(height: 12),
+                          _buildTestButton(
+                            label: l10n.settingsAddCredits,
+                            icon: Icons.add_circle_outline,
+                            color: Colors.amberAccent,
+                            entrance: entrance,
+                            delay: 0.45,
+                            onTap: () async {
+                              final messenger = ScaffoldMessenger.of(context);
+                              final save = SaveManager.load();
+                              save.goldGeoms += 100000;
+                              await SaveManager.save(save);
+                              if (!mounted) return;
+                              messenger.showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    l10n.settingsCreditsAdded(save.goldGeoms),
+                                    style: const TextStyle(
+                                      fontFamily: 'monospace',
+                                    ),
                                   ),
+                                  backgroundColor: Colors.amberAccent.shade700,
+                                  duration: const Duration(seconds: 1),
                                 ),
-                                backgroundColor: Colors.amberAccent.shade700,
-                                duration: const Duration(seconds: 1),
-                              ),
-                            );
-                          },
-                        ),
-                        const SizedBox(height: 12),
-                        _buildTestButton(
-                          label: l10n.settingsResetPurchases,
-                          icon: Icons.restart_alt_rounded,
-                          color: Colors.orangeAccent,
-                          entrance: entrance,
-                          delay: 0.5,
-                          onTap: () async {
-                            final messenger = ScaffoldMessenger.of(context);
-                            // Rebuild SaveData immutabilmente (coding-style:
-                            // ALWAYS new objects, NEVER mutate): preservo i
-                            // campi non resettati (goldGeoms, highscores,
-                            // stats, totalPlaytime, playedModes,
-                            // activeModifiers) e ricreo liste/mappe da zero.
-                            final current = SaveManager.load();
-                            final save = SaveData(
-                              goldGeoms: current.goldGeoms,
-                              upgrades: <String, int>{},
-                              unlockedSkins: <String>['classic'],
-                              unlockedTrails: <String>['normal'],
-                              unlockedModes: <String>['classic'],
-                              unlockedWeapons: <String>['basic'],
-                              highscores: Map<String, int>.from(
-                                current.highscores,
-                              ),
-                              totalPlaytime: current.totalPlaytime,
-                              stats: Map<String, int>.from(current.stats),
-                              playedModes: List<String>.from(
-                                current.playedModes,
-                              ),
-                              activeModifiers: List<String>.from(
-                                current.activeModifiers,
-                              ),
-                              activeSkin: 'classic',
-                              activeTrail: 'normal',
-                              startingWeapon: 'basic',
-                            );
-                            await SaveManager.save(save);
-                            if (!mounted) return;
-                            messenger.showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                  l10n.settingsPurchasesReset,
-                                  style: const TextStyle(
-                                    fontFamily: 'monospace',
+                              );
+                            },
+                          ),
+                          const SizedBox(height: 12),
+                          // TEST: grant 1000 player levels → 1000 talent points
+                          // (utente: "bottone che da 1000 livelli istant per
+                          // testing").
+                          _buildTestButton(
+                            label: '+1000 LIVELLI',
+                            icon: Icons.military_tech_outlined,
+                            color: Colors.tealAccent,
+                            entrance: entrance,
+                            delay: 0.47,
+                            onTap: () async {
+                              final messenger = ScaffoldMessenger.of(context);
+                              final save = SaveManager.load();
+                              save.grantTestLevels(1000);
+                              await SaveManager.save(save);
+                              if (!mounted) return;
+                              messenger.showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    'LV ${save.playerLevel} · '
+                                    '${save.talentPoints} pts',
+                                    style: const TextStyle(
+                                      fontFamily: 'monospace',
+                                    ),
                                   ),
+                                  backgroundColor: Colors.teal.shade700,
+                                  duration: const Duration(seconds: 1),
                                 ),
-                                backgroundColor: Colors.orangeAccent,
-                                duration: const Duration(seconds: 1),
-                              ),
-                            );
-                          },
-                        ),
-                        const SizedBox(height: 12),
-                        _buildTestButton(
-                          label: l10n.settingsCrashLogs,
-                          icon: Icons.report_problem_rounded,
-                          color: Colors.redAccent,
-                          entrance: entrance,
-                          delay: 0.55,
-                          onTap: _showCrashLogs,
-                        ),
+                              );
+                            },
+                          ),
+                          const SizedBox(height: 12),
+                          _buildTestButton(
+                            label: l10n.settingsResetPurchases,
+                            icon: Icons.restart_alt_rounded,
+                            color: Colors.orangeAccent,
+                            entrance: entrance,
+                            delay: 0.5,
+                            onTap: () async {
+                              final messenger = ScaffoldMessenger.of(context);
+                              // Rebuild SaveData immutabilmente (coding-style:
+                              // ALWAYS new objects, NEVER mutate): preservo i
+                              // campi non resettati (goldGeoms, highscores,
+                              // stats, totalPlaytime, playedModes,
+                              // activeModifiers) e ricreo liste/mappe da zero.
+                              final current = SaveManager.load();
+                              final save = SaveData(
+                                goldGeoms: current.goldGeoms,
+                                upgrades: <String, int>{},
+                                unlockedSkins: <String>['classic'],
+                                unlockedTrails: <String>['normal'],
+                                unlockedModes: <String>['classic'],
+                                unlockedWeapons: <String>['basic'],
+                                highscores: Map<String, int>.from(
+                                  current.highscores,
+                                ),
+                                totalPlaytime: current.totalPlaytime,
+                                stats: Map<String, int>.from(current.stats),
+                                playedModes: List<String>.from(
+                                  current.playedModes,
+                                ),
+                                activeModifiers: List<String>.from(
+                                  current.activeModifiers,
+                                ),
+                                activeSkin: 'classic',
+                                activeTrail: 'normal',
+                                startingWeapon: 'basic',
+                              );
+                              await SaveManager.save(save);
+                              if (!mounted) return;
+                              messenger.showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                    l10n.settingsPurchasesReset,
+                                    style: const TextStyle(
+                                      fontFamily: 'monospace',
+                                    ),
+                                  ),
+                                  backgroundColor: Colors.orangeAccent,
+                                  duration: const Duration(seconds: 1),
+                                ),
+                              );
+                            },
+                          ),
+                          const SizedBox(height: 12),
+                          _buildTestButton(
+                            label: l10n.settingsCrashLogs,
+                            icon: Icons.report_problem_rounded,
+                            color: Colors.redAccent,
+                            entrance: entrance,
+                            delay: 0.55,
+                            onTap: _showCrashLogs,
+                          ),
+                        ],
                       ],
                     ),
                   ),

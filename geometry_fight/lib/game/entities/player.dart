@@ -5,6 +5,7 @@ import 'package:flame/components.dart';
 import 'package:flutter/painting.dart' show HSVColor;
 import '../../data/constants.dart';
 import '../../data/difficulty.dart';
+import '../../data/talents/talent_effect.dart';
 import '../effects/chain_lightning_effect.dart';
 import '../game_world.dart';
 import 'bosses/boss_base.dart';
@@ -41,8 +42,31 @@ enum WeaponType {
   homing,
 }
 
+/// Maps a [WeaponType] to the talent [AbilityFx] that empowers it, or null for
+/// power-up-only weapons (spreadFan, overdrive) which have no dedicated forks.
+AbilityFx? fxForWeapon(WeaponType w) => switch (w) {
+  WeaponType.basic => AbilityFx.weaponBasic,
+  WeaponType.spread => AbilityFx.weaponSpread,
+  WeaponType.triple => AbilityFx.weaponTriple,
+  WeaponType.ricochet => AbilityFx.weaponRicochet,
+  WeaponType.laser => AbilityFx.weaponLaser,
+  WeaponType.plasma => AbilityFx.weaponPlasma,
+  WeaponType.homing => AbilityFx.weaponHoming,
+  WeaponType.gauss => AbilityFx.weaponGauss,
+  WeaponType.chainLightning => AbilityFx.weaponChain,
+  WeaponType.shotgun => AbilityFx.weaponShotgun,
+  WeaponType.railgun => AbilityFx.weaponRailgun,
+  WeaponType.spreadFan => null,
+  WeaponType.overdrive => null,
+};
+
 // Plasma: colpo lento con danni base * 3.9 (era 3.0, +30% richiesta utente).
 const double kPlasmaDamageMultiplier = 3.9;
+
+// Predicate hoistato (era closure inline in update() → nuova chiusura ogni
+// frame): un SnakeTrailSegment è "morto" se rimosso o non più montato e va
+// eliminato dalla lista di tracking del cap FIFO.
+bool _snakeSegmentDead(SnakeTrailSegment s) => s.isRemoved || !s.isMounted;
 
 class Player extends PositionComponent
     with HasGameReference<GeometryFightGame>, CollisionCallbacks {
@@ -71,7 +95,9 @@ class Player extends PositionComponent
   // Shake detection (richiesta utente): il wiggle rapido del joystick libera i
   // Leech agganciati. Accumula i reversal di direzione del movimento e decade
   // nel tempo; `isShaking` è true sopra la soglia.
-  Vector2 _prevMoveInput = Vector2.zero();
+  // `final`: mutato in-place via `.setFrom()` (mai riassegnato) per evitare
+  // alloc di un nuovo Vector2 ogni frame nella shake detection.
+  final Vector2 _prevMoveInput = Vector2.zero();
   double _shakeMeter = 0;
   static const double _shakeThreshold = 3.0; // ~2 inversioni nette del joystick
   bool get isShaking => _shakeMeter >= _shakeThreshold;
@@ -385,13 +411,13 @@ class Player extends PositionComponent
         final d = cur.dot(_prevMoveInput);
         if (d < -0.3) {
           _shakeMeter += 1.5; // inversione netta → conta 1 scrollata
-          _prevMoveInput = cur.clone();
+          _prevMoveInput.setFrom(cur);
         } else if (d > 0.5) {
-          _prevMoveInput = cur.clone(); // stessa direzione: segue derive lente
+          _prevMoveInput.setFrom(cur); // stessa direzione: segue derive lente
         }
         // d in [-0.3, 0.5]: transizione ambigua → non aggiornare il riferimento
       } else {
-        _prevMoveInput = cur.clone();
+        _prevMoveInput.setFrom(cur);
       }
     }
     _shakeMeter = (_shakeMeter - realDt * 1.0).clamp(0.0, 12.0);
@@ -442,7 +468,7 @@ class Player extends PositionComponent
         // Prune stale refs OGNI frame (non solo allo spawn): i segmenti
         // self-remove a 4s, se prune solo allo spawn potremmo trattenere
         // refs morti fino al prossimo tick → memoria + cap conta zombie.
-        _snakeTrailSegments.removeWhere((s) => s.isRemoved || !s.isMounted);
+        _snakeTrailSegments.removeWhere(_snakeSegmentDead);
 
         _snakeTrailTick += realDt;
         // Interpolazione anti-microlag: se realDt è grande (frame drop),
@@ -495,8 +521,15 @@ class Player extends PositionComponent
           game.world.add(seg);
         }
         // Aggiorna prev per il prossimo frame DOPO i spawn (così la prossima
-        // interpolazione parte dalla posizione corrente).
-        _snakePrevPos = position.clone();
+        // interpolazione parte dalla posizione corrente). Riusa il Vector2
+        // esistente (setFrom) invece di allocarne uno nuovo ogni frame; la
+        // prima volta lo crea (campo nullable preservato per il fallback `??`).
+        final prevPos = _snakePrevPos;
+        if (prevPos == null) {
+          _snakePrevPos = position.clone();
+        } else {
+          prevPos.setFrom(position);
+        }
       }
     }
   }
@@ -509,26 +542,37 @@ class Player extends PositionComponent
     // Clamp a 0.01 min per evitare divisione per zero se un shop mult arriva
     // a 0 (bug upgrade tier o save file corrotto) → fire interval infinito,
     // il player non spara più per tutto il run. Safety net.
+    // Talent empower for THIS weapon: power boosts damage, cdr boosts fire
+    // rate (lower effective cooldown). Null for power-up-only weapons.
+    final empowerFx = fxForWeapon(weapon);
+    final empowerPower = empowerFx == null
+        ? 0.0
+        : game.saveData.talentStats.skillPower(empowerFx);
+    final empowerCdr = empowerFx == null
+        ? 0.0
+        : game.saveData.talentStats.skillCdr(empowerFx);
+
     final fireRateMultiplier =
-        (game.saveData.fireRateMultiplier * (hasRapidFire ? 2.5 : 1.0)).clamp(
-          0.01,
-          double.infinity,
-        );
+        (game.saveData.fireRateMultiplier *
+                (1.0 + empowerCdr) *
+                (hasRapidFire ? 2.5 : 1.0))
+            .clamp(0.01, double.infinity);
 
     final double fireInterval = 1.0 / (baseFireRate * fireRateMultiplier);
     _fireTimer = fireInterval;
 
     final dir = direction.normalized();
-    double damageMultiplier = game.saveData.damageMultiplier;
+    double damageMultiplier =
+        game.saveData.damageMultiplier * (1.0 + empowerPower);
     if (hasFirePower) damageMultiplier *= 2.0;
     // Modifier glass_cannon: 3× danno (e 1 sola vita, applicata in
     // _applyModifiers). Wired qui per ogni weapon type.
     if (game.hasModifier('glass_cannon')) damageMultiplier *= 3.0;
-    // CRIT talent: roll per-salva. Su critico moltiplica il danno (×2.2, vedi
-    // SaveData.kCritMultiplier) e spawna una scintilla gialla di feedback.
+    // CRIT talent: roll per-salva. Su critico moltiplica il danno per il
+    // critMultiplier (base ×2.2 + Crit Damage talents) e spawna una scintilla.
     if (game.saveData.critChance > 0 &&
         _critRng.nextDouble() < game.saveData.critChance) {
-      damageMultiplier *= 2.2;
+      damageMultiplier *= game.saveData.critMultiplier;
       game.spawnExplosion(
         position,
         const Color(0xFFFFEE66),
@@ -604,7 +648,7 @@ class Player extends PositionComponent
         // +50% fire rate: 0.4 → 0.267s tra i colpi. Anche scalato dagli
         // upgrade shop + rapidFire powerup (entrambi già in fireRateMultiplier).
         // Overdrive powerup NON accelera il fire rate (solo movimento).
-        _fireTimer = (0.4 / 1.5) / fireRateMultiplier;
+        _fireTimer = ((0.4 / 1.5) / fireRateMultiplier).clamp(0.05, 5.0);
       case WeaponType.ricochet:
         // Ventaglio di 3 colpi che rimbalzano (richiesta utente).
         // Angoli: ~23° totali (-0.20, 0, +0.20 rad).
@@ -665,8 +709,10 @@ class Player extends PositionComponent
         // Calcolo custom: bypassa `fireRateMultiplier` che ha già 2.5x per
         // rapidFire, e applica 1.75x qui. Senza rapidFire usa il solo shop mult.
         final homingMult =
-            game.saveData.fireRateMultiplier * (hasRapidFire ? 1.75 : 1.0);
-        _fireTimer = 0.5 / homingMult;
+            game.saveData.fireRateMultiplier *
+            (1.0 + empowerCdr) *
+            (hasRapidFire ? 1.75 : 1.0);
+        _fireTimer = (0.5 / homingMult).clamp(0.05, 5.0);
       case WeaponType.triple:
         // Sparo triplo con angolo ristretto (~12° totali)
         for (final angle in [-0.105, 0.0, 0.105]) {
@@ -679,10 +725,10 @@ class Player extends PositionComponent
             weaponType: WeaponType.triple,
           );
         }
-        _fireTimer = fireInterval * 0.5;
+        _fireTimer = (fireInterval * 0.5).clamp(0.05, 5.0);
       case WeaponType.overdrive:
         _spawnOverdriveBeam(dir);
-        _fireTimer = 3.0 / fireRateMultiplier;
+        _fireTimer = (3.0 / fireRateMultiplier).clamp(0.05, 5.0);
       case WeaponType.gauss:
         // Iter 14 (utente): swirl bullet dedicato. All'impatto (enemy/boss
         // OR fine vita) spawna implosion 2s sul punto: pull + tick damage.
@@ -724,14 +770,19 @@ class Player extends PositionComponent
     // Pre-collect potential targets (caveman fix perf).
     // Skip `isRemoved`: Flame può tenere il component morto in `children`
     // per un frame → un chain bolt non deve "jumpare" su un cadavere.
+    // Registry: nemici da `game.activeEnemies` (no walk world.children); i boss
+    // NON sono nel registry (extends PositionComponent, non EnemyBase) → restano
+    // sourced da world.children.whereType<BossBase>().
     final candidates = <PositionComponent>[];
-    for (final child in game.world.children) {
-      if (child.isRemoved) continue;
-      if (child is EnemyBase && !child.isSpawnInvulnerable) {
-        candidates.add(child);
-      } else if (child is BossBase) {
-        candidates.add(child);
+    for (final enemy in game.activeEnemies) {
+      if (enemy.isRemoved) continue;
+      if (!enemy.isSpawnInvulnerable) {
+        candidates.add(enemy);
       }
+    }
+    for (final boss in game.world.children.whereType<BossBase>()) {
+      if (boss.isRemoved) continue;
+      candidates.add(boss);
     }
     if (candidates.isEmpty) return;
     final hitTargets = <PositionComponent>{};
@@ -807,27 +858,26 @@ class Player extends PositionComponent
     const corridor = 28.0;
     final origin = position + d * 20;
     final dmg = damageMultiplier * 6.0;
-    // Snapshot: takeDamage→onDeath può mutare world.children durante il loop.
-    for (final child in game.world.children.toList()) {
-      Vector2 cpos;
-      if (child is EnemyBase) {
-        if (child.isSpawnInvulnerable) continue;
-        cpos = child.position;
-      } else if (child is BossBase) {
-        cpos = child.position;
-      } else {
-        continue;
-      }
-      final rel = cpos - origin;
+    // Snapshot: takeDamage→onDeath può mutare la lista durante il loop.
+    // Registry: nemici da `game.activeEnemies` (no walk world.children); i boss
+    // NON sono nel registry (extends PositionComponent, non EnemyBase) → restano
+    // sourced da world.children.whereType<BossBase>().
+    for (final enemy in game.activeEnemies.toList()) {
+      if (enemy.isSpawnInvulnerable) continue;
+      final rel = enemy.position - origin;
       final along = rel.dot(d);
       if (along < 0 || along > maxLen) continue;
       final perp = (rel - d * along).length;
       if (perp > corridor) continue;
-      if (child is EnemyBase) {
-        child.takeDamage(dmg);
-      } else if (child is BossBase) {
-        child.takeDamage(dmg);
-      }
+      enemy.takeDamage(dmg);
+    }
+    for (final boss in game.world.children.whereType<BossBase>().toList()) {
+      final rel = boss.position - origin;
+      final along = rel.dot(d);
+      if (along < 0 || along > maxLen) continue;
+      final perp = (rel - d * along).length;
+      if (perp > corridor) continue;
+      boss.takeDamage(dmg);
     }
     game.world.add(
       RailgunBeam(origin: origin.clone(), direction: d, length: maxLen),
@@ -1030,11 +1080,16 @@ class Player extends PositionComponent
     shieldTimer = duration;
   }
 
+  // Paint condiviso del corpo/glow nave: riusato ogni frame (era `Paint()`
+  // locale ad ogni render → 1 alloc/frame). `.color`/`.maskFilter` vengono
+  // sempre reimpostati prima di ogni draw, quindi nessuno stato stantio.
+  static final Paint _glowPaint = Paint();
+
   @override
   void render(Canvas canvas) {
     final cx = size.x / 2;
     final cy = size.y / 2;
-    final paint = Paint();
+    final paint = _glowPaint;
 
     // === 1. TRAIL DI MOVIMENTO (scia luminosa dietro la nave) ===
     _renderTrail(canvas, cx, cy);
@@ -1609,12 +1664,31 @@ class Player extends PositionComponent
 
   static final _auraPaint = Paint();
 
+  // Cache dei 3 colori dell'alone overdrive. La hue dei 3 anelli condivide la
+  // stessa rampa (i*120 è solo uno shift costante) e l'alpha per anello è
+  // costante (0.08/0.06/0.04). Ricomputo solo quando l'indice LUT della hue
+  // base avanza → da 3 HSVColor+toColor/frame a ~0. RGB dalla LUT fine
+  // (delta <=1/256), alpha esatta.
+  int _auraHueKey = -1;
+  final List<Color> _auraColors = List<Color>.filled(
+    3,
+    const Color(0x00000000),
+  );
+
   /// Alone arcobaleno attorno alla nave durante overdrive — senza blur
   void _renderOverdriveAura(Canvas canvas, double cx, double cy) {
+    final baseHue = (_energyPhase * 60) % 360;
+    final key = (baseHue / 360.0 * _rainbowLutSize).floor() % _rainbowLutSize;
+    if (_auraHueKey != key) {
+      _auraHueKey = key;
+      for (int i = 0; i < 3; i++) {
+        final hue = ((_energyPhase * 60 + i * 120) % 360);
+        final idx = (hue / 360.0 * _rainbowLutSize).floor() % _rainbowLutSize;
+        _auraColors[i] = _rainbowLut[idx].withValues(alpha: 0.08 - i * 0.02);
+      }
+    }
     for (int i = 0; i < 3; i++) {
-      final hue = ((_energyPhase * 60 + i * 120) % 360);
-      final color = HSVColor.fromAHSV(0.08 - i * 0.02, hue, 1, 1).toColor();
-      _auraPaint.color = color;
+      _auraPaint.color = _auraColors[i];
       _auraPaint.maskFilter = null;
       canvas.drawCircle(Offset(cx, cy), 30 + i * 8.0, _auraPaint);
     }
@@ -1645,6 +1719,19 @@ class Player extends PositionComponent
   static final _flameInnerPaint = Paint();
   static final _flameOuterPaint = Paint();
 
+  // Colori fiamma invarianti (alpha costante a compile-time) → precalcolati
+  // una volta invece di `const Color(...).withValues(...)` ogni frame. Stessi
+  // valori esatti (delta zero).
+  static final Color _flameOuterColor = const Color(
+    0xFFFF2200,
+  ).withValues(alpha: 0.15);
+  static final Color _flameInnerColor = const Color(
+    0xFFFF6600,
+  ).withValues(alpha: 0.7);
+  static final Color _flameCoreColor = const Color(
+    0xFFFFFFFF,
+  ).withValues(alpha: 0.9);
+
   /// Disegna una fiamma singola del thruster — senza blur
   void _drawFlame(
     Canvas canvas,
@@ -1654,7 +1741,7 @@ class Player extends PositionComponent
     double width,
   ) {
     // Fiamma esterna (rosso/viola glow) — cerchio più grande, no blur
-    _flameOuterPaint.color = const Color(0xFFFF2200).withValues(alpha: 0.15);
+    _flameOuterPaint.color = _flameOuterColor;
     _flameOuterPaint.maskFilter = null;
     canvas.drawOval(
       Rect.fromCenter(
@@ -1666,7 +1753,7 @@ class Player extends PositionComponent
     );
 
     // Fiamma interna (arancione brillante)
-    _flameInnerPaint.color = const Color(0xFFFF6600).withValues(alpha: 0.7);
+    _flameInnerPaint.color = _flameInnerColor;
     _flameInnerPaint.maskFilter = null;
     canvas.drawOval(
       Rect.fromCenter(
@@ -1678,7 +1765,7 @@ class Player extends PositionComponent
     );
 
     // Core bianco (centro fiamma)
-    _flameCorePaint.color = const Color(0xFFFFFFFF).withValues(alpha: 0.9);
+    _flameCorePaint.color = _flameCoreColor;
     _flameCorePaint.maskFilter = null;
     canvas.drawOval(
       Rect.fromCenter(
@@ -1730,9 +1817,27 @@ class Player extends PositionComponent
 
   static final _wingPaint = Paint();
 
+  // Cache dei 4 colori delle luci ali. RGB fissi (rosso/verde), solo l'alpha
+  // varia con `pulse` (sin). Quantizzo `pulse` a 256 step → delta alpha
+  // <=1/256 (impercettibile) e ricomputo i 4 colori solo quando lo step
+  // cambia, evitando 4 Color.fromRGBO/frame.
+  int _wingPulseKey = -1;
+  final List<Color> _wingColors = List<Color>.filled(
+    4,
+    const Color(0x00000000),
+  );
+
   /// Luci sulle punte delle ali che pulsano — senza blur
   void _renderWingLights(Canvas canvas, double cx, double cy) {
     final pulse = 0.5 + math.sin(_wingPulse) * 0.5;
+    final key = (pulse * 255).round().clamp(0, 255);
+    if (_wingPulseKey != key) {
+      _wingPulseKey = key;
+      _wingColors[0] = Color.fromRGBO(255, 50, 50, pulse * 0.3);
+      _wingColors[1] = Color.fromRGBO(255, 50, 50, pulse * 0.8);
+      _wingColors[2] = Color.fromRGBO(50, 255, 100, pulse * 0.3);
+      _wingColors[3] = Color.fromRGBO(50, 255, 100, pulse * 0.8);
+    }
 
     canvas.save();
     canvas.translate(cx, cy);
@@ -1740,15 +1845,15 @@ class Player extends PositionComponent
 
     // Luce ala sinistra (rossa) — glow + core
     _wingPaint.maskFilter = null;
-    _wingPaint.color = Color.fromRGBO(255, 50, 50, pulse * 0.3);
+    _wingPaint.color = _wingColors[0];
     canvas.drawCircle(const Offset(-12, 10), 4, _wingPaint);
-    _wingPaint.color = Color.fromRGBO(255, 50, 50, pulse * 0.8);
+    _wingPaint.color = _wingColors[1];
     canvas.drawCircle(const Offset(-12, 10), 2, _wingPaint);
 
     // Luce ala destra (verde) — glow + core
-    _wingPaint.color = Color.fromRGBO(50, 255, 100, pulse * 0.3);
+    _wingPaint.color = _wingColors[2];
     canvas.drawCircle(const Offset(12, 10), 4, _wingPaint);
-    _wingPaint.color = Color.fromRGBO(50, 255, 100, pulse * 0.8);
+    _wingPaint.color = _wingColors[3];
     canvas.drawCircle(const Offset(12, 10), 2, _wingPaint);
 
     canvas.restore();
@@ -1761,14 +1866,14 @@ class Player extends PositionComponent
     final shieldAlpha = 0.2 + math.sin(_shieldPhase * 2) * 0.1;
 
     // Glow esterno — esagono più grande, alpha ridotta, no blur
-    _shieldPaint.color = NeonColors.cyan.withValues(alpha: shieldAlpha * 0.25);
+    _shieldPaint.color = _cyanAlpha(shieldAlpha * 0.25);
     _shieldPaint.style = PaintingStyle.fill;
     _shieldPaint.strokeWidth = 0;
     _shieldPaint.maskFilter = null;
     _drawHexagonAt(canvas, cx, cy, 28, _shieldPaint);
 
     // Bordo esagonale principale
-    _shieldPaint.color = NeonColors.cyan.withValues(alpha: shieldAlpha + 0.2);
+    _shieldPaint.color = _cyanAlpha(shieldAlpha + 0.2);
     _shieldPaint.style = PaintingStyle.stroke;
     _shieldPaint.strokeWidth = 1.5;
     _drawHexagonAt(canvas, cx, cy, 22, _shieldPaint);
@@ -1777,7 +1882,7 @@ class Player extends PositionComponent
     canvas.save();
     canvas.translate(cx, cy);
     canvas.rotate(_shieldPhase * 0.3);
-    _shieldPaint.color = NeonColors.cyan.withValues(alpha: shieldAlpha * 0.4);
+    _shieldPaint.color = _cyanAlpha(shieldAlpha * 0.4);
     _shieldPaint.strokeWidth = 0.5;
     _drawHexagonAt(canvas, 0, 0, 18, _shieldPaint);
     canvas.restore();
@@ -1789,9 +1894,9 @@ class Player extends PositionComponent
       final px = cx + 22 * math.cos(angle);
       final py = cy + 22 * math.sin(angle);
       final dotAlpha = 0.3 + math.sin(_shieldPhase * 3 + i) * 0.3;
-      _shieldPaint.color = NeonColors.cyan.withValues(alpha: dotAlpha * 0.5);
+      _shieldPaint.color = _cyanAlpha(dotAlpha * 0.5);
       canvas.drawCircle(Offset(px, py), 3, _shieldPaint);
-      _shieldPaint.color = NeonColors.cyan.withValues(alpha: dotAlpha);
+      _shieldPaint.color = _cyanAlpha(dotAlpha);
       canvas.drawCircle(Offset(px, py), 1.5, _shieldPaint);
     }
   }
@@ -1817,6 +1922,18 @@ class Player extends PositionComponent
   // Glow con blur — match shop preview (`_gGlowBlur`).
   static final Paint _phoenixGlow = Paint()
     ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 12);
+  // Body centrale: geometria PURAMENTE statica (coordinate letterali, nessuna
+  // dipendenza da fase/frame) → costruito una volta e riusato. Le ali NON
+  // sono cacheabili: i loro control point scalano con `wingPhase` in modo non
+  // uniforme (alcuni punti non sono moltiplicati), quindi una canvas transform
+  // cambierebbe i pixel → restano allocate per frame.
+  static final Path _phoenixBodyPath = Path()
+    ..moveTo(0, -16)
+    ..lineTo(4, -2)
+    ..lineTo(3, 10)
+    ..lineTo(-3, 10)
+    ..lineTo(-4, -2)
+    ..close();
 
   void _renderPhoenixOverlay(Canvas canvas, double cx, double cy) {
     canvas.save();
@@ -1844,17 +1961,11 @@ class Player extends PositionComponent
 
     // Body central dorato/rosso — mirror del body in `_drawPhoenixShip`
     // (shop_screen). Standalone (no fallback al ship body standard).
-    final body = Path()
-      ..moveTo(0, -16)
-      ..lineTo(4, -2)
-      ..lineTo(3, 10)
-      ..lineTo(-3, 10)
-      ..lineTo(-4, -2)
-      ..close();
+    // Path statico cacheato (`_phoenixBodyPath`): nessuna alloc per frame.
     _phoenixWingFill.color = const Color(0xFFFF5500);
-    canvas.drawPath(body, _phoenixWingFill);
+    canvas.drawPath(_phoenixBodyPath, _phoenixWingFill);
     _phoenixWingStroke.color = const Color(0xFFFFDD00).withValues(alpha: 0.8);
-    canvas.drawPath(body, _phoenixWingStroke);
+    canvas.drawPath(_phoenixBodyPath, _phoenixWingStroke);
 
     // Embers orbitanti
     for (int i = 0; i < 8; i++) {
@@ -1878,6 +1989,14 @@ class Player extends PositionComponent
   /// Glitch overlay: 3 copie ship offset RGB. Mirror di `_drawGlitchShip`
   /// shop preview.
   static final Paint _glitchPaint = Paint();
+  // Bordo bianco del glitch overlay: Paint dedicato (stile/strokeWidth/colore
+  // costanti) riusato ogni frame invece di allocarne uno nuovo in
+  // _renderGlitchOverlay. Separato da _glitchPaint perché usato interleaved
+  // con esso (fill vs stroke) nello stesso metodo.
+  static final Paint _glitchStroke = Paint()
+    ..color = const Color(0xFFFFFFFF).withValues(alpha: 0.9)
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 0.7;
 
   // FX paints dedicati per le skin spettacolari (iter 23).
   static final _fxPaint = Paint();
@@ -1898,7 +2017,7 @@ class Player extends PositionComponent
           final a = p * (1.5 + (i % 3) * 0.4) + i * (math.pi * 2 / 14);
           final rad = (14 + (i % 4) * 4) * s;
           final hue = (i * 26 + p * 40) % 360;
-          _fxPaint.color = HSVColor.fromAHSV(0.9, hue, 0.8, 1).toColor();
+          _fxPaint.color = _singularityHueLut[_hueIndex(hue)];
           canvas.drawCircle(
             Offset(cx + math.cos(a) * rad, cy + math.sin(a) * rad * 0.5),
             1.4,
@@ -1939,17 +2058,27 @@ class Player extends PositionComponent
           );
         }
       case 'tempest':
-        final rng = math.Random((p * 6).floor());
+        // PRNG deterministico allocation-free (xorshift32) al posto di
+        // `math.Random(seed)` (un'allocazione per chiamata). `rngState`
+        // thread manualmente: stesso ordine di consumo del Random originale
+        // (1 draw per a0 + 2 draw per segmento), look "fulmine random" stabile
+        // per seed identico. Seed | 1 per evitare lo stato 0 (degenere).
+        var rngState = ((p * 6).floor() & 0xFFFFFFFF) | 1;
         _fxStroke
           ..color = const Color(0xFFCCF0FF).withValues(alpha: 0.9)
           ..strokeWidth = 1.2;
         for (int b = 0; b < 4; b++) {
-          final a0 = rng.nextDouble() * math.pi * 2;
+          rngState = _xorshift32(rngState);
+          final a0 = (rngState / 0xFFFFFFFF) * math.pi * 2;
           var lx = cx + math.cos(a0) * 8 * s, ly = cy + math.sin(a0) * 8 * s;
           final path = Path()..moveTo(lx, ly);
           for (int seg = 0; seg < 4; seg++) {
-            lx += (math.cos(a0) * 5 + (rng.nextDouble() - 0.5) * 8) * s;
-            ly += (math.sin(a0) * 5 + (rng.nextDouble() - 0.5) * 8) * s;
+            rngState = _xorshift32(rngState);
+            final rx = rngState / 0xFFFFFFFF;
+            rngState = _xorshift32(rngState);
+            final ry = rngState / 0xFFFFFFFF;
+            lx += (math.cos(a0) * 5 + (rx - 0.5) * 8) * s;
+            ly += (math.sin(a0) * 5 + (ry - 0.5) * 8) * s;
             path.lineTo(lx, ly);
           }
           canvas.drawPath(path, _fxStroke);
@@ -1963,7 +2092,7 @@ class Player extends PositionComponent
           canvas.save();
           canvas.translate(cx + math.cos(a) * r, cy + math.sin(a) * r);
           canvas.rotate(a * 2);
-          _fxPaint.color = HSVColor.fromAHSV(0.85, hue, 0.9, 1).toColor();
+          _fxPaint.color = _spectrumHueLut[_hueIndex(hue)];
           final shard = Path()
             ..moveTo(0, -3 * s)
             ..lineTo(2 * s, 0)
@@ -1979,11 +2108,7 @@ class Player extends PositionComponent
           final a = (i / 7) * math.pi * 2;
           final fl = math.sin(p * 8 + i * 1.3) * 0.5 + 0.5;
           _fxStroke
-            ..color = Color.lerp(
-              const Color(0xFFFF2200),
-              const Color(0xFFFFDD00),
-              fl,
-            )!.withValues(alpha: 0.75)
+            ..color = _hellfireLerpLut[(fl * 255).round().clamp(0, 255)]
             ..strokeWidth = 2.2
             ..strokeCap = StrokeCap.round;
           canvas.drawLine(
@@ -2055,7 +2180,7 @@ class Player extends PositionComponent
         for (int ribbon = 0; ribbon < 3; ribbon++) {
           final hue = (p * 30 + ribbon * 120) % 360;
           _fxStroke
-            ..color = HSVColor.fromAHSV(0.5, hue, 0.7, 1).toColor()
+            ..color = _celestialFxHueLut[_hueIndex(hue)]
             ..strokeWidth = 2.5;
           final path = Path();
           for (int k = 0; k <= 20; k++) {
@@ -2100,11 +2225,7 @@ class Player extends PositionComponent
     _drawShipBody(canvas, _glitchPaint, 1.0);
 
     // Bordo bianco
-    final stroke = Paint()
-      ..color = const Color(0xFFFFFFFF).withValues(alpha: 0.9)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 0.7;
-    _drawShipBody(canvas, stroke, 1.0);
+    _drawShipBody(canvas, _glitchStroke, 1.0);
 
     // Glitch scanline orizzontale random
     if (glitchPhase < 0.15) {
@@ -2201,10 +2322,87 @@ class Player extends PositionComponent
     canvas.restore();
   }
 
-  /// Colore arcobaleno per overdrive
+  // LUT arcobaleno (sat=1, val=1, alpha=1) precalcolata una sola volta.
+  // 1536 = 256 step per ciascuno dei 6 sestanti della ruota delle tinte: in
+  // ogni sestante un solo canale RGB rampa 0→255 linearmente, quindi step
+  // adiacenti differiscono di <=1/256 su ogni canale (impercettibile). Indice
+  // = (hue / 360 * 1536).floor(). Sostituisce l'allocazione HSVColor+toColor
+  // per chiamata (fino a ~19/frame durante overdrive: 18 segmenti scia + base).
+  static const int _rainbowLutSize = 1536;
+  static final List<Color> _rainbowLut = List<Color>.generate(
+    _rainbowLutSize,
+    (i) =>
+        HSVColor.fromAHSV(1.0, i * 360.0 / _rainbowLutSize, 1.0, 1.0).toColor(),
+    growable: false,
+  );
+
+  /// Colore arcobaleno per overdrive (LUT, nessuna allocazione per chiamata).
   Color _getRainbowColor(double phase) {
     final hue = (phase * 60) % 360;
-    return HSVColor.fromAHSV(1.0, hue, 1.0, 1.0).toColor();
+    final idx = (hue / 360.0 * _rainbowLutSize).floor() % _rainbowLutSize;
+    return _rainbowLut[idx];
+  }
+
+  // LUT cyan a 256 livelli di alpha (RGB invariante = NeonColors.cyan, solo
+  // l'alpha varia). Usata da _renderShield, dove tutti i 16 colori per frame
+  // sono cyan con alpha animata: indicizzando per (alpha*255).round() si
+  // azzerano le allocazioni `withValues` per frame con delta alpha <=1/256.
+  static final List<Color> _cyanAlphaLut = List<Color>.generate(
+    256,
+    (i) => NeonColors.cyan.withValues(alpha: i / 255.0),
+    growable: false,
+  );
+
+  static Color _cyanAlpha(double alpha) =>
+      _cyanAlphaLut[(alpha * 255).round().clamp(0, 255)];
+
+  // Helper: LUT della ruota delle tinte a (alpha,sat,val) fissi, 1536 voci
+  // (256 per sestante) → step adiacenti con delta <=1/256 per canale. Indice
+  // = (hue/360*1536).floor(). Usata dagli effetti skin in-game che ciclano
+  // l'hue (singularity/spectrum/celestial), per evitare HSVColor+toColor per
+  // particella/frame.
+  static List<Color> _buildHueLut(double alpha, double sat, double val) =>
+      List<Color>.generate(
+        _rainbowLutSize,
+        (i) => HSVColor.fromAHSV(
+          alpha,
+          i * 360.0 / _rainbowLutSize,
+          sat,
+          val,
+        ).toColor(),
+        growable: false,
+      );
+
+  static int _hueIndex(double hue) =>
+      (hue / 360.0 * _rainbowLutSize).floor() % _rainbowLutSize;
+
+  // LUT skin-specifiche (stessi parametri AHSV delle chiamate originali).
+  static final List<Color> _singularityHueLut = _buildHueLut(0.9, 0.8, 1);
+  static final List<Color> _spectrumHueLut = _buildHueLut(0.85, 0.9, 1);
+  static final List<Color> _celestialFxHueLut = _buildHueLut(0.5, 0.7, 1);
+
+  // LUT hellfire: lerp rosso→oro con alpha 0.75 bakeata (256 voci, delta
+  // <=1/256). Indice = (fl*255).round().
+  static final List<Color> _hellfireLerpLut = List<Color>.generate(
+    256,
+    (i) => Color.lerp(
+      const Color(0xFFFF2200),
+      const Color(0xFFFFDD00),
+      i / 255.0,
+    )!.withValues(alpha: 0.75),
+    growable: false,
+  );
+
+  // Xorshift32 a 32 bit, deterministico e allocation-free. Usato per il
+  // fulmine procedurale della skin "tempest" al posto di `math.Random`.
+  // Lo stato viene mascherato a 32 bit a ogni passo → range sicuro anche su
+  // target a interi 53-bit. Restituisce uno stato non nullo (l'input deve
+  // essere != 0).
+  static int _xorshift32(int x) {
+    x ^= (x << 13) & 0xFFFFFFFF;
+    x ^= x >> 17;
+    x ^= (x << 5) & 0xFFFFFFFF;
+    return x & 0xFFFFFFFF;
   }
 
   @override

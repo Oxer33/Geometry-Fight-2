@@ -316,6 +316,10 @@ class _AchievementsScreenState extends State<AchievementsScreen>
     'special': l10n.achievementCategorySpecial,
   };
 
+  // Cache localized category names (locale-dependent): build once in
+  // didChangeDependencies invece di ricostruire la Map ad ogni frame.
+  late Map<String, String> _categoryNamesCache;
+
   // Cached per-category lists (avoid rebuilding every frame)
   late final Map<String, List<AchievementDef>> _achievementsByCategory;
   late final int _unlockedCount;
@@ -364,6 +368,14 @@ class _AchievementsScreenState extends State<AchievementsScreen>
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Localized names depend on the locale (an inherited dependency), so
+    // rebuild the cache here instead of on every build/frame.
+    _categoryNamesCache = _categoryNames(AppLocalizations.of(context)!);
+  }
+
+  @override
   void dispose() {
     _entranceController.dispose();
     _glowController.dispose();
@@ -375,19 +387,20 @@ class _AchievementsScreenState extends State<AchievementsScreen>
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final categoryNames = _categoryNames(l10n);
+    final categoryNames = _categoryNamesCache;
     return Scaffold(
       backgroundColor: Colors.black,
       body: SafeArea(
+        // Only the one-shot ENTRANCE animation drives this top-level rebuild.
+        // The repeating glow controller is consumed by narrow AnimatedBuilders
+        // wrapped around just the decorations that read it (header completion
+        // chip + tile decoration), so glow ticks no longer rebuild the whole
+        // Column/ListView. _shimmerController drives nothing and is therefore
+        // not part of any rebuild path.
         child: AnimatedBuilder(
-          animation: Listenable.merge([
-            _entranceController,
-            _glowController,
-            _shimmerController,
-          ]),
+          animation: _entranceController,
           builder: (context, _) {
             final entrance = _entranceController.value;
-            final glow = _glowController.value;
 
             return Column(
               children: [
@@ -398,7 +411,6 @@ class _AchievementsScreenState extends State<AchievementsScreen>
                   _unlockedCount,
                   _totalCount,
                   _completionPct,
-                  glow,
                 ),
 
                 // Achievement list
@@ -434,7 +446,7 @@ class _AchievementsScreenState extends State<AchievementsScreen>
                                   _categoryColors[_categories[ci]]!,
                                   entrance,
                                   ci * 0.08 + entry.key * 0.02,
-                                  glow,
+                                  l10n,
                                 ),
                               ),
                           const SizedBox(height: 12),
@@ -457,7 +469,6 @@ class _AchievementsScreenState extends State<AchievementsScreen>
     int unlocked,
     int total,
     double completionPct,
-    double glow,
   ) {
     return Opacity(
       opacity: entrance,
@@ -467,7 +478,11 @@ class _AchievementsScreenState extends State<AchievementsScreen>
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: Row(
             children: [
-              NeonBackButton(onTap: widget.onBack),
+              Semantics(
+                button: true,
+                label: l10n.back,
+                child: NeonBackButton(onTap: widget.onBack),
+              ),
               const SizedBox(width: 16),
               Text(
                 l10n.menuAchievementsAlt,
@@ -481,59 +496,68 @@ class _AchievementsScreenState extends State<AchievementsScreen>
                 ),
               ),
               const Spacer(),
-              // Completion indicator
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: Colors.cyanAccent.withValues(
-                      alpha: 0.3 + glow * 0.15,
+              // Completion indicator. Only the border alpha and progress-ring
+              // glow read the repeating glow controller, so wrap just this
+              // subtree in a narrow AnimatedBuilder instead of rebuilding the
+              // whole header every glow frame.
+              AnimatedBuilder(
+                animation: _glowController,
+                builder: (context, _) {
+                  final glow = _glowController.value;
+                  return Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
                     ),
-                  ),
-                  gradient: LinearGradient(
-                    colors: [
-                      Colors.cyanAccent.withValues(alpha: 0.08),
-                      Colors.cyanAccent.withValues(alpha: 0.02),
-                    ],
-                  ),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // Mini progress ring
-                    SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CustomPaint(
-                        painter: _ProgressRingPainter(
-                          progress: completionPct,
-                          color: Colors.cyanAccent,
-                          glow: glow,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: Colors.cyanAccent.withValues(
+                          alpha: 0.3 + glow * 0.15,
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      '$unlocked / $total',
-                      style: TextStyle(
-                        color: Colors.cyanAccent,
-                        fontSize: 12,
-                        fontFamily: 'monospace',
-                        fontWeight: FontWeight.bold,
-                        shadows: [
-                          Shadow(
-                            color: Colors.cyanAccent.withValues(alpha: 0.3),
-                            blurRadius: 4,
-                          ),
+                      gradient: LinearGradient(
+                        colors: [
+                          Colors.cyanAccent.withValues(alpha: 0.08),
+                          Colors.cyanAccent.withValues(alpha: 0.02),
                         ],
                       ),
                     ),
-                  ],
-                ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Mini progress ring
+                        SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CustomPaint(
+                            painter: _ProgressRingPainter(
+                              progress: completionPct,
+                              color: Colors.cyanAccent,
+                              glow: glow,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          '$unlocked / $total',
+                          style: TextStyle(
+                            color: Colors.cyanAccent,
+                            fontSize: 12,
+                            fontFamily: 'monospace',
+                            fontWeight: FontWeight.bold,
+                            shadows: [
+                              Shadow(
+                                color: Colors.cyanAccent.withValues(alpha: 0.3),
+                                blurRadius: 4,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
               ),
             ],
           ),
@@ -649,9 +673,8 @@ class _AchievementsScreenState extends State<AchievementsScreen>
     Color categoryColor,
     double entrance,
     double delay,
-    double glow,
+    AppLocalizations l10n,
   ) {
-    final l10n = AppLocalizations.of(context)!;
     final tileEntrance = (delay >= 1.0
         ? 1.0
         : ((entrance - delay) / (1.0 - delay)).clamp(0.0, 1.0));
@@ -662,225 +685,254 @@ class _AchievementsScreenState extends State<AchievementsScreen>
         : 0.0;
 
     final accentColor = unlocked ? Colors.greenAccent : categoryColor;
+    final tileName = achievementName(achievement.id, l10n);
+    // Accessibility-only state suffix. No 'locked/unlocked' ARB string pair
+    // exists, so use literal text here rather than adding new l10n keys.
+    final tileStateLabel = unlocked ? 'Unlocked' : 'Locked';
 
-    return Opacity(
-      opacity: tileEntrance,
-      child: Transform.translate(
-        offset: Offset(0, 10 * (1 - tileEntrance)),
-        child: Container(
-          margin: const EdgeInsets.only(bottom: 6),
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(
-              color: unlocked
-                  ? Colors.greenAccent.withValues(alpha: 0.3 + glow * 0.15)
-                  : Colors.white.withValues(alpha: 0.06),
-            ),
-            gradient: LinearGradient(
-              begin: Alignment.centerLeft,
-              end: Alignment.centerRight,
-              colors: unlocked
-                  ? [
-                      Colors.greenAccent.withValues(alpha: 0.06 + glow * 0.02),
-                      Colors.greenAccent.withValues(alpha: 0.01),
-                    ]
-                  : [Colors.white.withValues(alpha: 0.02), Colors.transparent],
-            ),
-            boxShadow: unlocked
-                ? [
-                    BoxShadow(
-                      color: Colors.greenAccent.withValues(
-                        alpha: 0.05 + glow * 0.03,
-                      ),
-                      blurRadius: 8,
+    return Semantics(
+      label: '$tileName ($tileStateLabel)',
+      enabled: unlocked,
+      child: Opacity(
+        opacity: tileEntrance,
+        child: Transform.translate(
+          offset: Offset(0, 10 * (1 - tileEntrance)),
+          // Only the decoration (border / gradient / shadow alpha on unlocked
+          // tiles) reads the repeating glow controller. Wrap just this tile's
+          // decoration in a narrow AnimatedBuilder; the inner Row content is
+          // passed via `child` so it is built once and reused across glow
+          // frames instead of rebuilding with the whole screen.
+          child: AnimatedBuilder(
+            animation: _glowController,
+            child: Row(
+              children: [
+                // Icon circle
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    gradient: RadialGradient(
+                      colors: unlocked
+                          ? [
+                              Colors.greenAccent.withValues(alpha: 0.2),
+                              Colors.greenAccent.withValues(alpha: 0.05),
+                            ]
+                          : [
+                              Colors.white.withValues(alpha: 0.06),
+                              Colors.white.withValues(alpha: 0.02),
+                            ],
                     ),
-                  ]
-                : null,
-          ),
-          child: Row(
-            children: [
-              // Icon circle
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: RadialGradient(
-                    colors: unlocked
+                    border: Border.all(
+                      color: unlocked
+                          ? Colors.greenAccent.withValues(alpha: 0.4)
+                          : Colors.white.withValues(alpha: 0.1),
+                      width: 1.5,
+                    ),
+                    boxShadow: unlocked
                         ? [
-                            Colors.greenAccent.withValues(alpha: 0.2),
-                            Colors.greenAccent.withValues(alpha: 0.05),
+                            BoxShadow(
+                              color: Colors.greenAccent.withValues(alpha: 0.15),
+                              blurRadius: 6,
+                            ),
                           ]
-                        : [
-                            Colors.white.withValues(alpha: 0.06),
-                            Colors.white.withValues(alpha: 0.02),
-                          ],
+                        : null,
                   ),
-                  border: Border.all(
-                    color: unlocked
-                        ? Colors.greenAccent.withValues(alpha: 0.4)
-                        : Colors.white.withValues(alpha: 0.1),
-                    width: 1.5,
-                  ),
-                  boxShadow: unlocked
-                      ? [
-                          BoxShadow(
-                            color: Colors.greenAccent.withValues(alpha: 0.15),
-                            blurRadius: 6,
-                          ),
-                        ]
-                      : null,
-                ),
-                child: Center(
-                  child: Text(
-                    unlocked ? achievement.icon : '?',
-                    style: TextStyle(
-                      fontSize: unlocked ? 18 : 16,
-                      color: unlocked ? null : Colors.white38,
+                  child: Center(
+                    child: Text(
+                      unlocked ? achievement.icon : '?',
+                      style: TextStyle(
+                        fontSize: unlocked ? 18 : 16,
+                        color: unlocked ? null : Colors.white38,
+                      ),
                     ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 12),
+                const SizedBox(width: 12),
 
-              // Info
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      achievementName(achievement.id, l10n),
-                      style: TextStyle(
-                        color: unlocked ? Colors.greenAccent : Colors.white,
-                        fontSize: 13,
-                        fontWeight: FontWeight.bold,
-                        fontFamily: 'monospace',
-                        shadows: unlocked
-                            ? [
-                                Shadow(
-                                  color: Colors.greenAccent.withValues(
-                                    alpha: 0.3,
-                                  ),
-                                  blurRadius: 4,
-                                ),
-                              ]
-                            : null,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      achievementDesc(achievement.id, l10n),
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.5),
-                        fontSize: 10,
-                        fontFamily: 'monospace',
-                      ),
-                    ),
-                    if (!unlocked && achievement.target > 1) ...[
-                      const SizedBox(height: 6),
-                      // Animated progress bar
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(3),
-                        child: Stack(
-                          children: [
-                            Container(
-                              height: 4,
-                              decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.06),
-                                borderRadius: BorderRadius.circular(3),
-                              ),
-                            ),
-                            FractionallySizedBox(
-                              widthFactor: progressPct,
-                              child: Container(
-                                height: 4,
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(3),
-                                  gradient: LinearGradient(
-                                    colors: [
-                                      accentColor,
-                                      accentColor.withValues(alpha: 0.6),
-                                    ],
-                                  ),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: accentColor.withValues(alpha: 0.4),
-                                      blurRadius: 4,
+                // Info
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        achievementName(achievement.id, l10n),
+                        style: TextStyle(
+                          color: unlocked ? Colors.greenAccent : Colors.white,
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                          fontFamily: 'monospace',
+                          shadows: unlocked
+                              ? [
+                                  Shadow(
+                                    color: Colors.greenAccent.withValues(
+                                      alpha: 0.3,
                                     ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ],
+                                    blurRadius: 4,
+                                  ),
+                                ]
+                              : null,
                         ),
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        '$progress / ${achievement.target}',
+                        achievementDesc(achievement.id, l10n),
                         style: TextStyle(
-                          color: accentColor.withValues(alpha: 0.4),
-                          fontSize: 9,
+                          color: Colors.white.withValues(alpha: 0.5),
+                          fontSize: 10,
                           fontFamily: 'monospace',
                         ),
                       ),
-                    ],
-                  ],
-                ),
-              ),
-
-              // Reward badge
-              if (achievement.reward > 0)
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(6),
-                    border: Border.all(
-                      color: unlocked
-                          ? Colors.greenAccent.withValues(alpha: 0.4)
-                          : const Color(0xFFFFD700).withValues(alpha: 0.3),
-                    ),
-                    gradient: LinearGradient(
-                      colors: unlocked
-                          ? [
-                              Colors.greenAccent.withValues(alpha: 0.1),
-                              Colors.greenAccent.withValues(alpha: 0.03),
-                            ]
-                          : [
-                              const Color(0xFFFFD700).withValues(alpha: 0.08),
-                              const Color(0xFFFFD700).withValues(alpha: 0.02),
+                      if (!unlocked && achievement.target > 1) ...[
+                        const SizedBox(height: 6),
+                        // Animated progress bar
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(3),
+                          child: Stack(
+                            children: [
+                              Container(
+                                height: 4,
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.06),
+                                  borderRadius: BorderRadius.circular(3),
+                                ),
+                              ),
+                              FractionallySizedBox(
+                                widthFactor: progressPct,
+                                child: Container(
+                                  height: 4,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(3),
+                                    gradient: LinearGradient(
+                                      colors: [
+                                        accentColor,
+                                        accentColor.withValues(alpha: 0.6),
+                                      ],
+                                    ),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: accentColor.withValues(
+                                          alpha: 0.4,
+                                        ),
+                                        blurRadius: 4,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
                             ],
-                    ),
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          '$progress / ${achievement.target}',
+                          style: TextStyle(
+                            color: accentColor.withValues(alpha: 0.4),
+                            fontSize: 9,
+                            fontFamily: 'monospace',
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        unlocked ? Icons.check_circle_rounded : Icons.diamond,
+                ),
+
+                // Reward badge
+                if (achievement.reward > 0)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(
                         color: unlocked
-                            ? Colors.greenAccent
-                            : const Color(0xFFFFD700),
-                        size: 12,
+                            ? Colors.greenAccent.withValues(alpha: 0.4)
+                            : const Color(0xFFFFD700).withValues(alpha: 0.3),
                       ),
-                      const SizedBox(width: 4),
-                      Text(
-                        '${achievement.reward}',
-                        style: TextStyle(
+                      gradient: LinearGradient(
+                        colors: unlocked
+                            ? [
+                                Colors.greenAccent.withValues(alpha: 0.1),
+                                Colors.greenAccent.withValues(alpha: 0.03),
+                              ]
+                            : [
+                                const Color(0xFFFFD700).withValues(alpha: 0.08),
+                                const Color(0xFFFFD700).withValues(alpha: 0.02),
+                              ],
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          unlocked ? Icons.check_circle_rounded : Icons.diamond,
                           color: unlocked
                               ? Colors.greenAccent
                               : const Color(0xFFFFD700),
-                          fontSize: 11,
-                          fontFamily: 'monospace',
-                          fontWeight: FontWeight.bold,
+                          size: 12,
                         ),
-                      ),
-                    ],
+                        const SizedBox(width: 4),
+                        Text(
+                          '${achievement.reward}',
+                          style: TextStyle(
+                            color: unlocked
+                                ? Colors.greenAccent
+                                : const Color(0xFFFFD700),
+                            fontSize: 11,
+                            fontFamily: 'monospace',
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
+              ],
+            ),
+            builder: (context, child) {
+              final glow = _glowController.value;
+              return Container(
+                margin: const EdgeInsets.only(bottom: 6),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: unlocked
+                        ? Colors.greenAccent.withValues(
+                            alpha: 0.3 + glow * 0.15,
+                          )
+                        : Colors.white.withValues(alpha: 0.06),
+                  ),
+                  gradient: LinearGradient(
+                    begin: Alignment.centerLeft,
+                    end: Alignment.centerRight,
+                    colors: unlocked
+                        ? [
+                            Colors.greenAccent.withValues(
+                              alpha: 0.06 + glow * 0.02,
+                            ),
+                            Colors.greenAccent.withValues(alpha: 0.01),
+                          ]
+                        : [
+                            Colors.white.withValues(alpha: 0.02),
+                            Colors.transparent,
+                          ],
+                  ),
+                  boxShadow: unlocked
+                      ? [
+                          BoxShadow(
+                            color: Colors.greenAccent.withValues(
+                              alpha: 0.05 + glow * 0.03,
+                            ),
+                            blurRadius: 8,
+                          ),
+                        ]
+                      : null,
                 ),
-            ],
+                child: child,
+              );
+            },
           ),
         ),
       ),
@@ -900,42 +952,47 @@ class _ProgressRingPainter extends CustomPainter {
     required this.glow,
   });
 
+  // Paint cache: evita alloc per frame durante glow/entrance animation.
+  static final Paint _bgPaint = Paint()
+    ..color = Colors.white.withValues(alpha: 0.1)
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 2;
+  static final Paint _arcPaint = Paint()
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 2
+    ..strokeCap = StrokeCap.round;
+  static final Paint _glowPaint = Paint()
+    ..style = PaintingStyle.stroke
+    ..strokeWidth = 2
+    ..strokeCap = StrokeCap.round
+    ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2);
+
   @override
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
     final radius = size.width / 2 - 1;
 
     // Background ring
-    final bgPaint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.1)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2;
-    canvas.drawCircle(center, radius, bgPaint);
+    canvas.drawCircle(center, radius, _bgPaint);
 
     // Progress arc
-    final arcPaint = Paint()
-      ..color = color
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2
-      ..strokeCap = StrokeCap.round;
-
+    _arcPaint.color = color;
     canvas.drawArc(
       Rect.fromCircle(center: center, radius: radius),
       -pi / 2,
       2 * pi * progress,
       false,
-      arcPaint,
+      _arcPaint,
     );
 
     // Glow
-    arcPaint.color = color.withValues(alpha: 0.3 + glow * 0.2);
-    arcPaint.maskFilter = const MaskFilter.blur(BlurStyle.normal, 2);
+    _glowPaint.color = color.withValues(alpha: 0.3 + glow * 0.2);
     canvas.drawArc(
       Rect.fromCircle(center: center, radius: radius),
       -pi / 2,
       2 * pi * progress,
       false,
-      arcPaint,
+      _glowPaint,
     );
   }
 

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 // ignore: unused_import
@@ -28,6 +29,7 @@ import 'ui/screens/leaderboard_screen.dart';
 import 'ui/screens/splash_screen.dart';
 import 'ui/screens/stats_screen.dart';
 import 'ui/screens/achievements_screen.dart';
+import 'ui/screens/talents/talent_tree_screen.dart';
 
 void main() async {
   // runZonedGuarded cattura anche errori async non catturati; CrashReporter
@@ -37,6 +39,31 @@ void main() async {
   await runZonedGuarded(() async {
     WidgetsFlutterBinding.ensureInitialized();
     await CrashReporter.install();
+
+    // Branded fallback instead of Flutter's default gray error box if a
+    // widget fails to build in a release build. In debug keep the detailed
+    // red error screen so problems stay visible during development.
+    final defaultErrorWidgetBuilder = ErrorWidget.builder;
+    ErrorWidget.builder = (FlutterErrorDetails details) {
+      if (kDebugMode) return defaultErrorWidgetBuilder(details);
+      return const Directionality(
+        textDirection: TextDirection.ltr,
+        child: ColoredBox(
+          color: Colors.black,
+          child: Center(
+            child: Text(
+              'Something went wrong.\nPlease restart the game.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: Colors.white70,
+                fontSize: 16,
+                decoration: TextDecoration.none,
+              ),
+            ),
+          ),
+        ),
+      );
+    };
 
     // Force landscape and fullscreen
     await SystemChrome.setPreferredOrientations([
@@ -186,6 +213,7 @@ enum AppScreen {
   summary, // 6/6 — riepilogo + multipliers + START
   game,
   shop,
+  talents,
   settings,
   leaderboard,
   stats,
@@ -262,6 +290,7 @@ class _NavigationWrapperState extends State<NavigationWrapper> {
           key: const ValueKey('mainMenu'),
           onPlay: () => _navigateTo(AppScreen.modeSelect),
           onShop: () => _navigateTo(AppScreen.shop),
+          onTalents: () => _navigateTo(AppScreen.talents),
           onSettings: () => _navigateTo(AppScreen.settings),
           onLeaderboard: () => _navigateTo(AppScreen.leaderboard),
           onStats: () => _navigateTo(AppScreen.stats),
@@ -406,6 +435,11 @@ class _NavigationWrapperState extends State<NavigationWrapper> {
       case AppScreen.shop:
         return ShopScreen(
           key: const ValueKey('shop'),
+          onBack: () => _navigateTo(AppScreen.mainMenu),
+        );
+      case AppScreen.talents:
+        return TalentTreeScreen(
+          key: const ValueKey('talents'),
           onBack: () => _navigateTo(AppScreen.mainMenu),
         );
       case AppScreen.settings:

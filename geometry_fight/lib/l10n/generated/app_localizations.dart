@@ -418,6 +418,12 @@ abstract class AppLocalizations {
   /// **'NEGOZIO'**
   String get menuStore;
 
+  /// No description provided for @menuTalents.
+  ///
+  /// In it, this message translates to:
+  /// **'TALENTI'**
+  String get menuTalents;
+
   /// No description provided for @menuSettings.
   ///
   /// In it, this message translates to:
@@ -2152,6 +2158,30 @@ abstract class AppLocalizations {
   /// **'Fulmine elettrico rimbalza tra 5 nemici — perfetto vs gruppi.'**
   String get weaponDescChain;
 
+  /// No description provided for @weaponNameShotgun.
+  ///
+  /// In it, this message translates to:
+  /// **'Shotgun'**
+  String get weaponNameShotgun;
+
+  /// No description provided for @weaponDescShotgun.
+  ///
+  /// In it, this message translates to:
+  /// **'8 pallettoni arancioni a cono ravvicinato — devastante da vicino.'**
+  String get weaponDescShotgun;
+
+  /// No description provided for @weaponNameRailgun.
+  ///
+  /// In it, this message translates to:
+  /// **'Railgun'**
+  String get weaponNameRailgun;
+
+  /// No description provided for @weaponDescRailgun.
+  ///
+  /// In it, this message translates to:
+  /// **'Colpo hitscan istantaneo che perfora TUTTI i nemici in linea retta.'**
+  String get weaponDescRailgun;
+
   /// No description provided for @modeDescClassic.
   ///
   /// In it, this message translates to:
@@ -2698,6 +2728,102 @@ abstract class AppLocalizations {
   /// **'Raggio magnete enorme. I geom volano verso di te.'**
   String get modDescMagnetKing;
 
+  /// No description provided for @waveModNameFrenzy.
+  ///
+  /// In it, this message translates to:
+  /// **'FRENZY'**
+  String get waveModNameFrenzy;
+
+  /// No description provided for @waveModTaglineFrenzy.
+  ///
+  /// In it, this message translates to:
+  /// **'mob +35% velocità'**
+  String get waveModTaglineFrenzy;
+
+  /// No description provided for @waveModNameTank.
+  ///
+  /// In it, this message translates to:
+  /// **'TANK'**
+  String get waveModNameTank;
+
+  /// No description provided for @waveModTaglineTank.
+  ///
+  /// In it, this message translates to:
+  /// **'mob ×1.6 HP'**
+  String get waveModTaglineTank;
+
+  /// No description provided for @waveModNameGlass.
+  ///
+  /// In it, this message translates to:
+  /// **'GLASS'**
+  String get waveModNameGlass;
+
+  /// No description provided for @waveModTaglineGlass.
+  ///
+  /// In it, this message translates to:
+  /// **'mob ×0.4 HP, punti ×1.6'**
+  String get waveModTaglineGlass;
+
+  /// No description provided for @waveModNameLoot.
+  ///
+  /// In it, this message translates to:
+  /// **'LOOT'**
+  String get waveModNameLoot;
+
+  /// No description provided for @waveModTaglineLoot.
+  ///
+  /// In it, this message translates to:
+  /// **'doppi geom drop'**
+  String get waveModTaglineLoot;
+
+  /// No description provided for @waveModNameBlitz.
+  ///
+  /// In it, this message translates to:
+  /// **'BLITZ'**
+  String get waveModNameBlitz;
+
+  /// No description provided for @waveModTaglineBlitz.
+  ///
+  /// In it, this message translates to:
+  /// **'+50% nemici'**
+  String get waveModTaglineBlitz;
+
+  /// No description provided for @waveModNameHaste.
+  ///
+  /// In it, this message translates to:
+  /// **'HASTE'**
+  String get waveModNameHaste;
+
+  /// No description provided for @waveModTaglineHaste.
+  ///
+  /// In it, this message translates to:
+  /// **'ondate ravvicinate'**
+  String get waveModTaglineHaste;
+
+  /// No description provided for @waveModNameMagnetic.
+  ///
+  /// In it, this message translates to:
+  /// **'MAGNETIC'**
+  String get waveModNameMagnetic;
+
+  /// No description provided for @waveModTaglineMagnetic.
+  ///
+  /// In it, this message translates to:
+  /// **'magnete geom ×2'**
+  String get waveModTaglineMagnetic;
+
+  /// No description provided for @waveModNameIron.
+  ///
+  /// In it, this message translates to:
+  /// **'IRON'**
+  String get waveModNameIron;
+
+  /// No description provided for @waveModTaglineIron.
+  ///
+  /// In it, this message translates to:
+  /// **'tank lenti'**
+  String get waveModTaglineIron;
+
   /// No description provided for @gameOverBossLabel.
   ///
   /// In it, this message translates to:
@@ -2709,6 +2835,48 @@ abstract class AppLocalizations {
   /// In it, this message translates to:
   /// **'GOLD GEOMS'**
   String get gameOverGoldGeoms;
+
+  /// No description provided for @gameOverGoldBase.
+  ///
+  /// In it, this message translates to:
+  /// **'base'**
+  String get gameOverGoldBase;
+
+  /// No description provided for @gameOverGoldBonus.
+  ///
+  /// In it, this message translates to:
+  /// **'bonus'**
+  String get gameOverGoldBonus;
+
+  /// No description provided for @gameOverGoldAchievement.
+  ///
+  /// In it, this message translates to:
+  /// **'obiettivo'**
+  String get gameOverGoldAchievement;
+
+  /// No description provided for @hudJoystickMove.
+  ///
+  /// In it, this message translates to:
+  /// **'MUOVI'**
+  String get hudJoystickMove;
+
+  /// No description provided for @hudJoystickAim.
+  ///
+  /// In it, this message translates to:
+  /// **'MIRA'**
+  String get hudJoystickAim;
+
+  /// No description provided for @diffStatHp.
+  ///
+  /// In it, this message translates to:
+  /// **'HP'**
+  String get diffStatHp;
+
+  /// No description provided for @diffStatSpeed.
+  ///
+  /// In it, this message translates to:
+  /// **'VEL'**
+  String get diffStatSpeed;
 
   /// No description provided for @achKills100Name.
   ///

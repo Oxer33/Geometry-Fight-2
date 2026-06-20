@@ -46,3 +46,6 @@ app.*.map.json
 
 # Release APK (build artifact, >100MB eccede GitHub limit)
 *.apk
+
+# Leftover temp dir (nested git scratch — not part of the project)
+test_gitcheck_tmp/

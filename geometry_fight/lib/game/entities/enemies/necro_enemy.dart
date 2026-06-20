@@ -86,6 +86,15 @@ class NecroEnemy extends EnemyBase {
   // abbastanza per identificare una death (mob fermo nel frame della morte)
   // senza essere fragile a micro-jitter di Vector2.
   static final Set<int> _resurrectingIds = <int>{};
+
+  /// Reset stato statico per nuova partita (chiamato da restartGame).
+  /// Azzera il dedupe globale delle resurrezioni: senza questo, le key
+  /// accodate da necro della run precedente sopravvivono al restart e
+  /// possono bloccare resurrezioni legittime nella nuova sessione.
+  static void resetStaticState() {
+    _resurrectingIds.clear();
+  }
+
   static int _deathKey(EnemyType type, Vector2 pos) {
     return Object.hash(type, pos.x.round(), pos.y.round());
   }

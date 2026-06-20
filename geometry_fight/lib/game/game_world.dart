@@ -105,6 +105,12 @@ class GeometryFightGame extends FlameGame
   // waveSystem inizializzato late perché necessita di `this` (game reference)
   late PowerUpSystem powerUpSystem;
 
+  // Registry entità attive: mantenuti in sync da onMount/onRemove delle entità
+  // (EnemyBase, Geom). Evitano di scansionare world.children ogni frame.
+  // Specchiano esattamente i nemici/geom live attualmente montati.
+  final List<EnemyBase> activeEnemies = <EnemyBase>[];
+  final List<Geom> activeGeoms = <Geom>[];
+
   GameState gameState = GameState.playing;
   double timeScale = 1.0;
   double _slowMoTimer = 0;
@@ -135,6 +141,13 @@ class GeometryFightGame extends FlameGame
 
   // Grid distortion cap: massimo 4 distorsioni per frame (evita lag su kill multipli)
   int _gridDistortionCount = 0;
+
+  // Explosion budget per frame: uccidere molti mob in un singolo frame (es.
+  // AoE/bomba che ne elimina 20) creava 20 ExplosionEffect da 8-40 particelle
+  // → spike CPU sul main thread (frame persi). Oltre soglia le esplosioni
+  // diventano economiche (poche particelle, no epic): il caos visivo le copre.
+  // Reset ogni frame come _gridDistortionCount.
+  int _explosionCount = 0;
 
   // Difficoltà e modalità di gioco
   final Difficulty difficulty;
@@ -354,6 +367,7 @@ class GeometryFightGame extends FlameGame
 
     // Reset grid distortion cap ogni frame
     _gridDistortionCount = 0;
+    _explosionCount = 0;
 
     // Reset budget globale split per frame: max N splitter si dividono
     // simultaneamente → cascata controllata quando laser/AoE ne investe molti.
@@ -970,11 +984,15 @@ class GeometryFightGame extends FlameGame
     int particleCount = 20,
     bool epic = false,
   }) {
+    // Budget per-frame: oltre 6 esplosioni nello stesso frame (kill multipli
+    // AoE) riduci a poche particelle e disattiva epic per evitare lo spike.
+    _explosionCount++;
+    final budgeted = _explosionCount > 6;
     final explosion = ExplosionEffect(
       color: color,
       radius: radius,
-      particleCount: particleCount,
-      epic: epic,
+      particleCount: budgeted ? 4 : particleCount,
+      epic: budgeted ? false : epic,
     );
     explosion.position = position.clone();
     world.add(explosion);
@@ -1295,6 +1313,14 @@ class GeometryFightGame extends FlameGame
     if (!saveData.playedModes.contains(gameMode.name)) {
       saveData.playedModes.add(gameMode.name);
     }
+
+    // Talent web XP: every mob and boss grants XP (utente). Scaled by XP Find
+    // talents. Levelling up grants talent points (1 per level).
+    final xpGained =
+        ((sessionKills * kXpPerKill + sessionBossKills * kXpPerBoss) *
+                saveData.xpFindMultiplier)
+            .round();
+    saveData.addXp(xpGained);
 
     unawaited(SaveManager.save(saveData));
   }
@@ -1662,6 +1688,7 @@ class GeometryFightGame extends FlameGame
     SwarmDroneEnemy.resetGlobalEnrage();
     LeechEnemy.resetAttachedCount();
     HomingMissile.resetStaticState();
+    NecroEnemy.resetStaticState();
     SplitterEnemy.resetFrameBudget();
     // Reset count cache: stale values dal session precedente potevano far
     // credere al WaveSystem che ci fosse ancora un boss attivo → wave 1
@@ -1670,6 +1697,11 @@ class GeometryFightGame extends FlameGame
     _cachedBossCount = 0;
     _cachedActiveBoss = null;
     _cachedNecros.clear();
+    // Clear registry entità: il world reset sopra rimuove le entità ma i loro
+    // onRemove vengono processati nel prossimo tick lifecycle → svuota subito
+    // così le liste ripartono pulite (si ripopolano via onMount al re-spawn).
+    activeEnemies.clear();
+    activeGeoms.clear();
     _countCacheTimer = 0;
     // Clear held keys: se user teneva premuto un tasto durante game over,
     // il set resta sporco. Il primo onKeyEvent ripulisce, ma cleanup qui

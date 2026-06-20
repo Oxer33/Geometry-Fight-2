@@ -76,6 +76,37 @@ class SpaceBackground extends PositionComponent
     Color(0xFF88CCFF), // blu cielo
   ];
 
+  // Quantized-alpha LUT for star/dust palette colors. Stars and dust draw the
+  // same base color at a continuously-varying alpha (twinkle / pulse). The
+  // rendered color is therefore a pure function of (baseColor, finalAlpha), so
+  // we precompute a 256-entry alpha ramp per distinct base color and index it
+  // by the quantized FINAL alpha — this covers every multiplier (×1.0, ×0.15,
+  // ×0.8, ×pulse) because the key is the final alpha value, not the base.
+  // Keyed by ARGB int so any palette color (incl. the 0xFFFFFFFF used for star
+  // centers) resolves to a single shared ramp. Delta <= 1/256 → imperceptible.
+  static const int _alphaSteps = 256;
+  static final Map<int, List<Color>> _alphaLutCache = {};
+
+  static List<Color> _alphaLutFor(Color base) {
+    final key = base.toARGB32();
+    final cached = _alphaLutCache[key];
+    if (cached != null) return cached;
+    final ramp = List<Color>.generate(
+      _alphaSteps,
+      (i) => base.withValues(alpha: i / (_alphaSteps - 1)),
+      growable: false,
+    );
+    _alphaLutCache[key] = ramp;
+    return ramp;
+  }
+
+  // Resolve `base` at `alpha` (0..1) via the quantized ramp — no per-frame
+  // Color allocation once the ramp is built.
+  static Color _quantizedColor(Color base, double alpha) {
+    final key = (alpha * (_alphaSteps - 1)).round().clamp(0, _alphaSteps - 1);
+    return _alphaLutFor(base)[key];
+  }
+
   // Colori delle nebulose
   static const List<Color> _nebulaColors = [
     Color(0xFF1A0033), // viola scuro
@@ -299,20 +330,21 @@ class SpaceBackground extends PositionComponent
 
       // Glow esterno (solo stelle grandi) — senza blur, cerchio più grande con alpha bassa
       if (star.size > 1.5) {
-        _starPaint.color = star.color.withValues(alpha: alpha * 0.15);
+        _starPaint.color = _quantizedColor(star.color, alpha * 0.15);
         _starPaint.maskFilter = null;
         canvas.drawCircle(Offset(star.x, star.y), star.size * 2.5, _starPaint);
       }
 
       // Corpo della stella
-      _starPaint.color = star.color.withValues(alpha: alpha);
+      _starPaint.color = _quantizedColor(star.color, alpha);
       canvas.drawCircle(Offset(star.x, star.y), star.size, _starPaint);
 
       // Centro luminoso per stelle grandi
       if (star.size > 2.0) {
-        _starPaint.color = const Color(
-          0xFFFFFFFF,
-        ).withValues(alpha: alpha * 0.8);
+        _starPaint.color = _quantizedColor(
+          const Color(0xFFFFFFFF),
+          alpha * 0.8,
+        );
         canvas.drawCircle(Offset(star.x, star.y), star.size * 0.4, _starPaint);
       }
     }
@@ -324,7 +356,7 @@ class SpaceBackground extends PositionComponent
     for (final d in _dust) {
       // Pulsazione lenta dell'alpha
       final pulse = 0.7 + 0.3 * math.sin(_time * 1.5 + d.x * 0.01);
-      _dustPaint.color = d.color.withValues(alpha: d.alpha * pulse);
+      _dustPaint.color = _quantizedColor(d.color, d.alpha * pulse);
       _dustPaint.maskFilter = null;
       // Cerchio leggermente più grande al posto del blur per effetto morbido
       canvas.drawCircle(Offset(d.x, d.y), d.size * 1.5, _dustPaint);

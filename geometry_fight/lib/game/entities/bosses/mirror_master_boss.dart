@@ -37,15 +37,15 @@ class MirrorMasterBoss extends BossBase {
   // Raggio orbita degli specchi attorno al boss (just outside body 95px).
   static const double _kMirrorOrbitR = 115.0;
 
-  // Count specchi per fase (richiesta utente): 2 → 4 → 6.
+  // Count specchi per fase (richiesta utente): 2 → 3 → 4 (aumenta di 1 a fase).
   int _mirrorCountForPhase(int phase) {
     switch (phase) {
       case 0:
         return 2;
       case 1:
-        return 4;
+        return 3;
       default:
-        return 6;
+        return 4;
     }
   }
 

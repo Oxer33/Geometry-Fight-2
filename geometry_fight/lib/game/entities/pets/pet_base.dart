@@ -11,6 +11,31 @@ import '../geom.dart';
 import '../player.dart';
 import '../projectiles.dart';
 
+/// Memoizzatore di colore quantizzato per i siti di render animati (glow/aura/
+/// ring/onde) dei pet. Il colore base è fisso per istanza (`def.color` o un
+/// bianco/accento costante), mentre l'alpha varia con `phase`/`pulse` ogni
+/// frame: invece di rialloc un `Color` identico 60×/s, quantizziamo l'alpha a
+/// 256 step e ricalcoliamo `withValues` SOLO quando la chiave cambia. Delta
+/// alpha ≤ 1/256 → impercettibile, stessa formula e draw order invariati.
+class _AlphaColorCache {
+  _AlphaColorCache(this._base);
+
+  final Color _base;
+  int _lastKey = -1;
+  Color _lastColor = const Color(0x00000000);
+
+  /// Ritorna `_base.withValues(alpha: alpha)` quantizzato a 256 step.
+  /// `alpha` è clampato a [0,1] prima della quantizzazione.
+  Color resolve(double alpha) {
+    final key = (alpha.clamp(0.0, 1.0) * 255).round();
+    if (key != _lastKey) {
+      _lastKey = key;
+      _lastColor = _base.withValues(alpha: key / 255);
+    }
+    return _lastColor;
+  }
+}
+
 /// Pet companion base (Geometry Wars 3 style drone). Vola accanto/attorno
 /// al player con comportamento e grafica per-tipo override-able.
 abstract class PetBase extends PositionComponent
@@ -54,8 +79,8 @@ abstract class PetBase extends PositionComponent
   EnemyBase? findNearestEnemy({double maxDist = 600}) {
     EnemyBase? best;
     double bestD = maxDist;
-    for (final c in game.world.children) {
-      if (c is EnemyBase && isValidPetTarget(c)) {
+    for (final c in game.activeEnemies) {
+      if (isValidPetTarget(c)) {
         final d = c.position.distanceTo(position);
         if (d < bestD) {
           bestD = d;
@@ -76,7 +101,12 @@ abstract class PetBase extends PositionComponent
     final nearest = findNearestEnemy(maxDist: 800);
     if (nearest != null) {
       final to = nearest.position - game.player.position;
-      if (to.length2 > 1e-4) return to.normalized();
+      if (to.length2 > 1e-4) {
+        // normalize() muta `to` in place (evita l'alloc di normalized()); il
+        // valore di ritorno (lunghezza) viene scartato, ritorniamo il vettore.
+        to.normalize();
+        return to;
+      }
     }
     return Vector2(1, 0);
   }
@@ -122,6 +152,11 @@ class AttackPet extends PetBase {
     ..strokeWidth = 1.6;
   static final _fillPaint = Paint();
   static final _glowPaint = Paint();
+  // Geometria statica del corpo (origin-relative) — costruita 1× e riusata,
+  // animata via canvas transform invece di rialloc Path ogni frame.
+  Path? _bodyPath;
+  // Cache colore glow: alpha quantizzato a 256 step (vedi _AlphaColorCache).
+  late final _glowCache = _AlphaColorCache(def.color);
 
   @override
   void render(Canvas canvas) {
@@ -129,14 +164,14 @@ class AttackPet extends PetBase {
     final cy = size.y / 2;
     final pulse = 0.6 + math.sin(phase * 6) * 0.4;
     // Glow alone
-    _glowPaint.color = def.color.withValues(alpha: 0.45 * pulse);
+    _glowPaint.color = _glowCache.resolve(0.45 * pulse);
     canvas.drawCircle(Offset(cx, cy), 14, _glowPaint);
     // Body diamond pointing forward (rotates with aim)
     final aim = math.atan2(cachedAim.y, cachedAim.x);
     canvas.save();
     canvas.translate(cx, cy);
     canvas.rotate(aim);
-    final path = Path()
+    final path = _bodyPath ??= Path()
       ..moveTo(11, 0)
       ..lineTo(0, 7)
       ..lineTo(-7, 0)
@@ -170,13 +205,11 @@ class CollectPet extends PetBase {
     // Wandering verso geom più vicino (se presente) invece di random.
     Geom? nearestGeom;
     double nearestD = 800;
-    for (final c in game.world.children) {
-      if (c is Geom) {
-        final d = c.position.distanceTo(position);
-        if (d < nearestD) {
-          nearestD = d;
-          nearestGeom = c;
-        }
+    for (final c in game.activeGeoms) {
+      final d = c.position.distanceTo(position);
+      if (d < nearestD) {
+        nearestD = d;
+        nearestGeom = c;
       }
     }
     if (nearestGeom != null) {
@@ -201,8 +234,8 @@ class CollectPet extends PetBase {
     // Pet contribuisce al gold sessione bypassando magnet logic player.
     // _pickupBuffer is reused to avoid per-frame List allocation.
     _pickupBuffer.clear();
-    for (final c in game.world.children) {
-      if (c is Geom && c.position.distanceTo(position) < 25) {
+    for (final c in game.activeGeoms) {
+      if (c.position.distanceTo(position) < 25) {
         _pickupBuffer.add(c);
       }
     }
@@ -221,6 +254,12 @@ class CollectPet extends PetBase {
   static final _ringPaint = Paint()
     ..style = PaintingStyle.stroke
     ..strokeWidth = 2;
+  // Geometria statica dell'esagono (origin-relative) — costruita 1× e riusata,
+  // ruotata via canvas transform invece di rialloc Path ogni frame.
+  Path? _bodyPath;
+  // Cache colore glow + ring: alpha quantizzato a 256 step.
+  late final _glowCache = _AlphaColorCache(def.color);
+  late final _ringCache = _AlphaColorCache(def.color);
 
   @override
   void render(Canvas canvas) {
@@ -228,33 +267,35 @@ class CollectPet extends PetBase {
     final cy = size.y / 2;
     final pulse = 0.6 + math.sin(phase * 5) * 0.4;
     // Glow esterno
-    _glowPaint.color = def.color.withValues(alpha: 0.45 * pulse);
+    _glowPaint.color = _glowCache.resolve(0.45 * pulse);
     canvas.drawCircle(Offset(cx, cy), 14, _glowPaint);
     // Hexagon body
     canvas.save();
     canvas.translate(cx, cy);
     canvas.rotate(phase * 0.5);
-    final path = Path();
-    for (int i = 0; i < 6; i++) {
-      final a = i * math.pi / 3;
-      final x = math.cos(a) * 8;
-      final y = math.sin(a) * 8;
-      if (i == 0) {
-        path.moveTo(x, y);
-      } else {
-        path.lineTo(x, y);
+    var path = _bodyPath;
+    if (path == null) {
+      path = Path();
+      for (int i = 0; i < 6; i++) {
+        final a = i * math.pi / 3;
+        final x = math.cos(a) * 8;
+        final y = math.sin(a) * 8;
+        if (i == 0) {
+          path.moveTo(x, y);
+        } else {
+          path.lineTo(x, y);
+        }
       }
+      path.close();
+      _bodyPath = path;
     }
-    path.close();
     _fillPaint.color = def.color;
     canvas.drawPath(path, _fillPaint);
     _outlinePaint.color = const Color(0xFFFFFFFF);
     canvas.drawPath(path, _outlinePaint);
     canvas.restore();
     // Rotating ring (collector field)
-    _ringPaint.color = def.color.withValues(
-      alpha: 0.6 + math.sin(phase * 8) * 0.3,
-    );
+    _ringPaint.color = _ringCache.resolve(0.6 + math.sin(phase * 8) * 0.3);
     final ringR = 11 + math.sin(phase * 4) * 2;
     canvas.drawCircle(Offset(cx, cy), ringR, _ringPaint);
     // Inner white dot
@@ -281,10 +322,10 @@ class SweepPet extends PetBase {
         Vector2(math.cos(ang), math.sin(ang)) * _orbitRadius;
     // Kill check: instakill nemico entro 18px. Esclude BH + spawn-invuln.
     // Boss è BossBase (no EnemyBase) → già escluso dal `c is EnemyBase`.
-    for (final c in game.world.children) {
-      if (c is EnemyBase && PetBase.isValidPetTarget(c)) {
+    for (final c in game.activeEnemies) {
+      if (PetBase.isValidPetTarget(c)) {
         if (c.position.distanceTo(position) < 18) {
-          c.takeDamage(999, isArea: true);
+          c.takeDamage(c.maxHp + 1, isArea: true);
         }
       }
     }
@@ -296,6 +337,12 @@ class SweepPet extends PetBase {
     ..strokeWidth = 1.5;
   static final _fillPaint = Paint();
   static final _glowPaint = Paint();
+  // Outline bianco semitrasparente (alpha costante) — hoistato 1× per evitare
+  // l'alloc di un Color identico per ognuna delle 4 lame, ogni frame. Stessa
+  // identica espressione di prima: nessuna variazione di colore.
+  static final _bladeOutline = const Color(0xFFFFFFFF).withValues(alpha: 0.7);
+  // Cache colore glow: alpha quantizzato a 256 step.
+  late final _glowCache = _AlphaColorCache(def.color);
 
   @override
   void render(Canvas canvas) {
@@ -303,7 +350,7 @@ class SweepPet extends PetBase {
     final cy = size.y / 2;
     final pulse = 0.5 + math.sin(phase * 8) * 0.5;
     // Glow rotante
-    _glowPaint.color = def.color.withValues(alpha: 0.5 * pulse);
+    _glowPaint.color = _glowCache.resolve(0.5 * pulse);
     canvas.drawCircle(Offset(cx, cy), 16, _glowPaint);
     // Pinwheel: 4 lame triangolari rotanti
     canvas.save();
@@ -320,7 +367,7 @@ class SweepPet extends PetBase {
         ..close();
       _fillPaint.color = def.color;
       canvas.drawPath(path, _fillPaint);
-      _outlinePaint.color = const Color(0xFFFFFFFF).withValues(alpha: 0.7);
+      _outlinePaint.color = _bladeOutline;
       canvas.drawPath(path, _outlinePaint);
     }
     canvas.restore();
@@ -368,13 +415,18 @@ class DefendPet extends PetBase {
     ..strokeWidth = 1.6;
   static final _fillPaint = Paint();
   static final _glowPaint = Paint();
+  // Geometria statica dello scudo (origin-relative) — costruita 1× e riusata,
+  // ruotata via canvas transform invece di rialloc Path ogni frame.
+  Path? _shieldPath;
+  // Cache colore glow: alpha quantizzato a 256 step.
+  late final _glowCache = _AlphaColorCache(def.color);
 
   @override
   void render(Canvas canvas) {
     final cx = size.x / 2;
     final cy = size.y / 2;
     final pulse = 0.6 + math.sin(phase * 5) * 0.4;
-    _glowPaint.color = def.color.withValues(alpha: 0.45 * pulse);
+    _glowPaint.color = _glowCache.resolve(0.45 * pulse);
     canvas.drawCircle(Offset(cx, cy), 14, _glowPaint);
     // Body: scudo orientato (rotazione segue back-aim)
     final aim = -cachedAim;
@@ -383,7 +435,7 @@ class DefendPet extends PetBase {
     canvas.translate(cx, cy);
     canvas.rotate(ang);
     // Shield half-circle (apertura verso back-direction)
-    final shieldPath = Path()
+    final shieldPath = _shieldPath ??= Path()
       ..moveTo(-7, -8)
       ..quadraticBezierTo(8, 0, -7, 8)
       ..close();
@@ -444,13 +496,20 @@ class SnipePet extends PetBase {
     ..strokeWidth = 1.6;
   static final _fillPaint = Paint();
   static final _glowPaint = Paint();
+  // Geometria statica del triangolo (origin-relative) — costruita 1× e riusata,
+  // ruotata via canvas transform invece di rialloc Path ogni frame.
+  Path? _bodyPath;
+  // Cache colore glow: alpha quantizzato a 256 step.
+  late final _glowCache = _AlphaColorCache(def.color);
+  // Crosshair bianco (alpha costante 0.9) — hoistato 1×. Stessa espressione.
+  static final _crosshairColor = const Color(0xFFFFFFFF).withValues(alpha: 0.9);
 
   @override
   void render(Canvas canvas) {
     final cx = size.x / 2;
     final cy = size.y / 2;
     final pulse = 0.6 + math.sin(phase * 5) * 0.4;
-    _glowPaint.color = def.color.withValues(alpha: 0.5 * pulse);
+    _glowPaint.color = _glowCache.resolve(0.5 * pulse);
     canvas.drawCircle(Offset(cx, cy), 14, _glowPaint);
     // Triangolo (scope direction = verso target più vicino o player aim)
     final aim = cachedAim;
@@ -458,7 +517,7 @@ class SnipePet extends PetBase {
     canvas.save();
     canvas.translate(cx, cy);
     canvas.rotate(ang);
-    final path = Path()
+    final path = _bodyPath ??= Path()
       ..moveTo(11, 0)
       ..lineTo(-7, -7)
       ..lineTo(-7, 7)
@@ -469,7 +528,7 @@ class SnipePet extends PetBase {
     canvas.drawPath(path, _outlinePaint);
     // Crosshair lines
     _outlinePaint.strokeWidth = 1;
-    _outlinePaint.color = const Color(0xFFFFFFFF).withValues(alpha: 0.9);
+    _outlinePaint.color = _crosshairColor;
     canvas.drawLine(const Offset(-3, 0), const Offset(8, 0), _outlinePaint);
     canvas.drawLine(const Offset(2, -4), const Offset(2, 4), _outlinePaint);
     _outlinePaint.strokeWidth = 1.6;
@@ -489,6 +548,11 @@ class _PetSnipeRayFx extends PositionComponent
   static final _rayPaint = Paint()
     ..style = PaintingStyle.stroke
     ..strokeWidth = 3;
+  // Cache colori (alpha quantizzato a 256 step): base costanti, alpha ∝ t.
+  // Per-istanza perché più ray FX possono coesistere con `t` diversi nello
+  // stesso frame (uno static thrashing tra istanze).
+  final _rayColorCache = _AlphaColorCache(NeonColors.laserRed);
+  final _coreColorCache = _AlphaColorCache(const Color(0xFFFFFFFF));
 
   _PetSnipeRayFx({required this.start, required this.end});
 
@@ -502,11 +566,11 @@ class _PetSnipeRayFx extends PositionComponent
   @override
   void render(Canvas canvas) {
     final t = (_lifetime / _lifetimeMax).clamp(0.0, 1.0);
-    _rayPaint.color = NeonColors.laserRed.withValues(alpha: t);
+    _rayPaint.color = _rayColorCache.resolve(t);
     _rayPaint.strokeWidth = 4 * t + 1;
     canvas.drawLine(Offset(start.x, start.y), Offset(end.x, end.y), _rayPaint);
     // Inner white core
-    _rayPaint.color = const Color(0xFFFFFFFF).withValues(alpha: t * 0.9);
+    _rayPaint.color = _coreColorCache.resolve(t * 0.9);
     _rayPaint.strokeWidth = 1.5 * t;
     canvas.drawLine(Offset(start.x, start.y), Offset(end.x, end.y), _rayPaint);
   }
@@ -549,7 +613,7 @@ class RamPet extends PetBase {
     }
     final to = target.position - position;
     if (to.length < 14) {
-      target.takeDamage(999, isArea: true);
+      target.takeDamage(target.maxHp + 1, isArea: true);
       _target = null;
       _cooldown = 1.0;
     } else if (to.length2 > 1e-6) {
@@ -563,13 +627,20 @@ class RamPet extends PetBase {
     ..strokeWidth = 1.6;
   static final _fillPaint = Paint();
   static final _glowPaint = Paint();
+  // Geometria statica del chevron (origin-relative) — costruita 1× e riusata,
+  // ruotata via canvas transform invece di rialloc Path ogni frame.
+  Path? _bodyPath;
+  // Cache colori (alpha quantizzato a 256 step): glow su def.color, trail su
+  // bianco. Entrambi con alpha ∝ pulse.
+  late final _glowCache = _AlphaColorCache(def.color);
+  final _trailCache = _AlphaColorCache(const Color(0xFFFFFFFF));
 
   @override
   void render(Canvas canvas) {
     final cx = size.x / 2;
     final cy = size.y / 2;
     final pulse = 0.6 + math.sin(phase * 7) * 0.4;
-    _glowPaint.color = def.color.withValues(alpha: 0.5 * pulse);
+    _glowPaint.color = _glowCache.resolve(0.5 * pulse);
     canvas.drawCircle(Offset(cx, cy), 15, _glowPaint);
     // Chevron arrow puntato verso target se presente, altrimenti usa cachedAim.
     final target = _target;
@@ -584,7 +655,7 @@ class RamPet extends PetBase {
     canvas.save();
     canvas.translate(cx, cy);
     canvas.rotate(ang);
-    final path = Path()
+    final path = _bodyPath ??= Path()
       ..moveTo(13, 0)
       ..lineTo(-3, -8)
       ..lineTo(0, 0)
@@ -595,7 +666,7 @@ class RamPet extends PetBase {
     _outlinePaint.color = const Color(0xFFFFFFFF);
     canvas.drawPath(path, _outlinePaint);
     // Trail/thrust dietro
-    _fillPaint.color = const Color(0xFFFFFFFF).withValues(alpha: 0.6 * pulse);
+    _fillPaint.color = _trailCache.resolve(0.6 * pulse);
     canvas.drawCircle(const Offset(-5, 0), 2.5, _fillPaint);
     canvas.restore();
   }
@@ -631,6 +702,14 @@ class PhoenixPet extends PetBase {
     ..strokeWidth = 1.6;
   static final _fillPaint = Paint();
   static final _glowPaint = Paint();
+  // Geometria statica del corpo a fiamma (origin-relative) — costruita 1× e
+  // riusata, ruotata via canvas transform invece di rialloc Path ogni frame.
+  Path? _bodyPath;
+  // Cache colore glow: alpha quantizzato a 256 step.
+  late final _glowCache = _AlphaColorCache(def.color);
+  // Corpo dimmato (alpha costante 0.4) quando spento — hoistato 1× (stessa
+  // espressione). Il ramo "carico" usa def.color diretto (nessun alloc).
+  late final _dimBody = def.color.withValues(alpha: 0.4);
 
   @override
   void render(Canvas canvas) {
@@ -639,13 +718,13 @@ class PhoenixPet extends PetBase {
     final pulse = 0.6 + math.sin(phase * 6) * 0.4;
     // Glow intenso quando carico, fioco quando spento.
     final aIntensity = charged ? 0.6 : 0.2;
-    _glowPaint.color = def.color.withValues(alpha: aIntensity * pulse);
+    _glowPaint.color = _glowCache.resolve(aIntensity * pulse);
     canvas.drawCircle(Offset(cx, cy), 16, _glowPaint);
     // Corpo: ali stilizzate ai lati + corpo centrale a fiamma.
     canvas.save();
     canvas.translate(cx, cy);
     canvas.rotate(phase * 0.8);
-    final path = Path()
+    final path = _bodyPath ??= Path()
       ..moveTo(0, -10)
       ..lineTo(8, -2)
       ..lineTo(5, 4)
@@ -653,7 +732,7 @@ class PhoenixPet extends PetBase {
       ..lineTo(-5, 4)
       ..lineTo(-8, -2)
       ..close();
-    _fillPaint.color = charged ? def.color : def.color.withValues(alpha: 0.4);
+    _fillPaint.color = charged ? def.color : _dimBody;
     canvas.drawPath(path, _fillPaint);
     _outlinePaint.color = const Color(0xFFFFFFFF);
     canvas.drawPath(path, _outlinePaint);
@@ -690,8 +769,8 @@ class BlackHolePet extends PetBase {
 
     // Risucchia nemici verso il pet. Esclude boss (BossBase, non EnemyBase)
     // automaticamente + spawn-invuln via isValidPetTarget.
-    for (final c in game.world.children) {
-      if (c is EnemyBase && PetBase.isValidPetTarget(c)) {
+    for (final c in game.activeEnemies) {
+      if (PetBase.isValidPetTarget(c)) {
         final d = c.position.distanceTo(position);
         if (d < _pullRadius && d > 1e-3) {
           final to = position - c.position;
@@ -706,6 +785,13 @@ class BlackHolePet extends PetBase {
   static final _arcPaint = Paint()
     ..style = PaintingStyle.stroke
     ..strokeWidth = 2.2;
+  // Cache colore glow + 4 cache indipendenti per gli archi (uno per `i`: alpha
+  // sfasato per arco → un'unica cache thrasherebbe nel loop). Alpha a 256 step.
+  late final _glowCache = _AlphaColorCache(def.color);
+  late final List<_AlphaColorCache> _arcCaches = List.generate(
+    4,
+    (_) => _AlphaColorCache(def.color),
+  );
 
   @override
   void render(Canvas canvas) {
@@ -713,7 +799,7 @@ class BlackHolePet extends PetBase {
     final cy = size.y / 2;
     final pulse = 0.5 + math.sin(phase * 4) * 0.5;
     // Glow esterno viola.
-    _glowPaint.color = def.color.withValues(alpha: 0.5 * pulse);
+    _glowPaint.color = _glowCache.resolve(0.5 * pulse);
     canvas.drawCircle(Offset(cx, cy), 16, _glowPaint);
     // Disco nero centrale (event horizon).
     _fillPaint.color = const Color(0xFF000000);
@@ -729,8 +815,8 @@ class BlackHolePet extends PetBase {
     _arcPaint.strokeWidth = 2.2;
     for (int i = 0; i < 4; i++) {
       final start = i * math.pi / 2;
-      _arcPaint.color = def.color.withValues(
-        alpha: 0.55 + math.sin(phase * 6 + i) * 0.3,
+      _arcPaint.color = _arcCaches[i].resolve(
+        0.55 + math.sin(phase * 6 + i) * 0.3,
       );
       canvas.drawArc(
         Rect.fromCircle(center: Offset.zero, radius: 11),
@@ -774,8 +860,8 @@ class EmpDronePet extends PetBase {
     if (_pulseTimer <= 0) {
       _pulseTimer = _pulseInterval;
       // Stun nemici entro raggio. Esclude boss + spawn-invuln.
-      for (final c in game.world.children) {
-        if (c is EnemyBase && PetBase.isValidPetTarget(c)) {
+      for (final c in game.activeEnemies) {
+        if (PetBase.isValidPetTarget(c)) {
           if (c.position.distanceTo(position) <= _pulseRadius) {
             c.applyStun(_stunDuration);
           }
@@ -799,6 +885,12 @@ class EmpDronePet extends PetBase {
   static final _outlinePaint = Paint()
     ..style = PaintingStyle.stroke
     ..strokeWidth = 1.6;
+  // Geometria statica dell'esagono (origin-relative) — costruita 1× e riusata
+  // invece di rialloc Path ogni frame (nessuna rotazione: posizione fissa).
+  Path? _bodyPath;
+  // Cache colori (alpha quantizzato a 256 step): glow ∝ pulse, ring ∝ charge.
+  late final _glowCache = _AlphaColorCache(def.color);
+  late final _ringCache = _AlphaColorCache(def.color);
 
   @override
   void render(Canvas canvas) {
@@ -807,23 +899,27 @@ class EmpDronePet extends PetBase {
     final pulse = 0.6 + math.sin(phase * 5) * 0.4;
     // Brightness cresce verso il pulse imminente.
     final charge = 1.0 - (_pulseTimer / _pulseInterval).clamp(0.0, 1.0);
-    _glowPaint.color = def.color.withValues(alpha: 0.45 * pulse);
+    _glowPaint.color = _glowCache.resolve(0.45 * pulse);
     canvas.drawCircle(Offset(cx, cy), 14, _glowPaint);
     // Corpo: hexagon con antenne cardinali (4 piccoli rettangoli).
     canvas.save();
     canvas.translate(cx, cy);
-    final body = Path();
-    for (int i = 0; i < 6; i++) {
-      final a = i * math.pi / 3;
-      final x = math.cos(a) * 7;
-      final y = math.sin(a) * 7;
-      if (i == 0) {
-        body.moveTo(x, y);
-      } else {
-        body.lineTo(x, y);
+    var body = _bodyPath;
+    if (body == null) {
+      body = Path();
+      for (int i = 0; i < 6; i++) {
+        final a = i * math.pi / 3;
+        final x = math.cos(a) * 7;
+        final y = math.sin(a) * 7;
+        if (i == 0) {
+          body.moveTo(x, y);
+        } else {
+          body.lineTo(x, y);
+        }
       }
+      body.close();
+      _bodyPath = body;
     }
-    body.close();
     _fillPaint.color = def.color;
     canvas.drawPath(body, _fillPaint);
     _outlinePaint.color = const Color(0xFFFFFFFF);
@@ -836,7 +932,7 @@ class EmpDronePet extends PetBase {
     canvas.drawRect(const Rect.fromLTWH(7, -1, 4, 2), _fillPaint);
     canvas.restore();
     // Ring di carica esterno: alpha cresce con charge.
-    _ringPaint.color = def.color.withValues(alpha: 0.2 + charge * 0.6);
+    _ringPaint.color = _ringCache.resolve(0.2 + charge * 0.6);
     canvas.drawCircle(
       Offset(cx, cy),
       13 + math.sin(phase * 4) * 1.5,
@@ -864,6 +960,11 @@ class TacticalSpotterPet extends PetBase {
   double _slowTimer = 0;
   double _priorTimeScale = 1.0;
   bool _slowActive = false;
+  // True mentre QUESTO pet possiede l'override di timeScale. Sostituisce il
+  // vecchio guard fragile `game.timeScale == _slowFactor` (che lasciava lo
+  // slow-mo incastrato se un altro sistema toccava timeScale nel frattempo).
+  // Garantisce il ripristino anche in onRemove() (game over/restart).
+  bool _slowing = false;
 
   @override
   void onPetUpdate(double dt) {
@@ -887,10 +988,12 @@ class TacticalSpotterPet extends PetBase {
       _slowTimer -= realDt;
       if (_slowTimer <= 0) {
         _slowActive = false;
-        // Ripristina lo scale precedente solo se nessun altro sistema lo ha
-        // già toccato (best-effort: confronta con _slowFactor).
-        if (game.timeScale == _slowFactor) {
+        // Ripristina lo scale precedente se siamo noi a possedere l'override.
+        // Flag dedicato invece del confronto fragile su game.timeScale: evita
+        // lo slow-mo incastrato quando un altro sistema cambia timeScale.
+        if (_slowing) {
           game.timeScale = _priorTimeScale;
+          _slowing = false;
         }
       }
     }
@@ -912,7 +1015,20 @@ class TacticalSpotterPet extends PetBase {
       _slowTimer = _slowDuration;
       _cooldown = _cooldownDuration;
       _slowActive = true;
+      _slowing = true;
     }
+  }
+
+  @override
+  void onRemove() {
+    // Ripristina il timeScale se il pet sparisce (game over/restart) mentre
+    // possiede ancora l'override: senza questo lo slow-mo resterebbe incastrato.
+    if (_slowing) {
+      game.timeScale = _priorTimeScale;
+      _slowing = false;
+      _slowActive = false;
+    }
+    super.onRemove();
   }
 
   static final _fillPaint = Paint();
@@ -920,13 +1036,17 @@ class TacticalSpotterPet extends PetBase {
   static final _strokePaint = Paint()
     ..style = PaintingStyle.stroke
     ..strokeWidth = 1.6;
+  // Cache colore glow (alpha ∝ pulse) + arco cooldown (alpha costante 0.55,
+  // hoistato 1× con la stessa espressione). Alpha a 256 step.
+  late final _glowCache = _AlphaColorCache(def.color);
+  late final _cooldownArcColor = def.color.withValues(alpha: 0.55);
 
   @override
   void render(Canvas canvas) {
     final cx = size.x / 2;
     final cy = size.y / 2;
     final pulse = 0.6 + math.sin(phase * 7) * 0.4;
-    _glowPaint.color = def.color.withValues(alpha: 0.5 * pulse);
+    _glowPaint.color = _glowCache.resolve(0.5 * pulse);
     canvas.drawCircle(Offset(cx, cy), 14, _glowPaint);
     // Corpo: scope/binocolo lime con reticolo a croce.
     canvas.save();
@@ -946,7 +1066,7 @@ class TacticalSpotterPet extends PetBase {
     canvas.restore();
     // Indicatore cooldown: arco esterno che scompare verso disponibilità.
     if (_cooldown > 0) {
-      _strokePaint.color = def.color.withValues(alpha: 0.55);
+      _strokePaint.color = _cooldownArcColor;
       _strokePaint.strokeWidth = 2;
       final fraction = (_cooldown / _cooldownDuration).clamp(0.0, 1.0);
       canvas.drawArc(
@@ -987,8 +1107,8 @@ class SlowerPet extends PetBase {
 
     // Rallenta i nemici dentro al campo. Esclude boss (BossBase, non
     // EnemyBase) automaticamente + spawn-invuln via isValidPetTarget.
-    for (final c in game.world.children) {
-      if (c is EnemyBase && PetBase.isValidPetTarget(c)) {
+    for (final c in game.activeEnemies) {
+      if (PetBase.isValidPetTarget(c)) {
         if (c.position.distanceTo(position) <= _fieldRadius) {
           c.applySlow(_slowRefresh, _slowFactor);
         }
@@ -1012,6 +1132,15 @@ class SlowerPet extends PetBase {
   static final _strokePaint = Paint()
     ..style = PaintingStyle.stroke
     ..strokeWidth = 1.8;
+  // Cache colori (alpha quantizzato a 256 step): campo + glow ∝ pulse, e 3
+  // cache indipendenti per le onde (alpha sfasato per `i` → un'unica cache
+  // thrasherebbe nel loop).
+  late final _fieldCache = _AlphaColorCache(def.color);
+  late final _glowCache = _AlphaColorCache(def.color);
+  late final List<_AlphaColorCache> _rippleCaches = List.generate(
+    3,
+    (_) => _AlphaColorCache(def.color),
+  );
 
   @override
   void render(Canvas canvas) {
@@ -1020,17 +1149,17 @@ class SlowerPet extends PetBase {
     final pulse = 0.5 + math.sin(phase * 3) * 0.5;
     // Campo di rallentamento: cerchio ampio semitrasparente (area effetto).
     _ringPaint
-      ..color = def.color.withValues(alpha: 0.12 + pulse * 0.06)
+      ..color = _fieldCache.resolve(0.12 + pulse * 0.06)
       ..strokeWidth = 1.4;
     canvas.drawCircle(Offset(cx, cy), _fieldRadius, _ringPaint);
     // Glow centrale.
-    _glowPaint.color = def.color.withValues(alpha: 0.5 * pulse);
+    _glowPaint.color = _glowCache.resolve(0.5 * pulse);
     canvas.drawCircle(Offset(cx, cy), 15, _glowPaint);
     // Onde concentriche lente (slow ripple) che si espandono dal nucleo.
     for (int i = 0; i < 3; i++) {
       final t = (phase * 0.4 + i / 3) % 1.0;
       _ringPaint
-        ..color = def.color.withValues(alpha: (1 - t) * 0.5)
+        ..color = _rippleCaches[i].resolve((1 - t) * 0.5)
         ..strokeWidth = 2;
       canvas.drawCircle(Offset(cx, cy), 6 + t * 12, _ringPaint);
     }
@@ -1076,6 +1205,9 @@ class BomberPet extends PetBase {
   double _dropTimer = 0.6;
   final List<_BomberMine> _mines = [];
 
+  // Predicato hoistato (evita alloc closure per frame in removeWhere).
+  static bool _mineIsDead(_BomberMine m) => m.isRemoved || !m.isMounted;
+
   @override
   void onPetUpdate(double dt) {
     // Orbita lenta attorno al player.
@@ -1084,7 +1216,7 @@ class BomberPet extends PetBase {
         Vector2(math.cos(phase * 1.6), math.sin(phase * 1.6)) * _orbitR;
 
     // Prune mine già esplose / rimosse dalla lista di tracking.
-    _mines.removeWhere((m) => m.isRemoved || !m.isMounted);
+    _mines.removeWhere(_mineIsDead);
 
     _dropTimer -= dt;
     if (_dropTimer <= 0 && _mines.length < _maxMines) {
@@ -1100,13 +1232,17 @@ class BomberPet extends PetBase {
   static final _stroke = Paint()
     ..style = PaintingStyle.stroke
     ..strokeWidth = 1.6;
+  // Cache colori (alpha quantizzato a 256 step): glow su def.color, miccia su
+  // bianco. Entrambi con alpha ∝ pulse.
+  late final _glowCache = _AlphaColorCache(def.color);
+  final _fuseCache = _AlphaColorCache(const Color(0xFFFFFFFF));
 
   @override
   void render(Canvas canvas) {
     final cx = size.x / 2;
     final cy = size.y / 2;
     final pulse = 0.5 + math.sin(phase * 5) * 0.5;
-    _glowPaint.color = def.color.withValues(alpha: 0.45 * pulse);
+    _glowPaint.color = _glowCache.resolve(0.45 * pulse);
     canvas.drawCircle(Offset(cx, cy), 13, _glowPaint);
     // Corpo drone esagonale ruotante.
     final hex = Path();
@@ -1122,7 +1258,7 @@ class BomberPet extends PetBase {
     // Nucleo bomba nero + anello miccia lampeggiante.
     _bodyPaint.color = const Color(0xFF1A0A00);
     canvas.drawCircle(Offset(cx, cy), 4, _bodyPaint);
-    _stroke.color = const Color(0xFFFFFFFF).withValues(alpha: pulse);
+    _stroke.color = _fuseCache.resolve(pulse);
     canvas.drawCircle(Offset(cx, cy), 4, _stroke);
   }
 }
@@ -1154,9 +1290,8 @@ class _BomberMine extends PositionComponent
       return;
     }
     if (_arm <= 0) {
-      for (final c in game.world.children) {
-        if (c is EnemyBase &&
-            PetBase.isValidPetTarget(c) &&
+      for (final c in game.activeEnemies) {
+        if (PetBase.isValidPetTarget(c) &&
             c.position.distanceTo(position) <= _triggerR) {
           _explode();
           return;
@@ -1192,6 +1327,23 @@ class _BomberMine extends PositionComponent
     ..style = PaintingStyle.stroke
     ..strokeWidth = 1.4;
   static final _core = Paint();
+  // Spuntoni bianchi (alpha costante 0.7) — hoistato 1×, stessa espressione.
+  static final _rayColor = const Color(0xFFFFFFFF).withValues(alpha: 0.7);
+  // Endpoints costanti del core lampeggiante.
+  static const _coreDark = Color(0xFF661100);
+  static const _coreHot = Color(0xFFFF2200);
+  // LUT 256-step del core `Color.lerp(_coreDark, _coreHot, k/255)`: costruita 1×
+  // e condivisa tra tutte le mine (read-only → nessun thrash con più mine nello
+  // stesso frame). Indicizzata dal parametro lerp quantizzato a 256 step.
+  static final List<Color> _coreLut = List.generate(
+    256,
+    (k) => Color.lerp(_coreDark, _coreHot, k / 255)!,
+    growable: false,
+  );
+  // Glow (alpha ∝ blink) e body (alpha costante 0.9): cache/hoist per-istanza
+  // perché più mine possono coesistere con `blink` diversi nello stesso frame.
+  late final _glowCache = _AlphaColorCache(color);
+  late final _bodyColor = color.withValues(alpha: 0.9);
 
   @override
   void render(Canvas canvas) {
@@ -1201,12 +1353,12 @@ class _BomberMine extends PositionComponent
     // Il blink accelera col tempo che resta (tensione pre-boom).
     final blinkSpeed = armed ? (8 + (6 - _life) * 2) : 4.0;
     final blink = 0.5 + math.sin(_life * blinkSpeed) * 0.5;
-    _glow.color = color.withValues(alpha: 0.35 + 0.3 * blink);
+    _glow.color = _glowCache.resolve(0.35 + 0.3 * blink);
     canvas.drawCircle(Offset(cx, cy), 9, _glow);
-    _body.color = color.withValues(alpha: 0.9);
+    _body.color = _bodyColor;
     canvas.drawCircle(Offset(cx, cy), 5, _body);
     // Spuntoni d'allarme rotanti.
-    _ray.color = const Color(0xFFFFFFFF).withValues(alpha: 0.7);
+    _ray.color = _rayColor;
     canvas.save();
     canvas.translate(cx, cy);
     canvas.rotate(_life * 2.2);
@@ -1219,12 +1371,10 @@ class _BomberMine extends PositionComponent
       );
     }
     canvas.restore();
-    // Core rosso lampeggiante (rosso vivo quando armata).
-    _core.color = Color.lerp(
-      const Color(0xFF661100),
-      const Color(0xFFFF2200),
-      armed ? blink : 0.2,
-    )!;
+    // Core rosso lampeggiante (rosso vivo quando armata). LUT 256-step invece
+    // di un Color.lerp per frame: stessa formula, delta ≤ 1/256.
+    final coreT = (armed ? blink : 0.2).clamp(0.0, 1.0);
+    _core.color = _coreLut[(coreT * 255).round()];
     canvas.drawCircle(Offset(cx, cy), 2.4, _core);
   }
 }
@@ -1243,13 +1393,15 @@ class RepulsorPet extends PetBase {
   void onPetUpdate(double dt) {
     position = game.player.position; // centro del campo
     final ppos = game.player.position;
-    for (final c in game.world.children) {
-      if (c is EnemyBase && PetBase.isValidPetTarget(c)) {
+    for (final c in game.activeEnemies) {
+      if (PetBase.isValidPetTarget(c)) {
         final d = c.position.distanceTo(ppos);
         if (d < _radius && d > 1e-3) {
           final falloff = 1.0 - d / _radius; // 1 al centro → 0 al bordo
           final away = c.position - ppos;
-          c.position += away.normalized() * _force * falloff * dt;
+          // normalize() muta `away` in place (evita l'alloc di normalized()).
+          away.normalize();
+          c.position += away * _force * falloff * dt;
         }
       }
     }
@@ -1258,13 +1410,22 @@ class RepulsorPet extends PetBase {
   static final _ringPaint = Paint()..style = PaintingStyle.stroke;
   static final _glowPaint = Paint();
   static final _corePaint = Paint();
+  // Cache colori (alpha quantizzato a 256 step): glow ∝ pulse + 3 cache
+  // indipendenti per le onde (alpha sfasato per `i`). Frecce bianche ad alpha
+  // costante 0.5 hoistate 1× (stessa espressione).
+  late final _glowCache = _AlphaColorCache(def.color);
+  late final List<_AlphaColorCache> _waveCaches = List.generate(
+    3,
+    (_) => _AlphaColorCache(def.color),
+  );
+  static final _arrowColor = const Color(0xFFFFFFFF).withValues(alpha: 0.5);
 
   @override
   void render(Canvas canvas) {
     final cx = size.x / 2;
     final cy = size.y / 2;
     final pulse = 0.5 + math.sin(phase * 4) * 0.5;
-    _glowPaint.color = def.color.withValues(alpha: 0.5 * pulse);
+    _glowPaint.color = _glowCache.resolve(0.5 * pulse);
     canvas.drawCircle(Offset(cx, cy), 10, _glowPaint);
     _corePaint.color = def.color;
     canvas.drawCircle(Offset(cx, cy), 4.5, _corePaint);
@@ -1273,13 +1434,13 @@ class RepulsorPet extends PetBase {
     // 3 onde concentriche espandenti (push field).
     for (int i = 0; i < 3; i++) {
       final t = (phase * 1.2 + i / 3) % 1.0;
-      _ringPaint.color = def.color.withValues(alpha: (1 - t) * 0.6);
+      _ringPaint.color = _waveCaches[i].resolve((1 - t) * 0.6);
       _ringPaint.strokeWidth = 2.0 * (1 - t) + 0.5;
       canvas.drawCircle(Offset(cx, cy), 6 + t * 16, _ringPaint);
     }
     // Frecce cardinali uscenti (respingono).
     _ringPaint
-      ..color = const Color(0xFFFFFFFF).withValues(alpha: 0.5)
+      ..color = _arrowColor
       ..strokeWidth = 1.4;
     for (int i = 0; i < 4; i++) {
       final a = i * math.pi / 2 + phase * 0.5;

@@ -57,6 +57,12 @@ String _petName(AppLocalizations l10n, String id, String fallback) {
       return l10n.petNameEmpDrone;
     case 'tactical_spotter':
       return l10n.petNameTacticalSpotter;
+    case 'slower':
+      return l10n.petNameSlower;
+    case 'bomber':
+      return l10n.petNameBomber;
+    case 'repulsor':
+      return l10n.petNameRepulsor;
     default:
       return fallback;
   }

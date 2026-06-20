@@ -179,6 +179,9 @@ class AppLocalizationsIt extends AppLocalizations {
   String get menuStore => 'NEGOZIO';
 
   @override
+  String get menuTalents => 'TALENTI';
+
+  @override
   String get menuSettings => 'IMPOSTAZIONI';
 
   @override
@@ -1102,6 +1105,20 @@ class AppLocalizationsIt extends AppLocalizations {
       'Fulmine elettrico rimbalza tra 5 nemici — perfetto vs gruppi.';
 
   @override
+  String get weaponNameShotgun => 'Shotgun';
+
+  @override
+  String get weaponDescShotgun =>
+      '8 pallettoni arancioni a cono ravvicinato — devastante da vicino.';
+
+  @override
+  String get weaponNameRailgun => 'Railgun';
+
+  @override
+  String get weaponDescRailgun =>
+      'Colpo hitscan istantaneo che perfora TUTTI i nemici in linea retta.';
+
+  @override
   String get modeDescClassic => '100 wave con boss ogni 10 — il modo standard';
 
   @override
@@ -1401,10 +1418,79 @@ class AppLocalizationsIt extends AppLocalizations {
       'Raggio magnete enorme. I geom volano verso di te.';
 
   @override
+  String get waveModNameFrenzy => 'FRENZY';
+
+  @override
+  String get waveModTaglineFrenzy => 'mob +35% velocità';
+
+  @override
+  String get waveModNameTank => 'TANK';
+
+  @override
+  String get waveModTaglineTank => 'mob ×1.6 HP';
+
+  @override
+  String get waveModNameGlass => 'GLASS';
+
+  @override
+  String get waveModTaglineGlass => 'mob ×0.4 HP, punti ×1.6';
+
+  @override
+  String get waveModNameLoot => 'LOOT';
+
+  @override
+  String get waveModTaglineLoot => 'doppi geom drop';
+
+  @override
+  String get waveModNameBlitz => 'BLITZ';
+
+  @override
+  String get waveModTaglineBlitz => '+50% nemici';
+
+  @override
+  String get waveModNameHaste => 'HASTE';
+
+  @override
+  String get waveModTaglineHaste => 'ondate ravvicinate';
+
+  @override
+  String get waveModNameMagnetic => 'MAGNETIC';
+
+  @override
+  String get waveModTaglineMagnetic => 'magnete geom ×2';
+
+  @override
+  String get waveModNameIron => 'IRON';
+
+  @override
+  String get waveModTaglineIron => 'tank lenti';
+
+  @override
   String get gameOverBossLabel => 'BOSS';
 
   @override
   String get gameOverGoldGeoms => 'GOLD GEOMS';
+
+  @override
+  String get gameOverGoldBase => 'base';
+
+  @override
+  String get gameOverGoldBonus => 'bonus';
+
+  @override
+  String get gameOverGoldAchievement => 'obiettivo';
+
+  @override
+  String get hudJoystickMove => 'MUOVI';
+
+  @override
+  String get hudJoystickAim => 'MIRA';
+
+  @override
+  String get diffStatHp => 'HP';
+
+  @override
+  String get diffStatSpeed => 'VEL';
 
   @override
   String get achKills100Name => 'Primo Sangue';

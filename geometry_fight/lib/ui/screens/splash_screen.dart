@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter/material.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../widgets/animated_builder_widget.dart';
@@ -125,6 +126,16 @@ class _SplashScreenState extends State<SplashScreen>
         });
       }
     });
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Memorizza size per `_updateShipSteering` (chiamato dal listener del
+    // chaseController, che non ha accesso al context). Aggiornato qui invece
+    // che nel builder per evitare un side-effect di stato durante il build;
+    // `MediaQuery.sizeOf` ri-triggera questo callback a ogni cambio di size.
+    _lastSize = MediaQuery.sizeOf(context);
   }
 
   /// Iter 15: integrazione steering frame-by-frame della nave.
@@ -288,10 +299,17 @@ class _SplashScreenState extends State<SplashScreen>
     _shipX += _shipVx * dt;
     _shipY += _shipVy * dt;
 
-    // === AIM: segue velocity (non target). Convenzione game:
-    // _rotation = atan2(v.y, v.x) + π/2. ===
-    if (speed > 1) {
-      _shipAim = math.atan2(_shipVy, _shipVx) + math.pi / 2;
+    // === AIM: punta al MOB (non più alla velocity). Iter 23 (utente: "i
+    // colpi non sfiorano il mob"): la nave ora si orienta verso il weaver
+    // mentre lo orbita, così muso + muzzle + proiettili sono allineati sul
+    // bersaglio. Durante l'avvicinamento velocity≈direzione-al-mob, quindi
+    // l'orientamento resta quasi identico al video precedente; cambia solo
+    // nelle fasi di strafe ravvicinato (legge come "circla e spara").
+    // Convenzione game: _rotation = atan2(dir.y, dir.x) + π/2.
+    final aimToMobX = droneX - _shipX;
+    final aimToMobY = droneY - _shipY;
+    if (aimToMobX * aimToMobX + aimToMobY * aimToMobY > 1) {
+      _shipAim = math.atan2(aimToMobY, aimToMobX) + math.pi / 2;
     }
 
     // === BURST SNAPSHOT: quando t supera ogni burst-start, cattura
@@ -375,10 +393,11 @@ class _SplashScreenState extends State<SplashScreen>
                 // Iter 22 (flutter-review): `MediaQuery.sizeOf` narrows
                 // sottoscrizione a sole `size` changes (vs `.of` che si
                 // iscrive a tutto: orientation/textScale/padding/insets).
+                // NOTA: `_lastSize` è memorizzato in `didChangeDependencies`
+                // (non qui) — scrivere stato dentro un builder è un side-effect
+                // di build; `MediaQuery.sizeOf` registra comunque la stessa
+                // dipendenza, quindi il valore è già aggiornato a ogni resize.
                 final screenSize = MediaQuery.sizeOf(context);
-                // Memorizza size per `_updateShipSteering` (chiamato dal
-                // listener del chaseController, che non ha accesso al context).
-                _lastSize = screenSize;
                 return CustomPaint(
                   painter: _SplashPainter(
                     chaseProgress: _chaseController.value,
@@ -415,93 +434,102 @@ class _SplashScreenState extends State<SplashScreen>
             Positioned(
               top: MediaQuery.paddingOf(context).top + 12,
               right: 16,
-              child: GestureDetector(
-                onTap: _fireCompleteOnce,
-                child: NeonAnimatedBuilder(
-                  animation: _bgController,
-                  builder: (context, _) {
-                    // Hue ciclante da `_bgController` (10s loop) + shift
-                    // sinusoidale per pulse extra.
-                    final hue = (_bgController.value * 360) % 360;
-                    final pulse =
-                        0.6 + math.sin(_bgController.value * math.pi * 4) * 0.4;
-                    final neonColor = HSVColor.fromAHSV(
-                      1.0,
-                      hue,
-                      0.85,
-                      1.0,
-                    ).toColor();
-                    final neonColorShift = HSVColor.fromAHSV(
-                      1.0,
-                      (hue + 90) % 360,
-                      0.85,
-                      1.0,
-                    ).toColor();
-                    return Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 18,
-                        vertical: 9,
-                      ),
-                      decoration: BoxDecoration(
-                        border: Border.all(
-                          color: neonColor.withValues(alpha: 0.85),
-                          width: 1.5,
+              child: Semantics(
+                button: true,
+                label: l10n.splashSkip,
+                child: GestureDetector(
+                  onTap: _fireCompleteOnce,
+                  child: NeonAnimatedBuilder(
+                    animation: _bgController,
+                    builder: (context, _) {
+                      // Hue ciclante da `_bgController` (10s loop) + shift
+                      // sinusoidale per pulse extra.
+                      final hue = (_bgController.value * 360) % 360;
+                      final pulse =
+                          0.6 +
+                          math.sin(_bgController.value * math.pi * 4) * 0.4;
+                      final neonColor = HSVColor.fromAHSV(
+                        1.0,
+                        hue,
+                        0.85,
+                        1.0,
+                      ).toColor();
+                      final neonColorShift = HSVColor.fromAHSV(
+                        1.0,
+                        (hue + 90) % 360,
+                        0.85,
+                        1.0,
+                      ).toColor();
+                      return Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 18,
+                          vertical: 9,
                         ),
-                        borderRadius: BorderRadius.circular(22),
-                        gradient: LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [
-                            neonColor.withValues(alpha: 0.18),
-                            Colors.black.withValues(alpha: 0.35),
-                            neonColorShift.withValues(alpha: 0.18),
+                        decoration: BoxDecoration(
+                          border: Border.all(
+                            color: neonColor.withValues(alpha: 0.85),
+                            width: 1.5,
+                          ),
+                          borderRadius: BorderRadius.circular(22),
+                          gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              neonColor.withValues(alpha: 0.18),
+                              Colors.black.withValues(alpha: 0.35),
+                              neonColorShift.withValues(alpha: 0.18),
+                            ],
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: neonColor.withValues(alpha: 0.4 * pulse),
+                              blurRadius: 14,
+                              spreadRadius: 1,
+                            ),
+                            BoxShadow(
+                              color: neonColorShift.withValues(
+                                alpha: 0.25 * pulse,
+                              ),
+                              blurRadius: 22,
+                            ),
                           ],
                         ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: neonColor.withValues(alpha: 0.4 * pulse),
-                            blurRadius: 14,
-                            spreadRadius: 1,
-                          ),
-                          BoxShadow(
-                            color: neonColorShift.withValues(
-                              alpha: 0.25 * pulse,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              l10n.splashSkip,
+                              style: TextStyle(
+                                color: neonColor,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w900,
+                                fontFamily: 'monospace',
+                                letterSpacing: 2.5,
+                                shadows: [
+                                  Shadow(color: neonColor, blurRadius: 8),
+                                  Shadow(
+                                    color: neonColorShift.withValues(
+                                      alpha: 0.6,
+                                    ),
+                                    blurRadius: 16,
+                                  ),
+                                ],
+                              ),
                             ),
-                            blurRadius: 22,
-                          ),
-                        ],
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            l10n.splashSkip,
-                            style: TextStyle(
+                            const SizedBox(width: 5),
+                            Icon(
+                              Icons.skip_next,
                               color: neonColor,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w900,
-                              fontFamily: 'monospace',
-                              letterSpacing: 2.5,
+                              size: 18,
                               shadows: [
                                 Shadow(color: neonColor, blurRadius: 8),
-                                Shadow(
-                                  color: neonColorShift.withValues(alpha: 0.6),
-                                  blurRadius: 16,
-                                ),
                               ],
                             ),
-                          ),
-                          const SizedBox(width: 5),
-                          Icon(
-                            Icons.skip_next,
-                            color: neonColor,
-                            size: 18,
-                            shadows: [Shadow(color: neonColor, blurRadius: 8)],
-                          ),
-                        ],
-                      ),
-                    );
-                  },
+                          ],
+                        ),
+                      );
+                    },
+                  ),
                 ),
               ),
             ),
@@ -984,24 +1012,24 @@ class _SplashPainter extends CustomPainter {
         if (!burstCaptured[b]) continue;
         final burstShipX = burstSnapX[b];
         final burstShipY = burstSnapY[b];
-        final dirX = burstSnapDx[b];
-        final dirY = burstSnapDy[b];
-        // Guard: snapshot dir invalido (vector ~zero) → skip.
-        if (dirX * dirX + dirY * dirY < 0.5) continue;
-        final perpX = -dirY;
-        final perpY = dirX;
         // Velocity vector al snapshot — usata per ricalcolare pos della
         // nave a fireTime di ogni pair (iter 17 fix "bullets dietro").
         final snapVx = burstSnapVx[b];
         final snapVy = burstSnapVy[b];
-        // Iter 14 (utente: "bullets dal centro non punta"): noseOffset
-        // bumped 16.8 → 24 → bullet emerge OLTRE tip nave (era esattamente
-        // sul tip → sembrava centro). Tip nave a -14*s=-18.9 local.
-        // Iter 16 (utente: "bullets non dalla punta"): ora il `dirX/dirY`
-        // è la velocity-dir (= ship aim direction), quindi `dirN * noseOffset`
-        // punta esattamente sulla punta visuale. Match in-game `nose =
-        // position + dir.normalized() * 22` (Player.dart line 467).
+        // Iter 23 (utente: "i colpi non sfiorano il mob"): la direzione del
+        // proiettile ora PUNTA AL MOB (non più alla velocity/orientamento
+        // nave). Calcolata per-coppia verso la pos del weaver al fireTime,
+        // con bias perpendicolare costante sul lato di coda → i bullet
+        // passano SEMPRE a un soffio dal mob (graze) invece di mancarlo
+        // largo. Il weaver continua la sua sinusoide, quindi il near-miss
+        // legge come "schiva all'ultimo". noseOffset 22 = match in-game
+        // `nose = position + dir.normalized() * 22` (Player.dart line 467).
         const noseOffset = 22.0;
+        // grazeBias: clearance verticale (px) tra la mira e il centro mob.
+        // Con la coppia ±pairOffset il bullet interno passa ~grazeBias-
+        // pairOffset dal centro (mob mezzo-asse verticale ≈ 8.5px) → sfiora
+        // il bordo senza colpire.
+        const grazeBias = 18.0;
 
         // Itera coppie del burst.
         for (int p = 0; p < pairsPerBurst; p++) {
@@ -1009,16 +1037,55 @@ class _SplashPainter extends CustomPainter {
           if (t <= fireTime) continue;
           final dtSinceFire = t - fireTime;
 
-          // Iter 17 (utente: "bullets sembrano partire da dietro la
-          // navicella"): pos della nave a `fireTime` ricalcolata da
-          // posSnap + velSnap × (fireTime - burstStart_in_seconds).
-          // Prima tutte le pair partivano da `posSnap` (pos vecchia
-          // 0-0.5s prima di now) → la nave si era già spostata avanti
-          // e i bullet apparivano "dietro" la nave corrente.
+          // Iter 17: pos della nave a `fireTime` ricalcolata da
+          // posSnap + velSnap × (fireTime - burstStart_in_seconds), così i
+          // bullet non partono "dietro" alla nave che si è già mossa.
           final dtFromBurstStartSec =
               (fireTime - burstStart) * chaseDurationSec;
           final shipCenterX = burstShipX + snapVx * dtFromBurstStartSec;
           final shipCenterY = burstShipY + snapVy * dtFromBurstStartSec;
+
+          // Pos mob al fireTime (stessa traiettoria di _drawChaseScene).
+          final mobAtX = size.width * (-0.15 + fireTime * 1.20);
+          final mobAtY =
+              cy +
+              math.sin(fireTime * math.pi * 2) * size.height * 0.32 +
+              math.sin(fireTime * math.pi * 8) * 6;
+          // Direzione base verso il mob + perpendicolare a essa: il graze
+          // bias è applicato LUNGO questa perpendicolare (non verticale) così
+          // la clearance ≈ grazeBias in QUALSIASI orientamento — anche se la
+          // nave è sopra/sotto il mob (dove un bias verticale collasserebbe a
+          // zero e il bullet centrerebbe).
+          var baseDx = mobAtX - shipCenterX;
+          var baseDy = mobAtY - shipCenterY;
+          final baseLen = math.sqrt(baseDx * baseDx + baseDy * baseDy);
+          if (baseLen < 0.5) continue;
+          baseDx /= baseLen;
+          baseDy /= baseLen;
+          final basePerpX = -baseDy;
+          final basePerpY = baseDx;
+          // Velocità mob (finite diff) → bias sul lato di CODA (opposto al
+          // moto): il mob "slitta via" dalla traiettoria → near-miss schivato.
+          final mobAheadX = size.width * (-0.15 + (fireTime + 0.01) * 1.20);
+          final mobAheadY =
+              cy +
+              math.sin((fireTime + 0.01) * math.pi * 2) * size.height * 0.32 +
+              math.sin((fireTime + 0.01) * math.pi * 8) * 6;
+          final mvDotPerp =
+              (mobAheadX - mobAtX) * basePerpX +
+              (mobAheadY - mobAtY) * basePerpY;
+          final biasSign = mvDotPerp >= 0 ? -1.0 : 1.0;
+          // Aim = mob + perp × graze bias → dir normalizzata.
+          final aimX =
+              (mobAtX + basePerpX * biasSign * grazeBias) - shipCenterX;
+          final aimY =
+              (mobAtY + basePerpY * biasSign * grazeBias) - shipCenterY;
+          final aimLen = math.sqrt(aimX * aimX + aimY * aimY);
+          if (aimLen < 0.5) continue;
+          final dirX = aimX / aimLen;
+          final dirY = aimY / aimLen;
+          final perpX = -dirY;
+          final perpY = dirX;
 
           // Distanza percorsa dal bullet: velocity costante × dt
           // (dt in chase-units, speed in px/chase-unit).
@@ -1489,5 +1556,34 @@ class _SplashPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant _SplashPainter oldDelegate) => true;
+  bool shouldRepaint(covariant _SplashPainter oldDelegate) {
+    // Ripaint solo se un campo letto dal painter è cambiato. Gli scalari sono
+    // confrontati per valore; le liste di snapshot/trail sono mutate in-place
+    // dallo State (stessa identità ogni frame), quindi i loro contenuti sono
+    // tracciati tramite i cursori scalari che cambiano in lockstep:
+    //  - trail ring buffer → trailHead/trailFilled avanzano ad ogni nuovo
+    //    sample (vedi `_updateShipSteering`), con il sample più recente in
+    //    shipX/shipY (già confrontati);
+    //  - burst snapshot → burstCaptured[i] passa a true nello stesso istante in
+    //    cui burstSnap* viene scritto, e poi la posizione è ricalcolata da
+    //    chaseProgress/chaseDurationSec (già confrontati). burstCaptured è una
+    //    lista bool mutata in-place, quindi va confrontata elemento per
+    //    elemento (l'identità non cambia).
+    return chaseProgress != oldDelegate.chaseProgress ||
+        bgPhase != oldDelegate.bgPhase ||
+        logoOpacity != oldDelegate.logoOpacity ||
+        logoScale != oldDelegate.logoScale ||
+        showExplosion != oldDelegate.showExplosion ||
+        explosionPhase != oldDelegate.explosionPhase ||
+        tapToStartText != oldDelegate.tapToStartText ||
+        shipX != oldDelegate.shipX ||
+        shipY != oldDelegate.shipY ||
+        shipAim != oldDelegate.shipAim ||
+        shipInit != oldDelegate.shipInit ||
+        chaseDurationSec != oldDelegate.chaseDurationSec ||
+        trailHead != oldDelegate.trailHead ||
+        trailFilled != oldDelegate.trailFilled ||
+        trailLen != oldDelegate.trailLen ||
+        !listEquals(burstCaptured, oldDelegate.burstCaptured);
+  }
 }

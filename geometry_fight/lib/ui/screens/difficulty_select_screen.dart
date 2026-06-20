@@ -29,6 +29,10 @@ class DifficultySelectScreen extends StatefulWidget {
 }
 
 class _DifficultySelectScreenState extends State<DifficultySelectScreen> {
+  // Step indicator: difficoltà è il 2° dei 6 step del flusso pre-game
+  // (mode → diff → mods → loadout → summary → game).
+  static const String _stepLabel = '2/6';
+
   late Difficulty _sel;
 
   // Caveman-review: guard against rapid double-tap firing onConfirm twice.
@@ -80,7 +84,7 @@ class _DifficultySelectScreenState extends State<DifficultySelectScreen> {
                       ),
                     ),
                     child: const Text(
-                      '2/6',
+                      _stepLabel,
                       style: TextStyle(
                         color: NeonColors.cyan,
                         fontSize: 12,
@@ -114,89 +118,98 @@ class _DifficultySelectScreenState extends State<DifficultySelectScreen> {
                         final selected = _sel == d;
                         final color = _diffColor(d);
                         final diffLabel = _diffName(l10n, d);
-                        return GestureDetector(
-                          // Iter 19 (utente: "tap auto-advance pre-game"):
-                          // setState + onConfirm. Re-tap same → still advance
-                          // (no toggle-off).
-                          // Caveman-review: _isAdvancing guard blocks double-tap
-                          // race during page transition.
-                          onTap: () {
-                            if (_isAdvancing) return;
-                            _isAdvancing = true;
-                            setState(() => _sel = d);
-                            widget.onConfirm(d);
-                          },
-                          child: SizedBox(
-                            // Iter 18: dimensioni esplicite per card 70%.
-                            width: 280,
-                            height: 100,
-                            child: Container(
-                              // Iter 18: padding card interno 8 → 16
-                              // (ora che la card ha altezza fissa, padding
-                              // interno coerente con request utente).
-                              padding: const EdgeInsets.all(16),
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(10),
-                                color: selected
-                                    ? color.withValues(alpha: 0.18)
-                                    : color.withValues(alpha: 0.05),
-                                border: Border.all(
-                                  color: color.withValues(
-                                    alpha: selected ? 0.95 : 0.4,
+                        return Semantics(
+                          button: true,
+                          label: diffLabel,
+                          selected: selected,
+                          child: GestureDetector(
+                            // Iter 19 (utente: "tap auto-advance pre-game"):
+                            // tap → onConfirm. Re-tap same → still advance
+                            // (no toggle-off).
+                            // Caveman-review: _isAdvancing guard blocks
+                            // double-tap race during page transition.
+                            // Nota: nessun setState prima di onConfirm — il
+                            // widget viene smontato dalla navigazione del
+                            // parent, quindi il rebuild locale verrebbe
+                            // scartato (la selezione è già tracciata nel
+                            // parent via _selectedDifficulty).
+                            onTap: () {
+                              if (_isAdvancing) return;
+                              _isAdvancing = true;
+                              widget.onConfirm(d);
+                            },
+                            child: SizedBox(
+                              // Iter 18: dimensioni esplicite per card 70%.
+                              width: 280,
+                              height: 100,
+                              child: Container(
+                                // Iter 18: padding card interno 8 → 16
+                                // (ora che la card ha altezza fissa, padding
+                                // interno coerente con request utente).
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(10),
+                                  color: selected
+                                      ? color.withValues(alpha: 0.18)
+                                      : color.withValues(alpha: 0.05),
+                                  border: Border.all(
+                                    color: color.withValues(
+                                      alpha: selected ? 0.95 : 0.4,
+                                    ),
+                                    width: selected ? 2.5 : 1,
                                   ),
-                                  width: selected ? 2.5 : 1,
+                                  boxShadow: selected
+                                      ? [
+                                          BoxShadow(
+                                            color: color.withValues(alpha: 0.4),
+                                            blurRadius: 12,
+                                          ),
+                                        ]
+                                      : null,
                                 ),
-                                boxShadow: selected
-                                    ? [
-                                        BoxShadow(
-                                          color: color.withValues(alpha: 0.4),
-                                          blurRadius: 12,
-                                        ),
-                                      ]
-                                    : null,
-                              ),
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  Text(
-                                    diffLabel,
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      color: color,
-                                      // Iter 18: 13 → 15 (-15% dal 18
-                                      // originale ≈ 15).
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.w900,
-                                      fontFamily: 'monospace',
-                                      letterSpacing: 2,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 3),
-                                  Text(
-                                    '×${cfg.scoreMultiplier.toStringAsFixed(1)} ${l10n.diffScoreMultiplier}',
-                                    style: TextStyle(
-                                      color: color.withValues(alpha: 0.8),
-                                      fontSize: 11,
-                                      fontFamily: 'monospace',
-                                    ),
-                                  ),
-                                  const SizedBox(height: 3),
-                                  // Valori moltiplicativi espliciti (HP/SPD
-                                  // nemici) — richiesta utente: visibili qui,
-                                  // NON nella schermata di riepilogo.
-                                  Text(
-                                    'HP ×${cfg.enemyHpMultiplier} · '
-                                    'SPD ×${cfg.enemySpeedMultiplier}',
-                                    style: TextStyle(
-                                      color: Colors.white.withValues(
-                                        alpha: 0.6,
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      diffLabel,
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        color: color,
+                                        // Iter 18: 13 → 15 (-15% dal 18
+                                        // originale ≈ 15).
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w900,
+                                        fontFamily: 'monospace',
+                                        letterSpacing: 2,
                                       ),
-                                      fontSize: 10,
-                                      fontFamily: 'monospace',
                                     ),
-                                  ),
-                                ],
+                                    const SizedBox(height: 3),
+                                    Text(
+                                      '×${cfg.scoreMultiplier.toStringAsFixed(1)} ${l10n.diffScoreMultiplier}',
+                                      style: TextStyle(
+                                        color: color.withValues(alpha: 0.8),
+                                        fontSize: 11,
+                                        fontFamily: 'monospace',
+                                      ),
+                                    ),
+                                    const SizedBox(height: 3),
+                                    // Valori moltiplicativi espliciti (HP/SPD
+                                    // nemici) — richiesta utente: visibili qui,
+                                    // NON nella schermata di riepilogo.
+                                    Text(
+                                      '${l10n.diffStatHp} ×${cfg.enemyHpMultiplier} · '
+                                      '${l10n.diffStatSpeed} ×${cfg.enemySpeedMultiplier}',
+                                      style: TextStyle(
+                                        color: Colors.white.withValues(
+                                          alpha: 0.6,
+                                        ),
+                                        fontSize: 10,
+                                        fontFamily: 'monospace',
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
                           ),

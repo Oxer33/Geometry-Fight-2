@@ -17,9 +17,22 @@ class Geom extends PositionComponent
   static final _random = math.Random();
   late Color _color;
   late double _rotationSpeed;
+  // Per-instance alpha→color cache for the diamond body. `_color` is fixed for
+  // the life of the geom (depends only on `value`), so the rendered color is a
+  // pure function of the quantized alpha. Cache (lastAlphaKey, lastColor) and
+  // recompute withValues only when the quantized key changes; during the steady
+  // alpha==1.0 phase reuse the already-opaque `_color` directly (NeonColors are
+  // 0xFF.. so withValues(alpha:1.0) is bit-identical). Quantized to 256 steps
+  // → max delta 1/256, visually imperceptible.
+  static const int _alphaSteps = 256;
+  int _lastAlphaKey = -1;
+  Color _cachedBodyColor = const Color(0x00000000);
   // Cached diamond path — gemSize depends only on `value` (final), so the
   // path never changes after onLoad(). Avoids one Path allocation per frame.
   late Path _diamondPath;
+  // Scratch Vector2 riusato nel calcolo dell'attrazione per frame — evita
+  // di allocare i temporanei `player.position - position` e `dir * speed * dt`.
+  final Vector2 _attractDir = Vector2.zero();
 
   Geom({this.value = 1}) : super(size: Vector2(10, 10), anchor: Anchor.center);
 
@@ -42,6 +55,19 @@ class Geom extends PositionComponent
       ..lineTo(0, gemSize)
       ..lineTo(-gemSize * 0.6, 0)
       ..close();
+  }
+
+  @override
+  void onMount() {
+    super.onMount();
+    // Registry game-level: evita scan di world.children ogni frame.
+    game.activeGeoms.add(this);
+  }
+
+  @override
+  void onRemove() {
+    game.activeGeoms.remove(this);
+    super.onRemove();
   }
 
   Color _getColorForValue(int v) {
@@ -109,9 +135,13 @@ class Geom extends PositionComponent
     }
 
     if (_attracted) {
-      final dir = (player.position - position);
-      if (dir.length2 > 1e-6) {
-        dir.normalize();
+      // Reuse scratch Vector2 invece di allocare `player.position - position`
+      // e `dir * speed * dt` per frame (con 100 geomi → 200 alloc/frame).
+      _attractDir
+        ..setFrom(player.position)
+        ..sub(position);
+      if (_attractDir.length2 > 1e-6) {
+        _attractDir.normalize();
         // Velocità attrazione: più vicino = più veloce.
         // Guard divisione: se magnetRange<=0 (edge case shop/data), skip
         // il termine proporzionale invece di NaN/Infinity.
@@ -119,7 +149,12 @@ class Geom extends PositionComponent
             ? (1.0 - dist / magnetRange).clamp(0.0, 1.0)
             : 0.0;
         final attractSpeed = player.hasMagnet ? 800.0 : 400.0 + proximity * 300;
-        position += dir * attractSpeed * dt;
+        // Due scale separate per preservare il raggruppamento del prodotto
+        // originale `dir * attractSpeed * dt` = `(dir * attractSpeed) * dt`
+        // (la moltiplicazione float non è associativa → output bit-identico).
+        _attractDir.scale(attractSpeed);
+        _attractDir.scale(dt);
+        position.add(_attractDir);
       }
     }
   }
@@ -139,7 +174,20 @@ class Geom extends PositionComponent
     final cy = size.y / 2;
 
     // Diamond shape (uses _diamondPath cached in onLoad — no per-frame allocation)
-    _geomBodyPaint.color = _color.withValues(alpha: alpha);
+    // Resolve body color via per-instance quantized-alpha cache: reuse the
+    // opaque `_color` directly when alpha==1.0, else recompute withValues only
+    // when the quantized key changes (same formula, delta <= 1/256).
+    final alphaKey = (alpha * (_alphaSteps - 1)).round().clamp(
+      0,
+      _alphaSteps - 1,
+    );
+    if (alphaKey != _lastAlphaKey) {
+      _cachedBodyColor = alphaKey == _alphaSteps - 1
+          ? _color
+          : _color.withValues(alpha: alpha);
+      _lastAlphaKey = alphaKey;
+    }
+    _geomBodyPaint.color = _cachedBodyColor;
     canvas.save();
     canvas.translate(cx, cy);
     canvas.rotate(_phase);

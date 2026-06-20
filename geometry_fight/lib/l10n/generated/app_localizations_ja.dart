@@ -163,6 +163,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get menuStore => 'ショップ';
 
   @override
+  String get menuTalents => 'TALENTI';
+
+  @override
   String get menuSettings => '設定';
 
   @override
@@ -1064,6 +1067,20 @@ class AppLocalizationsJa extends AppLocalizations {
   String get weaponDescChain => '電撃が5体の敵を跳ね回る——集団に最適。';
 
   @override
+  String get weaponNameShotgun => 'Shotgun';
+
+  @override
+  String get weaponDescShotgun =>
+      '8 pallettoni arancioni a cono ravvicinato — devastante da vicino.';
+
+  @override
+  String get weaponNameRailgun => 'Railgun';
+
+  @override
+  String get weaponDescRailgun =>
+      'Colpo hitscan istantaneo che perfora TUTTI i nemici in linea retta.';
+
+  @override
   String get modeDescClassic => '100ウェーブ・10ごとにボス——標準モード';
 
   @override
@@ -1337,10 +1354,79 @@ class AppLocalizationsJa extends AppLocalizations {
   String get modDescMagnetKing => '巨大なマグネット範囲。ジオムが飛んでくる。';
 
   @override
+  String get waveModNameFrenzy => 'フレンジー';
+
+  @override
+  String get waveModTaglineFrenzy => '敵の速度 +35%';
+
+  @override
+  String get waveModNameTank => 'タンク';
+
+  @override
+  String get waveModTaglineTank => '敵HP ×1.6';
+
+  @override
+  String get waveModNameGlass => 'グラス';
+
+  @override
+  String get waveModTaglineGlass => '敵HP ×0.4、スコア ×1.6';
+
+  @override
+  String get waveModNameLoot => 'ルート';
+
+  @override
+  String get waveModTaglineLoot => 'ジオム2倍ドロップ';
+
+  @override
+  String get waveModNameBlitz => 'ブリッツ';
+
+  @override
+  String get waveModTaglineBlitz => '敵 +50%';
+
+  @override
+  String get waveModNameHaste => 'ヘイスト';
+
+  @override
+  String get waveModTaglineHaste => '連続ウェーブ';
+
+  @override
+  String get waveModNameMagnetic => 'マグネット';
+
+  @override
+  String get waveModTaglineMagnetic => 'ジオム磁石 ×2';
+
+  @override
+  String get waveModNameIron => 'アイアン';
+
+  @override
+  String get waveModTaglineIron => '鈍重なタンク';
+
+  @override
   String get gameOverBossLabel => 'ボス';
 
   @override
   String get gameOverGoldGeoms => 'ゴールドジオム';
+
+  @override
+  String get gameOverGoldBase => '基本';
+
+  @override
+  String get gameOverGoldBonus => 'ボーナス';
+
+  @override
+  String get gameOverGoldAchievement => '実績';
+
+  @override
+  String get hudJoystickMove => '移動';
+
+  @override
+  String get hudJoystickAim => '照準';
+
+  @override
+  String get diffStatHp => 'HP';
+
+  @override
+  String get diffStatSpeed => '速度';
 
   @override
   String get achKills100Name => 'ファーストブラッド';

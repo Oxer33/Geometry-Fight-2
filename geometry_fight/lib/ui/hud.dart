@@ -8,6 +8,8 @@ import '../game/game_world.dart';
 import '../game/entities/enemies/enemy_base.dart';
 import '../game/entities/bosses/boss_base.dart';
 import '../l10n/generated/app_localizations.dart';
+import '../ui/shared/formatters.dart';
+import '../ui/shared/modifier_labels.dart';
 import 'widgets/animated_builder_widget.dart';
 
 /// HUD moderna e accattivante con effetti glassmorphism neon.
@@ -46,7 +48,14 @@ class _GameHudState extends State<GameHud> {
       child: NeonAnimatedBuilder(
         animation: _notifier,
         builder: (context, _) {
-          final topPad = MediaQuery.of(context).padding.top + 8;
+          // Startup race guard: the HUD overlay can build a frame before the
+          // game's async onLoad() has created `player` (a late field). Render
+          // nothing until the game finished loading; the notifier rebuilds us
+          // on the next tick once it has.
+          if (!game.isLoaded) return const SizedBox.shrink();
+          final padding = MediaQuery.paddingOf(context);
+          final screenSize = MediaQuery.sizeOf(context);
+          final topPad = padding.top + 8;
           return Stack(
             children: [
               // === PANNELLO SCORE (top-left) con glassmorphism ===
@@ -156,9 +165,9 @@ class _GameHudState extends State<GameHud> {
               // === BARRA HP BOSS (in basso, piccola e non invasiva) ===
               if (game.activeBoss != null)
                 Positioned(
-                  bottom: 30 + MediaQuery.of(context).padding.bottom,
-                  left: MediaQuery.of(context).size.width * 0.3,
-                  right: MediaQuery.of(context).size.width * 0.3,
+                  bottom: 30 + padding.bottom,
+                  left: screenSize.width * 0.3,
+                  right: screenSize.width * 0.3,
                   child: _BossHpBar(
                     bossName: game.activeBoss!.bossName,
                     healthPercent: game.activeBoss!.healthPercent,
@@ -235,7 +244,7 @@ class _GameHudState extends State<GameHud> {
 
               // === NEMICI RIMANENTI (mini-bar in basso al centro) ===
               Positioned(
-                bottom: 8 + MediaQuery.of(context).padding.bottom,
+                bottom: 8 + padding.bottom,
                 left: 0,
                 right: 0,
                 child: Center(
@@ -293,7 +302,7 @@ class _ScorePanel extends StatelessWidget {
         children: [
           // Score principale con glow dinamico
           Text(
-            _formatScore(score),
+            formatScore(score),
             style: TextStyle(
               color: Colors.white,
               fontSize: 24,
@@ -334,13 +343,6 @@ class _ScorePanel extends StatelessWidget {
     if (score > 1000000) return const Color(0xFFFFD700);
     if (score > 100000) return const Color(0xFF00FFFF);
     return const Color(0xFF4488FF);
-  }
-
-  String _formatScore(int s) {
-    if (s >= 1000000000) return '${(s / 1000000000).toStringAsFixed(1)}B';
-    if (s >= 1000000) return '${(s / 1000000).toStringAsFixed(1)}M';
-    if (s >= 10000) return '${s ~/ 1000}K';
-    return '$s';
   }
 }
 
@@ -635,7 +637,7 @@ class _WaveIndicator extends StatelessWidget {
                   ),
                   const SizedBox(width: 3),
                   Text(
-                    modifier.displayName,
+                    waveModifierName(l10n, modifier),
                     style: TextStyle(
                       color: modColor,
                       fontSize: 10,
@@ -652,7 +654,7 @@ class _WaveIndicator extends StatelessWidget {
                   ),
                   const SizedBox(width: 6),
                   Text(
-                    modifier.tagline,
+                    waveModifierTagline(l10n, modifier),
                     style: TextStyle(
                       color: modColor.withValues(alpha: 0.65),
                       fontSize: 9,

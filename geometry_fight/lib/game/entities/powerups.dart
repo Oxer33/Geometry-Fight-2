@@ -84,6 +84,18 @@ class PowerUp extends PositionComponent
   double _lifetime = 10.0;
   double _phase = 0;
   double _pulsePhase = 0;
+  // Scratch Vector2 riusato nel calcolo dell'attrazione per frame — evita
+  // di allocare i temporanei `player.position - position` e `dir * speed * dt`.
+  final Vector2 _attractDir = Vector2.zero();
+  // Cached heart path — geometria statica (coordinate costanti, nessuna
+  // dipendenza da valori per-frame). Solo per extraLife. Evita una Path
+  // allocazione per frame. L'esagono NON è cacheabile: la sua geometria
+  // dipende da `pulse` (per-frame) ed è anche usata come stroke, quindi
+  // canvas.scale() altererebbe la larghezza del bordo (vedi render).
+  static final Path _heartPath = Path()
+    ..moveTo(0, 2)
+    ..cubicTo(-4, -2, -4, -5, 0, -3)
+    ..cubicTo(4, -5, 4, -2, 0, 2);
 
   PowerUp({required this.type})
     : super(size: Vector2(24, 24), anchor: Anchor.center) {
@@ -151,11 +163,20 @@ class PowerUp extends PositionComponent
     final player = game.player;
     final dist = position.distanceTo(player.position);
     if (dist < _attractionRange) {
-      final dir = (player.position - position);
-      if (dir.length2 > 1e-6) {
-        dir.normalize();
+      // Reuse scratch Vector2 invece di allocare i temporanei
+      // `player.position - position` e `dir * speed * dt` per frame.
+      _attractDir
+        ..setFrom(player.position)
+        ..sub(position);
+      if (_attractDir.length2 > 1e-6) {
+        _attractDir.normalize();
         final attractSpeed = 300.0 + (1.0 - dist / _attractionRange) * 200;
-        position += dir * attractSpeed * realDt;
+        // Due scale separate per preservare il raggruppamento del prodotto
+        // originale `dir * attractSpeed * realDt` = `(dir * attractSpeed) *
+        // realDt` (moltiplicazione float non associativa → output bit-identico).
+        _attractDir.scale(attractSpeed);
+        _attractDir.scale(realDt);
+        position.add(_attractDir);
       }
     }
   }
@@ -295,11 +316,8 @@ class PowerUp extends PositionComponent
     // Inner icon (cuore per extraLife, cerchio per il resto)
     if (type == PowerUpType.extraLife) {
       _puPaint.color = const Color(0xFFFFFFFF).withValues(alpha: alpha * 0.9);
-      final heartPath = Path()
-        ..moveTo(0, 2)
-        ..cubicTo(-4, -2, -4, -5, 0, -3)
-        ..cubicTo(4, -5, 4, -2, 0, 2);
-      canvas.drawPath(heartPath, _puPaint);
+      // _heartPath cached (static geometry) — no per-frame Path allocation.
+      canvas.drawPath(_heartPath, _puPaint);
     } else {
       _puPaint.color = const Color(0xFFFFFFFF).withValues(alpha: alpha * 0.8);
       canvas.drawCircle(Offset.zero, 3, _puPaint);

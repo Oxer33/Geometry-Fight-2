@@ -109,17 +109,19 @@ class _StatsScreenState extends State<StatsScreen>
       backgroundColor: Colors.black,
       body: SafeArea(
         child: AnimatedBuilder(
+          // Only the one-shot entrance + counter animations drive the full
+          // tree rebuild. The repeating (~60fps) glow controller is consumed
+          // by a narrow AnimatedBuilder inside each stat tile, so glow frames
+          // no longer rebuild the whole Column + scrollable list.
           animation: Listenable.merge([
             _entranceController,
             _counterController,
-            _glowController,
           ]),
           builder: (context, _) {
             final entrance = _entranceController.value;
             final counter = Curves.easeOutCubic.transform(
               _counterController.value,
             );
-            final glow = _glowController.value;
 
             return Column(
               children: [
@@ -174,7 +176,6 @@ class _StatsScreenState extends State<StatsScreen>
                                 const Color(0xFFFFD700),
                               ),
                             ],
-                            glow,
                           ),
 
                           const SizedBox(height: 16),
@@ -222,7 +223,6 @@ class _StatsScreenState extends State<StatsScreen>
                                 Colors.cyanAccent,
                               ),
                             ],
-                            glow,
                           ),
 
                           const SizedBox(height: 16),
@@ -267,7 +267,6 @@ class _StatsScreenState extends State<StatsScreen>
                                 Colors.greenAccent,
                               ),
                             ],
-                            glow,
                           ),
 
                           const SizedBox(height: 16),
@@ -288,7 +287,6 @@ class _StatsScreenState extends State<StatsScreen>
                                     : 0.0,
                               ),
                             ],
-                            glow,
                           ),
 
                           if (saveData.highscores.isNotEmpty) ...[
@@ -308,7 +306,6 @@ class _StatsScreenState extends State<StatsScreen>
                                     ),
                                   )
                                   .toList(),
-                              glow,
                             ),
                           ],
 
@@ -335,7 +332,11 @@ class _StatsScreenState extends State<StatsScreen>
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: Row(
             children: [
-              NeonBackButton(onTap: widget.onBack),
+              Semantics(
+                button: true,
+                label: l10n.back,
+                child: NeonBackButton(onTap: widget.onBack),
+              ),
               const SizedBox(width: 16),
               Text(
                 l10n.statsTitle,
@@ -361,7 +362,6 @@ class _StatsScreenState extends State<StatsScreen>
     double entrance,
     double delay,
     List<_StatData> stats,
-    double glow,
   ) {
     final sectionEntrance = delay >= 1.0
         ? 1.0
@@ -425,116 +425,125 @@ class _StatsScreenState extends State<StatsScreen>
               ],
             ),
             const SizedBox(height: 8),
-            ...stats.map((s) => _buildStatTile(s, color, glow)),
+            ...stats.map((s) => _buildStatTile(s, color)),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildStatTile(_StatData data, Color sectionColor, double glow) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 6),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
-        gradient: LinearGradient(
-          begin: Alignment.centerLeft,
-          end: Alignment.centerRight,
-          colors: [
-            data.color.withValues(alpha: 0.04 + glow * 0.02),
-            Colors.transparent,
-          ],
-        ),
-      ),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              // Icon in colored circle
-              Container(
-                width: 28,
-                height: 28,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: data.color.withValues(alpha: 0.1),
-                  border: Border.all(
-                    color: data.color.withValues(alpha: 0.3),
-                    width: 1,
-                  ),
-                ),
-                child: Icon(data.icon, color: data.color, size: 14),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  data.label,
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.7),
-                    fontSize: 12,
-                    fontFamily: 'monospace',
-                  ),
-                ),
-              ),
-              Text(
-                data.value,
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 15,
-                  fontWeight: FontWeight.bold,
-                  fontFamily: 'monospace',
-                  shadows: [
-                    Shadow(
-                      color: data.color.withValues(alpha: 0.3 + glow * 0.2),
-                      blurRadius: 4,
-                    ),
-                  ],
-                ),
-              ),
-            ],
+  Widget _buildStatTile(_StatData data, Color sectionColor) {
+    // Only this tile's subtree is rebuilt per ~60fps glow frame — the
+    // surrounding Column/scrollable list stays outside this builder. The
+    // rendered output is identical to reading glow from the outer builder.
+    return AnimatedBuilder(
+      animation: _glowController,
+      builder: (context, _) {
+        final glow = _glowController.value;
+        return Container(
+          margin: const EdgeInsets.only(bottom: 6),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
+            gradient: LinearGradient(
+              begin: Alignment.centerLeft,
+              end: Alignment.centerRight,
+              colors: [
+                data.color.withValues(alpha: 0.04 + glow * 0.02),
+                Colors.transparent,
+              ],
+            ),
           ),
-          // Optional progress bar
-          if (data.progress != null) ...[
-            const SizedBox(height: 8),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(3),
-              child: Stack(
+          child: Column(
+            children: [
+              Row(
                 children: [
+                  // Icon in colored circle
                   Container(
-                    height: 4,
+                    width: 28,
+                    height: 28,
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.06),
-                      borderRadius: BorderRadius.circular(3),
+                      shape: BoxShape.circle,
+                      color: data.color.withValues(alpha: 0.1),
+                      border: Border.all(
+                        color: data.color.withValues(alpha: 0.3),
+                        width: 1,
+                      ),
+                    ),
+                    child: Icon(data.icon, color: data.color, size: 14),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      data.label,
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.7),
+                        fontSize: 12,
+                        fontFamily: 'monospace',
+                      ),
                     ),
                   ),
-                  FractionallySizedBox(
-                    widthFactor: data.progress!.clamp(0.0, 1.0),
-                    child: Container(
-                      height: 4,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(3),
-                        gradient: LinearGradient(
-                          colors: [
-                            data.color,
-                            data.color.withValues(alpha: 0.6),
-                          ],
+                  Text(
+                    data.value,
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                      fontFamily: 'monospace',
+                      shadows: [
+                        Shadow(
+                          color: data.color.withValues(alpha: 0.3 + glow * 0.2),
+                          blurRadius: 4,
                         ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: data.color.withValues(alpha: 0.4),
-                            blurRadius: 4,
-                          ),
-                        ],
-                      ),
+                      ],
                     ),
                   ),
                 ],
               ),
-            ),
-          ],
-        ],
-      ),
+              // Optional progress bar
+              if (data.progress != null) ...[
+                const SizedBox(height: 8),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(3),
+                  child: Stack(
+                    children: [
+                      Container(
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.06),
+                          borderRadius: BorderRadius.circular(3),
+                        ),
+                      ),
+                      FractionallySizedBox(
+                        widthFactor: data.progress!.clamp(0.0, 1.0),
+                        child: Container(
+                          height: 4,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(3),
+                            gradient: LinearGradient(
+                              colors: [
+                                data.color,
+                                data.color.withValues(alpha: 0.6),
+                              ],
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: data.color.withValues(alpha: 0.4),
+                                blurRadius: 4,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ],
+          ),
+        );
+      },
     );
   }
 

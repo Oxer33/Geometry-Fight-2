@@ -1,5 +1,11 @@
 import 'dart:ui';
 
+/// Test-tools flag for RELEASE builds. Off by default → Play Store release has
+/// NO cheat UI. Enable for a test APK with:
+///   flutter build apk --release --dart-define=TEST_TOOLS=true
+/// Debug builds always show the test tools regardless (see `kDebugMode`).
+const bool kTestTools = bool.fromEnvironment('TEST_TOOLS');
+
 // Arena 16:9 — larghezza adattata all'aspect ratio dello schermo.
 // Tunnel mode usa dimensioni separate per il corridoio lungo.
 // Storia ridimensionamenti:

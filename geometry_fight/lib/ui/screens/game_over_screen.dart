@@ -175,15 +175,15 @@ class _GameOverScreenState extends State<GameOverScreen>
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    // Outer builder listens ONLY to the one-shot controllers (entrance drives
+    // all fades/slides/scales, counter drives the animated stat/gold values).
+    // The two REPEATING controllers (_pulseController ~60fps reverse-repeat and
+    // _particleController repeat) are isolated into narrow AnimatedBuilders
+    // below so they no longer rebuild the whole Stack every frame. The rendered
+    // result each frame is identical — same controller values, same widgets.
     return AnimatedBuilder(
-      animation: Listenable.merge([
-        _entranceController,
-        _pulseController,
-        _counterController,
-        _particleController,
-      ]),
+      animation: Listenable.merge([_entranceController, _counterController]),
       builder: (context, _) {
-        final pulse = _pulseController.value;
         return Stack(
           children: [
             // Blurred background
@@ -197,14 +197,19 @@ class _GameOverScreenState extends State<GameOverScreen>
               ),
             ),
 
-            // Particle effects
-            CustomPaint(
-              painter: _GameOverParticlesPainter(
-                time: _particleController.value,
-                opacity: _bgFade.value,
-                hasNewRecord: widget.newAchievements.isNotEmpty,
-              ),
-              size: Size.infinite,
+            // Particle effects — only this subtree reads _particleController.
+            AnimatedBuilder(
+              animation: _particleController,
+              builder: (context, _) {
+                return CustomPaint(
+                  painter: _GameOverParticlesPainter(
+                    time: _particleController.value,
+                    opacity: _bgFade.value,
+                    hasNewRecord: widget.newAchievements.isNotEmpty,
+                  ),
+                  size: Size.infinite,
+                );
+              },
             ),
 
             // Scanlines
@@ -230,39 +235,57 @@ class _GameOverScreenState extends State<GameOverScreen>
                   children: [
                     const SizedBox(height: 16),
 
-                    // GAME OVER title
+                    // GAME OVER title — pulse-driven glow isolated in its own
+                    // narrow builder (only this subtree reads _pulseController).
                     Transform.scale(
                       scale: _titleScale.value,
                       child: Opacity(
                         opacity: _titleFade.value,
-                        child: _buildTitle(pulse, l10n.gameOver),
+                        child: AnimatedBuilder(
+                          animation: _pulseController,
+                          builder: (context, _) {
+                            return _buildTitle(
+                              _pulseController.value,
+                              l10n.gameOver,
+                            );
+                          },
+                        ),
                       ),
                     ),
 
                     const SizedBox(height: 4),
 
-                    // Decorative line
+                    // Decorative line — width pulses, isolated narrow builder.
                     Opacity(
                       opacity: _titleFade.value * 0.6,
-                      child: Container(
-                        width: 160 + pulse * 20,
-                        height: 1.5,
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [
-                              Colors.transparent,
-                              Colors.redAccent.withValues(alpha: 0.8),
-                              const Color(0xFFFF6600).withValues(alpha: 0.6),
-                              Colors.transparent,
-                            ],
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.redAccent.withValues(alpha: 0.4),
-                              blurRadius: 8,
+                      child: AnimatedBuilder(
+                        animation: _pulseController,
+                        builder: (context, _) {
+                          return Container(
+                            width: 160 + _pulseController.value * 20,
+                            height: 1.5,
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
+                                  Colors.transparent,
+                                  Colors.redAccent.withValues(alpha: 0.8),
+                                  const Color(
+                                    0xFFFF6600,
+                                  ).withValues(alpha: 0.6),
+                                  Colors.transparent,
+                                ],
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.redAccent.withValues(
+                                    alpha: 0.4,
+                                  ),
+                                  blurRadius: 8,
+                                ),
+                              ],
                             ),
-                          ],
-                        ),
+                          );
+                        },
                       ),
                     ),
 
@@ -350,6 +373,8 @@ class _GameOverScreenState extends State<GameOverScreen>
 
             // Buttons (right side, vertical stack — richiesta utente:
             // "metterli sulla destra" perché in basso erano tagliati).
+            // pulse-driven glow isolato in un narrow builder: solo i due
+            // bottoni leggono _pulseController, non tutto lo Stack.
             Positioned(
               right: 24,
               top: 0,
@@ -359,27 +384,33 @@ class _GameOverScreenState extends State<GameOverScreen>
                   offset: Offset(_buttonsSlide.value, 0),
                   child: Opacity(
                     opacity: _buttonsFade.value,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        _NeonGameOverButton(
-                          text: l10n.retry,
-                          icon: Icons.refresh_rounded,
-                          color: Colors.cyanAccent,
-                          onTap: widget.onRetry,
-                          pulse: pulse,
-                          isPrimary: true,
-                        ),
-                        const SizedBox(height: 14),
-                        _NeonGameOverButton(
-                          text: l10n.quit,
-                          icon: Icons.home_rounded,
-                          color: Colors.white70,
-                          onTap: widget.onQuit,
-                          pulse: pulse,
-                          isPrimary: false,
-                        ),
-                      ],
+                    child: AnimatedBuilder(
+                      animation: _pulseController,
+                      builder: (context, _) {
+                        final pulse = _pulseController.value;
+                        return Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            _NeonGameOverButton(
+                              text: l10n.retry,
+                              icon: Icons.refresh_rounded,
+                              color: Colors.cyanAccent,
+                              onTap: widget.onRetry,
+                              pulse: pulse,
+                              isPrimary: true,
+                            ),
+                            const SizedBox(height: 14),
+                            _NeonGameOverButton(
+                              text: l10n.quit,
+                              icon: Icons.home_rounded,
+                              color: Colors.white70,
+                              onTap: widget.onQuit,
+                              pulse: pulse,
+                              isPrimary: false,
+                            ),
+                          ],
+                        );
+                      },
                     ),
                   ),
                 ),
@@ -504,6 +535,7 @@ class _GameOverScreenState extends State<GameOverScreen>
   }
 
   Widget _buildGoldPanel(int totalGold, int perfBonus, int achievementGold) {
+    final l10n = AppLocalizations.of(context)!;
     final counterVal = _counterController.value;
     final animGold = (totalGold * counterVal).round();
 
@@ -548,27 +580,22 @@ class _GameOverScreenState extends State<GameOverScreen>
                 ),
               ),
               const SizedBox(width: 6),
-              Builder(
-                builder: (context) {
-                  final l10n = AppLocalizations.of(context)!;
-                  return Text(
-                    l10n.gameOverGoldGeoms,
-                    style: const TextStyle(
-                      color: Color(0xFFFFD700),
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                      fontFamily: 'monospace',
-                      letterSpacing: 2,
-                    ),
-                  );
-                },
+              Text(
+                l10n.gameOverGoldGeoms,
+                style: const TextStyle(
+                  color: Color(0xFFFFD700),
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  fontFamily: 'monospace',
+                  letterSpacing: 2,
+                ),
               ),
             ],
           ),
           if (perfBonus > 0 || achievementGold > 0) ...[
             const SizedBox(height: 4),
             Text(
-              '${widget.goldEarned} base${perfBonus > 0 ? ' + $perfBonus bonus' : ''}${achievementGold > 0 ? ' + $achievementGold achievement' : ''}',
+              '${widget.goldEarned} ${l10n.gameOverGoldBase}${perfBonus > 0 ? ' + $perfBonus ${l10n.gameOverGoldBonus}' : ''}${achievementGold > 0 ? ' + $achievementGold ${l10n.gameOverGoldAchievement}' : ''}',
               style: TextStyle(
                 color: const Color(0xFFFFD700).withValues(alpha: 0.5),
                 fontSize: 9,
@@ -825,75 +852,79 @@ class _NeonGameOverButtonState extends State<_NeonGameOverButton>
   Widget build(BuildContext context) {
     final glowAlpha = widget.isPrimary ? 0.15 + widget.pulse * 0.08 : 0.05;
 
-    return GestureDetector(
-      onTapDown: (_) => _pressController.forward(),
-      onTapUp: (_) {
-        _pressController.reverse();
-        widget.onTap();
-      },
-      onTapCancel: () => _pressController.reverse(),
-      child: AnimatedBuilder(
-        animation: _pressController,
-        builder: (context, _) {
-          final scale = 1.0 - _pressController.value * 0.05;
-          return Transform.scale(
-            scale: scale,
-            child: Container(
-              width: 160,
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: widget.color.withValues(
-                    alpha: widget.isPrimary ? 0.8 : 0.4,
+    return Semantics(
+      button: true,
+      label: widget.text,
+      child: GestureDetector(
+        onTapDown: (_) => _pressController.forward(),
+        onTapUp: (_) {
+          _pressController.reverse();
+          widget.onTap();
+        },
+        onTapCancel: () => _pressController.reverse(),
+        child: AnimatedBuilder(
+          animation: _pressController,
+          builder: (context, _) {
+            final scale = 1.0 - _pressController.value * 0.05;
+            return Transform.scale(
+              scale: scale,
+              child: Container(
+                width: 160,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: widget.color.withValues(
+                      alpha: widget.isPrimary ? 0.8 : 0.4,
+                    ),
+                    width: widget.isPrimary ? 2 : 1,
                   ),
-                  width: widget.isPrimary ? 2 : 1,
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      widget.color.withValues(alpha: glowAlpha),
+                      widget.color.withValues(alpha: glowAlpha * 0.3),
+                    ],
+                  ),
+                  boxShadow: widget.isPrimary
+                      ? [
+                          BoxShadow(
+                            color: widget.color.withValues(alpha: 0.2),
+                            blurRadius: 12,
+                          ),
+                        ]
+                      : null,
                 ),
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    widget.color.withValues(alpha: glowAlpha),
-                    widget.color.withValues(alpha: glowAlpha * 0.3),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(widget.icon, color: widget.color, size: 18),
+                    const SizedBox(width: 8),
+                    Text(
+                      widget.text,
+                      style: TextStyle(
+                        color: widget.color,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        fontFamily: 'monospace',
+                        letterSpacing: 3,
+                        shadows: widget.isPrimary
+                            ? [
+                                Shadow(
+                                  color: widget.color.withValues(alpha: 0.5),
+                                  blurRadius: 6,
+                                ),
+                              ]
+                            : null,
+                      ),
+                    ),
                   ],
                 ),
-                boxShadow: widget.isPrimary
-                    ? [
-                        BoxShadow(
-                          color: widget.color.withValues(alpha: 0.2),
-                          blurRadius: 12,
-                        ),
-                      ]
-                    : null,
               ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(widget.icon, color: widget.color, size: 18),
-                  const SizedBox(width: 8),
-                  Text(
-                    widget.text,
-                    style: TextStyle(
-                      color: widget.color,
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      fontFamily: 'monospace',
-                      letterSpacing: 3,
-                      shadows: widget.isPrimary
-                          ? [
-                              Shadow(
-                                color: widget.color.withValues(alpha: 0.5),
-                                blurRadius: 6,
-                              ),
-                            ]
-                          : null,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
+            );
+          },
+        ),
       ),
     );
   }
@@ -962,5 +993,8 @@ class _GameOverParticlesPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant _GameOverParticlesPainter old) => true;
+  bool shouldRepaint(covariant _GameOverParticlesPainter old) =>
+      old.time != time ||
+      old.opacity != opacity ||
+      old.hasNewRecord != hasNewRecord;
 }

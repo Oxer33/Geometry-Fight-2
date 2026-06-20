@@ -5,6 +5,7 @@ import '../../data/achievements.dart';
 import '../../data/save_data.dart';
 import '../../game/systems/music_manager.dart';
 import '../../l10n/generated/app_localizations.dart';
+import '../shared/formatters.dart';
 import '../widgets/animated_builder_widget.dart';
 
 /// Menu principale con effetti neon cinematografici.
@@ -14,6 +15,7 @@ class MainMenuScreen extends StatefulWidget {
   final VoidCallback onPlay;
   final VoidCallback onShop;
   final VoidCallback onSettings;
+  final VoidCallback? onTalents;
   final VoidCallback? onLeaderboard;
   final VoidCallback? onStats;
   final VoidCallback? onAchievements;
@@ -23,6 +25,7 @@ class MainMenuScreen extends StatefulWidget {
     required this.onPlay,
     required this.onShop,
     required this.onSettings,
+    this.onTalents,
     this.onLeaderboard,
     this.onStats,
     this.onAchievements,
@@ -259,28 +262,6 @@ class _MainMenuScreenState extends State<MainMenuScreen>
         ),
       ),
     );
-  }
-
-  String _formatNumber(int n) {
-    if (n >= 1000000000) {
-      return '${(n / 1000000000).toStringAsFixed(1)}B';
-    }
-    if (n >= 1000000) {
-      return '${(n / 1000000).toStringAsFixed(1)}M';
-    }
-    if (n >= 1000) {
-      return '${(n / 1000).toStringAsFixed(1)}K';
-    }
-    return n.toString();
-  }
-
-  String _formatTime(int seconds) {
-    final h = seconds ~/ 3600;
-    final m = (seconds % 3600) ~/ 60;
-    if (h > 0) {
-      return '${h}h ${m}m';
-    }
-    return '${m}m';
   }
 
   @override
@@ -634,28 +615,28 @@ class _MainMenuScreenState extends State<MainMenuScreen>
         children: [
           _StatChip(
             icon: Icons.hexagon_outlined,
-            value: _formatNumber(gold),
+            value: formatNumber(gold),
             color: const Color(0xFFFFD700),
             label: l10n.geoms,
           ),
           _statDivider(),
           _StatChip(
             icon: Icons.emoji_events_outlined,
-            value: _formatNumber(bestScore),
+            value: formatNumber(bestScore),
             color: Colors.cyanAccent,
             label: l10n.best,
           ),
           _statDivider(),
           _StatChip(
             icon: Icons.track_changes,
-            value: _formatNumber(totalKills),
+            value: formatNumber(totalKills),
             color: const Color(0xFFFF4466),
             label: l10n.kills,
           ),
           _statDivider(),
           _StatChip(
             icon: Icons.timer_outlined,
-            value: _formatTime(playtime),
+            value: formatTime(playtime),
             color: const Color(0xFF00FF88),
             label: l10n.timeLabel,
           ),
@@ -684,7 +665,6 @@ class _MainMenuScreenState extends State<MainMenuScreen>
   // ==================== RIGHT PANEL ====================
 
   Widget _buildRightPanel() {
-    final l10n = AppLocalizations.of(context)!;
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       mainAxisSize: MainAxisSize.min,
@@ -696,23 +676,11 @@ class _MainMenuScreenState extends State<MainMenuScreen>
         ),
         const SizedBox(height: 22),
 
-        // === GRIGLIA BOTTONI ===
+        // === GRIGLIA BOTTONI (Shop/Talenti, Classifica/Achievement,
+        // Statistiche/Impostazioni) ===
         SlideTransition(
           position: _gridSlide,
           child: FadeTransition(opacity: _gridFade, child: _buildButtonGrid()),
-        ),
-
-        const SizedBox(height: 16),
-
-        // === IMPOSTAZIONI ===
-        FadeTransition(
-          opacity: _settingsFade,
-          child: _NeonSmallButton(
-            text: l10n.menuSettings,
-            icon: Icons.settings_outlined,
-            color: Colors.white,
-            onTap: widget.onSettings,
-          ),
         ),
       ],
     );
@@ -834,9 +802,19 @@ class _MainMenuScreenState extends State<MainMenuScreen>
         color: const Color(0xFFFFD700),
         onTap: widget.onShop,
         badge: _saveData.goldGeoms > 0
-            ? _formatNumber(_saveData.goldGeoms)
+            ? formatNumber(_saveData.goldGeoms)
             : null,
       ),
+      if (widget.onTalents != null)
+        _NeonMenuButton(
+          text: l10n.menuTalents,
+          icon: Icons.account_tree_outlined,
+          color: const Color(0xFF49E5A6),
+          onTap: widget.onTalents!,
+          badge: _saveData.talentPoints > 0
+              ? '${_saveData.talentPoints}'
+              : null,
+        ),
       if (widget.onLeaderboard != null)
         _NeonMenuButton(
           text: l10n.menuLeaderboard,
@@ -858,6 +836,13 @@ class _MainMenuScreenState extends State<MainMenuScreen>
           color: const Color(0xFFFF4466),
           onTap: widget.onStats!,
         ),
+      // Settings now lives in the grid (pairs with Stats on the last row).
+      _NeonMenuButton(
+        text: l10n.menuSettings,
+        icon: Icons.settings_outlined,
+        color: Colors.white,
+        onTap: widget.onSettings,
+      ),
     ];
 
     final rows = <Widget>[];
@@ -1085,77 +1070,6 @@ class _NeonMenuButtonState extends State<_NeonMenuButton>
             ),
           );
         },
-      ),
-    );
-  }
-}
-
-// ==================== SMALL BUTTON ====================
-
-class _NeonSmallButton extends StatefulWidget {
-  final String text;
-  final IconData icon;
-  final Color color;
-  final VoidCallback onTap;
-
-  const _NeonSmallButton({
-    required this.text,
-    required this.icon,
-    required this.color,
-    required this.onTap,
-  });
-
-  @override
-  State<_NeonSmallButton> createState() => _NeonSmallButtonState();
-}
-
-class _NeonSmallButtonState extends State<_NeonSmallButton> {
-  bool _pressed = false;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTapDown: (_) => setState(() => _pressed = true),
-      onTapUp: (_) {
-        setState(() => _pressed = false);
-        widget.onTap();
-      },
-      onTapCancel: () => setState(() => _pressed = false),
-      child: AnimatedScale(
-        scale: _pressed ? 0.95 : 1.0,
-        duration: const Duration(milliseconds: 80),
-        child: AnimatedOpacity(
-          opacity: _pressed ? 0.9 : 0.7,
-          duration: const Duration(milliseconds: 80),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(
-                color: widget.color.withValues(alpha: 0.5),
-                width: 1.5,
-              ),
-              color: widget.color.withValues(alpha: 0.04),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(widget.icon, color: widget.color, size: 16),
-                const SizedBox(width: 6),
-                Text(
-                  widget.text,
-                  style: TextStyle(
-                    color: widget.color,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w900,
-                    fontFamily: 'monospace',
-                    letterSpacing: 2,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
       ),
     );
   }

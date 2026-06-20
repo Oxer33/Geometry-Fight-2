@@ -5,7 +5,9 @@ void main() {
   // Ensure the test binding is initialized before any pumpWidget call.
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  testWidgets('App launches and shows splash screen', (WidgetTester tester) async {
+  testWidgets('App launches and shows splash screen', (
+    WidgetTester tester,
+  ) async {
     await tester.pumpWidget(const GeometryFightApp());
     // Splash screen has an indefinite animation that never settles; use a
     // bounded pump instead of pumpAndSettle to avoid timeout.

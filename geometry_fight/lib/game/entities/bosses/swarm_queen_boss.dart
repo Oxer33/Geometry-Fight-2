@@ -50,9 +50,12 @@ class SwarmQueenBoss extends BossBase {
     // AoE lascia passare 10% per evitare stallo (player AoE pulisce lo sciame
     // e intanto scalfisce la queen).
     if (_hiveBondActive) {
-      if (isArea) {
-        super.takeDamage(amount * 0.1, isArea: true);
-      }
+      // Scudo NON è più blocco totale: lascia passare 10% anche al danno
+      // diretto (oltre all'area) → nessun'arma resta permanentemente bloccata
+      // se lo sciame respawna troppo in fretta (fix: stuck a 54% con homing,
+      // che è danno diretto e veniva bloccato al 100%). Pulire lo sciame
+      // (drone < 15) resta la via veloce per aprire il danno pieno.
+      super.takeDamage(amount * 0.1, isArea: isArea);
       return;
     }
     super.takeDamage(amount, isArea: isArea);

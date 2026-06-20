@@ -47,6 +47,34 @@ class SnakeTrailSegment extends PositionComponent
   static final Paint _corePaint = Paint();
   static final Paint _innerPaint = Paint();
 
+  // Base cyan→green lerp LUT indexed by quantized pulse (0..255). pulse is a
+  // pure function of `_phase` (final per segment) so the base color never
+  // changes for a given segment, but differs across segments → precompute the
+  // 256-entry gradient once (delta <= 1/256, imperceptible). Built lazily on
+  // first render so the lerp formula stays the single source of truth.
+  static const int _lutSteps = 256;
+  static List<Color>? _pulseLut;
+
+  static List<Color> _buildPulseLut() {
+    const cyan = Color(0xFF00FFFF);
+    const green = Color(0xFF00FF44);
+    return List<Color>.generate(
+      _lutSteps,
+      (i) => Color.lerp(cyan, green, i / (_lutSteps - 1))!,
+      growable: false,
+    );
+  }
+
+  // (pulseKey, alphaKey) cache for the three alpha-applied colors. Both keys
+  // are quantized to 256 steps; the colors are recomputed only when either
+  // key changes — across a contiguous run of identical segments/frames this
+  // collapses ~3 Color allocs/segment/frame to ~0.
+  static int _lastPulseKey = -1;
+  static int _lastAlphaKey = -1;
+  static Color _cachedGlow = const Color(0x00000000);
+  static Color _cachedCore = const Color(0x00000000);
+  static Color _cachedInner = const Color(0x00000000);
+
   SnakeTrailSegment({required Vector2 spawnAt, double phase = 0})
     : _phase = phase,
       super(
@@ -87,27 +115,37 @@ class SnakeTrailSegment extends PositionComponent
 
     // Pulse cyan↔green based on phase for trail-along visual rhythm.
     final pulse = (math.sin(_phase) * 0.5 + 0.5);
-    final color = Color.lerp(
-      const Color(0xFF00FFFF), // cyan
-      const Color(0xFF00FF44), // neon green
-      pulse,
-    )!;
+
+    // Resolve the base cyan→green color via the precomputed LUT (same lerp
+    // formula, quantized to 256 steps). Recompute the three alpha-applied
+    // colors only when the quantized (pulse, alpha) key changes.
+    final lut = _pulseLut ??= _buildPulseLut();
+    final pulseKey = (pulse * (_lutSteps - 1)).round().clamp(0, _lutSteps - 1);
+    final alphaKey = (a * (_lutSteps - 1)).round().clamp(0, _lutSteps - 1);
+    if (pulseKey != _lastPulseKey || alphaKey != _lastAlphaKey) {
+      final color = lut[pulseKey];
+      _cachedGlow = color.withValues(alpha: a * 0.35);
+      _cachedCore = color.withValues(alpha: a * 0.8);
+      _cachedInner = const Color(0xFFFFFFFF).withValues(alpha: a * 0.9);
+      _lastPulseKey = pulseKey;
+      _lastAlphaKey = alphaKey;
+    }
 
     // Outer glow halo.
     _glowPaint
-      ..color = color.withValues(alpha: a * 0.35)
+      ..color = _cachedGlow
       ..maskFilter = null;
     canvas.drawCircle(Offset(cx, cy), _radius * 2.2, _glowPaint);
 
     // Mid ring (saturated color).
     _corePaint
-      ..color = color.withValues(alpha: a * 0.8)
+      ..color = _cachedCore
       ..maskFilter = null;
     canvas.drawCircle(Offset(cx, cy), _radius * 1.1, _corePaint);
 
     // Inner white nucleus for "lethal" pop.
     _innerPaint
-      ..color = const Color(0xFFFFFFFF).withValues(alpha: a * 0.9)
+      ..color = _cachedInner
       ..maskFilter = null;
     canvas.drawCircle(Offset(cx, cy), _radius * 0.45, _innerPaint);
   }

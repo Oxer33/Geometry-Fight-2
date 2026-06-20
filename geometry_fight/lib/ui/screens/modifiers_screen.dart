@@ -1,71 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../data/modifiers.dart';
 import '../../l10n/generated/app_localizations.dart';
-
-/// Localized name for a modifier id. Falls back to catalog Italian if id is
-/// unknown (defensive — keeps render path safe when new mods are added).
-String _modifierName(String id, AppLocalizations l10n) {
-  switch (id) {
-    case 'glass_cannon':
-      return l10n.modNameGlassCannon;
-    case 'bullet_hell':
-      return l10n.modNameBulletHell;
-    case 'speed_demon':
-      return l10n.modNameSpeedDemon;
-    case 'no_powerups':
-      return l10n.modNameNoPowerups;
-    case 'fog_of_war':
-      return l10n.modNameFogOfWar;
-    case 'tiny_arena':
-      return l10n.modNameTinyArena;
-    case 'one_shot':
-      return l10n.modNameOneShot;
-    case 'chaos':
-      return l10n.modNameChaos;
-    case 'giant_mode':
-      return l10n.modNameGiantMode;
-    case 'ricochet_world':
-      return l10n.modNameRicochetWorld;
-    case 'infinite_bombs':
-      return l10n.modNameInfiniteBombs;
-    case 'magnet_king':
-      return l10n.modNameMagnetKing;
-    default:
-      return getModifier(id)?.name ?? id;
-  }
-}
-
-/// Localized description for a modifier id. Falls back to catalog Italian.
-String _modifierDesc(String id, AppLocalizations l10n) {
-  switch (id) {
-    case 'glass_cannon':
-      return l10n.modDescGlassCannon;
-    case 'bullet_hell':
-      return l10n.modDescBulletHell;
-    case 'speed_demon':
-      return l10n.modDescSpeedDemon;
-    case 'no_powerups':
-      return l10n.modDescNoPowerups;
-    case 'fog_of_war':
-      return l10n.modDescFogOfWar;
-    case 'tiny_arena':
-      return l10n.modDescTinyArena;
-    case 'one_shot':
-      return l10n.modDescOneShot;
-    case 'chaos':
-      return l10n.modDescChaos;
-    case 'giant_mode':
-      return l10n.modDescGiantMode;
-    case 'ricochet_world':
-      return l10n.modDescRicochetWorld;
-    case 'infinite_bombs':
-      return l10n.modDescInfiniteBombs;
-    case 'magnet_king':
-      return l10n.modDescMagnetKing;
-    default:
-      return getModifier(id)?.description ?? '';
-  }
-}
+import '../shared/modifier_labels.dart';
 
 class ModifiersSheet extends StatefulWidget {
   final List<String> activeModifiers;
@@ -233,117 +169,141 @@ class _ModifiersSheetState extends State<ModifiersSheet> {
                   final mod = allModifiers[index];
                   final isActive = _active.contains(mod.id);
 
-                  return GestureDetector(
-                    onTap: () => _toggle(mod.id),
-                    child: Container(
-                      margin: const EdgeInsets.only(bottom: 8),
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        border: Border.all(
+                  return Semantics(
+                    button: true,
+                    selected: isActive,
+                    label: modifierName(
+                      l10n,
+                      mod.id,
+                      getModifier(mod.id)?.name ?? mod.id,
+                    ),
+                    child: GestureDetector(
+                      onTap: () => _toggle(mod.id),
+                      child: Container(
+                        margin: const EdgeInsets.only(bottom: 8),
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          border: Border.all(
+                            color: isActive
+                                ? (mod.isChallenge
+                                          ? Colors.redAccent
+                                          : Colors.cyanAccent)
+                                      .withValues(alpha: 0.6)
+                                : Colors.white12,
+                            width: isActive ? 2 : 1,
+                          ),
+                          borderRadius: BorderRadius.circular(8),
                           color: isActive
                               ? (mod.isChallenge
                                         ? Colors.redAccent
                                         : Colors.cyanAccent)
-                                    .withValues(alpha: 0.6)
-                              : Colors.white12,
-                          width: isActive ? 2 : 1,
+                                    .withValues(alpha: 0.08)
+                              : Colors.white.withValues(alpha: 0.02),
                         ),
-                        borderRadius: BorderRadius.circular(8),
-                        color: isActive
-                            ? (mod.isChallenge
-                                      ? Colors.redAccent
-                                      : Colors.cyanAccent)
-                                  .withValues(alpha: 0.08)
-                            : Colors.white.withValues(alpha: 0.02),
-                      ),
-                      child: Row(
-                        children: [
-                          Text(mod.icon, style: const TextStyle(fontSize: 20)),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    Text(
-                                      _modifierName(mod.id, l10n),
-                                      style: TextStyle(
-                                        color: isActive
-                                            ? (mod.isChallenge
-                                                  ? Colors.redAccent
-                                                  : Colors.cyanAccent)
-                                            : Colors.white,
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.bold,
-                                        fontFamily: 'monospace',
-                                      ),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 6,
-                                        vertical: 1,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(3),
-                                        color: mod.isChallenge
-                                            ? Colors.redAccent.withValues(
-                                                alpha: 0.15,
-                                              )
-                                            : Colors.cyanAccent.withValues(
-                                                alpha: 0.15,
-                                              ),
-                                      ),
-                                      child: Text(
-                                        'x${mod.scoreMultiplier.toStringAsFixed(1)}',
+                        child: Row(
+                          children: [
+                            Text(
+                              mod.icon,
+                              style: const TextStyle(fontSize: 20),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Text(
+                                        modifierName(
+                                          l10n,
+                                          mod.id,
+                                          getModifier(mod.id)?.name ?? mod.id,
+                                        ),
                                         style: TextStyle(
-                                          color: mod.isChallenge
-                                              ? Colors.redAccent
-                                              : Colors.cyanAccent,
-                                          fontSize: 9,
+                                          color: isActive
+                                              ? (mod.isChallenge
+                                                    ? Colors.redAccent
+                                                    : Colors.cyanAccent)
+                                              : Colors.white,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.bold,
                                           fontFamily: 'monospace',
                                         ),
                                       ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  _modifierDesc(mod.id, l10n),
-                                  style: TextStyle(
-                                    color: Colors.white.withValues(alpha: 0.5),
-                                    fontSize: 10,
-                                    fontFamily: 'monospace',
+                                      const SizedBox(width: 8),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 6,
+                                          vertical: 1,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          borderRadius: BorderRadius.circular(
+                                            3,
+                                          ),
+                                          color: mod.isChallenge
+                                              ? Colors.redAccent.withValues(
+                                                  alpha: 0.15,
+                                                )
+                                              : Colors.cyanAccent.withValues(
+                                                  alpha: 0.15,
+                                                ),
+                                        ),
+                                        child: Text(
+                                          'x${mod.scoreMultiplier.toStringAsFixed(1)}',
+                                          style: TextStyle(
+                                            color: mod.isChallenge
+                                                ? Colors.redAccent
+                                                : Colors.cyanAccent,
+                                            fontSize: 9,
+                                            fontFamily: 'monospace',
+                                          ),
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          // Toggle indicator
-                          Container(
-                            width: 24,
-                            height: 24,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: isActive
-                                    ? Colors.greenAccent
-                                    : Colors.white24,
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    modifierDesc(
+                                      l10n,
+                                      mod.id,
+                                      getModifier(mod.id)?.description ?? '',
+                                    ),
+                                    style: TextStyle(
+                                      color: Colors.white.withValues(
+                                        alpha: 0.5,
+                                      ),
+                                      fontSize: 10,
+                                      fontFamily: 'monospace',
+                                    ),
+                                  ),
+                                ],
                               ),
-                              color: isActive
-                                  ? Colors.greenAccent.withValues(alpha: 0.2)
+                            ),
+                            // Toggle indicator
+                            Container(
+                              width: 24,
+                              height: 24,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: isActive
+                                      ? Colors.greenAccent
+                                      : Colors.white24,
+                                ),
+                                color: isActive
+                                    ? Colors.greenAccent.withValues(alpha: 0.2)
+                                    : null,
+                              ),
+                              child: isActive
+                                  ? const Icon(
+                                      Icons.check,
+                                      color: Colors.greenAccent,
+                                      size: 14,
+                                    )
                                   : null,
                             ),
-                            child: isActive
-                                ? const Icon(
-                                    Icons.check,
-                                    color: Colors.greenAccent,
-                                    size: 14,
-                                  )
-                                : null,
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                   );

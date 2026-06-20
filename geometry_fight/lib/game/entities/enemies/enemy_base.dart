@@ -112,6 +112,19 @@ abstract class EnemyBase extends PositionComponent
   }
 
   @override
+  void onMount() {
+    super.onMount();
+    // Registry game-level: evita scan di world.children ogni frame.
+    game.activeEnemies.add(this);
+  }
+
+  @override
+  void onRemove() {
+    game.activeEnemies.remove(this);
+    super.onRemove();
+  }
+
+  @override
   void update(double dt) {
     super.update(dt);
 

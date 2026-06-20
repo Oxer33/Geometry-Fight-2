@@ -13,7 +13,7 @@ import '../widgets/neon_back_button.dart';
 /// `_buildWeaponsTab` + `kPetCatalog`. Aggiornare se aggiungo entry.
 const int _kTotalSkins = 16;
 const int _kTotalTrails = 16;
-const int _kTotalWeapons = 9;
+const int _kTotalWeapons = 11;
 
 class ShopScreen extends StatefulWidget {
   final VoidCallback onBack;
@@ -27,10 +27,6 @@ class ShopScreen extends StatefulWidget {
 class _ShopScreenState extends State<ShopScreen> with TickerProviderStateMixin {
   late TabController _tabController;
   late AnimationController _previewController;
-  // Iter 19 (utente: "animated wave flow on talent connector lines"):
-  // controller dedicato 2s per pulse traveling sui connettori talent-tree.
-  // Repaint trigger via CustomPaint(repaint: ...).
-  late AnimationController _talentWaveController;
   late SaveData _saveData;
   int? _selectedPreviewIndex;
 
@@ -39,7 +35,6 @@ class _ShopScreenState extends State<ShopScreen> with TickerProviderStateMixin {
   // simultaneously (TabBarView keeps state) without ScrollController
   // attach conflicts.
   final ScrollController _petsScrollCtrl = ScrollController();
-  final ScrollController _upgradesScrollCtrl = ScrollController();
   final ScrollController _modesScrollCtrl = ScrollController();
   final ScrollController _weaponsListCtrl = ScrollController();
   final ScrollController _skinsListCtrl = ScrollController();
@@ -48,8 +43,9 @@ class _ShopScreenState extends State<ShopScreen> with TickerProviderStateMixin {
   @override
   void initState() {
     super.initState();
-    // 6 tab: upgrades, weapons, pets (NUOVO), modes, skins, trails.
-    _tabController = TabController(length: 6, vsync: this);
+    // 5 tab: weapons, pets, modes, skins, trails. (Gli upgrade stat sono stati
+    // sostituiti dal Talent Tree — vedi TalentTreeScreen.)
+    _tabController = TabController(length: 5, vsync: this);
     _tabController.addListener(() {
       if (_tabController.indexIsChanging) {
         setState(() => _selectedPreviewIndex = null);
@@ -59,10 +55,6 @@ class _ShopScreenState extends State<ShopScreen> with TickerProviderStateMixin {
       vsync: this,
       duration: const Duration(seconds: 10),
     )..repeat();
-    _talentWaveController = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 2),
-    )..repeat();
     _saveData = SaveManager.load();
   }
 
@@ -70,9 +62,7 @@ class _ShopScreenState extends State<ShopScreen> with TickerProviderStateMixin {
   void dispose() {
     _tabController.dispose();
     _previewController.dispose();
-    _talentWaveController.dispose();
     _petsScrollCtrl.dispose();
-    _upgradesScrollCtrl.dispose();
     _modesScrollCtrl.dispose();
     _weaponsListCtrl.dispose();
     _skinsListCtrl.dispose();
@@ -257,6 +247,8 @@ class _ShopScreenState extends State<ShopScreen> with TickerProviderStateMixin {
         'laser' => l10n.weaponNameLaser,
         'gauss' => l10n.weaponNameGauss,
         'chain' => l10n.weaponNameChain,
+        'shotgun' => l10n.weaponNameShotgun,
+        'railgun' => l10n.weaponNameRailgun,
         _ => fallback,
       };
 
@@ -271,6 +263,8 @@ class _ShopScreenState extends State<ShopScreen> with TickerProviderStateMixin {
         'laser' => l10n.weaponDescLaser,
         'gauss' => l10n.weaponDescGauss,
         'chain' => l10n.weaponDescChain,
+        'shotgun' => l10n.weaponDescShotgun,
+        'railgun' => l10n.weaponDescRailgun,
         _ => fallback,
       };
 
@@ -302,19 +296,6 @@ class _ShopScreenState extends State<ShopScreen> with TickerProviderStateMixin {
         'gravityInferno' => l10n.modeDescGravityInferno,
         'snake' => l10n.modeDescSnake,
         'arenaShrink' => l10n.modeDescArenaShrink,
-        _ => fallback,
-      };
-
-  String _upgradeName(AppLocalizations l10n, String id, String fallback) =>
-      switch (id) {
-        'firepower' => l10n.upgradeFirepower,
-        'fire_rate' => l10n.upgradeFireRate,
-        'speed' => l10n.upgradeSpeed,
-        'shield_capacity' => l10n.upgradeShield,
-        'starting_lives' => l10n.upgradeLives,
-        'bomb_capacity' => l10n.upgradeBombs,
-        'magnet_range' => l10n.upgradeMagnet,
-        'xp_boost' => l10n.upgradeXpBoost,
         _ => fallback,
       };
 
@@ -419,6 +400,18 @@ class _ShopScreenState extends State<ShopScreen> with TickerProviderStateMixin {
     return item.description;
   }
 
+  /// Ordina un catalogo per prezzo crescente (stabile: a parità di costo
+  /// conserva l'ordine curato del literal). Ritorna una NUOVA lista —
+  /// l'input non viene mutato. Il default gratuito (cost 0) resta primo.
+  List<T> _sortByCost<T extends _ShopItem>(List<T> items) {
+    final indexed = [for (var i = 0; i < items.length; i++) (i, items[i])];
+    indexed.sort((a, b) {
+      final byCost = a.$2.cost.compareTo(b.$2.cost);
+      return byCost != 0 ? byCost : a.$1.compareTo(b.$1);
+    });
+    return [for (final e in indexed) e.$2];
+  }
+
   void _purchase(String id, int cost, VoidCallback onSuccess) {
     if (_saveData.goldGeoms >= cost) {
       setState(() {
@@ -438,55 +431,6 @@ class _ShopScreenState extends State<ShopScreen> with TickerProviderStateMixin {
           ),
           backgroundColor: Colors.redAccent,
           duration: const Duration(seconds: 1),
-        ),
-      );
-    }
-  }
-
-  /// Attempt to buy/level-up an upgrade node directly from a tap on the
-  /// talent-tree map. Deducts gold, increments level, saves, shows snackbar.
-  /// No-op when already maxed (with a hint snackbar).
-  void _tryBuyUpgrade(_UpgradeItem item) {
-    final currentLevel = _saveData.getUpgradeLevel(item.id);
-    // Idempotent on max-level: show hint snackbar and bail before _purchase.
-    if (currentLevel >= item.maxLevel) {
-      if (!mounted) return;
-      final l10n = AppLocalizations.of(context)!;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            l10n.shopAlreadyMax(_upgradeName(l10n, item.id, item.name)),
-            style: const TextStyle(fontFamily: 'monospace'),
-          ),
-          backgroundColor: Colors.blueGrey,
-          duration: const Duration(seconds: 1),
-        ),
-      );
-      return;
-    }
-    final safeLvl = currentLevel.clamp(0, item.costs.length - 1);
-    final cost = item.costs[safeLvl];
-    _purchase(item.id, cost, () {
-      _saveData.upgrades[item.id] = currentLevel + 1;
-    });
-    // Success snackbar only when the level actually advanced (purchase may
-    // have failed silently inside _purchase if gold was insufficient — in
-    // which case _purchase has already shown its own "gold insufficiente"
-    // snackbar and we must not stack a second one).
-    if (!mounted) return;
-    if (_saveData.getUpgradeLevel(item.id) > currentLevel) {
-      final l10n = AppLocalizations.of(context)!;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            l10n.shopUpgradedToLevel(
-              _upgradeName(l10n, item.id, item.name),
-              currentLevel + 1,
-            ),
-            style: const TextStyle(fontFamily: 'monospace'),
-          ),
-          backgroundColor: Colors.green.shade700,
-          duration: const Duration(milliseconds: 900),
         ),
       );
     }
@@ -582,7 +526,6 @@ class _ShopScreenState extends State<ShopScreen> with TickerProviderStateMixin {
                 letterSpacing: 1,
               ),
               tabs: [
-                Tab(text: l10n.shopTabUpgrades),
                 Tab(text: l10n.shopTabWeapons),
                 Tab(text: l10n.shopTabPets),
                 Tab(text: l10n.shopTabModes),
@@ -595,7 +538,6 @@ class _ShopScreenState extends State<ShopScreen> with TickerProviderStateMixin {
               child: TabBarView(
                 controller: _tabController,
                 children: [
-                  _buildUpgradesTab(),
                   _buildWeaponsTab(),
                   _buildPetsTab(),
                   _buildModesTab(),
@@ -871,7 +813,7 @@ class _ShopScreenState extends State<ShopScreen> with TickerProviderStateMixin {
     ];
 
     return _buildPreviewGrid(
-      items: skins,
+      items: _sortByCost(skins),
       unlocked: _saveData.unlockedSkins,
       activeId: _saveData.activeSkin,
       onPurchase: (item) {
@@ -1150,7 +1092,7 @@ class _ShopScreenState extends State<ShopScreen> with TickerProviderStateMixin {
     ];
 
     return _buildPreviewGrid(
-      items: trails,
+      items: _sortByCost(trails),
       unlocked: _saveData.unlockedTrails,
       activeId: _saveData.activeTrail,
       onPurchase: (item) {
@@ -1271,7 +1213,7 @@ class _ShopScreenState extends State<ShopScreen> with TickerProviderStateMixin {
       _WeaponDef(
         'homing',
         'Homing',
-        15000,
+        40000,
         '5 missili che inseguono bersagli distinti — esplodono al muro.',
         NeonColors.pink,
         'homing',
@@ -1280,7 +1222,7 @@ class _ShopScreenState extends State<ShopScreen> with TickerProviderStateMixin {
     ];
 
     return _buildPreviewGrid(
-      items: weapons,
+      items: _sortByCost(weapons),
       unlocked: _saveData.unlockedWeapons,
       activeId: _saveData.startingWeapon,
       onPurchase: (item) {
@@ -1328,7 +1270,7 @@ class _ShopScreenState extends State<ShopScreen> with TickerProviderStateMixin {
         .toList();
 
     return _buildPreviewGrid(
-      items: pets,
+      items: _sortByCost(pets),
       unlocked: _saveData.unlockedPets,
       activeId: _saveData.activePet,
       onPurchase: (item) {
@@ -1351,261 +1293,6 @@ class _ShopScreenState extends State<ShopScreen> with TickerProviderStateMixin {
       listController: _petsScrollCtrl,
     );
   }
-
-  // ==================== UPGRADES TAB ====================
-
-  /// Diagonal talent tree: 3 tiers, tiered prereqs. Tap nodo → buy +1 livello
-  /// se affordable + sbloccato. Niente bottom info card: nome + level/maxLevel
-  /// renderizzati sotto ogni nodo.
-  Widget _buildUpgradesTab() {
-    final upgrades = _upgradeNodes();
-    // Hoist l10n fuori dal loop dei nodi (prima ogni nodo lo lookup-ava 2×).
-    final l10n = AppLocalizations.of(context)!;
-    return _cyanScrollbar(
-      controller: _upgradesScrollCtrl,
-      child: SingleChildScrollView(
-        controller: _upgradesScrollCtrl,
-        padding: const EdgeInsets.fromLTRB(12, 8, 12, 16),
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            final mapW = constraints.maxWidth;
-            // Aspect 1.55× → 6 righe (diamond chain) leggibili senza scroll.
-            final mapH = mapW * 1.55;
-            return SizedBox(
-              width: mapW,
-              height: mapH,
-              child: Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  Positioned.fill(
-                    // Iter 19 (utente: "animated wave flow on talent
-                    // connector lines"): repaint listenable = talent
-                    // wave controller (2s period). Painter calcola
-                    // pulse traveling per ogni linea attiva.
-                    // Painter usa super(repaint: waveT) → CustomPaint si
-                    // re-paint da solo senza rebuild del Stack / Positioned.
-                    child: CustomPaint(
-                      painter: _UpgradeMapPainter(
-                        nodes: upgrades,
-                        connections: _upgradeConnections,
-                        saveData: _saveData,
-                        waveT: _talentWaveController,
-                      ),
-                    ),
-                  ),
-                  for (final node in upgrades)
-                    Positioned(
-                      // Width 72 → center horizontally; vertical offset 28
-                      // allinea (node.y * mapH) al centro del cerchio icona
-                      // (icon spans 0-56 px nel widget, centro a 28 px).
-                      left: node.x * mapW - 36,
-                      top: node.y * mapH - 28,
-                      child: _UpgradeMapNode(
-                        item: node.item,
-                        currentLevel: _saveData.getUpgradeLevel(node.item.id),
-                        l10n: l10n,
-                        upgradeName: _upgradeName(
-                          l10n,
-                          node.item.id,
-                          node.item.name,
-                        ),
-                        unlocked: _isUpgradeUnlocked(node.item.id),
-                        onTap: () {
-                          // Locked node tap = no-op (defensive: il
-                          // GestureDetector dentro `_UpgradeMapNode` già passa
-                          // onTap=null quando locked, ma manteniamo il check
-                          // qui per sicurezza in caso di future modifiche al
-                          // node widget).
-                          if (!_isUpgradeUnlocked(node.item.id)) return;
-                          _tryBuyUpgrade(node.item);
-                        },
-                      ),
-                    ),
-                ],
-              ),
-            );
-          },
-        ),
-      ),
-    );
-  }
-
-  /// Prereq map: id → list of (prereqId, requiredLevel) pairs.
-  /// Nodo unlocked solo quando TUTTI i prereq raggiungono il loro livello.
-  /// Vertical-chain layout (diamond): speed root → firepower/fire_rate →
-  /// shield → bomb/lives → magnet → xp_boost.
-  /// Iter 19 fix: single source-of-truth. Painter usa lo stesso `_prereqsLookup`
-  /// module-scope per evitare duplicazione (DRY) e drift tra le due copie.
-  static const Map<String, List<(String, int)>> _prereqs = _prereqsLookup;
-
-  bool _isUpgradeUnlocked(String id) {
-    // Lookup defensive: id sconosciuto → unlocked (no prereqs). Evita
-    // crash se il chiamante passa un id non in _prereqs.
-    final reqs = _prereqs[id];
-    if (reqs == null || reqs.isEmpty) return true;
-    for (final (prereqId, minLevel) in reqs) {
-      if (_saveData.getUpgradeLevel(prereqId) < minLevel) return false;
-    }
-    return true;
-  }
-
-  /// Talent-tree node layout: chain verticale a diamante (6 righe).
-  /// Coordinate normalizzate (x,y in [0,1] = % della grid area).
-  List<_UpgradeNode> _upgradeNodes() => const [
-    // Row 0 (y=0.06): root
-    _UpgradeNode(
-      x: 0.50,
-      y: 0.06,
-      item: _UpgradeItem(
-        'speed',
-        'SPEED',
-        [500, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000],
-        10,
-        '+2.5% velocità per livello (max +25% al L10)',
-        Icons.speed,
-        NeonColors.cyan,
-      ),
-    ),
-    // Row 1 (y=0.22): combat core
-    _UpgradeNode(
-      x: 0.30,
-      y: 0.22,
-      item: _UpgradeItem(
-        'firepower',
-        'FIREPOWER',
-        [500, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000],
-        10,
-        '+2.5% danno per livello (max +25% al L10)',
-        Icons.local_fire_department,
-        Color(0xFFFF4400),
-      ),
-    ),
-    _UpgradeNode(
-      x: 0.70,
-      y: 0.22,
-      item: _UpgradeItem(
-        'fire_rate',
-        'FIRE RATE',
-        [500, 1000, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000],
-        10,
-        '+2.5% cadenza per livello (max +25% al L10)',
-        Icons.bolt,
-        NeonColors.bulletYellow,
-      ),
-    ),
-    // Row 2 (y=0.38): shield join
-    _UpgradeNode(
-      x: 0.50,
-      y: 0.38,
-      item: _UpgradeItem(
-        'shield_capacity',
-        'SHIELD',
-        [1200, 2400, 3600, 4800, 6000, 7200, 8400, 9600, 10800, 12000],
-        10,
-        'Scudo post-morte: +2.5s per livello (max 25s al L10)',
-        Icons.shield_outlined,
-        Color(0xFF00AAFF),
-      ),
-    ),
-    // Row 3 (y=0.54): bomb / lives split
-    _UpgradeNode(
-      x: 0.30,
-      y: 0.54,
-      item: _UpgradeItem(
-        'bomb_capacity',
-        'BOMB RANGE',
-        [600, 1200, 1800, 2400, 3000, 3600, 4200, 4800, 5400, 6000],
-        10,
-        '+raggio esplosione per livello (L0 metà arena, L10 arena intera)',
-        Icons.blur_circular,
-        NeonColors.orange,
-      ),
-    ),
-    _UpgradeNode(
-      x: 0.70,
-      y: 0.54,
-      item: _UpgradeItem(
-        'starting_lives',
-        'LIVES',
-        [800, 1600, 2400, 3200, 4000, 4800, 5600, 6400, 7200, 8000],
-        10,
-        'Vite iniziali: +1 ogni 2 livelli (max +5 al L10)',
-        Icons.favorite,
-        Color(0xFFFF4466),
-      ),
-    ),
-    // Row 4 (y=0.70): magnet join
-    _UpgradeNode(
-      x: 0.50,
-      y: 0.70,
-      item: _UpgradeItem(
-        'magnet_range',
-        'MAGNET',
-        [1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000],
-        10,
-        '+5px raggio magnete per livello (max +50px al L10)',
-        Icons.radar,
-        NeonColors.purple,
-      ),
-    ),
-    // Row 5 (y=0.86): xp tail
-    _UpgradeNode(
-      x: 0.50,
-      y: 0.86,
-      item: _UpgradeItem(
-        'xp_boost',
-        'XP BOOST',
-        [1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000],
-        10,
-        '+5% GoldGeom per livello (max +50% al L10)',
-        Icons.auto_awesome,
-        Color(0xFFFFD700),
-      ),
-    ),
-    // CRIT (talent) — colpo critico ×2.2. Ramo sinistro da FIREPOWER.
-    _UpgradeNode(
-      x: 0.14,
-      y: 0.38,
-      item: _UpgradeItem(
-        'crit',
-        'CRIT',
-        [300, 600, 900, 1200, 1500, 1800, 2100, 2400, 2700, 3000],
-        10,
-        '+3% probabilità di colpo critico (×2.2 danno) per livello',
-        Icons.star,
-        Color(0xFFFFEE66),
-      ),
-    ),
-    // DASH (talent) — scatto rapido con i-frame. Ramo destro da FIRE RATE.
-    _UpgradeNode(
-      x: 0.86,
-      y: 0.38,
-      item: _UpgradeItem(
-        'dash',
-        'DASH',
-        [400, 800, 1200, 1600, 2000, 2400, 2800, 3200, 3600, 4000],
-        10,
-        'Sblocca lo scatto con i-frame; cooldown cala col livello (3s→1s)',
-        Icons.fast_forward,
-        Color(0xFF00FFFF),
-      ),
-    ),
-  ];
-
-  /// Connessioni skill-tree (id_a, id_b) — linee tra prereq e dipendenti.
-  static const _upgradeConnections = <(String, String)>[
-    ('speed', 'firepower'),
-    ('speed', 'fire_rate'),
-    ('firepower', 'shield_capacity'),
-    ('fire_rate', 'shield_capacity'),
-    ('shield_capacity', 'bomb_capacity'),
-    ('shield_capacity', 'starting_lives'),
-    ('bomb_capacity', 'magnet_range'),
-    ('starting_lives', 'magnet_range'),
-    ('magnet_range', 'xp_boost'),
-    ('firepower', 'crit'),
-    ('fire_rate', 'dash'),
-  ];
 
   // ==================== MODES TAB ====================
 
@@ -2573,290 +2260,6 @@ class _PetDef extends _ShopItem {
     this.color,
     this.petType,
   );
-}
-
-class _UpgradeItem {
-  final String id;
-  final String name;
-  final List<int> costs;
-  final int maxLevel;
-  final String description;
-  final IconData icon;
-  final Color color;
-
-  const _UpgradeItem(
-    this.id,
-    this.name,
-    this.costs,
-    this.maxLevel,
-    this.description,
-    this.icon,
-    this.color,
-  );
-}
-
-/// Iter 13: nodo skill-tree (mappa 2D upgrades).
-/// `x`/`y` normalizzati 0-1 = posizione su grid area.
-class _UpgradeNode {
-  final double x;
-  final double y;
-  final _UpgradeItem item;
-  const _UpgradeNode({required this.x, required this.y, required this.item});
-}
-
-/// Iter 19 (utente: "animated wave flow on talent connector lines").
-/// Tre stati per linea:
-///  • INACTIVE (prereq di b non soddisfatto)  → grigio dim, no pulse.
-///  • AVAILABLE (b unlocked, b level 0)       → cyan light statica, no pulse.
-///  • ACTIVE (b unlocked, sia a che b lvl≥1) → base dim + pulse traveling.
-/// Pulse: 20% segmento lungo la linea, hue shift cyan→green→cyan via
-/// `waveT.value`. Repaint trigger via `CustomPaint(repaint: waveT)`.
-class _UpgradeMapPainter extends CustomPainter {
-  // Magic numbers extracted (iter 19 caveman-review).
-  static const double _nodeRadius = 26.0;
-  static const double _basePulseHalfBand = 0.10;
-  static const double _hueCenter = 150.0;
-  static const double _hueAmplitude = 30.0;
-  static const Color _activeBaseColor = Color(0xFF00FFFF);
-  static const Color _availableBaseColor = Color(0xFF66E6FF);
-
-  // Paint objects cached at painter level — prima 2 alloc per frame, ora 0.
-  // Per-line state colors mutati in place. NOTA: questo painter è ricreato
-  // ogni volta che il widget viene ricostruito (nuovo SaveData ref); paint
-  // restano statici per evitare alloc su ogni listenable tick.
-  static final Paint _baseLinePaint = Paint()
-    ..style = PaintingStyle.stroke
-    ..strokeWidth = 1.8
-    ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 2);
-  static final Paint _pulsePaint = Paint()
-    ..style = PaintingStyle.stroke
-    ..strokeWidth = 3.0
-    ..strokeCap = StrokeCap.round
-    ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 3);
-
-  final List<_UpgradeNode> nodes;
-  final List<(String, String)> connections;
-  final SaveData saveData;
-  // Listenable per repaint + valore animazione 0..1.
-  final Animation<double> waveT;
-  // O(1) lookup by id; prima ogni connection faceva 2× O(N) firstWhere/frame.
-  late final Map<String, _UpgradeNode> _nodesById = {
-    for (final n in nodes) n.item.id: n,
-  };
-
-  _UpgradeMapPainter({
-    required this.nodes,
-    required this.connections,
-    required this.saveData,
-    required this.waveT,
-  }) : super(repaint: waveT);
-
-  /// Prereq di `bId` soddisfatti. Single source-of-truth: `_prereqsLookup`
-  /// è ora condivisa con `_ShopScreenState._prereqs`.
-  bool _prereqSatisfied(String bId) {
-    final reqs = _prereqsLookup[bId];
-    if (reqs == null || reqs.isEmpty) return true;
-    for (final (prereqId, minLevel) in reqs) {
-      if (saveData.getUpgradeLevel(prereqId) < minLevel) return false;
-    }
-    return true;
-  }
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final t = waveT.value.clamp(0.0, 1.0);
-
-    for (final (aId, bId) in connections) {
-      // O(1) lookup: skip se uno dei nodi non esiste (defensive vs id typo).
-      final a = _nodesById[aId];
-      final b = _nodesById[bId];
-      if (a == null || b == null) continue;
-
-      final lvlA = saveData.getUpgradeLevel(aId);
-      final lvlB = saveData.getUpgradeLevel(bId);
-      final bUnlocked = _prereqSatisfied(bId);
-      // Stati: ACTIVE = b unlocked + sia a che b ≥1 livello.
-      // AVAILABLE = b unlocked + b ancora a 0 (cyan light statica).
-      // INACTIVE = b NON unlocked (prereq mancante) → grigio dim.
-      final isActive = bUnlocked && lvlA > 0 && lvlB > 0;
-      final isAvailable = bUnlocked && !isActive;
-
-      // Compute endpoint shortened by _nodeRadius along direction.
-      final ax = a.x * size.width;
-      final ay = a.y * size.height;
-      final bx = b.x * size.width;
-      final by = b.y * size.height;
-      final dx = bx - ax;
-      final dy = by - ay;
-      final len = math.sqrt(dx * dx + dy * dy);
-      if (len <= _nodeRadius * 2) continue;
-      final nx = dx / len;
-      final ny = dy / len;
-      final p0 = Offset(ax + nx * _nodeRadius, ay + ny * _nodeRadius);
-      final p1 = Offset(bx - nx * _nodeRadius, by - ny * _nodeRadius);
-
-      // Base line color/alpha per stato.
-      if (isActive) {
-        _baseLinePaint.color = _activeBaseColor.withValues(alpha: 0.3);
-      } else if (isAvailable) {
-        _baseLinePaint.color = _availableBaseColor.withValues(alpha: 0.5);
-      } else {
-        // INACTIVE: dim grey (mantenuto come iter 13).
-        _baseLinePaint.color = Colors.white.withValues(alpha: 0.12);
-      }
-      canvas.drawLine(p0, p1, _baseLinePaint);
-
-      // Pulse traveling solo per ACTIVE.
-      if (!isActive) continue;
-
-      // Hue shift cyan(180°) → green(120°) → cyan via sine sul valore t.
-      // Mantiene pulse "vivo" senza saltare di colpo. Saturazione/Value alti.
-      final hue = _hueCenter + math.sin(t * math.pi * 2) * _hueAmplitude;
-      final pulseColor = HSVColor.fromAHSV(1.0, hue, 0.95, 1.0).toColor();
-
-      // Pulse band centrata su t. Per la linea retta non serve computeMetrics:
-      // basta interpolare lungo p0→p1 (più veloce + zero alloc Path/metrics).
-      final s = (t - _basePulseHalfBand).clamp(0.0, 1.0);
-      final e = (t + _basePulseHalfBand).clamp(0.0, 1.0);
-      if (e <= s) continue;
-      final ps = Offset.lerp(p0, p1, s)!;
-      final pe = Offset.lerp(p0, p1, e)!;
-      _pulsePaint.color = pulseColor.withValues(alpha: 0.9);
-      canvas.drawLine(ps, pe, _pulsePaint);
-    }
-  }
-
-  @override
-  bool shouldRepaint(_UpgradeMapPainter old) {
-    // Repaint trigger via Listenable (super.repaint=waveT). saveData
-    // mutato in-place + setState dopo purchase ricrea painter, quindi
-    // basta confrontare reference per coprire purchase updates.
-    return old.saveData != saveData ||
-        old.connections != connections ||
-        old.nodes != nodes;
-  }
-}
-
-/// Lookup statico replica di `_ShopScreenState._prereqs` per uso nel
-/// painter (module-scope). Aggiorna assieme.
-const Map<String, List<(String, int)>> _prereqsLookup = {
-  'speed': [],
-  'firepower': [('speed', 5)],
-  'fire_rate': [('speed', 5)],
-  'shield_capacity': [('firepower', 5), ('fire_rate', 5)],
-  'bomb_capacity': [('shield_capacity', 5)],
-  'starting_lives': [('shield_capacity', 5)],
-  'magnet_range': [('bomb_capacity', 5), ('starting_lives', 5)],
-  'crit': [('firepower', 5)],
-  'dash': [('fire_rate', 5)],
-  'xp_boost': [('magnet_range', 5)],
-};
-
-/// Nodo skill-tree con nome + livello sotto. Stato lock = greyed/no-tap.
-class _UpgradeMapNode extends StatelessWidget {
-  final _UpgradeItem item;
-  final int currentLevel;
-  final bool unlocked;
-  final String upgradeName;
-  final AppLocalizations l10n;
-  final VoidCallback onTap;
-
-  const _UpgradeMapNode({
-    required this.item,
-    required this.currentLevel,
-    required this.unlocked,
-    required this.upgradeName,
-    required this.l10n,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final isMaxed = currentLevel >= item.maxLevel;
-    final activeColor = unlocked
-        ? item.color
-        : Colors.white.withValues(alpha: 0.25);
-    final glow = !unlocked
-        ? 0.15
-        : isMaxed
-        ? 0.9
-        : (0.3 + 0.06 * currentLevel);
-    return GestureDetector(
-      onTap: unlocked ? onTap : null,
-      child: SizedBox(
-        width: 72,
-        // Icon node 56px + label area ~26px (nome + level).
-        height: 96,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Cerchio icona
-            Container(
-              width: 56,
-              height: 56,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: activeColor.withValues(
-                  alpha: unlocked ? (0.12 + 0.04 * currentLevel) : 0.05,
-                ),
-                border: Border.all(
-                  color: activeColor.withValues(alpha: glow),
-                  width: 2,
-                ),
-                boxShadow: unlocked
-                    ? [
-                        BoxShadow(
-                          color: activeColor.withValues(alpha: glow * 0.5),
-                          blurRadius: 10,
-                        ),
-                      ]
-                    : null,
-              ),
-              alignment: Alignment.center,
-              child: Icon(
-                unlocked ? item.icon : Icons.lock,
-                color: activeColor,
-                size: unlocked ? 24 : 18,
-              ),
-            ),
-            const SizedBox(height: 3),
-            // Nome upgrade (compatto)
-            SizedBox(
-              width: 72,
-              child: Text(
-                upgradeName,
-                textAlign: TextAlign.center,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  color: activeColor.withValues(alpha: unlocked ? 0.95 : 0.4),
-                  fontSize: 9,
-                  fontWeight: FontWeight.w900,
-                  fontFamily: 'monospace',
-                  letterSpacing: 0.5,
-                ),
-              ),
-            ),
-            const SizedBox(height: 1),
-            // Livello current/max
-            Text(
-              '$currentLevel/${item.maxLevel}',
-              style: TextStyle(
-                color: !unlocked
-                    ? Colors.white.withValues(alpha: 0.3)
-                    : isMaxed
-                    ? Colors.greenAccent
-                    : activeColor.withValues(alpha: 0.85),
-                fontSize: 10,
-                fontWeight: FontWeight.w900,
-                fontFamily: 'monospace',
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }
 
 // ==================== SKIN PREVIEW PAINTER ====================

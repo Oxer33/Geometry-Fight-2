@@ -35,6 +35,16 @@ class _Mp3Pool {
     int loaded = 0;
     for (final p in _players) {
       try {
+        // Focus none per-player (oltre al globale): garantisce che i BOOM
+        // critici (player/boss/gameover/enemy death = _Mp3Pool) non negozino
+        // l'audio focus → partono immediati, nessuna coda focus a ritardarli.
+        await p.setAudioContext(
+          AudioContext(
+            android: const AudioContextAndroid(
+              audioFocus: AndroidAudioFocus.none,
+            ),
+          ),
+        );
         await p.setReleaseMode(ReleaseMode.stop);
         await p.setSource(AssetSource('audio/$assetRelPath'));
         loaded++;
@@ -198,6 +208,20 @@ class AudioSystem {
     // Double-check post-await: se init() concurrente ha già finito,
     // skip setup (evita pool duplicate/leak).
     if (_initialized) return;
+    // Audio focus = none: i player SFX non si rubano il focus a vicenda. Il
+    // default `gain` causava ~270 onAudioFocusChange/sessione (ducking, tagli,
+    // e una coda di comandi focus sul platform channel che ritardava di
+    // secondi il BOOM di morte). Con `none` i suoni si sovrappongono liberi:
+    // niente coda/ducking da focus → BOOM critici immediati.
+    try {
+      await AudioPlayer.global.setAudioContext(
+        AudioContext(
+          android: const AudioContextAndroid(
+            audioFocus: AndroidAudioFocus.none,
+          ),
+        ),
+      );
+    } catch (_) {}
     // Ogni pool ha il proprio try/catch: se uno fallisce non deve killare
     // l'intero sistema audio. `_initialized=true` anche con pool parziali →
     // gli SFX non-falliti funzionano comunque.
@@ -289,6 +313,35 @@ class AudioSystem {
   /// stopped+disposed immediatamente (senza essere aggiunto alla lista, che
   /// è già stata svuotata). Senza questa guard, player orphan persistevano
   /// nel menù post game-exit.
+  /// Cap massimo di player "rari" (FlameAudio.play) tenuti vivi insieme.
+  /// Sotto gioco lungo/pesante questi possono accumularsi più velocemente di
+  /// quanto onPlayerComplete li purghi, e ogni AudioPlayer vivo streamma
+  /// eventi platform (position/state) → flood della message-queue Android →
+  /// lag progressivo + suoni/vibrazioni in coda che drenano lenti. Oltre il
+  /// cap, droppa il più vecchio (stop+dispose).
+  static const int _maxTrackedRare = 6;
+
+  /// Aggiunge un player raro applicando il cap + wiring dell'auto-purge su
+  /// onPlayerComplete. Centralizza la logica usata da `_playTracked` e
+  /// `_tryDirectThenPool` così il bound vale per entrambi i path.
+  static void _trackRarePlayer(AudioPlayer player) {
+    while (_trackedRarePlayers.length >= _maxTrackedRare) {
+      final old = _trackedRarePlayers.removeAt(0);
+      try {
+        old.stop();
+      } catch (_) {}
+      try {
+        old.dispose();
+      } catch (_) {}
+    }
+    _trackedRarePlayers.add(player);
+    player.onPlayerComplete.first
+        .then((_) {
+          _trackedRarePlayers.remove(player);
+        })
+        .catchError((Object _) {});
+  }
+
   static void _playTracked(String asset, double volume) {
     try {
       FlameAudio.play(asset, volume: volume).then<void>((player) {
@@ -302,13 +355,7 @@ class AudioSystem {
           } catch (_) {}
           return;
         }
-        _trackedRarePlayers.add(player);
-        // Auto-cleanup quando il track finisce naturalmente.
-        player.onPlayerComplete.first
-            .then((_) {
-              _trackedRarePlayers.remove(player);
-            })
-            .catchError((Object _) {});
+        _trackRarePlayer(player);
       }, onError: (Object _, StackTrace _) {});
     } catch (_) {}
   }
@@ -447,12 +494,7 @@ class AudioSystem {
             } catch (_) {}
             return;
           }
-          _trackedRarePlayers.add(player);
-          player.onPlayerComplete.first
-              .then((_) {
-                _trackedRarePlayers.remove(player);
-              })
-              .catchError((Object _) {});
+          _trackRarePlayer(player);
         },
         onError: (Object _, StackTrace _) {
           poolFallback();

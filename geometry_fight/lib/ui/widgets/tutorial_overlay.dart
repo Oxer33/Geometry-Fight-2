@@ -85,32 +85,36 @@ class TutorialOverlay extends StatelessWidget {
                     const SizedBox(height: 32),
 
                     // Pulsante continua
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 28,
-                        vertical: 12,
-                      ),
-                      decoration: BoxDecoration(
-                        border: Border.all(
-                          color: Colors.cyanAccent,
-                          width: 1.5,
+                    Semantics(
+                      button: true,
+                      label: l10n.tutorialTapToStart,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 28,
+                          vertical: 12,
                         ),
-                        borderRadius: BorderRadius.circular(8),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.cyanAccent.withValues(alpha: 0.3),
-                            blurRadius: 12,
+                        decoration: BoxDecoration(
+                          border: Border.all(
+                            color: Colors.cyanAccent,
+                            width: 1.5,
                           ),
-                        ],
-                      ),
-                      child: Text(
-                        l10n.tutorialTapToStart,
-                        style: const TextStyle(
-                          color: Colors.cyanAccent,
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                          fontFamily: 'monospace',
-                          letterSpacing: 2,
+                          borderRadius: BorderRadius.circular(8),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.cyanAccent.withValues(alpha: 0.3),
+                              blurRadius: 12,
+                            ),
+                          ],
+                        ),
+                        child: Text(
+                          l10n.tutorialTapToStart,
+                          style: const TextStyle(
+                            color: Colors.cyanAccent,
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            fontFamily: 'monospace',
+                            letterSpacing: 2,
+                          ),
                         ),
                       ),
                     ),

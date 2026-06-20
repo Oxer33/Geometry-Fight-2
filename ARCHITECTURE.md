@@ -23,6 +23,7 @@
 14. [Pattern Architetturali](#pattern-architetturali)
 15. [Game Modes](#game-modes)
 16. [Flusso di Gioco](#flusso-di-gioco)
+17. [Sistema Talenti](#sistema-talenti-talent-web)
 
 ---
 
@@ -918,6 +919,35 @@ App Start
 
 ---
 
+## Sistema Talenti (Talent Web)
+
+Albero stile **Path of Exile** che sostituisce il vecchio tab "Upgrades" dello
+shop come unica progressione di statistiche.
+
+- **Struttura**: ~616 nodi su 10 anelli concentrici + 6 root (punti di partenza),
+  6 "arm" (rami) ciascuno con colore/tema. Connettività **non-direzionale**:
+  possedere un nodo apre tutti i vicini connessi.
+- **Tipi nodo**: `root` (6), `minor` (422, +1 piccola stat), `notable` (122,
+  stat ×4 + 2ª stat), `fork` (60 = 30 slot × 2 gemelli mutuamente esclusivi che
+  *empowerano* una singola arma), `keystone` (6, stat ×22 + 2 extra, fine ramo).
+- **Generazione**: procedurale e **deterministica**
+  (`lib/data/talents/talent_generator.dart`); prereq = spoke interno + ring-loop
+  + diagonale → web cross-linkata.
+- **Progressione**: XP per ogni mob/boss → livello giocatore
+  (`SaveData.playerXp/playerLevel`, curva chiusa); **1 punto talent per livello**.
+  Gli stat getter di `SaveData` (damage, crit, fire rate, …) ora si *folddano*
+  dai talent posseduti via `TalentService.foldTalents`.
+- **Effetti** (NO hp/difesa — gioco one-shot): danno arma, crit chance/dmg,
+  fire rate, move speed, cooldown, gold/xp find, magnet, bomb radius, durata
+  scudo post-morte, ed *empower* per arma (`skillPower`/`skillCdr` per `AbilityFx`).
+- **Rendering**: due `CustomPainter` — `TalentWebPainter` statico (RepaintBoundary,
+  edge a 3 stati, shape per tier) + `TalentFxPainter` animato (hub orb, glow nodi
+  posseduti, energy wave). Pan/zoom con `InteractiveViewer`.
+- **File**: `lib/data/talents/*`, `lib/ui/screens/talents/*`. Test:
+  `test/unit/talents/*`.
+
+---
+
 ## Dipendenze
 
 ```yaml
@@ -930,5 +960,5 @@ dependencies:
 
 ---
 
-> Documento generato il 29/03/2026
-> Geometry Fight 2 v2.0 — Flutter + Flame Engine
+> Documento generato il 29/03/2026 · aggiornato il 20/06/2026 (Talent System)
+> Geometry Fight 2 v1.0.16+17 — Flutter + Flame Engine
